@@ -1057,38 +1057,36 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 	PutByte(&CARTRIDGE_piggyback, addr, byte);
 }
 
-/* special support of Bounty Bob on Atari5200 */
+/* special support of Atari 5200 and Atari 8-bit Bounty Bob */
 void CARTRIDGE_BountyBob1(UWORD addr)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-			addr -= 0x4ff6;
-			MEMORY_CopyROM(0x4000, 0x4fff, active_cart->image + addr * 0x1000);
-			active_cart->state = (active_cart->state & 0x0c) | addr;
-		}
-	} else {
-		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
-			addr -= 0x8ff6;
-			MEMORY_CopyROM(0x8000, 0x8fff, active_cart->image + addr * 0x1000);
-			active_cart->state = (active_cart->state & 0x0c) | addr;
+	UWORD base_addr = (addr & 0xf000);
+	addr &= 0x00ff;
+	if (addr >= 0xf6 && addr <= 0xf9) {
+		int new_state;
+		addr -= 0xf6;
+		new_state = (active_cart->state & 0x0c) | addr;
+		if (new_state != active_cart->state) {
+			MEMORY_CopyROM(base_addr, base_addr + 0x0fff,
+			               active_cart->image + addr * 0x1000);
+			active_cart->state = new_state;
 		}
 	}
 }
 
 void CARTRIDGE_BountyBob2(UWORD addr)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-			addr -= 0x5ff6;
-			MEMORY_CopyROM(0x5000, 0x5fff, active_cart->image + 0x4000 + addr * 0x1000);
-			active_cart->state = (active_cart->state & 0x03) | (addr << 2);
-		}
-	}
-	else {
-		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
-			addr -= 0x9ff6;
-			MEMORY_CopyROM(0x9000, 0x9fff, active_cart->image + 0x4000 + addr * 0x1000);
-			active_cart->state = (active_cart->state & 0x03) | (addr << 2);
+	UWORD base_addr = (addr & 0xf000);
+	addr &= 0x00ff;
+	if (addr >= 0xf6 && addr <= 0xf9) {
+		int new_state;
+		int old_state = active_cart->state;
+		addr -= 0xf6;
+		new_state = (active_cart->state & 0x03) | (addr << 2);
+		if (new_state != active_cart->state) {
+			MEMORY_CopyROM(base_addr, base_addr + 0x0fff,
+			               active_cart->image + 0x4000 + addr * 0x1000);
+			active_cart->state = new_state;
 		}
 	}
 }
@@ -1098,7 +1096,7 @@ void CARTRIDGE_5200SuperCart(UWORD addr)
 	int old_state = active_cart->state;
 	int new_state = old_state;
 
-	if ((addr & 0xbfc0) == 0xbfc0) {
+	if ((addr & 0xc0) == 0xc0) {
 		switch (addr & 0x30) {
 		case 0x00: /* $BFCx */
 			new_state = (new_state & 0x03) | (addr & 0x0c);
@@ -1122,77 +1120,38 @@ void CARTRIDGE_5200SuperCart(UWORD addr)
 #ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 {
-	if (!no_side_effects) {
-		if (Atari800_machine_type == Atari800_MACHINE_5200) {
-			if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-				CARTRIDGE_BountyBob1(addr);
-			}
-		} else {
-			if (addr >= 0x8ff6 && addr <= 0x8ff9) {
-				CARTRIDGE_BountyBob1(addr);
-			}
-		}
-	}
+	if (!no_side_effects)
+		CARTRIDGE_BountyBob1(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 {
-	if (!no_side_effects) {
-		if (Atari800_machine_type == Atari800_MACHINE_5200) {
-			if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-				CARTRIDGE_BountyBob2(addr);
-			}
-		} else {
-			if (addr >= 0x9ff6 && addr <= 0x9ff9) {
-				CARTRIDGE_BountyBob2(addr);
-			}
-		}
-	}
+	if (!no_side_effects)
+		CARTRIDGE_BountyBob2(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 UBYTE CARTRIDGE_5200SuperCartGetByte(UWORD addr, int no_side_effects)
 {
-	if (!no_side_effects) {
-		if (Atari800_machine_type == Atari800_MACHINE_5200) {
-			CARTRIDGE_5200SuperCart(addr);
-		}
-	}
+	if (!no_side_effects)
+		CARTRIDGE_5200SuperCart(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x4ff6 && addr <= 0x4ff9) {
-			CARTRIDGE_BountyBob1(addr);
-		}
-	} else {
-		if (addr >= 0x8ff6 && addr <= 0x8ff9) {
-			CARTRIDGE_BountyBob1(addr);
-		}
-	}
+	CARTRIDGE_BountyBob1(addr);
 }
 
 void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		if (addr >= 0x5ff6 && addr <= 0x5ff9) {
-			CARTRIDGE_BountyBob2(addr);
-		}
-	} else {
-		if (addr >= 0x9ff6 && addr <= 0x9ff9) {
-			CARTRIDGE_BountyBob2(addr);
-		}
-	}
+	CARTRIDGE_BountyBob2(addr);
 }
 
 void CARTRIDGE_5200SuperCartPutByte(UWORD addr, UBYTE value)
 {
-	if (Atari800_machine_type == Atari800_MACHINE_5200) {
-		CARTRIDGE_5200SuperCart(addr);
-	}
+	CARTRIDGE_5200SuperCart(addr);
 }
 #endif
 
