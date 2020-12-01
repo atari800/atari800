@@ -1058,7 +1058,9 @@ void CARTRIDGE_PutByte(UWORD addr, UBYTE byte)
 }
 
 /* special support of Atari 5200 and Atari 8-bit Bounty Bob */
-void CARTRIDGE_BountyBob1(UWORD addr)
+
+/* addr must be $4fxx in 5200 mode or $8fxx in 800 mode. */
+static void access_BountyBob1(UWORD addr)
 {
 	UWORD base_addr = (addr & 0xf000);
 	addr &= 0x00ff;
@@ -1074,13 +1076,13 @@ void CARTRIDGE_BountyBob1(UWORD addr)
 	}
 }
 
-void CARTRIDGE_BountyBob2(UWORD addr)
+/* addr must be $5fxx in 5200 mode or $9fxx in 800 mode. */
+static void access_BountyBob2(UWORD addr)
 {
 	UWORD base_addr = (addr & 0xf000);
 	addr &= 0x00ff;
 	if (addr >= 0xf6 && addr <= 0xf9) {
 		int new_state;
-		int old_state = active_cart->state;
 		addr -= 0xf6;
 		new_state = (active_cart->state & 0x03) | (addr << 2);
 		if (new_state != active_cart->state) {
@@ -1091,7 +1093,8 @@ void CARTRIDGE_BountyBob2(UWORD addr)
 	}
 }
 
-void CARTRIDGE_5200SuperCart(UWORD addr)
+/* addr must be $bfxx in 5200 mode only. */
+static void access_5200SuperCart(UWORD addr)
 {
 	int old_state = active_cart->state;
 	int new_state = old_state;
@@ -1117,43 +1120,41 @@ void CARTRIDGE_5200SuperCart(UWORD addr)
 	}
 }
 
-#ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects)
 {
 	if (!no_side_effects)
-		CARTRIDGE_BountyBob1(addr);
+		access_BountyBob1(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects)
 {
 	if (!no_side_effects)
-		CARTRIDGE_BountyBob2(addr);
+		access_BountyBob2(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 UBYTE CARTRIDGE_5200SuperCartGetByte(UWORD addr, int no_side_effects)
 {
 	if (!no_side_effects)
-		CARTRIDGE_5200SuperCart(addr);
+		access_5200SuperCart(addr);
 	return MEMORY_dGetByte(addr);
 }
 
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value)
 {
-	CARTRIDGE_BountyBob1(addr);
+	access_BountyBob1(addr);
 }
 
 void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value)
 {
-	CARTRIDGE_BountyBob2(addr);
+	access_BountyBob2(addr);
 }
 
 void CARTRIDGE_5200SuperCartPutByte(UWORD addr, UBYTE value)
 {
-	CARTRIDGE_5200SuperCart(addr);
+	access_5200SuperCart(addr);
 }
-#endif
 
 static void ResetCartState(CARTRIDGE_image_t *cart)
 {

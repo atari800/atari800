@@ -74,18 +74,9 @@ void CARTRIDGE_ColdStart(void);
 
 UBYTE CARTRIDGE_GetByte(UWORD addr, int no_side_effects);
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte);
-
-/* addr must be $4fxx in 5200 mode or $8fxx in 800 mode. */
-void CARTRIDGE_BountyBob1(UWORD addr);
-
-/* addr must be $5fxx in 5200 mode or $9fxx in 800 mode. */
-void CARTRIDGE_BountyBob2(UWORD addr);
-
-/* addr must be $bfxx in 5200 mode only. */
-void CARTRIDGE_5200SuperCart(UWORD addr);
 void CARTRIDGE_StateSave(void);
 void CARTRIDGE_StateRead(UBYTE version);
-#ifdef PAGED_ATTRIB
+
 /* addr must be $4fxx in 5200 mode or $8fxx in 800 mode. */
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects);
 
@@ -103,6 +94,5 @@ void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value);
 
 /* addr must be $bfxx in 5200 mode only. */
 void CARTRIDGE_5200SuperCartPutByte(UWORD addr, UBYTE value);
-#endif
 
 #endif /* CARTRIDGE_H_ */
