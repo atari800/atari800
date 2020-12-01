@@ -76,16 +76,16 @@ UBYTE CARTRIDGE_GetByte(UWORD addr, int no_side_effects);
 void CARTRIDGE_PutByte(UWORD addr, UBYTE byte);
 void CARTRIDGE_BountyBob1(UWORD addr);
 void CARTRIDGE_BountyBob2(UWORD addr);
-void CARTRIDGE_Switchable5200(UWORD addr);
+void CARTRIDGE_5200SuperCart(UWORD addr);
 void CARTRIDGE_StateSave(void);
 void CARTRIDGE_StateRead(UBYTE version);
 #ifdef PAGED_ATTRIB
 UBYTE CARTRIDGE_BountyBob1GetByte(UWORD addr, int no_side_effects);
 UBYTE CARTRIDGE_BountyBob2GetByte(UWORD addr, int no_side_effects);
-UBYTE CARTRIDGE_Switchable5200GetByte(UWORD addr, int no_side_effects);
+UBYTE CARTRIDGE_5200SuperCartGetByte(UWORD addr, int no_side_effects);
 void CARTRIDGE_BountyBob1PutByte(UWORD addr, UBYTE value);
 void CARTRIDGE_BountyBob2PutByte(UWORD addr, UBYTE value);
-void CARTRIDGE_Switchable5200PutByte(UWORD addr, UBYTE value);
+void CARTRIDGE_5200SuperCartPutByte(UWORD addr, UBYTE value);
 #endif
 
 #endif /* CARTRIDGE_H_ */
