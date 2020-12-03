@@ -222,8 +222,8 @@ AC_DEFUN([TRY_USE_SDL],
             LIBS="$LIBS $SDL_LIBS"
             CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
             if [[ "$a8_host" = "win" ]]; then
-dnl Don't redefine main -- SDL.h will do it for us in atari_sdl.c Otherwise
-dnl the autoconf tests don't work.
+dnl Defer redefinition of main - do it later, in src/Makefile.am. Otherwise
+dnl the autoconf tests would not work.
                 CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
 dnl Avoid making stdout.txt on Windows sdl target by discarding libSDLmain and
 dnl compiling our own src/sdl/SDL_win32_main.c (copied from libSDL dources),

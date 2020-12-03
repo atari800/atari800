@@ -16,6 +16,8 @@ SUFFIXES = .c .cpp .s .o .h .asm
 
 doc_DATA = 
 
+atari800_CPPFLAGS =
+
 if CONFIGURE_TARGET_LIBATARI800
 lib_LIBRARIES = libatari800.a
 include_HEADERS = libatari800/libatari800.h
@@ -86,6 +88,7 @@ if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
 if CONFIGURE_HOST_WIN
 atari800_SOURCES += sdl/SDL_win32_main.c
+atari800_CPPFLAGS += -Dmain=SDL_main
 endif
 endif
 
