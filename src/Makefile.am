@@ -111,6 +111,9 @@ endif
 if WITH_SOUND_OSS
 atari800_SOURCES += sound.c sound_oss.c
 endif
+if WITH_SOUND_WIN
+atari800_SOURCES += win32/sound.c
+endif
 if WITH_SOUND_LIBATARI800
 atari800_SOURCES += sound.c libatari800/sound.c libatari800/sound.h
 endif
@@ -147,9 +150,6 @@ libwin32_a_SOURCES = \
 	win32/main.c win32/main.h win32/main_menu.h \
 	win32/keyboard.c win32/keyboard.h \
 	win32/joystick.c win32/joystick.h
-if WITH_SOUND_WIN
-libwin32_a_SOURCES += win32/sound.c
-endif
 atari800_LDADD += libwin32.a win32/atari.ro
 # A special rule for win32 to not compile with -ansi -pedantic
 libwin32_a_CFLAGS = $(CFLAGS_NOANSI)
