@@ -79,11 +79,17 @@ static int KBD_STICK_1_DOWN = SDLK_s;
 static int KBD_STICK_1_UP = SDLK_w;
 
 /* Maping for the START, RESET, OPTION, SELECT and EXIT keys */
-static int KBD_RESET = SDLK_F5;
+static int KBD_UI = SDLK_F1;
 static int KBD_OPTION = SDLK_F2;
 static int KBD_SELECT = SDLK_F3;
 static int KBD_START = SDLK_F4;
+static int KBD_RESET = SDLK_F5;
+static int KBD_HELP = SDLK_F6;
+static int KBD_BREAK = SDLK_F7;
+static int KBD_MON = SDLK_F8;
 static int KBD_EXIT = SDLK_F9;
+static int KBD_SSHOT = SDLK_F10;
+static int KBD_TURBO = SDLK_F12;
 
 /* real joysticks */
 
@@ -230,16 +236,28 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		return set_real_js_use_hat(2,parameters);
 	else if (strcmp(option, "SDL_JOY_3_USE_HAT") == 0)
 		return set_real_js_use_hat(3,parameters);
-	else if (strcmp(option, "SDL_RESET_KEY") == 0)
-	        return SDLKeyBind(&KBD_RESET, parameters);
+	else if (strcmp(option, "SDL_UI_KEY") == 0)
+		return SDLKeyBind(&KBD_UI, parameters);
 	else if (strcmp(option, "SDL_OPTION_KEY") == 0)
-	        return SDLKeyBind(&KBD_OPTION, parameters);
+		return SDLKeyBind(&KBD_OPTION, parameters);
 	else if (strcmp(option, "SDL_SELECT_KEY") == 0)
-	        return SDLKeyBind(&KBD_SELECT, parameters);
+		return SDLKeyBind(&KBD_SELECT, parameters);
 	else if (strcmp(option, "SDL_START_KEY") == 0)
-	        return SDLKeyBind(&KBD_START, parameters);
+		return SDLKeyBind(&KBD_START, parameters);
+	else if (strcmp(option, "SDL_RESET_KEY") == 0)
+		return SDLKeyBind(&KBD_RESET, parameters);
+	else if (strcmp(option, "SDL_HELP_KEY") == 0)
+		return SDLKeyBind(&KBD_HELP, parameters);
+	else if (strcmp(option, "SDL_BREAK_KEY") == 0)
+		return SDLKeyBind(&KBD_BREAK, parameters);
+	else if (strcmp(option, "SDL_MON_KEY") == 0)
+		return SDLKeyBind(&KBD_MON, parameters);
 	else if (strcmp(option, "SDL_EXIT_KEY") == 0)
-	        return SDLKeyBind(&KBD_EXIT, parameters);
+		return SDLKeyBind(&KBD_EXIT, parameters);
+	else if (strcmp(option, "SDL_SSHOT_KEY") == 0)
+		return SDLKeyBind(&KBD_SSHOT, parameters);
+	else if (strcmp(option, "SDL_TURBO_KEY") == 0)
+		return SDLKeyBind(&KBD_TURBO, parameters);
 	else
 		return FALSE;
 }
@@ -263,11 +281,17 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
 	fprintf(fp, "SDL_JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
 
-	fprintf(fp, "SDL_RESET_KEY=%d\n", KBD_RESET);
+	fprintf(fp, "SDL_UI_KEY=%d\n", KBD_UI);
 	fprintf(fp, "SDL_OPTION_KEY=%d\n", KBD_OPTION);
 	fprintf(fp, "SDL_SELECT_KEY=%d\n", KBD_SELECT);
 	fprintf(fp, "SDL_START_KEY=%d\n", KBD_START);
+	fprintf(fp, "SDL_RESET_KEY=%d\n", KBD_RESET);
+	fprintf(fp, "SDL_HELP_KEY=%d\n", KBD_HELP);
+	fprintf(fp, "SDL_BREAK_KEY=%d\n", KBD_BREAK);
+	fprintf(fp, "SDL_MON_KEY=%d\n", KBD_MON);
 	fprintf(fp, "SDL_EXIT_KEY=%d\n", KBD_EXIT);
+	fprintf(fp, "SDL_SSHOT_KEY=%d\n", KBD_SSHOT);
+	fprintf(fp, "SDL_TURBO_KEY=%d\n", KBD_TURBO);
 	
 	write_real_js_configs(fp);
 }
@@ -712,24 +736,34 @@ int PLATFORM_Keyboard(void)
 		return INPUT_key_shift ? AKEY_COLDSTART : AKEY_WARMSTART;
 	}
 	if (lastkey == KBD_EXIT) {
-	        return AKEY_EXIT;
+		return AKEY_EXIT;
 	}
-
-	switch (lastkey) {
-	case SDLK_F1:
+	if (lastkey == KBD_UI) {
 		key_pressed = 0;
 		return AKEY_UI;
-	case SDLK_F8:
+	}
+	if (lastkey == KBD_MON) {
 		UI_alt_function = UI_MENU_MONITOR;
-		break;
-	case SDLK_F10:
+	}
+	if (lastkey == KBD_HELP) {
+		return AKEY_HELP ^ shiftctrl;
+	}
+	if (lastkey == KBD_BREAK) {
+		if (BINLOAD_wait_active) {
+			BINLOAD_pause_loading = TRUE;
+			return AKEY_NONE;
+		}
+		else
+			return AKEY_BREAK;
+	}
+	if (lastkey == KBD_SSHOT) {
 		key_pressed = 0;
 		return INPUT_key_shift ? AKEY_SCREENSHOT_INTERLACE : AKEY_SCREENSHOT;
-	case SDLK_F12:
+	}
+	if (lastkey == KBD_TURBO) {
 		key_pressed = 0;
 		return AKEY_TURBO;
 	}
-
 	if (UI_alt_function != -1) {
 		key_pressed = 0;
 		return AKEY_UI;
@@ -808,8 +842,6 @@ int PLATFORM_Keyboard(void)
 		else
 			return AKEY_CAPSTOGGLE;
 	case SDLK_END:
-	case SDLK_F6:
-		return AKEY_HELP ^ shiftctrl;
 	case SDLK_PAGEDOWN:
 		return AKEY_F2 | AKEY_SHFT;
 	case SDLK_PAGEUP:
@@ -817,13 +849,6 @@ int PLATFORM_Keyboard(void)
 	case SDLK_HOME:
 		return key_control ? AKEY_LESS|shiftctrl : AKEY_CLEAR;
 	case SDLK_PAUSE:
-	case SDLK_F7:
-		if (BINLOAD_wait_active) {
-			BINLOAD_pause_loading = TRUE;
-			return AKEY_NONE;
-		}
-		else
-			return AKEY_BREAK;
 	case SDLK_CAPSLOCK:
 		if (INPUT_key_shift)
 			return AKEY_CAPSLOCK|shiftctrl;
