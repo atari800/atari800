@@ -122,11 +122,11 @@ binary-arch:		checkroot build
 
 # Create dependency information
 #
-	dpkg-shlibdeps src/$(P)
+	dpkg-shlibdeps debian/tmp/usr/bin/$(P)
 
 # Generate control file for the package
 #
-	dpkg-gencontrol -p$(P) -isp
+	dpkg-gencontrol -p$(P)
 
 # Clean up file ownership
 #

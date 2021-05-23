@@ -24,8 +24,8 @@ Ensure the SDL development files are installed:
 
     sudo apt-get install libsdl1.2-dev
 
-NATIVE COMPILE ON THE RASPBERRY PI 0, 2 or 3
-============================================
+NATIVE COMPILE ON THE RASPBERRY PI ZERO, 2 or 3
+===============================================
 Configure and make:
 
     ./configure --target=rpi
@@ -33,29 +33,51 @@ Configure and make:
 
 Make generates the executable file src/atari800.
 
-NATIVE COMPILE ON THE RASPBERRY PI 4
-====================================
+NATIVE COMPILE ON THE RASPBERRY PI 4 or 400
+===========================================
 Configure and make:
 
     ./configure --enable-opengl-by-default
     make
 
-The Pi 4 hardware is different to its predecessors.  It runs the stock
-version of atari800, not a special Raspberry Pi variation.  However,
-it is not fast enough to run the stock version without OpenGL hardware video
-acceleration, so the --enable-opengl-by-default option is required.  This
-sets VIDEO_ACCEL=1 in the configuration file that is created on the first
-run after installation, enabling acceleration by default.
+The Pi 4 and 400 have different hardware to earlier models.  They run
+the stock version of atari800, not a special Raspberry Pi variant.  However,
+they are not fast enough to run the stock version without OpenGL hardware
+video acceleration, so the --enable-opengl-by-default option is required.
+This sets VIDEO_ACCEL=1 in the configuration file that is created on the
+first run after installation, enabling acceleration by default.
 
-(Acceleration is generally disabled by default to permit the emulator to run
-on systems with broken OpenGL drivers, but this is not an issue with the
-Pi 4 because the drivers in Pi OS are good.)
+Some Linux distributions have broken OpenGL drivers.  Acceleration is
+generally disabled by default to allow atari800 to run at reduced efficiency
+on these systems, rather than crashing, but this is not an an issue with Pi OS
+because its drivers are good.
 
-CROSS COMPILE FOR THE RASPBERRY PI 0, 2 or 3
-============================================
-Cross compilation is only useful for major development projects involving
-repeated compilation of large volumes of code.  For minor changes it is
-much quicker and easier to native compile.
+The --enable-opengl-by-default option makes it possible to produce Pi 4/400
+packages that install and run correctly, without the user having to turn
+acceleration on manually via the menu system.
+
+The configuration command above is an abbreviated form of:
+
+    ./configure --with-opengl --enable-opengl-by-default
+
+where the first option (--with-opengl) specifies that we wish to build OpenGL
+support, and the second that we wish to enable it.  The first may be omitted
+because it is the default behaviour for OpenGL-aware systems.
+
+
+
+CROSS COMPILE FOR THE RASPBERRY PI ZERO, 2 or 3
+===============================================
+Cross compilation was used to speed up the development of atari800 on early
+Pis.
+
+Given the improved performance of the Pi 2 and later machines, there is no
+incentive to cross compile any more.  Native compilation is simpler and
+quicker in practice.
+
+The following description illustrates the use of options and tools that still
+exist, and has been retained for historical interest.  It was written in
+2018, and is no longer updated.
 
 To cross compile you need the linaro-gnueabihf toolchain.  This can be
 obtained from GitHub or from official software sources on some versions

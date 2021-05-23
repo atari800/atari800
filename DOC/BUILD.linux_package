@@ -16,11 +16,11 @@ Download the latest release of the source code from the Github Releases Area
 like 'atari800-4.2.0-src.tgz'.
 
 Unzip the source code.  The contents will go into a directory called
-'atari800-4.2.0' or similar.  This will be referred to in these notes as the
+'atari800-4.2.0' or similar, which will be referred to in these notes as the
 'atari800' directory.
 
 Do not obtain the source code by cloning the current atari800 repository
-because this may have been modified since the last release and may contain
+because this may have been modified since the last release, and may contain
 partially developed and untested code.
 
 COMPILE WITHOUT ERROR
@@ -32,6 +32,17 @@ instructions in the appropriate atari800/DOC file:
     BUILD.RPI    - specific instructions for the Raspberry Pi
 
 Confirm that the compilation completes without error.
+
+UPDATE CONFIGURATION FILE FOR PACKAGING
+=======================================
+Temporarily rename or move the existing configuration file (.atari800.cfg in
+the home directory), then run atari800 to generate a new default file, and
+copy it to /debian/atari800.cfg (note there is no '.' preceeding
+'atari800.cfg').
+
+This copy will placed in the package for reference.
+
+Reinstate the original copy of .atari800.cfg
 
 UPDATE DEBIAN CHANGELOG
 =======================
@@ -59,22 +70,23 @@ Edit these lines as appropriate.  For example:
 
       * New upstream version 4.2.0
 
-     -- Cliff Hatch <Contact via atari800-users@lists.sourceforge.net>  Sat, 04 Jul 2020 10:06:18 +0100
+    -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 04 Jul 2020 10:06:18 +0100
 
 The version number '4.2.0-1' will be used as part of the name of the package
-you are going to build.  If you build additional releases of '4.2.0' to fix
-bugs, call them '4.2.0-1', '4.2.0-2', etc..
+you are going to build.
 
 Label the release 'unstable'.  This does not mean it is actually unstable, just
-that you have not done exhaustive tests to prove otherwise.
+that no tests have been performed at this stage to prove otherwise.
 
 You may add additional comments if you wish, on lines beginning with two spaces
 and a '*'.
 
 Set urgency to 'low', or 'medium' for major updates.
 
-Enter your name and contact details in place of the default user and computer
-names.
+You should replace your default user information with the name and email
+address of the current package maintainer, as identified in
+debian/README.debian.
+
 
 ADJUST BUILD OPTIONS IN THE DEBIAN RULES FILE
 =============================================
@@ -90,7 +102,7 @@ The debian rules file 'atari800/debian/rules' contains the following command
 You don't need to change this if your are building the stock SDL version.
 Otherwise edit the second line to specify configuration options for the target
 machine.  For example, the command required for the older Raspberry
-Pis (0, 2 and 3) is:
+Pis (Zero, 2 and 3) is:
 
 	./configure \
 		 --target=rpi
@@ -114,7 +126,7 @@ Raspberry Pi packages:
 BUILD THE PACKAGE
 =================
 
-    dpkg-buildpackage -d -B -uc -us
+    dpkg-buildpackage -B -uc
 
 Even though you started with a version of the source code that compiles without
 error, it is possible that warnings and errors may be reported at this stage.
@@ -139,6 +151,10 @@ or
 <Right Click> and select the appropriate menu item, <Package Install> or
 <Open with GDebi Package Installer> etc..
 
+or use the command:
+
+    sudo dpkg -i atari800_4.1.0-1_amd64.deb
+
 TEST
 ====
 Check that the atari800 command runs the emulator successfully:
@@ -162,8 +178,8 @@ This removes the command and documentation, but leaves the configuration file
 
 RENAME THE PACKAGE
 ==================
-The default names of packages are sometimes not very informative, in which case
-you may change them to anything you like.
+The default names of packages are sometimes not very informative, but you may
+change them to anything you like.
 
 For example, the name of the 4.2.0 Raspberry Pi 4 package was changed from
 
@@ -173,19 +189,36 @@ to
 
     atari800_4.2.0_rpi4_buster.deb
 
-DISTRIBUTION
-============
-Send the three files created (.buildinfo, .changes and .deb) to the owner of
-the atari800/atari800 Git repository for general release.
-
 ISSUE A PULL REQUEST TO UPDATE THE DEBIAN CHANGELOG
 ===================================================
 Enter the new lines you created in atari800/debian/changelog into the master
-of this file on Git.
+of this file on Git, to keep the record intact.
 
-This is not essential, but it keeps the record intact and confirms to anyone
-taking on the task of building packages that this is the current system.
+DISTRIBUTION VIA THE GITHUB RELEASES AREA
+=========================================
+Send the three files created (.buildinfo, .changes and .deb) to the owner of
+the Git repository (https://github.com/atari800/atari800).
 
+The owner will post the .deb file to the releases area
+(https://github.com/atari800/atari800/releases) for download by users.
+
+This is a shortcut method.  It is quicker than distribution via the Debian
+Project.
+
+When a new release is announced on the Atari800 mailing list, anyone in the
+community can follow the procedure described in this document and make it
+available to users without delay.
+
+DISTRIBUTION VIA THE DEBIAN PROJECT
+===================================
+Formal distribution via the Debian Project can only be performed by the
+package maintainer, a listed Debian member.  The procedure is rigourous in
+order to ensure the quality of the software.  Depending on how much free
+time the maintainer has it may take many months to complete.
+
+Packages distributed in this manner become available in official repositories.
+Users may download and install them using the apt-get command or a software
+manager.
 
 
 

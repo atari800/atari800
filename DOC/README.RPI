@@ -2,12 +2,18 @@ SYSTEM SPECIFICATION
 ====================
 Atari800 version 4 runs on the following systems:
 
-    Pi 0, 2 or 3, running Raspbian or Pi OS (Stretch or Buster).
+    Pi Zero, 2 or 3,    running Raspbian or Pi OS Full or Lite, 
+                        Stretch or Buster.
 
-    Pi 4 running Raspbian or Pi OS (Buster).
+    Pi 4 or 400         running Pi OS Full or Lite, Buster.
 
-VIDEO MODE ON PI 2, 3 or 3
-==========================
+Note that the Pi Zero has only one USB port, so it is necessary to use a hub
+to provide ports for the keyboard and joystick (and mouse if you are running
+Pi OS Full).  Also, it has no separate audio output, so a monitor capable of
+playing sound via the HDMI port is required.
+
+VIDEO MODE ON PI ZERO, 2 or 3
+=============================
 You may obtain proper video/audio sync and vsync for PAL/NTSC machines by
 setting particular video modes.
 
