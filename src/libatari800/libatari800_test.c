@@ -56,4 +56,6 @@ int main(int argc, char **argv) {
 		}
 		frame++;
 	}
+
+	libatari800_exit();
 }

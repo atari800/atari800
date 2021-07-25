@@ -40,7 +40,7 @@ int PLATFORM_Exit(int run_monitor)
 {
 	Log_flushlog();
 
-	return 1;  /* always continue. Leave it to the client to exit */
+	return 0;  /* always exit. There is no monitor in libatari800 */
 }
 
 

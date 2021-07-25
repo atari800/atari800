@@ -46,6 +46,7 @@
 #include "sio.h"
 #include "cartridge.h"
 #include "ui.h"
+#include "cfg.h"
 #include "libatari800/main.h"
 #include "libatari800/init.h"
 #include "libatari800/input.h"
@@ -179,11 +180,18 @@ int UI_show_hidden_files = FALSE;
 /* User visible routines */
 
 int libatari800_init(int argc, char **argv) {
+	int status;
+
 	CPU_cim_encountered = 0;
 	libatari800_error_code = 0;
 	Atari800_nframes = 0;
 	MEMORY_selftest_enabled = 0;
-	return Atari800_Initialise(&argc, argv);
+	CFG_save_on_exit = 0;
+	status = Atari800_Initialise(&argc, argv);
+	if (status) {
+		Log_flushlog();
+	}
+	return status;
 }
 
 char *error_messages[] = {
@@ -277,6 +285,10 @@ void libatari800_get_current_state(emulator_state_t *state)
 void libatari800_restore_state(emulator_state_t *state)
 {
 	LIBATARI800_StateLoad(state->state);
+}
+
+void libatari800_exit() {
+	Atari800_Exit(0);
 }
 
 /*

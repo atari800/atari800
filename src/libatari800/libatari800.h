@@ -207,4 +207,6 @@ void libatari800_get_current_state(emulator_state_t *state);
 
 void libatari800_restore_state(emulator_state_t *state);
 
+void libatari800_exit();
+
 #endif /* LIBATARI800_H_ */
