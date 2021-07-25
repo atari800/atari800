@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Atari800 includes */
@@ -180,16 +181,37 @@ int UI_show_hidden_files = FALSE;
 /* User visible routines */
 
 int libatari800_init(int argc, char **argv) {
+	int i;
 	int status;
+	int argv_alloced = FALSE;
+	char **argv_ptr = NULL;
+
+	/* If the first entry in argv isn't NULL or atari800, insert blank argument as zeroth
+	   argv entry. This handles legacy case where calling function did have to put in the
+	   atari800 argument, and also new case where it isn't required. */
+	if ((argc == 0) || ((argc > 0) && argv[0] && (strcmp(argv[0], "atari800") != 0))) {
+		argv_ptr = (Util_malloc(sizeof(char *) * (argc + 1)));
+		argv_alloced = TRUE;
+		argv_ptr[0] = NULL;
+		for (i = 0; i < argc; i++) {
+			argv_ptr[i + 1] = argv[i];
+		}
+		argc++;
+	}
+	else {
+		argv_ptr = argv;
+	}
 
 	CPU_cim_encountered = 0;
 	libatari800_error_code = 0;
 	Atari800_nframes = 0;
 	MEMORY_selftest_enabled = 0;
-	CFG_save_on_exit = 0;
-	status = Atari800_Initialise(&argc, argv);
+	status = Atari800_Initialise(&argc, argv_ptr);
 	if (status) {
 		Log_flushlog();
+	}
+	if (argv_alloced) {
+		free(argv_ptr);
 	}
 	return status;
 }

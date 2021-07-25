@@ -32,7 +32,6 @@ int main(int argc, char **argv) {
 
 	/* force the 400/800 OS to get the Memo Pad */
 	char *test_args[] = {
-		"atari800",
 		"-atari",
 	};
 	libatari800_init(sizeof(test_args) / sizeof(test_args[0]), test_args);
