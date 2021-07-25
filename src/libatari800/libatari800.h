@@ -201,6 +201,18 @@ UBYTE *libatari800_get_main_memory_ptr();
 
 UBYTE *libatari800_get_screen_ptr();
 
+UBYTE *libatari800_get_sound_ptr();
+
+int libatari800_get_sound_buffer_size();
+
+int libatari800_get_sound_frequency();
+
+int libatari800_get_num_sound_channels();
+
+int libatari800_get_num_sound_samples();
+
+int libatari800_get_sound_sample_size();
+
 cpu_state_t *libatari800_get_cpu_ptr();
 
 void libatari800_get_current_state(emulator_state_t *state);
