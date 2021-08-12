@@ -1386,6 +1386,12 @@ int PLATFORM_Keyboard(void)
 	                keycode |= AKEY_c;
                 break;
         case 0x2f:
+				if (alt_key)
+				{
+					keycode = AKEY_UI;
+					UI_alt_function = UI_MENU_VIDEO_RECORDING;	/* ALT+V .. Select system */
+				}
+				else
                 keycode |= AKEY_v;
                 break;
         case 0x30:

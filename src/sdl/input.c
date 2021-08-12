@@ -529,6 +529,9 @@ int PLATFORM_Keyboard(void)
 			case SDLK_w:
 				UI_alt_function = UI_MENU_SOUND_RECORDING;
 				break;
+			case SDLK_v:
+				UI_alt_function = UI_MENU_VIDEO_RECORDING;
+				break;
 			case SDLK_a:
 				UI_alt_function = UI_MENU_ABOUT;
 				break;

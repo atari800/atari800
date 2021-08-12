@@ -434,6 +434,7 @@ Alt+T                Tape management
 Alt+Y                Select system
 Alt+O                Sound settings
 Alt+W                Sound recording start/stop
+Alt+V                Video recording start/stop
 Alt+S                Save state file
 Alt+L                Load state file
 Alt+A                About the emulator
