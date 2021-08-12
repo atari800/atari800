@@ -94,6 +94,8 @@ int GetKeyName(void);
 	#define UI_MENU_HOT_KEY_HELP     23
 #endif
 
+#define UI_MENU_VIDEO_RECORDING  24
+
 /* Structure of menu item. Each menu is just an array of items of this structure
    terminated by UI_MENU_END */
 typedef struct

@@ -141,6 +141,9 @@ o Screen snapshots (normal and interlaced) to PCX and PNG files.
 
 o Sound output may be written to WAV files.
 
+o Emulator video and audio may be recorded to AVI files for playback in
+  video players or uploading to YouTube or other online platforms.
+
 o User interface on all versions supporting bitmapped graphics.
 
 o R: device (the Atari850 serial ports) mapped to net or real serial port.

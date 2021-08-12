@@ -1047,6 +1047,13 @@ if [[ "$with_sound" != no ]]; then
         WANT_SYNCHRONIZED_SOUND=no
         WANT_VOL_ONLY_SOUND="no"
     fi
+
+    if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
+        WANT_VIDEO_RECORDING=yes
+        AC_DEFINE(AVI_VIDEO_RECORDING,1,[Define to enable support for AVI video/audio recording.])
+    else
+        WANT_VIDEO_RECORDING="no"
+    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"
@@ -1057,6 +1064,7 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
+    WANT_VIDEO_RECORDING="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
@@ -1315,6 +1323,7 @@ if [[ "$with_sound" != no ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
+echo "Using video recording?................: $WANT_VIDEO_RECORDING"
 if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi

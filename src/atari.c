@@ -98,7 +98,7 @@
 #endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
-#include "sndsave.h"
+#include "multimedia.h"
 #include "sound.h"
 #endif
 #ifdef R_IO_DEVICE
@@ -1000,7 +1000,7 @@ int Atari800_Exit(int run_monitor)
 		RDevice_Exit(); /* R: Device cleanup */
 #endif
 #ifdef SOUND
-		SndSave_CloseSoundFile();
+		Multimedia_CloseFile();
 #endif
 		MONITOR_Exit();
 #ifdef SDL
@@ -1326,6 +1326,9 @@ void Atari800_Frame(void)
 #endif /* BASIC */
 	POKEY_Frame();
 #ifdef SOUND
+#ifdef AVI_VIDEO_RECORDING
+	Multimedia_WriteVideo();
+#endif
 	Sound_Update();
 #endif
 	Atari800_nframes++;
