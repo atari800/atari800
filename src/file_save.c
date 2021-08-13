@@ -25,15 +25,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_save.h"
-#ifdef SOUND
-#include "pokeysnd.h"
-#ifdef AVI_VIDEO_RECORDING
 #include "screen.h"
 #include "colours.h"
 #include "util.h"
+#ifdef SOUND
+#include "pokeysnd.h"
+#ifdef AVI_VIDEO_RECORDING
 #include "log.h"
 #endif
 #endif
+
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
+
+#define ATARI_VISIBLE_WIDTH 336
+#define ATARI_LEFT_MARGIN 24
 
 #ifdef SOUND
 /* number of bytes written to the currently open multimedia file */
@@ -43,8 +50,6 @@ static ULONG byteswritten;
 static int sample_size;
 
 #ifdef AVI_VIDEO_RECORDING
-#define ATARI_VISIBLE_WIDTH 336
-#define ATARI_LEFT_MARGIN 24
 
 /* AVI requires the header at the beginning of the file contains sizes of each
    chunk, so the header will be rewritten upon the close of the file to update
@@ -103,6 +108,17 @@ static int current_audio_samples;
 #endif /* AVI_VIDEO_RECORDING */
 #endif /* SOUND */
 
+
+/* fputw, fputl, and fwritele are utility functions to write values as
+   little-endian format regardless of the endianness of the platform. */
+
+/* write 16-bit word as little endian */
+void fputw(UWORD x, FILE *fp)
+{
+	fputc(x & 0xff, fp);
+	fputc((x >> 8) & 0xff, fp);
+}
+
 /* write 32-bit long as little endian */
 void fputl(ULONG x, FILE *fp)
 {
@@ -110,14 +126,6 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 8) & 0xff, fp);
 	fputc((x >> 16) & 0xff, fp);
 	fputc((x >> 24) & 0xff, fp);
-}
-
-
-/* write 16-bit word as little endian */
-void fputw(UWORD x, FILE *fp)
-{
-	fputc(x & 0xff, fp);
-	fputc((x >> 8) & 0xff, fp);
 }
 
 /* fwritele mimics fwrite but writes data in little endian format if operating
@@ -169,6 +177,185 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 #endif
 	return fwrite(ptr, size, nmemb, fp);
 }
+
+
+/* PCX_SaveScreen saves the screen data to the file in PCX format, optionally
+   using interlace if ptr2 is not NULL.
+
+   PCX format is a lossless image file format derived from PC Paintbrush, a
+   DOS-era paint program, and is widely supported by image viewers. The
+   compression method is run-length encoding, which is simple to implement but
+   only compresses well when groups of neighboring pixels on a scan line have
+   the same color.
+
+   The PNG format (see PNG_SaveScreen below) compresses much better, but depends
+   on the external libpng library. No external dependencies are needed for PCX
+   format.
+
+   fp:          file pointer of file open for writing
+   ptr1:        pointer to Screen_atari
+   ptr2:        (optional) pointer to another array of size Screen_atari containing
+                the interlaced scan lines to blend with ptr1. Set to NULL if no
+				interlacing.
+*/
+void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
+{
+	int i;
+	int x;
+	int y;
+	UBYTE plane = 16;	/* 16 = Red, 8 = Green, 0 = Blue */
+	UBYTE last;
+	UBYTE count;
+
+	fputc(0xa, fp);   /* pcx signature */
+	fputc(0x5, fp);   /* version 5 */
+	fputc(0x1, fp);   /* RLE encoding */
+	fputc(0x8, fp);   /* bits per pixel */
+	fputw(0, fp);     /* XMin */
+	fputw(0, fp);     /* YMin */
+	fputw(ATARI_VISIBLE_WIDTH - 1, fp); /* XMax */
+	fputw(Screen_HEIGHT - 1, fp);        /* YMax */
+	fputw(0, fp);     /* HRes */
+	fputw(0, fp);     /* VRes */
+	for (i = 0; i < 48; i++)
+		fputc(0, fp); /* EGA color palette */
+	fputc(0, fp);     /* reserved */
+	fputc(ptr2 != NULL ? 3 : 1, fp); /* number of bit planes */
+	fputw(ATARI_VISIBLE_WIDTH, fp);  /* number of bytes per scan line per color plane */
+	fputw(1, fp);     /* palette info */
+	fputw(ATARI_VISIBLE_WIDTH, fp); /* screen resolution */
+	fputw(Screen_HEIGHT, fp);
+	for (i = 0; i < 54; i++)
+		fputc(0, fp);  /* unused */
+
+	ptr1 += ATARI_LEFT_MARGIN;
+	if (ptr2 != NULL) {
+		ptr2 += ATARI_LEFT_MARGIN;
+	}
+	for (y = 0; y < Screen_HEIGHT; ) {
+		x = 0;
+		do {
+			last = ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
+			count = 0xc0;
+			do {
+				ptr1++;
+				if (ptr2 != NULL)
+					ptr2++;
+				count++;
+				x++;
+			} while (last == (ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
+						&& count < 0xff && x < ATARI_VISIBLE_WIDTH);
+			if (count > 0xc1 || last >= 0xc0)
+				fputc(count, fp);
+			fputc(last, fp);
+		} while (x < ATARI_VISIBLE_WIDTH);
+
+		if (ptr2 != NULL && plane) {
+			ptr1 -= ATARI_VISIBLE_WIDTH;
+			ptr2 -= ATARI_VISIBLE_WIDTH;
+			plane -= 8;
+		}
+		else {
+			ptr1 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+			if (ptr2 != NULL) {
+				ptr2 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+				plane = 16;
+			}
+			y++;
+		}
+	}
+
+	if (ptr2 == NULL) {
+		/* write palette */
+		fputc(0xc, fp);
+		for (i = 0; i < 256; i++) {
+			fputc(Colours_GetR(i), fp);
+			fputc(Colours_GetG(i), fp);
+			fputc(Colours_GetB(i), fp);
+		}
+	}
+}
+
+#ifdef HAVE_LIBPNG
+/* PNG_SaveScreen saves the screen data to the file in PNG format, optionally
+   using interlace if ptr2 is not NULL.
+
+   PNG format is a lossless image file format that compresses much better than
+   PCX. Because it depends on the external libpng library, it is only compiled
+   in atari800 if requested and libpng is found on the system.
+
+   fp:          file pointer of file open for writing
+   ptr1:        pointer to Screen_atari
+   ptr2:        (optional) pointer to another array of size Screen_atari containing
+                the interlaced scan lines to blend with ptr1. Set to NULL if no
+				interlacing.
+*/
+void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
+{
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_bytep rows[Screen_HEIGHT];
+
+	png_ptr = png_create_write_struct(
+		PNG_LIBPNG_VER_STRING,
+		NULL, NULL, NULL
+	);
+	if (png_ptr == NULL)
+		return;
+	info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == NULL)
+		return;
+	png_init_io(png_ptr, fp);
+	png_set_IHDR(
+		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
+		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
+		PNG_INTERLACE_NONE,
+		PNG_COMPRESSION_TYPE_DEFAULT,
+		PNG_FILTER_TYPE_DEFAULT
+	);
+	if (ptr2 == NULL) {
+		int i;
+		png_color palette[256];
+		for (i = 0; i < 256; i++) {
+			palette[i].red = Colours_GetR(i);
+			palette[i].green = Colours_GetG(i);
+			palette[i].blue = Colours_GetB(i);
+		}
+		png_set_PLTE(png_ptr, info_ptr, palette, 256);
+		ptr1 += ATARI_LEFT_MARGIN;
+		for (i = 0; i < Screen_HEIGHT; i++) {
+			rows[i] = ptr1;
+			ptr1 += Screen_WIDTH;
+		}
+	}
+	else {
+		png_bytep ptr3;
+		int x;
+		int y;
+		ptr1 += ATARI_LEFT_MARGIN;
+		ptr2 += ATARI_LEFT_MARGIN;
+		ptr3 = (png_bytep) Util_malloc(3 * ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
+		for (y = 0; y < Screen_HEIGHT; y++) {
+			rows[y] = ptr3;
+			for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
+				*ptr3++ = (png_byte) ((Colours_GetR(*ptr1) + Colours_GetR(*ptr2)) >> 1);
+				*ptr3++ = (png_byte) ((Colours_GetG(*ptr1) + Colours_GetG(*ptr2)) >> 1);
+				*ptr3++ = (png_byte) ((Colours_GetB(*ptr1) + Colours_GetB(*ptr2)) >> 1);
+				ptr1++;
+				ptr2++;
+			}
+			ptr1 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+			ptr2 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+		}
+	}
+	png_set_rows(png_ptr, info_ptr, rows);
+	png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+	if (ptr2 != NULL)
+		free(rows[0]);
+}
+#endif /* HAVE_LIBPNG */
+
 
 #ifdef SOUND
 /* WAV_OpenFile will start a new sound file and write out the header. Note that

@@ -7,6 +7,11 @@ void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
 size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp);
 
+void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2);
+#ifdef HAVE_LIBPNG
+void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2);
+#endif
+
 #ifdef SOUND
 FILE *WAV_OpenFile(const char *szFileName);
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp);
