@@ -303,8 +303,10 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	if (png_ptr == NULL)
 		return;
 	info_ptr = png_create_info_struct(png_ptr);
-	if (info_ptr == NULL)
+	if (info_ptr == NULL) {
+		png_destroy_write_struct(&png_ptr, NULL);
 		return;
+	}
 	png_init_io(png_ptr, fp);
 	png_set_IHDR(
 		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
