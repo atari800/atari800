@@ -907,16 +907,16 @@ static int AVI_WriteIndex(FILE *fp) {
 		fputs("00dc", fp); /* stream 0, a compressed video frame */
 		fputl(0x10, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = (frame_indexes[i] & 0xffff0000) / 0x10000;
+		size = frame_indexes[i] / 0x10000;
 		fputl(size, fp); /* size of video frame */
-		offset += size + 8;
+		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 
 		fputs("01wb", fp); /* stream 1, audio data */
 		fputl(0, fp); /* flags: audio is not a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
 		size = frame_indexes[i] & 0xffff;
 		fputl(size, fp); /* size of audio data */
-		offset += size + 8;
+		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 	}
 
 	bytes_written = ftell(fp) - bytes_written;
