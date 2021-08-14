@@ -119,7 +119,6 @@ int File_Export_Initialise(int *argc, char *argv[])
 
 	int i;
 	int j;
-	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc); /* is argument available? */
@@ -149,7 +148,6 @@ int File_Export_Initialise(int *argc, char *argv[])
 #endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				help_only = TRUE;
 #ifdef AVI_VIDEO_RECORDING
 				Log_print("\t-videocodec best-available|rle"
 #ifdef HAVE_LIBPNG
