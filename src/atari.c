@@ -1002,7 +1002,7 @@ int Atari800_Exit(int run_monitor)
 #ifdef R_IO_DEVICE
 		RDevice_Exit(); /* R: Device cleanup */
 #endif
-#ifdef SOUND
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
 		Multimedia_CloseFile();
 #endif
 		MONITOR_Exit();
@@ -1328,10 +1328,10 @@ void Atari800_Frame(void)
 	}
 #endif /* BASIC */
 	POKEY_Frame();
-#ifdef SOUND
 #ifdef AVI_VIDEO_RECORDING
 	Multimedia_WriteVideo();
 #endif
+#ifdef SOUND
 	Sound_Update();
 #endif
 	Atari800_nframes++;

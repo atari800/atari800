@@ -1292,6 +1292,7 @@ static void SoundRecording(void)
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
+#endif /* defined(SOUND) && !defined(DREAMCAST) */
 
 #ifdef AVI_VIDEO_RECORDING
 static void VideoRecording(void)
@@ -1317,7 +1318,6 @@ static void VideoRecording(void)
 	}
 }
 #endif /* AVI_VIDEO_RECORDING */
-#endif /* defined(SOUND) && !defined(DREAMCAST) */
 
 static int AutostartFile(void)
 {
@@ -4250,10 +4250,10 @@ void UI_Run(void)
 		UI_MENU_SUBMENU_ACCEL(UI_MENU_SOUND, "Sound Settings", "Alt+O"),
 #ifndef DREAMCAST
 		UI_MENU_ACTION_ACCEL(UI_MENU_SOUND_RECORDING, "Sound Recording Start/Stop", "Alt+W"),
+#endif
+#endif
 #ifdef AVI_VIDEO_RECORDING
 		UI_MENU_ACTION_ACCEL(UI_MENU_VIDEO_RECORDING, "Video Recording Start/Stop", "Alt+V"),
-#endif
-#endif
 #endif
 #ifndef CURSES_BASIC
 		UI_MENU_SUBMENU(UI_MENU_DISPLAY, "Display Settings"),
@@ -4376,12 +4376,12 @@ void UI_Run(void)
 		case UI_MENU_SOUND_RECORDING:
 			SoundRecording();
 			break;
+#endif
+#endif
 #ifdef AVI_VIDEO_RECORDING
 		case UI_MENU_VIDEO_RECORDING:
 			VideoRecording();
 			break;
-#endif
-#endif
 #endif
 		case UI_MENU_SAVESTATE:
 			SaveState();

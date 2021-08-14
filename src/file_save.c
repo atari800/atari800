@@ -30,9 +30,9 @@
 #include "util.h"
 #ifdef SOUND
 #include "pokeysnd.h"
+#endif
 #ifdef AVI_VIDEO_RECORDING
 #include "log.h"
-#endif
 #endif
 
 #ifdef HAVE_LIBPNG
@@ -48,6 +48,7 @@ static ULONG byteswritten;
 
 /* sample size in bytes; will not change during a recording */
 static int sample_size;
+#endif
 
 #ifdef AVI_VIDEO_RECORDING
 
@@ -92,7 +93,6 @@ static ULONG largest_video_frame;
    updated as frames are added to the video. */
 static ULONG frames_written;
 static float fps;
-static ULONG samples_written;
 
 /* Some data must be dynamically allocated for file creation */
 #define FRAME_INDEX_ALLOC_SIZE 1000
@@ -101,14 +101,17 @@ static int num_frames_allocated;
 static int rle_buffer_size;
 static UBYTE *rle_buffer = NULL;
 static int current_screen_size;
+
+#ifdef SOUND
+static ULONG samples_written;
 static int audio_buffer_size;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples;
+#endif
 
 static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
-#endif /* SOUND */
 
 
 int File_Save_Initialise(int *argc, char *argv[])
@@ -588,6 +591,7 @@ int WAV_CloseFile(FILE *fp)
 
 	return bSuccess;
 }
+#endif /* SOUND */
 
 #ifdef AVI_VIDEO_RECORDING
 
@@ -613,7 +617,10 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputs("LIST", fp);
 	list_size = 4 + 8 + 56 /* hdrl identifier plus avih size */
 		+ 12 + (8 + 56 + 8 + 40 + 256*4 + 8 + 16) /* video stream strl header LIST + (strh + strf + strn) */
-		+ 12 + (8 + 56 + 8 + 18 + 8 + 12); /* audio stream strl header LIST + (strh + strf + strn) */
+#ifdef SOUND
+		+ 12 + (8 + 56 + 8 + 18 + 8 + 12) /* audio stream strl header LIST + (strh + strf + strn) */
+#endif
+		;
 	fputl(list_size, fp); /* length of header payload */
 	fputs("hdrl", fp);
 
@@ -630,7 +637,11 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
 	fputl(frames_written, fp); /* number of frames in the video */
 	fputl(0, fp); /* initial frames, always zero for us */
+#ifdef SOUND
 	fputl(2, fp); /* 2 streams, both video and audio */
+#else
+	fputl(1, fp); /* Only video stream */
+#endif
 	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
 	fputl(ATARI_VISIBLE_WIDTH, fp); /* video width */
 	fputl(Screen_HEIGHT, fp); /* video height */
@@ -726,6 +737,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputc(0, fp); /* null terminator */
 	fputc(0, fp); /* padding to get to 16 bytes */
 
+#ifdef SOUND
 	/* audio stream format */
 
 	/* 12 bytes for audio stream strl LIST chuck header; LIST payload size includes the
@@ -777,6 +789,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	/* 12 bytes for name, zero terminated */
 	fputs("POKEY audio", fp);
 	fputc(0, fp); /* null terminator */
+#endif /* SOUND */
 
 	/* audia/video data */
 
@@ -808,12 +821,9 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
-	samples_written = 0;
 	current_screen_size = 0;
-	current_audio_samples = 0;
 
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
@@ -822,8 +832,14 @@ FILE *AVI_OpenFile(const char *szFileName)
 	rle_buffer_size = ATARI_VISIBLE_WIDTH * Screen_HEIGHT;
 	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
 
+#ifdef SOUND
+	current_audio_samples = 0;
+	samples_written = 0;
+
+	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 	audio_buffer_size = (int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024;
 	audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+#endif
 
 	if (!AVI_WriteHeader(fp)) {
 		fclose(fp);
@@ -842,11 +858,13 @@ FILE *AVI_OpenFile(const char *szFileName)
 /* AVI_WriteFrame writes out a single frame of video and audio, and saves the
    index data for the end-of-file index chunk */
 static int AVI_WriteFrame(FILE *fp) {
-	int audio_size;
 	int video_padding;
-	int audio_padding;
 	int frame_size;
 	int result;
+#ifdef SOUND
+	int audio_size;
+	int audio_padding;
+#endif
 
 	frame_size = ftell(fp);
 
@@ -861,6 +879,7 @@ static int AVI_WriteFrame(FILE *fp) {
 		fputc(0, fp);
 	}
 
+#ifdef SOUND
 	audio_size = current_audio_samples * sample_size;
 	audio_padding = audio_size % 2;
 	fputs("01wb", fp);
@@ -869,9 +888,14 @@ static int AVI_WriteFrame(FILE *fp) {
 	if (audio_padding) {
 		fputc(0, fp);
 	}
-
-	frame_indexes[frames_written] = current_screen_size * 0x10000 + audio_size;
 	samples_written += current_audio_samples;
+#endif
+
+	frame_indexes[frames_written] = current_screen_size
+#ifdef SOUND
+		+ 0x10000 * audio_size
+#endif
+		;
 	frames_written++;
 	if (frames_written >= num_frames_allocated) {
 		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
@@ -880,7 +904,11 @@ static int AVI_WriteFrame(FILE *fp) {
 
 	/* check expected file data written equals the calculated size */
 	frame_size = ftell(fp) - frame_size;
-	result = (frame_size == 8 + current_screen_size + video_padding + 8 + audio_size + audio_padding);
+	result = (frame_size == 8 + current_screen_size + video_padding
+#ifdef SOUND
+		+ 8 + audio_size + audio_padding
+#endif
+		);
 
 	/* update size limit calculation including the 32 bytes needed for each index entry */
 	size_limit += frame_size + 32;
@@ -896,7 +924,9 @@ static int AVI_WriteFrame(FILE *fp) {
 
 	/* reset size indicators for next frame */
 	current_screen_size = 0;
+#ifdef SOUND
 	current_audio_samples = 0;
+#endif
 
 	if (size_limit > MAX_RECORDING_SIZE) {
 		/* force file close when at the limit */
@@ -986,17 +1016,25 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
    function again. */
 int AVI_AddVideoFrame(FILE *fp) {
 	if (current_screen_size > 0) {
+#ifdef SOUND
 		if (current_audio_samples > 0) {
+#endif
 			if (!AVI_WriteFrame(fp)) {
 				return 0;
 			}
+#ifdef SOUND
 		}
 		else {
 			printf("AVI write error: attempted to write video frame without audio data\n");
 			return 0;
 		}
+#endif
 	}
-	else if (current_screen_size < 0 || current_audio_samples < 0) {
+	else if (current_screen_size < 0
+#ifdef SOUND
+			 || current_audio_samples < 0
+#endif
+			) {
 		/* error condition; force close of file */
 		return 0;
 	}
@@ -1014,6 +1052,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 	return current_screen_size > 0;
 }
 
+#ifdef SOUND
 /* AVI_AddAudioSamples adds audio data to the stream for the current video
    frame. If an existing video frame & audio data exist, save it to the file
    before starting a new frame. Note that AVI_AddVideoFrame and
@@ -1050,6 +1089,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 
 	return 1;
 }
+#endif
 
 static int AVI_WriteIndex(FILE *fp) {
 	int i;
@@ -1062,7 +1102,11 @@ static int AVI_WriteIndex(FILE *fp) {
 
 	bytes_written = ftell(fp);
 	offset = 4;
-	index_size = frames_written * 32;
+	index_size = frames_written * 16
+#ifdef SOUND
+		* 2
+#endif
+		;
 
 	/* The index format used here is tag 'idx1" (index version 1.0) & documented at
 	https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex
@@ -1075,16 +1119,18 @@ static int AVI_WriteIndex(FILE *fp) {
 		fputs("00dc", fp); /* stream 0, a compressed video frame */
 		fputl(0x10, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = frame_indexes[i] / 0x10000;
+		size = frame_indexes[i] & 0xffff;
 		fputl(size, fp); /* size of video frame */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 
+#ifdef SOUND
 		fputs("01wb", fp); /* stream 1, audio data */
 		fputl(0, fp); /* flags: audio is not a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = frame_indexes[i] & 0xffff;
+		size = frame_indexes[i] / 0x10000;
 		fputl(size, fp); /* size of audio data */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
+#endif
 	}
 
 	bytes_written = ftell(fp) - bytes_written;
@@ -1103,7 +1149,11 @@ int AVI_CloseFile(FILE *fp)
 	int result;
 
 	/* write out final frame if one exists */
-	if (current_screen_size > 0 && current_audio_samples > 0) {
+	if (current_screen_size > 0
+#ifdef SOUND
+		&& current_audio_samples > 0
+#endif
+			) {
 		result = AVI_WriteFrame(fp);
 	}
 	else {
@@ -1124,9 +1174,11 @@ int AVI_CloseFile(FILE *fp)
 		result = AVI_WriteHeader(fp);
 	}
 	fclose(fp);
+#ifdef SOUND
 	free(audio_buffer);
 	audio_buffer = NULL;
 	audio_buffer_size = 0;
+#endif
 	free(rle_buffer);
 	rle_buffer = NULL;
 	rle_buffer_size = 0;
@@ -1136,4 +1188,3 @@ int AVI_CloseFile(FILE *fp)
 	return result;
 }
 #endif /* AVI_VIDEO_RECORDING */
-#endif /* SOUND */

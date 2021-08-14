@@ -26,14 +26,17 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2);
 FILE *WAV_OpenFile(const char *szFileName);
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp);
 int WAV_CloseFile(FILE *fp);
+#endif
+
 #ifdef AVI_VIDEO_RECORDING
 int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source);
 FILE *AVI_OpenFile(const char *szFileName);
 int AVI_CloseFile(FILE *fp);
 int AVI_AddVideoFrame(FILE *fp);
+#ifdef SOUND
 int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp);
-#endif /* AVI_VIDEO_RECORDING */
 #endif /* SOUND */
+#endif /* AVI_VIDEO_RECORDING */
 
 #endif /* FILE_SAVE_H_ */
 

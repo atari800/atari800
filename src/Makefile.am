@@ -96,8 +96,7 @@ if WITH_SOUND
 atari800_SOURCES += \
 	pokeysnd.c pokeysnd.h \
 	mzpokeysnd.c mzpokeysnd.h \
-	remez.c remez.h \
-	multimedia.c multimedia.h
+	remez.c remez.h
 endif
 if WITH_SOUND_SDL
 atari800_SOURCES += sound.c sound.h sdl/sound.c
@@ -124,7 +123,7 @@ if WANT_POKEYREC
 atari800_SOURCES += pokeyrec.c pokeyrec.h
 endif
 if WITH_FILE_SAVE
-atari800_SOURCES += file_save.c file_save.h
+atari800_SOURCES += multimedia.c multimedia.h file_save.c file_save.h
 endif
 
 

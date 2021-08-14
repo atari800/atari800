@@ -27,8 +27,12 @@
 #include "multimedia.h"
 #include "file_save.h"
 
+#ifdef SOUND
+
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
+
+#endif
 
 #ifdef AVI_VIDEO_RECORDING
 
@@ -48,13 +52,46 @@ static FILE *avioutput = NULL;
    RETURNS: TRUE is file is open, FALSE if it is not */
 int Multimedia_IsFileOpen(void)
 {
-	return sndoutput != NULL
+	return FALSE
+#ifdef SOUND
+		|| sndoutput != NULL
+#endif
 #ifdef AVI_VIDEO_RECORDING
 		|| avioutput != NULL
 #endif
 	;
 }
 
+/* Multimedia_CloseFile should be called when the program is exiting, or
+   when all data required has been written to the file.
+   Multimedia_CloseFile will also be called automatically when a call is
+   made to Multimedia_OpenSoundFile/Multimedia_OpenVideoFile, or an error is made in
+   Multimedia_WriteToSoundFile. Note that both types of media files have to update
+   the file headers with information regarding the length of the file.
+
+   RETURNS: TRUE if file closed with no problems, FALSE if failure during close
+   */
+int Multimedia_CloseFile(void)
+{
+	int bSuccess = TRUE;
+
+#ifdef SOUND
+	if (sndoutput != NULL) {
+		bSuccess = WAV_CloseFile(sndoutput);
+		sndoutput = NULL;
+	}
+#endif
+#ifdef AVI_VIDEO_RECORDING
+	if (avioutput != NULL) {
+		bSuccess = AVI_CloseFile(avioutput);
+		avioutput = NULL;
+	}
+#endif
+
+	return bSuccess;
+}
+
+#ifdef SOUND
 /* Multimedia_OpenSoundFile will start a new sound file and write out the
    header. If an existing sound file is already open it will be closed first,
    and the new file opened in its place.
@@ -102,33 +139,7 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 
 	return result;
 }
-
-/* Multimedia_CloseFile should be called when the program is exiting, or
-   when all data required has been written to the file.
-   Multimedia_CloseFile will also be called automatically when a call is
-   made to Multimedia_OpenSoundFile/Multimedia_OpenVideoFile, or an error is made in
-   Multimedia_WriteToSoundFile. Note that both types of media files have to update
-   the file headers with information regarding the length of the file.
-
-   RETURNS: TRUE if file closed with no problems, FALSE if failure during close
-   */
-int Multimedia_CloseFile(void)
-{
-	int bSuccess = TRUE;
-
-	if (sndoutput != NULL) {
-		bSuccess = WAV_CloseFile(sndoutput);
-		sndoutput = NULL;
-	}
-#ifdef AVI_VIDEO_RECORDING
-	if (avioutput != NULL) {
-		bSuccess = AVI_CloseFile(avioutput);
-		avioutput = NULL;
-	}
-#endif
-
-	return bSuccess;
-}
+#endif /* SOUND */
 
 #ifdef AVI_VIDEO_RECORDING
 

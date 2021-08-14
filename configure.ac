@@ -1047,13 +1047,6 @@ if [[ "$with_sound" != no ]]; then
         WANT_SYNCHRONIZED_SOUND=no
         WANT_VOL_ONLY_SOUND="no"
     fi
-
-    if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
-        WANT_VIDEO_RECORDING=yes
-        AC_DEFINE(AVI_VIDEO_RECORDING,1,[Define to enable support for AVI video/audio recording.])
-    else
-        WANT_VIDEO_RECORDING="no"
-    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"
@@ -1064,12 +1057,18 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
-    WANT_VIDEO_RECORDING="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
+
+if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
+    WANT_VIDEO_RECORDING=yes
+    AC_DEFINE(AVI_VIDEO_RECORDING,1,[Define to enable support for AVI video/audio recording.])
+else
+    WANT_VIDEO_RECORDING="no"
+fi
 AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = "yes" -o "$WANT_CURSES_BASIC" != "yes")
 
 A8_OPTION(ide,$WANT_IDE,
