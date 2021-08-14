@@ -1064,12 +1064,18 @@ AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WAN
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
-    WANT_VIDEO_RECORDING=yes
-    AC_DEFINE(AVI_VIDEO_RECORDING,1,[Define to enable support for AVI video/audio recording.])
+    video_recording_possible=yes
 else
-    WANT_VIDEO_RECORDING="no"
+    video_recording_possible="no"
 fi
-AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = "yes" -o "$WANT_CURSES_BASIC" != "yes")
+if [[ "$video_recording_possible" = "yes" ]]; then
+    A8_OPTION(videorecording,"yes",
+            [Support video recording to AVI files (default=ON)],
+            AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
+            )
+fi
+
+AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes" -o "$WANT_CURSES_BASIC" != "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
@@ -1323,7 +1329,7 @@ if [[ "$with_sound" != no ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-echo "Using video recording?................: $WANT_VIDEO_RECORDING"
+echo "Using video recording?................: $WANT_AVI_VIDEO_RECORDING"
 if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi
