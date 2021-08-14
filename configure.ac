@@ -1075,6 +1075,9 @@ else
 fi
 
 AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
+
+dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
+dnl is enabled, or for screenshots when screen.c is compiled into the code.
 AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
