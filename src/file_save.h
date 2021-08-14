@@ -3,6 +3,9 @@
 
 #include "atari.h"
 
+#define VIDEO_CODEC_MRLE 1
+#define VIDEO_CODEC_PNG 2
+
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
 size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp);

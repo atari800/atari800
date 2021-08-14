@@ -105,6 +105,8 @@ static int audio_buffer_size;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples;
 
+static int video_codec = VIDEO_CODEC_PNG;
+
 #endif /* AVI_VIDEO_RECORDING */
 #endif /* SOUND */
 
@@ -277,6 +279,20 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 }
 
 #ifdef HAVE_LIBPNG
+static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+	if (current_screen_size >= 0) {
+		printf("Frame %d: saving %d bytes to PNG @ %d\n", frames_written, (int)length, current_screen_size);
+		if (current_screen_size + length < rle_buffer_size) {
+			memcpy(rle_buffer + current_screen_size, data, length);
+			current_screen_size += length;
+		}
+		else {
+			current_screen_size = -1;
+		}
+	}
+}
+
 /* PNG_SaveScreen saves the screen data to the file in PNG format, optionally
    using interlace if ptr2 is not NULL.
 
@@ -307,7 +323,12 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_destroy_write_struct(&png_ptr, NULL);
 		return;
 	}
-	png_init_io(png_ptr, fp);
+	if (fp == NULL) {
+		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
+	}
+	else {
+		png_init_io(png_ptr, fp);
+	}
 	png_set_IHDR(
 		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
 		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
@@ -566,7 +587,16 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes for stream header data */
 	fputs("vids", fp); /* video stream */
-	fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
+	switch (video_codec) {
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			fputs("MPNG", fp); /* MPNG format (Motion-PNG, ala Motion-JPEG */
+			break;
+#endif
+		default:
+			fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
+			break;
+	}
 	fputl(0, fp); /* flags */
 	fputw(0, fp); /* priority */
 	fputw(0, fp); /* language */
@@ -591,7 +621,16 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(Screen_HEIGHT, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
-	fputl(1, fp); /* compression_type */
+	switch (video_codec) {
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			fputs("MPNG", fp); /* compression: MPNG format requires fourcc name here */
+			break;
+#endif
+		default:
+			fputl(1, fp); /* compression: MRLE format requires a binary 1 */
+			break;
+	}
 	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* image_size */
 	fputl(0, fp); /* x pixels per meter (!) */
 	fputl(0, fp); /* y pikels per meter */
@@ -894,7 +933,16 @@ int AVI_AddVideoFrame(FILE *fp) {
 		return 0;
 	}
 
-	current_screen_size = MRLE_CreateFrame(rle_buffer, rle_buffer_size, (const UBYTE *)Screen_atari);
+	switch (video_codec) {
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			PNG_SaveScreen(NULL, (UBYTE *)Screen_atari, NULL);
+			break;
+#endif
+		default:
+			current_screen_size = MRLE_CreateFrame(rle_buffer, rle_buffer_size, (const UBYTE *)Screen_atari);
+			break;
+	}
 	return current_screen_size > 0;
 }
 
