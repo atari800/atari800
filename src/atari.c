@@ -98,8 +98,13 @@
 #endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
+#ifndef DREAMCAST
 #include "multimedia.h"
+#endif /* !DREAMCAST */
 #include "sound.h"
+#endif
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+#include "file_save.h"
 #endif
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
@@ -775,7 +780,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !Screen_Initialise(argc, argv)
 		|| !UI_Initialise(argc, argv)
 #endif
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
 		|| !File_Save_Initialise(argc, argv)
 #endif
 		/* Initialise Custom Chips */
@@ -1002,7 +1007,7 @@ int Atari800_Exit(int run_monitor)
 #ifdef R_IO_DEVICE
 		RDevice_Exit(); /* R: Device cleanup */
 #endif
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
 		Multimedia_CloseFile();
 #endif
 		MONITOR_Exit();

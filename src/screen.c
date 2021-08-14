@@ -67,6 +67,7 @@ int Screen_show_disk_led = TRUE;
 int Screen_show_sector_counter = FALSE;
 int Screen_show_1200_leds = TRUE;
 
+#ifndef DREAMCAST
 #ifdef HAVE_LIBPNG
 #define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
 #else
@@ -113,6 +114,7 @@ static void Screen_SetScreenshotFilenamePattern(const char *p)
 	strcpy(screenshot_filename_format, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 	screenshot_no_max = 1000;
 }
+#endif /* !DREAMCAST */
 
 int Screen_Initialise(int *argc, char *argv[])
 {
@@ -123,19 +125,24 @@ int Screen_Initialise(int *argc, char *argv[])
 	for (i = j = 1; i < *argc; i++) {
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
-		
+
+#ifndef DREAMCAST
 		if (strcmp(argv[i], "-screenshots") == 0) {
 			if (i_a)
 				Screen_SetScreenshotFilenamePattern(argv[++i]);
 			else a_m = TRUE;
 		}
-		else if (strcmp(argv[i], "-showspeed") == 0) {
+		else
+#endif /* !DREAMCAST */
+		if (strcmp(argv[i], "-showspeed") == 0) {
 			Screen_show_atari_speed = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
+#ifndef DREAMCAST
 				Log_print("\t-screenshots <p> Set filename pattern for screenshots");
+#endif /* !DREAMCAST */
 				Log_print("\t-showspeed       Show percentage of actual speed");
 			}
 			argv[j++] = argv[i];
@@ -447,6 +454,7 @@ void Screen_Draw1200LED(void)
 	}
 }
 
+#ifndef DREAMCAST
 void Screen_FindScreenshotFilename(char *buffer, unsigned bufsize)
 {
 	static int no = -1;
@@ -523,6 +531,7 @@ void Screen_SaveNextScreenshot(int interlaced)
 	Screen_FindScreenshotFilename(filename, sizeof(filename));
 	Screen_SaveScreenshot(filename, interlaced);
 }
+#endif /* !DREAMCAST */
 
 void Screen_EntireDirty(void)
 {
