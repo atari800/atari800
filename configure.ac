@@ -1064,18 +1064,18 @@ AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WAN
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
-    video_recording_possible=yes
-else
-    video_recording_possible="no"
-fi
-if [[ "$video_recording_possible" = "yes" ]]; then
+    have_bitmapped_screen=yes
     A8_OPTION(videorecording,"yes",
             [Support video recording to AVI files (default=ON)],
             AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
+else
+    have_bitmapped_screen="no"
+    WANT_AVI_VIDEO_RECORDING="no"
 fi
 
-AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes" -o "$WANT_CURSES_BASIC" != "yes")
+AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],

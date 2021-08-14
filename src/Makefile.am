@@ -122,8 +122,11 @@ endif
 if WANT_POKEYREC
 atari800_SOURCES += pokeyrec.c pokeyrec.h
 endif
+if WITH_MULTIMEDIA
+atari800_SOURCES += multimedia.c multimedia.h
+endif
 if WITH_FILE_SAVE
-atari800_SOURCES += multimedia.c multimedia.h file_save.c file_save.h
+atari800_SOURCES += file_save.c file_save.h
 endif
 
 
