@@ -1,5 +1,5 @@
 /*
- * file_save.c - low level interface for saving to various file formats
+ * file_export.c - low level interface for saving to various file formats
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "file_save.h"
+#include "file_export.h"
 #include "screen.h"
 #include "colours.h"
 #include "util.h"
@@ -114,7 +114,7 @@ static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 #endif /* AVI_VIDEO_RECORDING */
 
 
-int File_Save_Initialise(int *argc, char *argv[])
+int File_Export_Initialise(int *argc, char *argv[])
 {
 
 	int i;

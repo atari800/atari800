@@ -104,7 +104,7 @@
 #include "sound.h"
 #endif
 #if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-#include "file_save.h"
+#include "file_export.h"
 #endif
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
@@ -781,7 +781,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !UI_Initialise(argc, argv)
 #endif
 #if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-		|| !File_Save_Initialise(argc, argv)
+		|| !File_Export_Initialise(argc, argv)
 #endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)

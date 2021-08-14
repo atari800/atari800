@@ -38,7 +38,7 @@
 #include "screen.h"
 #include "sio.h"
 #include "util.h"
-#include "file_save.h"
+#include "file_export.h"
 
 ULONG *Screen_atari = NULL;
 #ifdef DIRTYRECT

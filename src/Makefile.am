@@ -125,8 +125,8 @@ endif
 if WITH_MULTIMEDIA
 atari800_SOURCES += multimedia.c multimedia.h
 endif
-if WITH_FILE_SAVE
-atari800_SOURCES += file_save.c file_save.h
+if WITH_FILE_EXPORT
+atari800_SOURCES += file_export.c file_export.h
 endif
 
 

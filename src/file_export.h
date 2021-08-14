@@ -1,5 +1,5 @@
-#ifndef FILE_SAVE_H_
-#define FILE_SAVE_H_
+#ifndef FILE_EXPORT_H_
+#define FILE_EXPORT_H_
 
 #include "atari.h"
 
@@ -11,7 +11,7 @@
 #define VIDEO_CODEC_BEST_AVAILABLE 1
 #endif
 
-int File_Save_Initialise(int *argc, char *argv[]);
+int File_Export_Initialise(int *argc, char *argv[]);
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
@@ -38,5 +38,5 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp);
 #endif /* SOUND */
 #endif /* AVI_VIDEO_RECORDING */
 
-#endif /* FILE_SAVE_H_ */
+#endif /* FILE_EXPORT_H_ */
 

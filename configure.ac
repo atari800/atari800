@@ -1075,7 +1075,7 @@ else
 fi
 
 AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
-AM_CONDITIONAL([WITH_FILE_SAVE], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
+AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
