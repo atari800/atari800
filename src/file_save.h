@@ -5,6 +5,13 @@
 
 #define VIDEO_CODEC_MRLE 1
 #define VIDEO_CODEC_PNG 2
+#ifdef HAVE_LIBPNG
+#define VIDEO_CODEC_BEST_AVAILABLE 2
+#else
+#define VIDEO_CODEC_BEST_AVAILABLE 1
+#endif
+
+int File_Save_Initialise(int *argc, char *argv[]);
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);

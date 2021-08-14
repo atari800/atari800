@@ -775,6 +775,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 		|| !Screen_Initialise(argc, argv)
 		|| !UI_Initialise(argc, argv)
 #endif
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+		|| !File_Save_Initialise(argc, argv)
+#endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)
 		|| !GTIA_Initialise(argc, argv)

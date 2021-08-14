@@ -105,10 +105,72 @@ static int audio_buffer_size;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples;
 
-static int video_codec = VIDEO_CODEC_PNG;
+static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
 #endif /* SOUND */
+
+
+int File_Save_Initialise(int *argc, char *argv[])
+{
+
+	int i;
+	int j;
+	int help_only = FALSE;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+		int a_i = FALSE; /* error, argument invalid! */
+
+#ifdef AVI_VIDEO_RECORDING
+		if (strcmp(argv[i], "-videocodec") == 0) {
+			if (i_a) {
+				char *mode = argv[++i];
+				if (strcmp(mode, "rle") == 0)
+					video_codec = VIDEO_CODEC_MRLE;
+#ifdef HAVE_LIBPNG
+				else if (strcmp(mode, "png") == 0)
+					video_codec = VIDEO_CODEC_PNG;
+#endif
+				else if (strcmp(mode, "best-available") == 0)
+					video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+				else {
+					a_i = TRUE;
+				}
+			}
+			else a_m = TRUE;
+		}
+#else
+		if (0) {}
+#endif
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+				help_only = TRUE;
+#ifdef AVI_VIDEO_RECORDING
+				Log_print("\t-videocodec best-available|rle"
+#ifdef HAVE_LIBPNG
+					"|png"
+#endif
+				);
+				Log_print("\t                 Select video codec, (default: best-available)");
+#endif
+			}
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		} else if (a_i) {
+			Log_print("Invalid argument for '%s'", argv[--i]);
+			return FALSE;
+		}
+	}
+	*argc = j;
+
+	return TRUE;
+}
 
 
 /* fputw, fputl, and fwritele are utility functions to write values as
