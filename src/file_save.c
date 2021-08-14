@@ -180,6 +180,7 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 	return fwrite(ptr, size, nmemb, fp);
 }
 
+#if !defined(BASIC) && !defined(CURSES_BASIC)
 
 /* PCX_SaveScreen saves the screen data to the file in PCX format, optionally
    using interlace if ptr2 is not NULL.
@@ -279,6 +280,7 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 }
 
 #ifdef HAVE_LIBPNG
+#ifdef AVI_VIDEO_RECORDING
 static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	if (current_screen_size >= 0) {
@@ -292,6 +294,7 @@ static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t len
 		}
 	}
 }
+#endif /* AVI_VIDEO_RECORDING */
 
 /* PNG_SaveScreen saves the screen data to the file in PNG format, optionally
    using interlace if ptr2 is not NULL.
@@ -323,12 +326,14 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_destroy_write_struct(&png_ptr, NULL);
 		return;
 	}
+#ifdef AVI_VIDEO_RECORDING
 	if (fp == NULL) {
 		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
 	}
-	else {
+	else
+#endif
 		png_init_io(png_ptr, fp);
-	}
+
 	png_set_IHDR(
 		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
 		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
@@ -378,6 +383,7 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		free(rows[0]);
 }
 #endif /* HAVE_LIBPNG */
+#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 
 
 #ifdef SOUND
