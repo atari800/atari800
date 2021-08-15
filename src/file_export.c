@@ -28,11 +28,9 @@
 #include "screen.h"
 #include "colours.h"
 #include "util.h"
+#include "log.h"
 #ifdef SOUND
 #include "pokeysnd.h"
-#endif
-#ifdef AVI_VIDEO_RECORDING
-#include "log.h"
 #endif
 
 #ifdef HAVE_LIBPNG
@@ -98,15 +96,15 @@ static float fps;
 #define FRAME_INDEX_ALLOC_SIZE 1000
 static ULONG *frame_indexes;
 static int num_frames_allocated;
-static int rle_buffer_size;
+static int rle_buffer_size = 0;
 static UBYTE *rle_buffer = NULL;
-static int current_screen_size;
+static int current_screen_size = -1;
 
 #ifdef SOUND
 static ULONG samples_written;
-static int audio_buffer_size;
+static int audio_buffer_size = 0;
 static UBYTE *audio_buffer = NULL;
-static int current_audio_samples;
+static int current_audio_samples = -1;
 #endif
 
 static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
@@ -347,12 +345,12 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	if (current_screen_size >= 0) {
-		printf("Frame %d: saving %d bytes to PNG @ %d\n", frames_written, (int)length, current_screen_size);
 		if (current_screen_size + length < rle_buffer_size) {
 			memcpy(rle_buffer + current_screen_size, data, length);
 			current_screen_size += length;
 		}
 		else {
+			Log_print("AVI write error: video compression buffer size too small.");
 			current_screen_size = -1;
 		}
 	}
@@ -988,7 +986,7 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 		   bitmap marker. If buffer size remaining is less than this, it's too
 		   small. */
 		if (bufsize < (Screen_WIDTH * 2 + 2 + 2)) {
-			printf("AVI write error: video compression buffer size too small.\n");
+			Log_print("AVI write error: video compression buffer size too small.");
 			return -1;
 		}
 		size = MRLE_CompressLine(buf, ptr);
@@ -1023,7 +1021,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 #ifdef SOUND
 		}
 		else {
-			printf("AVI write error: attempted to write video frame without audio data\n");
+			Log_print("AVI write error: attempted to write video frame without audio data");
 			return 0;
 		}
 #endif
@@ -1066,7 +1064,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 			}
 		}
 		else {
-			printf("AVI write error: attempted to write audio data without video frame\n");
+			Log_print("AVI write error: attempted to write audio data without video frame");
 			return 0;
 		}
 	}
@@ -1077,7 +1075,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 
 	size = num_samples * sample_size;
 	if (size > audio_buffer_size) {
-		printf("AVI write error: audio buffer size too small to hold %d samples\n", num_samples);
+		Log_print("AVI write error: audio buffer size too small to hold %d samples", num_samples);
 		/* set error condition */
 		current_audio_samples = -1;
 		return 0;
@@ -1176,10 +1174,12 @@ int AVI_CloseFile(FILE *fp)
 	free(audio_buffer);
 	audio_buffer = NULL;
 	audio_buffer_size = 0;
+	current_audio_samples = -1;
 #endif
 	free(rle_buffer);
 	rle_buffer = NULL;
 	rle_buffer_size = 0;
+	current_screen_size = -1;
 	free(frame_indexes);
 	frame_indexes = NULL;
 	num_frames_allocated = 0;
