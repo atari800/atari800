@@ -111,6 +111,10 @@ static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
 
+#ifdef HAVE_LIBPNG
+static int png_compression_level = 6;
+#endif
+
 
 int File_Export_Initialise(int *argc, char *argv[])
 {
@@ -123,8 +127,9 @@ int File_Export_Initialise(int *argc, char *argv[])
 		int a_m = FALSE; /* error, argument missing! */
 		int a_i = FALSE; /* error, argument invalid! */
 
+		if (0) {}
 #ifdef AVI_VIDEO_RECORDING
-		if (strcmp(argv[i], "-videocodec") == 0) {
+		else if (strcmp(argv[i], "-videocodec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "rle") == 0)
@@ -141,8 +146,18 @@ int File_Export_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-#else
-		if (0) {}
+#endif
+#ifdef HAVE_LIBPNG
+		else if (strcmp(argv[i], "-pnglevel") == 0) {
+			if (i_a) {
+				png_compression_level = Util_sscandec(argv[++i]);
+				if (png_compression_level < 0 || png_compression_level > 9) {
+					Log_print("Invalid PNG image compression level - must be between 0 and 9");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
 #endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -153,6 +168,9 @@ int File_Export_Initialise(int *argc, char *argv[])
 #endif
 				);
 				Log_print("\t                 Select video codec, (default: auto)");
+#endif
+#ifdef HAVE_LIBPNG
+				Log_print("\t-pnglevel <n>    Set PNG image compression level 0-9 (default 6)");
 #endif
 			}
 			argv[j++] = argv[i];
@@ -395,6 +413,7 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 #endif
 		png_init_io(png_ptr, fp);
 
+	png_set_compression_level(png_ptr, png_compression_level);
 	png_set_IHDR(
 		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
 		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
