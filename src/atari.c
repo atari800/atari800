@@ -98,13 +98,11 @@
 #endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
-#ifndef DREAMCAST
-#include "multimedia.h"
-#endif /* !DREAMCAST */
 #include "sound.h"
 #endif
 #if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
 #include "file_export.h"
+#include "multimedia.h"
 #endif
 #ifdef R_IO_DEVICE
 #include "rdevice.h"

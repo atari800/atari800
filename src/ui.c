@@ -80,9 +80,11 @@
 #endif /* BIT3 */
 #ifdef SOUND
 #include "pokeysnd.h"
-#include "multimedia.h"
 #include "sound.h"
 #endif /* SOUND */
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#include "multimedia.h"
+#endif /* defined(SOUND) || defined(AVI_VIDEO_RECORDING) */
 #ifdef DIRECTX
 #include "win32\main.h"
 #include "win32\joystick.h"
