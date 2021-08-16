@@ -133,7 +133,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 				else if (strcmp(mode, "png") == 0)
 					video_codec = VIDEO_CODEC_PNG;
 #endif
-				else if (strcmp(mode, "best-available") == 0)
+				else if (strcmp(mode, "auto") == 0)
 					video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 				else {
 					a_i = TRUE;
@@ -147,12 +147,12 @@ int File_Export_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 #ifdef AVI_VIDEO_RECORDING
-				Log_print("\t-videocodec best-available|rle"
+				Log_print("\t-videocodec auto|rle"
 #ifdef HAVE_LIBPNG
 					"|png"
 #endif
 				);
-				Log_print("\t                 Select video codec, (default: best-available)");
+				Log_print("\t                 Select video codec, (default: auto)");
 #endif
 			}
 			argv[j++] = argv[i];
