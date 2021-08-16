@@ -30,6 +30,7 @@
 #include "util.h"
 #include "log.h"
 #ifdef SOUND
+#include "sound.h"
 #include "pokeysnd.h"
 #endif
 
@@ -106,6 +107,8 @@ static int audio_buffer_size = 0;
 static UBYTE *audio_buffer = NULL;
 static int current_audio_samples = -1;
 #endif
+
+static int num_streams;
 
 static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
@@ -630,12 +633,14 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* hdrl LIST. Payload size includes the 4 bytes of the 'hdrl' identifier. */
 	fputs("LIST", fp);
-	list_size = 4 + 8 + 56 /* hdrl identifier plus avih size */
-		+ 12 + (8 + 56 + 8 + 40 + 256*4 + 8 + 16) /* video stream strl header LIST + (strh + strf + strn) */
-#ifdef SOUND
-		+ 12 + (8 + 56 + 8 + 18 + 8 + 12) /* audio stream strl header LIST + (strh + strf + strn) */
-#endif
-		;
+
+	/* total header size includes hdrl identifier plus avih size PLUS the video stream
+	   header which is (strl header LIST + (strh + strf + strn)) */
+	list_size = 4 + 8 + 56 + (12 + (8 + 56 + 8 + 40 + 256*4 + 8 + 16));
+
+	/* if audio is included, add size of audio stream strl header LIST + (strh + strf + strn) */
+	if (num_streams == 2) list_size += 12 + (8 + 56 + 8 + 18 + 8 + 12);
+
 	fputl(list_size, fp); /* length of header payload */
 	fputs("hdrl", fp);
 
@@ -652,11 +657,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
 	fputl(frames_written, fp); /* number of frames in the video */
 	fputl(0, fp); /* initial frames, always zero for us */
-#ifdef SOUND
-	fputl(2, fp); /* 2 streams, both video and audio */
-#else
-	fputl(1, fp); /* Only video stream */
-#endif
+	fputl(num_streams, fp); /* 2 = video and audio, 1 = video only */
 	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
 	fputl(ATARI_VISIBLE_WIDTH, fp); /* video width */
 	fputl(Screen_HEIGHT, fp); /* video height */
@@ -753,57 +754,59 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputc(0, fp); /* padding to get to 16 bytes */
 
 #ifdef SOUND
-	/* audio stream format */
+	if (num_streams == 2) {
+		/* audio stream format */
 
-	/* 12 bytes for audio stream strl LIST chuck header; LIST payload size includes the
-	   4 bytes of the 'strl' identifier plus the strh + strf + strn sizes */
-	fputs("LIST", fp);
-	fputl(4 + 8 + 56 + 8 + 18 + 8 + 12, fp);
-	fputs("strl", fp);
+		/* 12 bytes for audio stream strl LIST chuck header; LIST payload size includes the
+		4 bytes of the 'strl' identifier plus the strh + strf + strn sizes */
+		fputs("LIST", fp);
+		fputl(4 + 8 + 56 + 8 + 18 + 8 + 12, fp);
+		fputs("strl", fp);
 
-	/* stream header format is same as video above even when used for audio */
+		/* stream header format is same as video above even when used for audio */
 
-	/* 8 bytes for stream header indicator */
-	fputs("strh", fp);
-	fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
+		/* 8 bytes for stream header indicator */
+		fputs("strh", fp);
+		fputl(56, fp); /* length of strh payload: 14 x 4 byte words */
 
-	/* 56 bytes for stream header data */
-	fputs("auds", fp); /* video stream */
-	fputl(1, fp); /* 1 = uncompressed audio */
-	fputl(0, fp); /* flags */
-	fputw(0, fp); /* priority */
-	fputw(0, fp); /* language */
-	fputl(0, fp); /* initial_frames */
-	fputl(1, fp); /* scale */
-	fputl(POKEYSND_playback_freq, fp); /* rate, i.e. samples per second */
-	fputl(0, fp); /* start time; zero = no delay */
-	fputl(samples_written, fp); /* length (for audio is number of samples) */
-	fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
-	fputl(0, fp); /* quality (-1 = default quality?) */
-	fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
-	fputl(0, fp); /* rcRect, ignored */
-	fputl(0, fp);
+		/* 56 bytes for stream header data */
+		fputs("auds", fp); /* video stream */
+		fputl(1, fp); /* 1 = uncompressed audio */
+		fputl(0, fp); /* flags */
+		fputw(0, fp); /* priority */
+		fputw(0, fp); /* language */
+		fputl(0, fp); /* initial_frames */
+		fputl(1, fp); /* scale */
+		fputl(POKEYSND_playback_freq, fp); /* rate, i.e. samples per second */
+		fputl(0, fp); /* start time; zero = no delay */
+		fputl(samples_written, fp); /* length (for audio is number of samples) */
+		fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
+		fputl(0, fp); /* quality (-1 = default quality?) */
+		fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
+		fputl(0, fp); /* rcRect, ignored */
+		fputl(0, fp);
 
-	/* 8 bytes for stream format indicator */
-	fputs("strf", fp);
-	fputl(18, fp); /* length of header */
+		/* 8 bytes for stream format indicator */
+		fputs("strf", fp);
+		fputl(18, fp); /* length of header */
 
-	/* 18 bytes for stream format data */
-	fputw(1, fp); /* format_type */
-	fputw(POKEYSND_num_pokeys, fp); /* channels */
-	fputl(POKEYSND_playback_freq, fp); /* sample_rate */
-	fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
-	fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
-	fputw(sample_size * 8, fp); /* bits_per_sample */
-	fputw(0, fp); /* size */
+		/* 18 bytes for stream format data */
+		fputw(1, fp); /* format_type */
+		fputw(POKEYSND_num_pokeys, fp); /* channels */
+		fputl(POKEYSND_playback_freq, fp); /* sample_rate */
+		fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
+		fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
+		fputw(sample_size * 8, fp); /* bits_per_sample */
+		fputw(0, fp); /* size */
 
-	/* 8 bytes for stream name indicator */
-	fputs("strn", fp);
-	fputl(12, fp); /* length of name */
+		/* 8 bytes for stream name indicator */
+		fputs("strn", fp);
+		fputl(12, fp); /* length of name */
 
-	/* 12 bytes for name, zero terminated */
-	fputs("POKEY audio", fp);
-	fputc(0, fp); /* null terminator */
+		/* 12 bytes for name, zero terminated */
+		fputs("POKEY audio", fp);
+		fputc(0, fp); /* null terminator */
+	}
 #endif /* SOUND */
 
 	/* audia/video data */
@@ -851,9 +854,20 @@ FILE *AVI_OpenFile(const char *szFileName)
 	current_audio_samples = 0;
 	samples_written = 0;
 
-	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
-	audio_buffer_size = (int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024;
-	audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+	if (Sound_enabled) {
+		num_streams = 2;
+		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
+		audio_buffer_size = (int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024;
+		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+	}
+	else {
+		num_streams = 1;
+		sample_size = 0;
+		audio_buffer_size = 0;
+		audio_buffer = NULL;
+	}
+#else
+	num_streams = 1;
 #endif
 
 	if (!AVI_WriteHeader(fp)) {
@@ -875,6 +889,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 static int AVI_WriteFrame(FILE *fp) {
 	int video_padding;
 	int frame_size;
+	int expected_frame_size;
 	int result;
 #ifdef SOUND
 	int audio_size;
@@ -893,17 +908,24 @@ static int AVI_WriteFrame(FILE *fp) {
 	if (video_padding) {
 		fputc(0, fp);
 	}
+	expected_frame_size = 8 + current_screen_size + video_padding;
 
 #ifdef SOUND
-	audio_size = current_audio_samples * sample_size;
-	audio_padding = audio_size % 2;
-	fputs("01wb", fp);
-	fputl(audio_size, fp);
-	fwritele(audio_buffer, sample_size, current_audio_samples, fp);
-	if (audio_padding) {
-		fputc(0, fp);
+	if (num_streams == 2) {
+		audio_size = current_audio_samples * sample_size;
+		audio_padding = audio_size % 2;
+		fputs("01wb", fp);
+		fputl(audio_size, fp);
+		fwritele(audio_buffer, sample_size, current_audio_samples, fp);
+		if (audio_padding) {
+			fputc(0, fp);
+		}
+		samples_written += current_audio_samples;
+		expected_frame_size += 8 + audio_size + audio_padding;
 	}
-	samples_written += current_audio_samples;
+	else {
+		audio_size = 0;
+	}
 #endif
 
 	frame_indexes[frames_written] = current_screen_size
@@ -919,11 +941,7 @@ static int AVI_WriteFrame(FILE *fp) {
 
 	/* check expected file data written equals the calculated size */
 	frame_size = ftell(fp) - frame_size;
-	result = (frame_size == 8 + current_screen_size + video_padding
-#ifdef SOUND
-		+ 8 + audio_size + audio_padding
-#endif
-		);
+	result = (frame_size == expected_frame_size);
 
 	/* update size limit calculation including the 32 bytes needed for each index entry */
 	size_limit += frame_size + 32;
@@ -1032,7 +1050,7 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 int AVI_AddVideoFrame(FILE *fp) {
 	if (current_screen_size > 0) {
 #ifdef SOUND
-		if (current_audio_samples > 0) {
+		if (num_streams == 1 || current_audio_samples > 0) {
 #endif
 			if (!AVI_WriteFrame(fp)) {
 				return 0;
@@ -1190,8 +1208,10 @@ int AVI_CloseFile(FILE *fp)
 	}
 	fclose(fp);
 #ifdef SOUND
-	free(audio_buffer);
-	audio_buffer = NULL;
+	if (audio_buffer_size > 0) {
+		free(audio_buffer);
+		audio_buffer = NULL;
+	}
 	audio_buffer_size = 0;
 	current_audio_samples = -1;
 #endif
