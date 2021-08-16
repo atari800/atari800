@@ -1274,6 +1274,10 @@ static void CartManagement(void)
 #if defined(SOUND) && !defined(DREAMCAST)
 static void SoundRecording(void)
 {
+	if (!Sound_enabled) {
+		UI_driver->fMessage("Can't record. Sound not enabled.", 1);
+		return;
+	}
 	if (!Multimedia_IsFileOpen()) {
 		int no = 0;
 		do {
