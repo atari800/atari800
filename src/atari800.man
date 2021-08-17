@@ -801,16 +801,12 @@ The default.
 Use the codec that provides the best average compression ratio.
 .TP
 .B rle
-Use run-length encoding for moderate compression of video frames. The resulting
-videos are supported virtually everywhere, even Microsoft's legacy Windows Media
-Player. This codec is always available.
+Use run-length encoding for low compression of video frames. This codec is
+always available.
 .TP
 .B png
-Use PNG image compression for high compression of video frames, but the
-resulting videos are not supported by some players. YouTube can import them and
-modern players (such as vlc) can play them, but some like Windows Media
-Player and Totem (on Linux) cannot. This codec is only available if PNG support was
-compiled into the emulator.
+Use PNG image compression for high compression of video frames. This codec is only
+available if PNG support was compiled into the emulator.
 .PD
 .RE
 .TP
@@ -1579,31 +1575,32 @@ joysticks are also supported.
 .SH VIDEO RECORDING
 .B atari800
 is capable of recording the emulation session to AVI format multimedia files.
-Video frames are stored using either a low compression format (the
-\fB\-videocodec rle\fR option) or a high compression format (the \fB\-videocodec
-png\fR option), and audio is stored as raw PCM data using the sample size
-specified by the \fB\-audio16\fR or \fB\-audio8\fR options. To record without
-sound, specify the \fB\-nosound\fR option.
+Video frames are stored using either a high compression codec (the
+\fB\-videocodec png\fR option) or a low compression codec (the \fB\-videocodec
+rle\fR option). Audio is stored as raw PCM data using the sample size specified
+by the \fB\-audio16\fR or \fB\-audio8\fR options. To record without sound,
+specify the \fB\-nosound\fR option.
 .PP
-The low compression format is based on run-length encoding, and is widely
-supported in video players, even legacy applications like Windows Media Player.
-This codec is most efficient when there are large groups of pixels on a scan
-line that are the same color.
+The high compression codec is based on PNG images, support for which is a
+compile-time option when building the emulator. It is the default codec if
+available, as it is supported by virtually all modern players (including vlc,
+ffmpeg and GStreamer-based players). Windows Media Player does not support this
+codec, however.
 .PP
-The high compression format is based on PNG images. The resulting videos can be
-imported into YouTube and are supported in most modern players (like vlc and
-ffmpeg-based programs), but not applications like Windows Media Player or
-GStreamer-based players like Totem. If legacy playback is required, use the
-\fB\-videocodec rle\fR option. The PNG codec is not limited by scan line and is a
-much higher compression format, but is still affected by the compexity of the
-scene.
+The low compression codec is always available. It is based on run-length
+encoding, which is much less efficient than the PNG codec. Some modern players
+support this, but the only practical use should be if PNG support is not
+available or legacy Windows Media Player support is required.
+.PP
+The AVI files produced by \fBatari800\fR can be imported into YouTube regardless
+of the selected codec.
 .PP
 Currently there is a limit of 4GB for video size.
 .PP
-The maximum recording time varies, mostly depending on the compression ability
-of the video codec. The audio is not compressed, so every second of audio
-consumes 88200 bytes at the default rate of 44.1kHz with 16-bit samples, or
-44100 bytes when using 8-bit samples.
+The maximum recording time for this 4GB size varies, mostly depending on the
+compression ability of the video codec. The audio is not compressed, so every
+second of audio consumes 88200 bytes at the default rate of 44.1kHz with 16-bit
+samples, or 44100 bytes when using 8-bit samples.
 .PP
 The compressed size of video frames can vary during recording as the emulated
 screen changes. Games that have plain backgrounds like Miner 2049er and Jumpman
