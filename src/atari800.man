@@ -789,6 +789,37 @@ Automatic setting should be OK in most cases.
 Set sound latency in milliseconds. 
 Increase it if you experience gaps of silence during sound playback.
 
+.TP
+\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR
+Select the video codec used to compress and store image frames in AVI video recordings:
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the codec that provides the best average compression ratio.
+.TP
+.B rle
+Use run-length encoding for moderate compression of video frames. The resulting
+videos are supported virtually everywhere, even Microsoft's legacy Windows Media
+Player. This codec is always available.
+.TP
+.B png
+Use PNG image compression for high compression of video frames, but the
+resulting videos are not supported by some players. YouTube can import them and
+modern players (such as vlc) can play them, but some like Windows Media
+Player and Totem (on Linux) cannot. This codec is only available if PNG support was
+compiled into the emulator.
+.PD
+.RE
+.TP
+.BI \-pnglevel\  num
+Set PNG image compression level 0-9 (default 6). Zero means no compression and
+larger numbers correspond to higher compression and smaller image sizes, at the
+cost of increased time to generate the compressed image. This affects both
+screenshots and the video codec.
+
 .SS Curses Options
 
 .TP
@@ -1241,6 +1272,9 @@ Sound settings
 .BR Alt + W
 Sound recording start/stop
 .TP
+.BR Alt + V
+Video recording start/stop
+.TP
 .BR Alt + S
 Save state file
 .TP
@@ -1540,6 +1574,136 @@ Atari key (either Alt key will work)
 Joystick 0 is operated by the mouse position relative to the center of
 the screen. The mouse button acts as the trigger.  On Linux, standard
 joysticks are also supported.
+
+.PD 1
+.SH VIDEO RECORDING
+.B atari800
+is capable of recording the emulation session to AVI format multimedia files.
+Video frames are stored using either a low compression format (the
+\fB\-videocodec rle\fR option) or a high compression format (the \fB\-videocodec
+png\fR option), and audio is stored as raw PCM data using the sample size
+specified by the \fB\-audio16\fR or \fB\-audio8\fR options. To record without
+sound, specify the \fB\-nosound\fR option.
+.PP
+The low compression format is based on run-length encoding, and is widely
+supported in video players, even legacy applications like Windows Media Player.
+This codec is most efficient when there are large groups of pixels on a scan
+line that are the same color.
+.PP
+The high compression format is based on PNG images. The resulting videos can be
+imported into YouTube and are supported in most modern players (like vlc and
+ffmpeg-based programs), but not applications like Windows Media Player or
+GStreamer-based players like Totem. If legacy playback is required, use the
+\fB\-videocodec rle\fR option. The PNG codec is not limited by scan line and is a
+much higher compression format, but is still affected by the compexity of the
+scene.
+.PP
+Currently there is a limit of 4GB for video size.
+.PP
+The maximum recording time varies, mostly depending on the compression ability
+of the video codec. The audio is not compressed, so every second of audio
+consumes 88200 bytes at the default rate of 44.1kHz with 16-bit samples, or
+44100 bytes when using 8-bit samples.
+.PP
+The compressed size of video frames can vary during recording as the emulated
+screen changes. Games that have plain backgrounds like Miner 2049er and Jumpman
+compress better than those that have complex playfields like Alley Cat or
+Boulder Dash. Sample recording times (in hours) for these games are shown below,
+using the size of a typical video frame as the average for the entire video and
+calculating the amount of recording time available for a 4GB file.
+
+.PP
+NTSC, RLE codec:
+
+.TS
+tab(@), center, box;
+l | c | c s s
+c | c | _ _ _
+c | c | c c c
+l | c | c c c
+l | cB | cB cB cB.
+@Typical@Recording time (hours:minutes)
+Game@video@
+@frame@no@8-bit@16-bit
+@size@audio@audio@audio
+_
+Miner 2049er@5.2k@3:42@3:15@2:54@
+Jumpman@8.7k@2:13@2:03@1:54@
+Alley Cat@18k@1:04@1:02@0:59@
+Boulder Dash@34k@0:34@0:33@0:32@
+.TE
+
+.PP
+NTSC, PNG codec (default compression level):
+.TS
+tab(@), center, box;
+l | c | c s s
+c | c | _ _ _
+c | c | c c c
+l | c | c c c
+l | cB | cB cB cB.
+@Typical@Recording time (hours:minutes)
+Game@video@
+@frame@no@8-bit@16-bit
+@size@audio@audio@audio
+_
+Miner 2049er@2.2k@8:43@6:32@5:16@
+Jumpman@2.4k@8:00@6:08@5:00@
+Alley Cat@4.1k@4:42@3:59@3:28@
+Boulder Dash@4.5k@4:17@3:41@3:14@
+.TE
+
+.PP
+NTSC, PNG codec (compression level 9):
+.TS
+tab(@), center, box;
+l | c | c s s
+c | c | _ _ _
+c | c | c c c
+l | c | c c c
+l | cB | cB cB cB.
+@Typical@Recording time (hours:minutes)
+Game@video@
+@frame@no@8-bit@16-bit
+@size@audio@audio@audio
+_
+Miner 2049er@2.0k@9:35@7:01@5:34@
+Jumpman@2.1k@9:08@6:46@5:25@
+Alley Cat@3.8k@5:04@4:15@3:40@
+Boulder Dash@2.5k@7:41@5:56@4:52@
+.TE
+
+.PP
+Unless legacy playback is needed, it is recommended to use the PNG video codec.
+.PP
+Audio sizes make quite a large difference at high video compression levels
+because the size of the audio samples approaches the size of the video. Using
+8-bit audio is one simple way to increase recording time if 16-bit POKEY audio
+is not used during emulation.
+.PP
+Longer recording times are available when emulating at the PAL frame rate
+because there are 10 fewer video frames per second as compared to NTSC, while
+the audio sampling rate is the same as NTSC.
+
+.PP
+PAL, PNG codec (compression level 9):
+.TS
+tab(@), center, box;
+l | c | c s s
+c | c | _ _ _
+c | c | c c c
+l | c | c c c
+l | cB | cB cB cB.
+@Typical@Recording time (hours:minutes)
+Game@video@
+@frame@no@8-bit@16-bit
+@size@audio@audio@audio
+_
+Miner 2049er@2.0k@11:30@8:00@6:10@
+Jumpman@2.1k@10:58@7:44@6:01@
+Alley Cat@3.8k@6:05@4:56@4:10@
+Boulder Dash@2.5k@9:13@6:50@5:27@
+.TE
 
 .PD 1
 
