@@ -34,11 +34,11 @@
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
 
-#define DEFAULT_SOUND_FILENAME_FORMAT "atari%03d.wav"
+#define DEFAULT_SOUND_FILENAME_FORMAT "atari###.wav"
 
-static char sound_filename_format[FILENAME_MAX] = DEFAULT_SOUND_FILENAME_FORMAT;
+static char sound_filename_format[FILENAME_MAX];
 static int sound_no_last = -1;
-static int sound_no_max = 1000;
+static int sound_no_max = 0;
 
 #endif
 
@@ -47,11 +47,11 @@ static int sound_no_max = 1000;
 /* avioutput is just the file pointer for the current video file */
 static FILE *avioutput = NULL;
 
-#define DEFAULT_VIDEO_FILENAME_FORMAT "atari%03d.avi"
+#define DEFAULT_VIDEO_FILENAME_FORMAT "atari###.avi"
 
-static char video_filename_format[FILENAME_MAX] = DEFAULT_VIDEO_FILENAME_FORMAT;
+static char video_filename_format[FILENAME_MAX];
 static int video_no_last = -1;
-static int video_no_max = 1000;
+static int video_no_max = 0;
 
 #endif /* AVI_VIDEO_RECORDING */
 
@@ -157,6 +157,9 @@ int Multimedia_CloseFile(void)
 /* Get the next filename in the sound_file_format pattern.
    RETURNS: True if filename is available, false if no filenames left in the pattern. */
 int Multimedia_GetNextSoundFile(char *buffer, int bufsize) {
+	if (!sound_no_max) {
+		sound_no_max = Util_filenamepattern(DEFAULT_SOUND_FILENAME_FORMAT, sound_filename_format, FILENAME_MAX, NULL);
+	}
 	return Util_findnextfilename(sound_filename_format, &sound_no_last, sound_no_max, buffer, bufsize, FALSE);
 }
 
@@ -213,6 +216,9 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 /* Get the next filename in the video_file_format pattern.
    RETURNS: True if filename is available, false if no filenames left in the pattern. */
 int Multimedia_GetNextVideoFile(char *buffer, int bufsize) {
+	if (!video_no_max) {
+		video_no_max = Util_filenamepattern(DEFAULT_VIDEO_FILENAME_FORMAT, video_filename_format, FILENAME_MAX, NULL);
+	}
 	return Util_findnextfilename(video_filename_format, &video_no_last, video_no_max, buffer, bufsize, FALSE);
 }
 

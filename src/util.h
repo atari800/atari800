@@ -138,6 +138,7 @@ void Util_catpath(char *result, const char *path1, const char *path2);
 /* Takes input string p in the form of "foo%bar##.ext" and converts to "foo%%bar%02d.ext",
    storing the result in the char array pointed to by buffer (with a max size bufsize).
    At most 9 digits are supported; if more that that, uses the format specifed in default.
+   Default format should use the hash specification also, like "atari###.ext".
 
    Returns the maximum number supported by the pattern. */
 int Util_filenamepattern(const char *p, char *buffer, int bufsize, const char *default_pattern);

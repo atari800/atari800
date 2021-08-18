@@ -69,14 +69,14 @@ int Screen_show_1200_leds = TRUE;
 
 #ifndef DREAMCAST
 #ifdef HAVE_LIBPNG
-#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari###.png"
 #else
-#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.pcx"
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari###.pcx"
 #endif
 
-static char screenshot_filename_format[FILENAME_MAX] = DEFAULT_SCREENSHOT_FILENAME_FORMAT;
+static char screenshot_filename_format[FILENAME_MAX];
 static int screenshot_no_last = -1;
-static int screenshot_no_max = 1000;
+static int screenshot_no_max = 0;
 
 #endif /* !DREAMCAST */
 
@@ -474,6 +474,9 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 void Screen_SaveNextScreenshot(int interlaced)
 {
 	char filename[FILENAME_MAX];
+	if (!screenshot_no_max) {
+		screenshot_no_max = Util_filenamepattern(DEFAULT_SCREENSHOT_FILENAME_FORMAT, screenshot_filename_format, FILENAME_MAX, NULL);
+	}
 	Util_findnextfilename(screenshot_filename_format, &screenshot_no_last, screenshot_no_max, filename, sizeof(filename), TRUE);
 	Screen_SaveScreenshot(filename, interlaced);
 }

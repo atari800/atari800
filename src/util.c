@@ -359,7 +359,7 @@ void Util_catpath(char *result, const char *path1, const char *path2)
 			? "%s%s" : "%s" Util_DIR_SEP_STR "%s", path1, path2);
 }
 
-int Util_filenamepattern(const char *p, char *buffer, int bufsize, const char *default_pattern)
+static int parse_hashes(const char *p, char *buffer, int bufsize)
 {
 	char *f = buffer;
 	char no_width = '0';
@@ -391,9 +391,18 @@ int Util_filenamepattern(const char *p, char *buffer, int bufsize, const char *d
 			return no_max; /* ok */
 		p++;
 	}
-	Log_print("Invalid filename pattern, using default.");
-	strcpy(buffer, default_pattern);
-	no_max = 1000;
+	return 0;
+}
+
+int Util_filenamepattern(const char *p, char *buffer, int bufsize, const char *default_pattern)
+{
+	int no_max;
+
+	no_max = parse_hashes(p, buffer, bufsize);
+	if (!no_max && default_pattern) {
+		Log_print("Invalid filename pattern, using default.");
+		no_max = parse_hashes(default_pattern, buffer, bufsize);
+	}
 	return no_max;
 }
 
