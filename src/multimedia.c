@@ -26,11 +26,19 @@
 #include <stdlib.h>
 #include "multimedia.h"
 #include "file_export.h"
+#include "util.h"
+#include "log.h"
 
 #ifdef SOUND
 
 /* sndoutput is just the file pointer for the current sound file */
 static FILE *sndoutput = NULL;
+
+#define DEFAULT_SOUND_FILENAME_FORMAT "atari%03d.wav"
+
+static char sound_filename_format[FILENAME_MAX] = DEFAULT_SOUND_FILENAME_FORMAT;
+static int sound_no_last = -1;
+static int sound_no_max = 1000;
 
 #endif
 
@@ -39,7 +47,61 @@ static FILE *sndoutput = NULL;
 /* avioutput is just the file pointer for the current video file */
 static FILE *avioutput = NULL;
 
+#define DEFAULT_VIDEO_FILENAME_FORMAT "atari%03d.avi"
+
+static char video_filename_format[FILENAME_MAX] = DEFAULT_VIDEO_FILENAME_FORMAT;
+static int video_no_last = -1;
+static int video_no_max = 1000;
+
 #endif /* AVI_VIDEO_RECORDING */
+
+
+int Multimedia_Initialise(int *argc, char *argv[])
+{
+
+	int i;
+	int j;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc); /* is argument available? */
+		int a_m = FALSE; /* error, argument missing! */
+
+		if (0) {}
+#ifdef SOUND
+		else if (strcmp(argv[i], "-soundfilename") == 0) {
+			if (i_a)
+				sound_no_max = Util_filenamepattern(argv[++i], sound_filename_format, FILENAME_MAX, DEFAULT_SOUND_FILENAME_FORMAT);
+			else a_m = TRUE;
+		}
+#endif
+#ifdef AVI_VIDEO_RECORDING
+		else if (strcmp(argv[i], "-videofilename") == 0) {
+			if (i_a)
+				video_no_max = Util_filenamepattern(argv[++i], video_filename_format, FILENAME_MAX, DEFAULT_VIDEO_FILENAME_FORMAT);
+			else a_m = TRUE;
+		}
+#endif
+		else {
+			if (strcmp(argv[i], "-help") == 0) {
+#ifdef SOUND
+				Log_print("\t-soundfilename <p>   Set filename pattern for audio recording");
+#endif /* !DREAMCAST */
+#ifdef AVI_VIDEO_RECORDING
+				Log_print("\t-videofilename <p>   Set filename pattern for video recording");
+#endif /* !DREAMCAST */
+			}
+			argv[j++] = argv[i];
+		}
+
+		if (a_m) {
+			Log_print("Missing argument for '%s'", argv[i]);
+			return FALSE;
+		}
+	}
+	*argc = j;
+
+	return TRUE;
+}
 
 
 /* Multimedia_IsFileOpen simply returns true if any multimedia file is currently
@@ -92,6 +154,12 @@ int Multimedia_CloseFile(void)
 }
 
 #ifdef SOUND
+/* Get the next filename in the sound_file_format pattern.
+   RETURNS: True if filename is available, false if no filenames left in the pattern. */
+int Multimedia_GetNextSoundFile(char *buffer, int bufsize) {
+	return Util_findnextfilename(sound_filename_format, &sound_no_last, sound_no_max, buffer, bufsize, FALSE);
+}
+
 /* Multimedia_OpenSoundFile will start a new sound file and write out the
    header. If an existing sound file is already open it will be closed first,
    and the new file opened in its place.
@@ -142,6 +210,11 @@ int Multimedia_WriteAudio(const unsigned char *ucBuffer, unsigned int uiSize)
 #endif /* SOUND */
 
 #ifdef AVI_VIDEO_RECORDING
+/* Get the next filename in the video_file_format pattern.
+   RETURNS: True if filename is available, false if no filenames left in the pattern. */
+int Multimedia_GetNextVideoFile(char *buffer, int bufsize) {
+	return Util_findnextfilename(video_filename_format, &video_no_last, video_no_max, buffer, bufsize, FALSE);
+}
 
 /* Multimedia_OpenVideoFile will start a new video file and write out the
    header. If an existing video file is already open it will be closed first,

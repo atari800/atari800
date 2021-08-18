@@ -1279,19 +1279,15 @@ static void SoundRecording(void)
 		return;
 	}
 	if (!Multimedia_IsFileOpen()) {
-		int no = 0;
-		do {
-			char buffer[32];
-			snprintf(buffer, sizeof(buffer), "atari%03d.wav", no);
-			if (!Util_fileexists(buffer)) {
-				/* file does not exist - we can create it */
-				FilenameMessage(Multimedia_OpenSoundFile(buffer)
-					? "Recording sound to file \"%s\""
-					: "Can't write to file \"%s\"", buffer);
-				return;
-			}
-		} while (++no < 1000);
-		UI_driver->fMessage("All atariXXX.wav files exist!", 1);
+		char buffer[FILENAME_MAX];
+		if (Multimedia_GetNextSoundFile(buffer, sizeof(buffer))) {
+			/* file does not exist - we can create it */
+			FilenameMessage(Multimedia_OpenSoundFile(buffer)
+				? "Recording sound to file \"%s\""
+				: "Can't write to file \"%s\"", buffer);
+			return;
+		}
+		UI_driver->fMessage("All sound files exist!", 1);
 	}
 	else {
 		Multimedia_CloseFile();
@@ -1304,19 +1300,15 @@ static void SoundRecording(void)
 static void VideoRecording(void)
 {
 	if (!Multimedia_IsFileOpen()) {
-		int no = 0;
-		do {
-			char buffer[32];
-			snprintf(buffer, sizeof(buffer), "atari%03d.avi", no);
-			if (!Util_fileexists(buffer)) {
-				/* file does not exist - we can create it */
-				FilenameMessage(Multimedia_OpenVideoFile(buffer)
-					? "Recording video to file \"%s\""
-					: "Can't write to file \"%s\"", buffer);
-				return;
-			}
-		} while (++no < 1000);
-		UI_driver->fMessage("All atariXXX.avi files exist!", 1);
+		char buffer[FILENAME_MAX];
+		if (Multimedia_GetNextVideoFile(buffer, sizeof(buffer))) {
+			/* file does not exist - we can create it */
+			FilenameMessage(Multimedia_OpenVideoFile(buffer)
+				? "Recording video to file \"%s\""
+				: "Can't write to file \"%s\"", buffer);
+			return;
+		}
+		UI_driver->fMessage("All video files exist!", 1);
 	}
 	else {
 		Multimedia_CloseFile();
