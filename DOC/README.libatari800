@@ -60,7 +60,7 @@ For example:
 Here's an example with an 8k cartridge image, using additional command line
 arguments to limit the testing to only NTSC XL machines:
 
-     $ src/guess_settings -xl -ntsc test.rom
+    $ src/guess_settings -xl -ntsc test.rom
     test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=1 'Standard 8 KB')
     test.rom: 64k XL  NTSC XL ROM  status: FAIL (self test) (cart=21 'Right slot 8 KB')
     test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=39 'Phoenix 8 KB')
@@ -87,7 +87,7 @@ using:
 It is a very simple example. It boots the emulator into Memo Pad, and after 100
 frames of emulation, simulates the 'A' key being pressed and held down to print
 a bunch of "A" characters on the screen. A simple representation of the screen
-is displayed as text output from your terminal command line.
+is displayed as text output to the terminal.
 
 
 LIBRARY OVERVIEW
@@ -118,16 +118,51 @@ accepts a pointer to a structure input_template_t, which describes user input
 like the keyboard and joystick state. It performs one full frame's worth of
 emulation, and returns control to the calling function.
 
-The screen array and the state of the current RAM are available at the end of
-every frame for the calling function to present to the user.
+The screen array and audio buffer are available at the end of every frame for
+the calling function to present to the user.
 
-NOTE: sound is currently not supported, but will be added as soon as possible.
+The example program libatari800_test shows very simple usage of the library.
+The basic usage to generate emulator frames is shown in this code snippet::
+
+    input_template_t input;
+    char *test_args[] = {
+        "-atari",
+    };
+
+    libatari800_init(1, test_args);
+
+    libatari800_clear_input_array(&input);
+
+    while (libatari800_get_frame_number() < 200) {
+        libatari800_next_frame(&input);
+        if (libatari800_get_frame_number() > 100) {
+            input.keychar = 'A';
+        }
+    }
+
+    libatari800_exit();
+
+Note the usage of 'fake' command line arguments. In the future, libatari800 may
+provide more direct specification of configuration parameters, but this is not
+yet implemented as it will require a lot of new code to reimplement what is
+currently processed through the standard configuration file.
+
+So, currently, libatari800 relies on a valid configuration file to specify the
+location of the ROM files. By default, libatari800 will scan in the same
+directories as the normal atari800 program. To provide an alternate location,
+add the "-config" argument and a path to the file, as in the following::
+
+    char *test_args[] = {
+        "-atari",
+        "-config",
+        "/path/to/.atari800.cfg",
+    };
 
 
 Advanced usage
 --------------
 
-In addition to the screen and memory, the entire internal state of the emulator
+In addition to the screen and audio, the entire internal state of the emulator
 can be examined and even changed between frames. The state save format is used
 to facilitate this, so it is even possible restore the state of the emulator
 from save files generated from another atari800 instance.
