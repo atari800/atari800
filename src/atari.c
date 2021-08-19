@@ -1033,6 +1033,7 @@ void Atari800_ErrExit(void)
 }
 
 #ifndef __PLUS
+#ifndef LIBATARI800
 static void autoframeskip(double curtime, double lasttime)
 {
 	static int afs_lastframe = 0, afs_discard = 0;
@@ -1241,6 +1242,7 @@ static void basic_frame(void)
 }
 
 #endif /* defined(BASIC) || defined(VERY_SLOW) || defined(CURSES_BASIC) */
+#endif /* LIBATARI800 */
 
 void Atari800_Frame(void)
 {
@@ -1347,6 +1349,7 @@ void Atari800_Frame(void)
 	Sound_Update();
 #endif
 	Atari800_nframes++;
+#ifndef LIBATARI800
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {
 		double benchmark_time = Util_time() - benchmark_start_time;
@@ -1374,6 +1377,7 @@ void Atari800_Frame(void)
 		else
 			Atari800_Sync();
 #endif /* BENCHMARK */
+#endif /* LIBATARI800 */
 }
 
 #endif /* __PLUS */
