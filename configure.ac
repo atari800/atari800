@@ -709,7 +709,7 @@ AC_DEFUN([A8_OPTION],[
     fi
 ])
 
-if [[ "$a8_target" == "libatari800" ]]; then
+if [[ "$a8_target" = "libatari800" ]]; then
     WANT_NEW_CYCLE_EXACT=yes
     WANT_VERY_SLOW=no
     WANT_CRASH_MENU=no
@@ -1040,7 +1040,7 @@ if [[ "$with_sound" != no ]]; then
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
 
-    if [[ "$with_sound" == "libatari800" ]]; then
+    if [[ "$with_sound" = "libatari800" ]]; then
         WANT_SOUND_CALLBACK=no
         WANT_CONSOLE_SOUND=yes
         WANT_SERIO_SOUND=yes
@@ -1094,7 +1094,7 @@ A8_OPTION(pokeyrec,$WANT_POKEYREC,
           [Provide Pokey registers recording (default=ON)],
           POKEYREC,[Define to add Pokey registers recording.]
          )
-if [[ "$WANT_POKEYREC" == "yes" ]]; then
+if [[ "$WANT_POKEYREC" = "yes" ]]; then
     AC_SYS_LARGEFILE
 fi
 AM_CONDITIONAL([WANT_POKEYREC], test "$WANT_POKEYREC" = "yes")
