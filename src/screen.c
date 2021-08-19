@@ -69,51 +69,15 @@ int Screen_show_1200_leds = TRUE;
 
 #ifndef DREAMCAST
 #ifdef HAVE_LIBPNG
-#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.png"
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari###.png"
 #else
-#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari%03d.pcx"
+#define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari###.pcx"
 #endif
 
-static char screenshot_filename_format[FILENAME_MAX] = DEFAULT_SCREENSHOT_FILENAME_FORMAT;
-static int screenshot_no_max = 1000;
+static char screenshot_filename_format[FILENAME_MAX];
+static int screenshot_no_last = -1;
+static int screenshot_no_max = 0;
 
-/* converts "foo%bar##.pcx" to "foo%%bar%02d.pcx" */
-static void Screen_SetScreenshotFilenamePattern(const char *p)
-{
-	char *f = screenshot_filename_format;
-	char no_width = '0';
-	screenshot_no_max = 1;
-	/* 9 because sprintf'ed "no" can be 9 digits */
-	while (f < screenshot_filename_format + FILENAME_MAX - 9) {
-		/* replace a sequence of hashes with e.g. "%05d" */
-		if (*p == '#') {
-			if (no_width > '0') /* already seen a sequence of hashes */
-				break;          /* invalid */
-			/* count hashes */
-			do {
-				screenshot_no_max *= 10;
-				p++;
-				no_width++;
-				/* now no_width is the number of hashes seen so far
-				   and p points after the counted hashes */
-			} while (no_width < '9' && *p == '#'); /* no more than 9 hashes */
-			*f++ = '%';
-			*f++ = '0';
-			*f++ = no_width;
-			*f++ = 'd';
-			continue;
-		}
-		if (*p == '%')
-			*f++ = '%'; /* double the percents */
-		*f++ = *p;
-		if (*p == '\0')
-			return; /* ok */
-		p++;
-	}
-	Log_print("Invalid filename pattern for screenshots, using default.");
-	strcpy(screenshot_filename_format, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
-	screenshot_no_max = 1000;
-}
 #endif /* !DREAMCAST */
 
 int Screen_Initialise(int *argc, char *argv[])
@@ -129,7 +93,7 @@ int Screen_Initialise(int *argc, char *argv[])
 #ifndef DREAMCAST
 		if (strcmp(argv[i], "-screenshots") == 0) {
 			if (i_a)
-				Screen_SetScreenshotFilenamePattern(argv[++i]);
+				screenshot_no_max = Util_filenamepattern(argv[++i], screenshot_filename_format, FILENAME_MAX, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 			else a_m = TRUE;
 		}
 		else
@@ -455,24 +419,6 @@ void Screen_Draw1200LED(void)
 }
 
 #ifndef DREAMCAST
-void Screen_FindScreenshotFilename(char *buffer, unsigned bufsize)
-{
-	static int no = -1;
-	static int overwrite = FALSE;
-
-	for (;;) {
-		if (++no >= screenshot_no_max) {
-			no = 0;
-			overwrite = TRUE;
-		}
-		snprintf(buffer, bufsize, screenshot_filename_format, no);
-		if (overwrite)
-			break;
-		if (!Util_fileexists(buffer))
-			break; /* file does not exist - we can create it */
-	}
-}
-
 static int striendswith(const char *s1, const char *s2)
 {
 	int pos;
@@ -528,7 +474,10 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 void Screen_SaveNextScreenshot(int interlaced)
 {
 	char filename[FILENAME_MAX];
-	Screen_FindScreenshotFilename(filename, sizeof(filename));
+	if (!screenshot_no_max) {
+		screenshot_no_max = Util_filenamepattern(DEFAULT_SCREENSHOT_FILENAME_FORMAT, screenshot_filename_format, FILENAME_MAX, NULL);
+	}
+	Util_findnextfilename(screenshot_filename_format, &screenshot_no_last, screenshot_no_max, filename, sizeof(filename), TRUE);
 	Screen_SaveScreenshot(filename, interlaced);
 }
 #endif /* !DREAMCAST */

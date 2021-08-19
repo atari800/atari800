@@ -752,8 +752,8 @@ palette (by default the loaded palette is displayed unmodified).
 .TP
 .BI \-screenshots\  pattern
 Set filename pattern for screenshots.
-Use to override the default \fIatari000.png\fR, \fIatari001.png\fR etc.
-filenames.
+Use to override the default pattern of \fIatari###.png\fR which produces
+\fIatari000.png\fR, \fIatari001.png\fR etc. filenames.
 Hashes are replaced with raising numbers.
 Existing files are overwritten only if all the files defined by the pattern
 exist.
@@ -815,6 +815,20 @@ Set PNG image compression level 0-9 (default 6). Zero means no compression and
 larger numbers correspond to higher compression and smaller image sizes, at the
 cost of increased time to generate the compressed image. This affects both
 screenshots and the video codec.
+
+.TP
+.BI \-soundfilename\  pattern
+Set filename pattern for audio recordings.
+Use to override the default pattern of \fIatari###.wav\fR which produces
+\fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
+Hashes are replaced with raising numbers.
+
+.TP
+.BI \-videofilename\  pattern
+Set filename pattern for video recordings.
+Use to override the default pattern of \fIatari###.avi\fR which produces
+\fIatari000.avi\fR, \fIatari001.avi\fR etc. filenames.
+Hashes are replaced with raising numbers.
 
 .SS Curses Options
 
