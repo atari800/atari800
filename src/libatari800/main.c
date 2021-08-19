@@ -293,13 +293,17 @@ UBYTE *libatari800_get_screen_ptr()
 	return (UBYTE *)Screen_atari;
 }
 
-UBYTE *libatari800_get_sound_ptr()
+UBYTE *libatari800_get_sound_buffer()
 {
 	return (UBYTE *)LIBATARI800_Sound_array;
 }
 
-int libatari800_get_sound_buffer_size() {
+int libatari800_get_sound_buffer_len() {
 	return (int)sound_array_fill;
+}
+
+int libatari800_get_sound_buffer_allocated_size() {
+	return (int)sound_hw_buffer_size;
 }
 
 int libatari800_get_sound_frequency() {
@@ -318,15 +322,28 @@ int libatari800_get_sound_sample_size() {
 	return Sound_out.sample_size;
 }
 
+float libatari800_get_fps() {
+	return Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+}
+
+int libatari800_get_frame_number() {
+	return Atari800_nframes;
+}
+
 void libatari800_get_current_state(emulator_state_t *state)
 {
 	LIBATARI800_StateSave(state->state, &state->tags);
 	state->flags.selftest_enabled = MEMORY_selftest_enabled;
+	state->flags.nframes = (ULONG)Atari800_nframes;
+	state->flags.sample_residual = (ULONG)(0xffffffff * sample_residual);
 }
 
 void libatari800_restore_state(emulator_state_t *state)
 {
 	LIBATARI800_StateLoad(state->state);
+	MEMORY_selftest_enabled = state->flags.selftest_enabled;
+	Atari800_nframes = state->flags.nframes;
+	sample_residual = (double)state->flags.sample_residual / (double)0xffffffff;
 }
 
 void libatari800_exit() {

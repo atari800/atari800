@@ -127,9 +127,10 @@ int wavWrite()
 	if (wav) {
 		int result;
 
-		result = fwrite(libatari800_get_sound_ptr(), 1, libatari800_get_sound_buffer_size(), wav);
+		printf("frame %d: writing %d bytes in sound buffer\n", libatari800_get_frame_number(), libatari800_get_sound_buffer_len());
+		result = fwrite(libatari800_get_sound_buffer(), 1, libatari800_get_sound_buffer_len(), wav);
 		byteswritten += result;
-		if (result != libatari800_get_sound_buffer_size()) {
+		if (result != libatari800_get_sound_buffer_len()) {
 			wavClose();
 		}
 
@@ -143,13 +144,13 @@ int main(int argc, char **argv) {
 	int frame;
 	input_template_t input;
 	int i;
-	int save_wav;
-
-	save_wav = 0;
+	int save_wav = FALSE;
+	int show_screen = TRUE;
 
 	for (i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-wav") == 0) {
 			save_wav = TRUE;
+			show_screen = FALSE;
 		}
 	}
 
@@ -165,30 +166,31 @@ int main(int argc, char **argv) {
 	cpu_state_t *cpu;
 	unsigned char *pc;
 
-	printf("sound: freq=%d, frames=%d, bytes/sample=%d, channels=%d, buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_num_sound_samples(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_size());
+	printf("emulation: fps=%f\n", libatari800_get_fps());
 
-	frame = 0;
+	printf("sound: freq=%d, frames=%d, bytes/sample=%d, channels=%d, max buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_num_sound_samples(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_allocated_size());
+
 	if (save_wav) {
 		wav = wavOpen("libatari800_test.wav");
 	}
-	while (frame < 200) {
+	while (libatari800_get_frame_number() < 200) {
 		libatari800_get_current_state(&state);
 		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
 		pc = &state.state[state.tags.pc];
-		printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", frame, cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
+		if (show_screen) printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 		libatari800_next_frame(&input);
-		if (frame > 100) {
-			debug_screen();
+		if (libatari800_get_frame_number() > 100) {
+			if (show_screen) debug_screen();
 			input.keychar = 'A';
 		}
 		if (wav) {
 			wavWrite();
 		}
-		frame++;
 	}
 	if (wav) {
 		wavClose();
 	}
+	printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
 
 	libatari800_exit();
 }

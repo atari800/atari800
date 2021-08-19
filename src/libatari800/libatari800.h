@@ -65,6 +65,9 @@ typedef struct {
 
 typedef struct {
     UBYTE selftest_enabled;
+    UBYTE _align1[3];
+    ULONG nframes;
+    ULONG sample_residual;
 } statesav_flags_t;
 
 typedef struct {
@@ -201,9 +204,11 @@ UBYTE *libatari800_get_main_memory_ptr();
 
 UBYTE *libatari800_get_screen_ptr();
 
-UBYTE *libatari800_get_sound_ptr();
+UBYTE *libatari800_get_sound_buffer();
 
-int libatari800_get_sound_buffer_size();
+int libatari800_get_sound_buffer_len();
+
+int libatari800_get_sound_buffer_allocated_size();
 
 int libatari800_get_sound_frequency();
 
@@ -212,6 +217,10 @@ int libatari800_get_num_sound_channels();
 int libatari800_get_num_sound_samples();
 
 int libatari800_get_sound_sample_size();
+
+float libatari800_get_fps();
+
+int libatari800_get_frame_number();
 
 cpu_state_t *libatari800_get_cpu_ptr();
 
