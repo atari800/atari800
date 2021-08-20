@@ -194,7 +194,7 @@ extern int libatari800_error_code;
 
 int libatari800_init(int argc, char **argv);
 
-char *libatari800_error_message();
+const char *libatari800_error_message();
 
 void libatari800_clear_input_array(input_template_t *input);
 
@@ -218,15 +218,11 @@ int libatari800_get_sound_frequency();
 
 int libatari800_get_num_sound_channels();
 
-int libatari800_get_num_sound_samples();
-
 int libatari800_get_sound_sample_size();
 
 float libatari800_get_fps();
 
 int libatari800_get_frame_number();
-
-cpu_state_t *libatari800_get_cpu_ptr();
 
 void libatari800_get_current_state(emulator_state_t *state);
 

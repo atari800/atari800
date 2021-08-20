@@ -238,7 +238,7 @@ char *error_messages[] = {
 };
 char *unknown_error = "unknown error";
 
-char *libatari800_error_message() {
+const char *libatari800_error_message() {
 	if ((libatari800_error_code < 0) || (libatari800_error_code > (sizeof(error_messages)))) {
 		return unknown_error;
 	}

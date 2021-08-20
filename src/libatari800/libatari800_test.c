@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
 
 	printf("emulation: fps=%f\n", libatari800_get_fps());
 
-	printf("sound: freq=%d, frames=%d, bytes/sample=%d, channels=%d, max buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_num_sound_samples(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_allocated_size());
+	printf("sound: freq=%d, bytes/sample=%d, channels=%d, max buffer size=%d\n", libatari800_get_sound_frequency(), libatari800_get_sound_sample_size(), libatari800_get_num_sound_channels(), libatari800_get_sound_buffer_allocated_size());
 
 	if (save_wav) {
 		wav = wavOpen("libatari800_test.wav");
