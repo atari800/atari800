@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
 	emulator_state_t state;
 	cpu_state_t *cpu;
-	unsigned char *pc;
+	pc_state_t *pc;
 
 	printf("emulation: fps=%f\n", libatari800_get_fps());
 
@@ -177,8 +177,8 @@ int main(int argc, char **argv) {
 	while (libatari800_get_frame_number() < 200) {
 		libatari800_get_current_state(&state);
 		cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
-		pc = &state.state[state.tags.pc];
-		if (show_screen) printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
+		pc = (pc_state_t *)&state.state[state.tags.pc];
+		if (show_screen) printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc->PC);
 		libatari800_next_frame(&input);
 		if (libatari800_get_frame_number() > 100) {
 			if (show_screen) debug_screen();
@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 	if (wav) {
 		wavClose();
 	}
-	printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc[0] + 256 * pc[1]);
+	printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc->PC);
 
 	libatari800_exit();
 }

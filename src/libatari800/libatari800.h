@@ -92,6 +92,10 @@ typedef struct {
 } cpu_state_t;
 
 typedef struct {
+    UWORD PC;
+} pc_state_t;
+
+typedef struct {
     UBYTE DMACTL;
     UBYTE CHACTL;
     UBYTE HSCROL;
