@@ -127,9 +127,10 @@ The basic usage to generate emulator frames is shown in this code snippet::
     input_template_t input;
     char *test_args[] = {
         "-atari",
+        NULL,
     };
 
-    libatari800_init(1, test_args);
+    libatari800_init(-1, test_args);
 
     libatari800_clear_input_array(&input);
 
@@ -142,10 +143,9 @@ The basic usage to generate emulator frames is shown in this code snippet::
 
     libatari800_exit();
 
-Note the usage of 'fake' command line arguments. In the future, libatari800 may
-provide more direct specification of configuration parameters, but this is not
-yet implemented as it will require a lot of new code to reimplement what is
-currently processed through the standard configuration file.
+Note the usage of the test_args array that mimics command line arguments. In the
+future, libatari800 may provide more direct specification of configuration
+parameters, but this is not yet implemented.
 
 So, currently, libatari800 relies on a valid configuration file to specify the
 location of the ROM files. By default, libatari800 will scan in the same
@@ -156,6 +156,7 @@ add the "-config" argument and a path to the file, as in the following::
         "-atari",
         "-config",
         "/path/to/.atari800.cfg",
+        NULL,
     };
 
 

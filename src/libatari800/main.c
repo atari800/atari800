@@ -181,12 +181,27 @@ int libatari800_init(int argc, char **argv) {
 	int argv_alloced = FALSE;
 	char **argv_ptr = NULL;
 
-	/* If the first entry in argv isn't NULL or atari800, insert blank argument as zeroth
-	   argv entry. This handles legacy case where calling function did have to put in the
-	   atari800 argument, and also new case where it isn't required. */
+	/* There are two ways to specify arguments.
+
+	   If argc is negative, argv must be specified in the form of a NULL
+	   terminated list of arguments.
+
+	   If argc is positive, argv must contain the number of elements specified
+	   by argc.
+
+	   It is not necessory to specify the argv[0] entry as NULL or atari800. If
+	   it is not there, however, this routine inserts a dummy zeroth argv entry
+	   to satisfy the requirements of Atari800_Initialise.
+	   */
+	if (argc < 0) {
+		for (i = 0;; i++) {
+			if (!argv[i]) break;
+		}
+		argc = i;
+	}
 	if ((argc == 0) || ((argc > 0) && argv[0] && (strcmp(argv[0], "atari800") != 0))) {
-		argv_ptr = (Util_malloc(sizeof(char *) * (argc + 1)));
-		argv_alloced = TRUE;
+		argv_alloced = argc + 1;
+		argv_ptr = (Util_malloc(sizeof(char *) * argv_alloced));
 		argv_ptr[0] = NULL;
 		for (i = 0; i < argc; i++) {
 			argv_ptr[i + 1] = argv[i];
