@@ -38,9 +38,7 @@
 #include "platform.h"
 #include "memory.h"
 #include "screen.h"
-#ifdef SOUND
 #include "../sound.h"
-#endif
 #include "util.h"
 #include "videomode.h"
 #include "sio.h"
@@ -100,10 +98,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		|| !LIBATARI800_Input_Initialise(argc, argv))
 		return FALSE;
 
-	/* turn off frame sync, return frames as fast as possible and let whatever
-	 calls process_frame to manage syncing to NTSC or PAL */
-	Atari800_turbo = TRUE;
-
 	return TRUE;
 }
 
@@ -139,9 +133,7 @@ void LIBATARI800_Frame(void)
 	Screen_DrawDiskLED();
 	Screen_Draw1200LED();
 	POKEY_Frame();
-#ifdef SOUND
 	Sound_Update();
-#endif
 	Atari800_nframes++;
 }
 

@@ -40,9 +40,7 @@
 #include "memory.h"
 #include "screen.h"
 #include "sio.h"
-#ifdef SOUND
 #include "../sound.h"
-#endif
 #include "util.h"
 #include "libatari800/main.h"
 #include "libatari800/cpu_crash.h"
