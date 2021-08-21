@@ -454,9 +454,14 @@ int Atari800_Initialise(int *argc, char *argv[])
 	   the configuration file easier to edit */
 	SYSROM_SetDefaults();
 
-	/* if no configuration file read, try to save one with the defaults */
+	/* if no configuration file read, try to save one with the defaults (except when
+	   using libatari800) */
 	if (!got_config)
+#ifdef LIBATARI800
+		; /* prevent warning for unused variable got_config */
+#else
 		CFG_WriteConfig();
+#endif
 
 #endif /* __PLUS */
 
@@ -970,10 +975,13 @@ int Atari800_Exit(int run_monitor)
 #endif /* CTRL_C_HANDLER */
 #ifndef __PLUS
 	if (!restart) {
+#ifndef LIBATARI800
 		/* We'd better save the configuration before calling the *_Exit() functions -
-		   there's a danger that they might change some emulator settings. */
+		   there's a danger that they might change some emulator settings (unless
+		   we're using libatari800). */
 		if (CFG_save_on_exit)
 			CFG_WriteConfig();
+#endif
 
 		/* Cleanup functions, in reverse order as the init functions in
 		   Atari800_Initialise(). */
@@ -1025,6 +1033,7 @@ void Atari800_ErrExit(void)
 }
 
 #ifndef __PLUS
+#ifndef LIBATARI800
 static void autoframeskip(double curtime, double lasttime)
 {
 	static int afs_lastframe = 0, afs_discard = 0;
@@ -1233,6 +1242,7 @@ static void basic_frame(void)
 }
 
 #endif /* defined(BASIC) || defined(VERY_SLOW) || defined(CURSES_BASIC) */
+#endif /* LIBATARI800 */
 
 void Atari800_Frame(void)
 {
@@ -1339,6 +1349,7 @@ void Atari800_Frame(void)
 	Sound_Update();
 #endif
 	Atari800_nframes++;
+#ifndef LIBATARI800
 #ifdef BENCHMARK
 	if (Atari800_nframes >= BENCHMARK) {
 		double benchmark_time = Util_time() - benchmark_start_time;
@@ -1366,6 +1377,7 @@ void Atari800_Frame(void)
 		else
 			Atari800_Sync();
 #endif /* BENCHMARK */
+#endif /* LIBATARI800 */
 }
 
 #endif /* __PLUS */

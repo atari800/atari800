@@ -60,7 +60,7 @@ For example:
 Here's an example with an 8k cartridge image, using additional command line
 arguments to limit the testing to only NTSC XL machines:
 
-     $ src/guess_settings -xl -ntsc test.rom
+    $ src/guess_settings -xl -ntsc test.rom
     test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=1 'Standard 8 KB')
     test.rom: 64k XL  NTSC XL ROM  status: FAIL (self test) (cart=21 'Right slot 8 KB')
     test.rom: 64k XL  NTSC XL ROM  status: OK through 1000 frames (cart=39 'Phoenix 8 KB')
@@ -87,7 +87,7 @@ using:
 It is a very simple example. It boots the emulator into Memo Pad, and after 100
 frames of emulation, simulates the 'A' key being pressed and held down to print
 a bunch of "A" characters on the screen. A simple representation of the screen
-is displayed as text output from your terminal command line.
+is displayed as text output to the terminal.
 
 
 LIBRARY OVERVIEW
@@ -118,16 +118,52 @@ accepts a pointer to a structure input_template_t, which describes user input
 like the keyboard and joystick state. It performs one full frame's worth of
 emulation, and returns control to the calling function.
 
-The screen array and the state of the current RAM are available at the end of
-every frame for the calling function to present to the user.
+The screen array and audio buffer are available at the end of every frame for
+the calling function to present to the user.
 
-NOTE: sound is currently not supported, but will be added as soon as possible.
+The example program libatari800_test shows very simple usage of the library.
+The basic usage to generate emulator frames is shown in this code snippet::
+
+    input_template_t input;
+    char *test_args[] = {
+        "-atari",
+        NULL,
+    };
+
+    libatari800_init(-1, test_args);
+
+    libatari800_clear_input_array(&input);
+
+    while (libatari800_get_frame_number() < 200) {
+        libatari800_next_frame(&input);
+        if (libatari800_get_frame_number() > 100) {
+            input.keychar = 'A';
+        }
+    }
+
+    libatari800_exit();
+
+Note the usage of the test_args array that mimics command line arguments. In the
+future, libatari800 may provide more direct specification of configuration
+parameters, but this is not yet implemented.
+
+So, currently, libatari800 relies on a valid configuration file to specify the
+location of the ROM files. By default, libatari800 will scan in the same
+directories as the normal atari800 program. To provide an alternate location,
+add the "-config" argument and a path to the file, as in the following::
+
+    char *test_args[] = {
+        "-atari",
+        "-config",
+        "/path/to/.atari800.cfg",
+        NULL,
+    };
 
 
 Advanced usage
 --------------
 
-In addition to the screen and memory, the entire internal state of the emulator
+In addition to the screen and audio, the entire internal state of the emulator
 can be examined and even changed between frames. The state save format is used
 to facilitate this, so it is even possible restore the state of the emulator
 from save files generated from another atari800 instance.
@@ -147,10 +183,11 @@ can be found by:
 
     unsigned char state[STATESAV_MAX_SIZE];
     statesav_tags_t tags;
-    unsigned short pc;
+    pc_state_t *pc;
     
     libatari800_get_current_state(state, &tags);
-    pc = state[tags.pc] + 256 * state[tags.pc + 1]);
+    pc = (pc_state_t *)&state.state[state.tags.pc];
+    printf("CPU PC=%04x\n", pc->PC);
 
 
 Overview of source code changes
@@ -173,3 +210,265 @@ The libatari800 port differences include:
 * the crash menu is excluded
 
 * some instrumentation of the state save file has been added
+
+
+LIBRARY FUNCTIONS
+=================
+
+   int libatari800_init (int argc, char ** argv)
+       Initialize emulator configuration
+
+       Sets emulator configuration using the supplied argument list. The arguments correspond to
+       command line arguments for the atari800 program, see its manual page for more information
+       on arguments and their functions.
+
+       Parameters
+           argc number of arguments in argv, or -1 if argv contains a NULL terminated list.
+           argv list of arguments.
+
+       Return values
+           FALSE if error in argument list
+           TRUE if successful
+
+
+   const char* libatari800_error_message ()
+       Get text description of latest error message
+
+       If the libatari800_next_frame return value indicates an error condition, this function
+       will return an error message suitable for display to the user.
+
+       Returns
+           text description of error
+
+
+   void libatari800_clear_input_array (input_template_t * input)
+       Clears input array structure
+
+       Clears any user input (keystrokes, joysticks, paddles) in the input array structure to
+       indicate that no user input is taking place.
+
+       This should be called to initialize the input array before the first call to
+       libatari800_next_frame.
+
+       Parameters
+           input pointer to input array structure
+
+
+   int libatari800_next_frame (input_template_t * input)
+       Perform one video frame's worth of emulation
+
+       This is the main driver for libatari800. This function runs the emulator for enough CPU
+       cycles to produce one video frame's worth of emulation. Results of the frame can be
+       retrieved using the libatari800_get_* functions.
+
+       Parameters
+           input input template structure defining the user input for the frame
+
+       Return values
+           0 successfully emulated frame
+           1 unidentified cartridge type
+           2 CPU crash
+           3 BRK instruction encountered
+           4 display list error
+           5 entered self-test mode
+           6 entered Memo Pad
+           7 encountered invalid escape opcode
+
+
+   int libatari800_mount_disk_image (int diskno, const char * filename, int readonly)
+       Use disk image in a disk drive
+
+       Insert a virtual floppy image into one of the emulated disk drives. Currently supported
+       formats include ATR, ATX, DCM, PRO, XFD.
+
+       Parameters
+           diskno disk drive number (1 - 8)
+           filename path to disk image
+           readonly if TRUE will be mounted as read-only
+
+       Return values
+           FALSE if error
+           TRUE if successful
+
+
+   int libatari800_reboot_with_file (const char * filename)
+       Restart emulation using file
+
+       Perform a cold start with a disk image, executable file, cartridge, cassette image, BASIC
+       file, or atari800 state save file.
+
+       This is currently the only way to load and have the emulator run an executable file or
+       BASIC program without a boot disk image. The atari800 emulator includes a built-in
+       bootloader for these files but is only available at machine start.
+
+       Parameters
+           path to file
+
+       Returns
+           file type, or 0 for error
+
+
+   UBYTE* libatari800_get_main_memory_ptr ()
+       Return pointer to main memory
+
+       This is actual array containing the emulator's main bank of 64k of RAM. Changes made here
+       will be reflected in the state of the emulator, potentially causing the emulated CPU to
+       halt if it encounters an illegal instruction.
+
+       Accessing memory through this pointer will not return hardware register information, this
+       provides access to the RAM only.
+
+       Returns
+           pointer to the beginning of the 64k block of main memory
+
+
+   UBYTE* libatari800_get_screen_ptr ()
+       Return pointer to screen data
+
+       The emulated screen is an array of 384x240 bytes in scan line order with the top of the
+       screen at the beginning of the array. Each byte represents the color index of a pixel in
+       the usual Atari palette (high 4 bits are the hue and low 4 bits are the luminance).
+
+       The large size of the screen includes the overscan areas not usually displayed. Typical
+       margins will be 24 on each the right and left, and 16 each on the top and bottom, leaving
+       an 8 pixel margin on all sides for the normal 320x192 addressable pixels.
+
+       Note that the screen is output only, and changes to this array will have no effect on the
+       emulation.
+
+       Returns
+           pointer to the beginning of the 92160 bytes of data holding the emulated screen.
+
+
+   UBYTE* libatari800_get_sound_buffer ()
+       Return pointer to sound data
+
+       If sound is used, each emulated frame will fill the sound buffer with samples at the
+       configured audio sample rate.
+
+       Because the emulation runs at a non-integer frame rate (approximately 59.923 frames per
+       second in NTSC, 49.861 fps in PAL), the number of samples is not a constant for all
+       frames -- it can vary by one sample per frame. For example, in NTSC with a sample rate of
+       44.1KHz, most frames will contain 736 samples, but one out of about every 19 frames will
+       contain 735 samples.
+
+       Use the function libatari800_get_sound_buffer_len to determine usable size of the sound
+       buffer.
+
+       Returns
+           pointer to the beginning of the sound sample buffer
+
+
+   int libatari800_get_sound_buffer_len ()
+       Return the usable size of the sound buffer.
+
+       Returns
+           number of bytes of valid data in the sound buffer
+
+
+   int libatari800_get_sound_buffer_allocated_size ()
+       Return the maximum size of the sound buffer.
+
+       Returns
+           number of bytes allocated in sound buffer
+
+
+   int libatari800_get_sound_frequency ()
+       Return the audio sample rate in samples per second
+
+       Returns
+           the audio sample rate, typically 44100 or 48000
+
+
+   int libatari800_get_num_sound_channels ()
+       Return the number of audio channels
+
+       Return values
+           1 mono
+           2 stereo
+
+
+   int libatari800_get_sound_sample_size ()
+       Return the sample size in bytes of each audio sample
+
+       Return values
+           1 8-bit audio
+           2 16-bit audio
+
+
+   float libatari800_get_fps ()
+       Return the video frame rate
+
+       It is important to note that libatari800 can run as fast as the host computer will allow,
+       but simulates operation as if it were running at NTSC or PAL frame rates. It is up to the
+       calling program to display frames at the correct rate.
+
+       The NTSC frame rate is 59.9227434 frames per second, and PAL is 49.8607597 fps.
+
+       Returns
+           floating point number representing the frame rate.
+
+
+   int libatari800_get_frame_number ()
+       Return the number of frames of emulation in the current state of the emulator
+
+       This is also equivalent to the number of times libatari800_next_frame has been called
+       since the initialization of libatarii800.
+
+       Calls to libatari800_init, cold starts, and warm starts do not reset this number; it will
+       continue to grow after these events. This value can get reset, however, if the emulator
+       state is restored from a previously saved state. In this case, the number of frames will
+       be restored to the value from the saved state.
+
+       Returns
+           number of frames that have been generated, or zero if no libatari800_next_frame has
+           not been called yet.
+
+
+   void libatari800_get_current_state (emulator_state_t * state)
+       Save the state of the emulator
+
+       Save the state of the emulator into a data structure that can later be used to restore
+       the emulator to this state using a call to libatari800_restore_state.
+
+       The emulator state structure can be examined by using the structure member tags as an
+       offset to locate the subsystem of interest, and casting the resulting offset into its own
+       struct. E.g. to find the value of the CPU registers and the current program counter, this
+       code:
+
+            emulator_state_t state;
+            cpu_state_t *cpu;
+            pc_state_t *pc;
+
+            libatari800_get_current_state(&state);
+            cpu = (cpu_state_t *)&state.state[state.tags.cpu];
+            pc = (pc_state_t *)&state.state[state.tags.pc];
+            printf("CPU A=%02x X=%02x Y=%02x PC=%04x0, cpu->A, cpu->X, cpu->Y, pc->PC);
+
+       gets the current state of the emulator, locates the cpu_state_t and the
+       pc_state_t structures within it, and prints the values of interest.
+
+       Parameters
+           state pointer to an already allocated emulator_state_t structure
+
+
+   void libatari800_restore_state (emulator_state_t * state)
+       Restore the state of the emulator
+
+       Return the emulator to a previous state as defined by a previous call to
+       libatari800_get_current_state.
+
+       Minimal error checking is performed on the data in state, so if the data in state has
+       been altered it is possible that the emulator will be returned to an invalid state and
+       further emulation will fail.
+
+       Parameters
+           state pointer to an already allocated emulator_state_t structure
+
+
+   void libatari800_exit ()
+       Free resources used by the emulator.
+
+       Release any memory or other resources used by the emulator. Further calls to
+       libatari800_* functions are not permitted after a call to this function, and attempting
+       to do so will have undefined behavior and likely crash the program.

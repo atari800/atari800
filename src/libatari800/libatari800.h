@@ -65,6 +65,9 @@ typedef struct {
 
 typedef struct {
     UBYTE selftest_enabled;
+    UBYTE _align1[3];
+    ULONG nframes;
+    ULONG sample_residual;
 } statesav_flags_t;
 
 typedef struct {
@@ -87,6 +90,10 @@ typedef struct {
     UBYTE Y;
     UBYTE IRQ;
 } cpu_state_t;
+
+typedef struct {
+    UWORD PC;
+} pc_state_t;
 
 typedef struct {
     UBYTE DMACTL;
@@ -187,7 +194,7 @@ extern int libatari800_error_code;
 
 int libatari800_init(int argc, char **argv);
 
-char *libatari800_error_message();
+const char *libatari800_error_message();
 
 void libatari800_clear_input_array(input_template_t *input);
 
@@ -201,10 +208,26 @@ UBYTE *libatari800_get_main_memory_ptr();
 
 UBYTE *libatari800_get_screen_ptr();
 
-cpu_state_t *libatari800_get_cpu_ptr();
+UBYTE *libatari800_get_sound_buffer();
+
+int libatari800_get_sound_buffer_len();
+
+int libatari800_get_sound_buffer_allocated_size();
+
+int libatari800_get_sound_frequency();
+
+int libatari800_get_num_sound_channels();
+
+int libatari800_get_sound_sample_size();
+
+float libatari800_get_fps();
+
+int libatari800_get_frame_number();
 
 void libatari800_get_current_state(emulator_state_t *state);
 
 void libatari800_restore_state(emulator_state_t *state);
+
+void libatari800_exit();
 
 #endif /* LIBATARI800_H_ */
