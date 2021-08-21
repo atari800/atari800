@@ -33,13 +33,13 @@
 #include "sound.h"
 #include "pokeysnd.h"
 #endif
+#ifdef SDL
+#include "videomode.h"
+#endif
 
 #ifdef HAVE_LIBPNG
 #include <png.h>
 #endif
-
-#define ATARI_VISIBLE_WIDTH 336
-#define ATARI_LEFT_MARGIN 24
 
 #ifdef SOUND
 /* number of bytes written to the currently open multimedia file */
@@ -47,6 +47,16 @@ static ULONG byteswritten;
 
 /* sample size in bytes; will not change during a recording */
 static int sample_size;
+#endif
+
+#if !defined(BASIC) && !defined(CURSES_BASIC)
+
+/* image size will be determined in a call to set_video_margins() below */
+static int video_left_margin;
+static int video_top_margin;
+static int video_width;
+static int video_height;
+
 #endif
 
 #ifdef AVI_VIDEO_RECORDING
@@ -264,6 +274,23 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 
+static void set_video_margins(void)
+{
+	/* There doesn't seem to be another way to tell if the VIDEOMODE_ vars are
+	   included other than checking for SDL. It seems that SDL is the only port
+	   that uses videomode.c. Videomode gives us the nice -horiz-area and
+	   -vert-area command line args. */
+#ifdef SDL
+	video_left_margin = VIDEOMODE_src_offset_left;
+	video_width = VIDEOMODE_src_offset_left + VIDEOMODE_src_width - video_left_margin;
+#else
+	video_left_margin = Screen_visible_x1;
+	video_width = Screen_visible_x2 - video_left_margin;
+#endif
+	video_top_margin = Screen_visible_y1;
+	video_height = Screen_visible_y2 - video_top_margin;
+}
+
 /* PCX_SaveScreen saves the screen data to the file in PCX format, optionally
    using interlace if ptr2 is not NULL.
 
@@ -292,32 +319,34 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	UBYTE last;
 	UBYTE count;
 
+	set_video_margins();
+
 	fputc(0xa, fp);   /* pcx signature */
 	fputc(0x5, fp);   /* version 5 */
 	fputc(0x1, fp);   /* RLE encoding */
 	fputc(0x8, fp);   /* bits per pixel */
 	fputw(0, fp);     /* XMin */
 	fputw(0, fp);     /* YMin */
-	fputw(ATARI_VISIBLE_WIDTH - 1, fp); /* XMax */
-	fputw(Screen_HEIGHT - 1, fp);        /* YMax */
+	fputw(video_width - 1, fp); /* XMax */
+	fputw(video_height - 1, fp);        /* YMax */
 	fputw(0, fp);     /* HRes */
 	fputw(0, fp);     /* VRes */
 	for (i = 0; i < 48; i++)
 		fputc(0, fp); /* EGA color palette */
 	fputc(0, fp);     /* reserved */
 	fputc(ptr2 != NULL ? 3 : 1, fp); /* number of bit planes */
-	fputw(ATARI_VISIBLE_WIDTH, fp);  /* number of bytes per scan line per color plane */
+	fputw(video_width, fp);  /* number of bytes per scan line per color plane */
 	fputw(1, fp);     /* palette info */
-	fputw(ATARI_VISIBLE_WIDTH, fp); /* screen resolution */
-	fputw(Screen_HEIGHT, fp);
+	fputw(video_width, fp); /* screen resolution */
+	fputw(video_height, fp);
 	for (i = 0; i < 54; i++)
 		fputc(0, fp);  /* unused */
 
-	ptr1 += ATARI_LEFT_MARGIN;
+	ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
 	if (ptr2 != NULL) {
-		ptr2 += ATARI_LEFT_MARGIN;
+		ptr2 += (Screen_WIDTH * video_top_margin) + video_left_margin;
 	}
-	for (y = 0; y < Screen_HEIGHT; ) {
+	for (y = 0; y < video_height; ) {
 		x = 0;
 		do {
 			last = ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
@@ -329,21 +358,21 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 				count++;
 				x++;
 			} while (last == (ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
-						&& count < 0xff && x < ATARI_VISIBLE_WIDTH);
+						&& count < 0xff && x < video_width);
 			if (count > 0xc1 || last >= 0xc0)
 				fputc(count, fp);
 			fputc(last, fp);
-		} while (x < ATARI_VISIBLE_WIDTH);
+		} while (x < video_width);
 
 		if (ptr2 != NULL && plane) {
-			ptr1 -= ATARI_VISIBLE_WIDTH;
-			ptr2 -= ATARI_VISIBLE_WIDTH;
+			ptr1 -= video_width;
+			ptr2 -= video_width;
 			plane -= 8;
 		}
 		else {
-			ptr1 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+			ptr1 += Screen_WIDTH - video_width;
 			if (ptr2 != NULL) {
-				ptr2 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+				ptr2 += Screen_WIDTH - video_width;
 				plane = 16;
 			}
 			y++;
@@ -414,11 +443,14 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	}
 	else
 #endif
+	{
+		set_video_margins();
 		png_init_io(png_ptr, fp);
+	}
 
 	png_set_compression_level(png_ptr, png_compression_level);
 	png_set_IHDR(
-		png_ptr, info_ptr, ATARI_VISIBLE_WIDTH, Screen_HEIGHT,
+		png_ptr, info_ptr, video_width, video_height,
 		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
 		PNG_INTERLACE_NONE,
 		PNG_COMPRESSION_TYPE_DEFAULT,
@@ -433,8 +465,8 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 			palette[i].blue = Colours_GetB(i);
 		}
 		png_set_PLTE(png_ptr, info_ptr, palette, 256);
-		ptr1 += ATARI_LEFT_MARGIN;
-		for (i = 0; i < Screen_HEIGHT; i++) {
+		ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
+		for (i = 0; i < video_height; i++) {
 			rows[i] = ptr1;
 			ptr1 += Screen_WIDTH;
 		}
@@ -443,20 +475,20 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_bytep ptr3;
 		int x;
 		int y;
-		ptr1 += ATARI_LEFT_MARGIN;
-		ptr2 += ATARI_LEFT_MARGIN;
-		ptr3 = (png_bytep) Util_malloc(3 * ATARI_VISIBLE_WIDTH * Screen_HEIGHT);
-		for (y = 0; y < Screen_HEIGHT; y++) {
+		ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
+		ptr2 += (Screen_WIDTH * video_top_margin) + video_left_margin;
+		ptr3 = (png_bytep) Util_malloc(3 * video_width * video_height);
+		for (y = 0; y < video_height; y++) {
 			rows[y] = ptr3;
-			for (x = 0; x < ATARI_VISIBLE_WIDTH; x++) {
+			for (x = 0; x < video_width; x++) {
 				*ptr3++ = (png_byte) ((Colours_GetR(*ptr1) + Colours_GetR(*ptr2)) >> 1);
 				*ptr3++ = (png_byte) ((Colours_GetG(*ptr1) + Colours_GetG(*ptr2)) >> 1);
 				*ptr3++ = (png_byte) ((Colours_GetB(*ptr1) + Colours_GetB(*ptr2)) >> 1);
 				ptr1++;
 				ptr2++;
 			}
-			ptr1 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
-			ptr2 += Screen_WIDTH - ATARI_VISIBLE_WIDTH;
+			ptr1 += Screen_WIDTH - video_width;
+			ptr2 += Screen_WIDTH - video_width;
 		}
 	}
 	png_set_rows(png_ptr, info_ptr, rows);
@@ -652,15 +684,15 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes */
 	fputl((ULONG)(1000000 / fps), fp); /* microseconds per frame */
-	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
+	fputl(video_width * video_height * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
 	fputl(0, fp); /* reserved */
 	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
 	fputl(frames_written, fp); /* number of frames in the video */
 	fputl(0, fp); /* initial frames, always zero for us */
 	fputl(num_streams, fp); /* 2 = video and audio, 1 = video only */
-	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
-	fputl(ATARI_VISIBLE_WIDTH, fp); /* video width */
-	fputl(Screen_HEIGHT, fp); /* video height */
+	fputl(video_width * video_height * 3, fp); /* suggested buffer size */
+	fputl(video_width, fp); /* video width */
+	fputl(video_height, fp); /* video height */
 	fputl(0, fp); /* reserved */
 	fputl(0, fp);
 	fputl(0, fp);
@@ -700,7 +732,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl((ULONG)(fps * 1000000), fp); /* rate = frames per second / scale */
 	fputl(0, fp); /* start */
 	fputl(frames_written, fp); /* length (for video is number of frames) */
-	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* suggested buffer size */
+	fputl(video_width * video_height * 3, fp); /* suggested buffer size */
 	fputl(0, fp); /* quality */
 	fputl(0, fp); /* sample size (0 = variable sample size) */
 	fputl(0, fp); /* rcRect, ignored */
@@ -712,8 +744,8 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 40 bytes for stream format data */
 	fputl(40, fp); /* header_size */
-	fputl(ATARI_VISIBLE_WIDTH, fp); /* width */
-	fputl(Screen_HEIGHT, fp); /* height */
+	fputl(video_width, fp); /* width */
+	fputl(video_height, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
 	switch (video_codec) {
@@ -726,7 +758,7 @@ static int AVI_WriteHeader(FILE *fp) {
 			fputl(1, fp); /* compression: MRLE format requires a binary 1 */
 			break;
 	}
-	fputl(ATARI_VISIBLE_WIDTH * Screen_HEIGHT * 3, fp); /* image_size */
+	fputl(video_width * video_height * 3, fp); /* image_size */
 	fputl(0, fp); /* x pixels per meter (!) */
 	fputl(0, fp); /* y pikels per meter */
 	fputl(256, fp); /* colors_used */
@@ -842,12 +874,13 @@ FILE *AVI_OpenFile(const char *szFileName)
 	current_screen_size = 0;
 
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+	set_video_margins();
 
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
-	rle_buffer_size = ATARI_VISIBLE_WIDTH * Screen_HEIGHT;
+	rle_buffer_size = Screen_WIDTH * Screen_HEIGHT;
 	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
 
 #ifdef SOUND
@@ -975,7 +1008,7 @@ static int AVI_WriteFrame(FILE *fp) {
    mpv), as well as proprietary applications like Windows Media Player. See
    https://wiki.multimedia.cx/index.php?title=Microsoft_RLE for a description of
    the format. */
-static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
+static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
 	int x;
 	int size;
 	UBYTE last;
@@ -990,11 +1023,11 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr) {
 			ptr++;
 			count++;
 			x++;
-		} while (last == *ptr && x < ATARI_VISIBLE_WIDTH && count < 255);
+		} while (last == *ptr && x < width && count < 255);
 		*buf++ = count;
 		*buf++ = last;
 		size += 2;
-	} while (x < ATARI_VISIBLE_WIDTH);
+	} while (x < width);
 	return size;
 }
 
@@ -1014,19 +1047,19 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 	/* MRLE codec requires image origin at bottom left, so start saving at last scan
 	   line and work back to the zeroth scan line. */
 
-	for (y = Screen_HEIGHT-1; y >= 0; y--) {
-		ptr = source + (y * Screen_WIDTH) + ATARI_LEFT_MARGIN;
+	for (y = (video_top_margin + video_height)-1; y >= video_top_margin; y--) {
+		ptr = source + (y * Screen_WIDTH) + video_left_margin;
 
 		/* worst case for RLE compression is where no pixel has the same color
 		   as its neighbor,  resulting in twice the number of bytes as pixels.
 		   Each line needs the end of line marker, plus possibly the end of
 		   bitmap marker. If buffer size remaining is less than this, it's too
 		   small. */
-		if (bufsize < (Screen_WIDTH * 2 + 2 + 2)) {
+		if (bufsize < (video_width * 2 + 2 + 2)) {
 			Log_print("AVI write error: video compression buffer size too small.");
 			return -1;
 		}
-		size = MRLE_CompressLine(buf, ptr);
+		size = MRLE_CompressLine(buf, ptr, video_width);
 		buf += size;
 		bufsize -= size + 2;
 
