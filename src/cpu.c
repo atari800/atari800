@@ -77,7 +77,7 @@
 #endif /* ASAP */
 
 #ifdef LIBATARI800
-#include "libatari800/main.h"
+#include "libatari800/cpu_crash.h"
 #endif
 
 /* For Atari Basic loader */

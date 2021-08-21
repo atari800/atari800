@@ -37,7 +37,7 @@
 #include <stdlib.h>
 
 #ifdef LIBATARI800
-#include "libatari800/main.h"
+#include "libatari800/cpu_crash.h"
 #endif
 
 int ESC_enable_sio_patch = TRUE;
