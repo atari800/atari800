@@ -23,6 +23,8 @@ lib_LIBRARIES = libatari800.a
 include_HEADERS = libatari800/libatari800.h
 libatari800_a_SOURCES = \
 	libatari800/libatari800.h \
+	libatari800/api.c \
+	libatari800/cpu_crash.h \
 	libatari800/main.c libatari800/main.h \
 	libatari800/init.c libatari800/init.h \
 	libatari800/exit.c \

@@ -33,7 +33,7 @@
 #include "sound.h"
 #include "pokeysnd.h"
 #endif
-#ifdef SDL
+#ifdef SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
 #endif
 
@@ -276,11 +276,7 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 
 static void set_video_margins(void)
 {
-	/* There doesn't seem to be another way to tell if the VIDEOMODE_ vars are
-	   included other than checking for SDL. It seems that SDL is the only port
-	   that uses videomode.c. Videomode gives us the nice -horiz-area and
-	   -vert-area command line args. */
-#ifdef SDL
+#ifdef SUPPORTS_CHANGE_VIDEOMODE
 	video_left_margin = VIDEOMODE_src_offset_left;
 	video_width = VIDEOMODE_src_offset_left + VIDEOMODE_src_width - video_left_margin;
 #else

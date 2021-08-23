@@ -141,7 +141,6 @@ int wavWrite()
 }
 
 int main(int argc, char **argv) {
-	int frame;
 	input_template_t input;
 	int i;
 	int save_wav = FALSE;
@@ -191,6 +190,9 @@ int main(int argc, char **argv) {
 	if (wav) {
 		wavClose();
 	}
+	libatari800_get_current_state(&state);
+	cpu = (cpu_state_t *)&state.state[state.tags.cpu];  /* order: A,SR,SP,X,Y */
+	pc = (pc_state_t *)&state.state[state.tags.pc];
 	printf("frame %d: A=%02x X=%02x Y=%02x SP=%02x SR=%02x PC=%04x\n", libatari800_get_frame_number(), cpu->A, cpu->X, cpu->Y, cpu->P, cpu->S, pc->PC);
 
 	libatari800_exit();

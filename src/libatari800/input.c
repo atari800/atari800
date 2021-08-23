@@ -97,6 +97,22 @@ int PLATFORM_Keyboard(void)
 	if (key_control)
 		shiftctrl ^= AKEY_CTRL;
 
+	/* Handle special keys */
+	switch (lastkey) {
+	case ' ':
+		return AKEY_SPACE ^ shiftctrl;
+	case '\n':
+		return AKEY_RETURN ^ shiftctrl;
+	case '\b':
+		return AKEY_BACKSPACE|shiftctrl;
+	case '\t':
+		return AKEY_TAB ^ shiftctrl;
+	case 27:
+		return AKEY_ESCAPE ^ shiftctrl;
+	case 127:
+		return AKEY_DELETE_CHAR;
+	}
+
 	/* Handle CTRL-0 to CTRL-9 and other control characters */
 	if (key_control) {
 		switch(lastkey) {
