@@ -21,6 +21,80 @@
 #define TRUE   1
 #endif
 
+/* Special keys for use as input_template_t.keycode values. These defines are
+   from akey.h in the atari800 source, but are copied here as the internal
+   headers aren't available when libatari800 is installed as a library. */
+#define AKEY_HELP 0x11
+#define AKEY_DOWN 0x8f
+#define AKEY_LEFT 0x86
+#define AKEY_RIGHT 0x87
+#define AKEY_UP 0x8e
+#define AKEY_BACKSPACE 0x34
+#define AKEY_DELETE_CHAR 0xb4
+#define AKEY_DELETE_LINE 0x74
+#define AKEY_INSERT_CHAR 0xb7
+#define AKEY_INSERT_LINE 0x77
+#define AKEY_ESCAPE 0x1c
+#define AKEY_ATARI 0x27
+#define AKEY_CAPSLOCK 0x7c
+#define AKEY_CAPSTOGGLE 0x3c
+#define AKEY_TAB 0x2c
+#define AKEY_SETTAB 0x6c
+#define AKEY_CLRTAB 0xac
+#define AKEY_RETURN 0x0c
+#define AKEY_SPACE 0x21
+#define AKEY_EXCLAMATION 0x5f
+#define AKEY_DBLQUOTE 0x5e
+#define AKEY_HASH 0x5a
+#define AKEY_DOLLAR 0x58
+#define AKEY_PERCENT 0x5d
+#define AKEY_AMPERSAND 0x5b
+#define AKEY_QUOTE 0x73
+#define AKEY_AT 0x75
+#define AKEY_PARENLEFT 0x70
+#define AKEY_PARENRIGHT 0x72
+#define AKEY_LESS 0x36
+#define AKEY_GREATER 0x37
+#define AKEY_EQUAL 0x0f
+#define AKEY_QUESTION 0x66
+#define AKEY_MINUS 0x0e
+#define AKEY_PLUS 0x06
+#define AKEY_ASTERISK 0x07
+#define AKEY_SLASH 0x26
+#define AKEY_COLON 0x42
+#define AKEY_SEMICOLON 0x02
+#define AKEY_COMMA 0x20
+#define AKEY_FULLSTOP 0x22
+#define AKEY_UNDERSCORE 0x4e
+#define AKEY_BRACKETLEFT 0x60
+#define AKEY_BRACKETRIGHT 0x62
+#define AKEY_CIRCUMFLEX 0x47
+#define AKEY_BACKSLASH 0x46
+#define AKEY_BAR 0x4f
+#define AKEY_CLEAR (AKEY_SHFT | AKEY_LESS)
+#define AKEY_CARET (AKEY_SHFT | AKEY_ASTERISK)
+#define AKEY_F1 0x03
+#define AKEY_F2 0x04
+#define AKEY_F3 0x13
+#define AKEY_F4 0x14
+
+/* 5200 key codes */
+#define AKEY_5200_START 0x39
+#define AKEY_5200_PAUSE 0x31
+#define AKEY_5200_RESET 0x29
+#define AKEY_5200_0 0x25
+#define AKEY_5200_1 0x3f
+#define AKEY_5200_2 0x3d
+#define AKEY_5200_3 0x3b
+#define AKEY_5200_4 0x37
+#define AKEY_5200_5 0x35
+#define AKEY_5200_6 0x33
+#define AKEY_5200_7 0x2f
+#define AKEY_5200_8 0x2d
+#define AKEY_5200_9 0x2b
+#define AKEY_5200_HASH 0x23
+#define AKEY_5200_ASTERISK 0x27
+
 typedef struct {
     UBYTE keychar;
     UBYTE keycode;
