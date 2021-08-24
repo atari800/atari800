@@ -150,11 +150,6 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	/* Host Caps Lock will make lastuni switch case, so prevent this*/
-    if(lastkey>='A' && lastkey <= 'Z' && !INPUT_key_shift) lastkey += 0x20;
-    if(lastkey>='a' && lastkey <= 'z' && INPUT_key_shift) lastkey -= 0x20;
-	/* Uses only UNICODE translation, no shift states (this was added to
-	 * support non-US keyboard layouts)*/
 	/* input.c takes care of removing invalid shift+control keys */
 	switch (lastkey) {
 	case 1:
@@ -210,57 +205,57 @@ int PLATFORM_Keyboard(void)
 	case 26:
 		return AKEY_CTRL_z|shiftctrl;
 	case 'A':
-		return AKEY_A;
+		return AKEY_A|shiftctrl;
 	case 'B':
-		return AKEY_B;
+		return AKEY_B|shiftctrl;
 	case 'C':
-		return AKEY_C;
+		return AKEY_C|shiftctrl;
 	case 'D':
-		return AKEY_D;
+		return AKEY_D|shiftctrl;
 	case 'E':
-		return AKEY_E;
+		return AKEY_E|shiftctrl;
 	case 'F':
-		return AKEY_F;
+		return AKEY_F|shiftctrl;
 	case 'G':
-		return AKEY_G;
+		return AKEY_G|shiftctrl;
 	case 'H':
-		return AKEY_H;
+		return AKEY_H|shiftctrl;
 	case 'I':
-		return AKEY_I;
+		return AKEY_I|shiftctrl;
 	case 'J':
-		return AKEY_J;
+		return AKEY_J|shiftctrl;
 	case 'K':
-		return AKEY_K;
+		return AKEY_K|shiftctrl;
 	case 'L':
-		return AKEY_L;
+		return AKEY_L|shiftctrl;
 	case 'M':
-		return AKEY_M;
+		return AKEY_M|shiftctrl;
 	case 'N':
-		return AKEY_N;
+		return AKEY_N|shiftctrl;
 	case 'O':
-		return AKEY_O;
+		return AKEY_O|shiftctrl;
 	case 'P':
-		return AKEY_P;
+		return AKEY_P|shiftctrl;
 	case 'Q':
-		return AKEY_Q;
+		return AKEY_Q|shiftctrl;
 	case 'R':
-		return AKEY_R;
+		return AKEY_R|shiftctrl;
 	case 'S':
-		return AKEY_S;
+		return AKEY_S|shiftctrl;
 	case 'T':
-		return AKEY_T;
+		return AKEY_T|shiftctrl;
 	case 'U':
-		return AKEY_U;
+		return AKEY_U|shiftctrl;
 	case 'V':
-		return AKEY_V;
+		return AKEY_V|shiftctrl;
 	case 'W':
-		return AKEY_W;
+		return AKEY_W|shiftctrl;
 	case 'X':
-		return AKEY_X;
+		return AKEY_X|shiftctrl;
 	case 'Y':
-		return AKEY_Y;
+		return AKEY_Y|shiftctrl;
 	case 'Z':
-		return AKEY_Z;
+		return AKEY_Z|shiftctrl;
 	case ':':
 		return AKEY_COLON;
 	case '!':
@@ -296,57 +291,57 @@ int PLATFORM_Keyboard(void)
 	case '>':
 		return AKEY_GREATER;
 	case 'a':
-		return AKEY_a;
+		return AKEY_a|shiftctrl;
 	case 'b':
-		return AKEY_b;
+		return AKEY_b|shiftctrl;
 	case 'c':
-		return AKEY_c;
+		return AKEY_c|shiftctrl;
 	case 'd':
-		return AKEY_d;
+		return AKEY_d|shiftctrl;
 	case 'e':
-		return AKEY_e;
+		return AKEY_e|shiftctrl;
 	case 'f':
-		return AKEY_f;
+		return AKEY_f|shiftctrl;
 	case 'g':
-		return AKEY_g;
+		return AKEY_g|shiftctrl;
 	case 'h':
-		return AKEY_h;
+		return AKEY_h|shiftctrl;
 	case 'i':
-		return AKEY_i;
+		return AKEY_i|shiftctrl;
 	case 'j':
-		return AKEY_j;
+		return AKEY_j|shiftctrl;
 	case 'k':
-		return AKEY_k;
+		return AKEY_k|shiftctrl;
 	case 'l':
-		return AKEY_l;
+		return AKEY_l|shiftctrl;
 	case 'm':
-		return AKEY_m;
+		return AKEY_m|shiftctrl;
 	case 'n':
-		return AKEY_n;
+		return AKEY_n|shiftctrl;
 	case 'o':
-		return AKEY_o;
+		return AKEY_o|shiftctrl;
 	case 'p':
-		return AKEY_p;
+		return AKEY_p|shiftctrl;
 	case 'q':
-		return AKEY_q;
+		return AKEY_q|shiftctrl;
 	case 'r':
-		return AKEY_r;
+		return AKEY_r|shiftctrl;
 	case 's':
-		return AKEY_s;
+		return AKEY_s|shiftctrl;
 	case 't':
-		return AKEY_t;
+		return AKEY_t|shiftctrl;
 	case 'u':
-		return AKEY_u;
+		return AKEY_u|shiftctrl;
 	case 'v':
-		return AKEY_v;
+		return AKEY_v|shiftctrl;
 	case 'w':
-		return AKEY_w;
+		return AKEY_w|shiftctrl;
 	case 'x':
-		return AKEY_x;
+		return AKEY_x|shiftctrl;
 	case 'y':
-		return AKEY_y;
+		return AKEY_y|shiftctrl;
 	case 'z':
-		return AKEY_z;
+		return AKEY_z|shiftctrl;
 	case ';':
 		return AKEY_SEMICOLON;
 	case '0':
