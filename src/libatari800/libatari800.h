@@ -270,6 +270,8 @@ int libatari800_init(int argc, char **argv);
 
 const char *libatari800_error_message();
 
+void libatari800_continue_emulation_on_brk(int cont);
+
 void libatari800_clear_input_array(input_template_t *input);
 
 int libatari800_next_frame(input_template_t *input);
