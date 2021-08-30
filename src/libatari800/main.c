@@ -66,7 +66,7 @@
 
 int PLATFORM_Configure(char *option, char *parameters)
 {
-	return TRUE;
+	return LIBATARI800_ReadConfig(option, parameters);
 }
 
 void PLATFORM_ConfigSave(FILE *fp)
