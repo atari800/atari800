@@ -3,6 +3,7 @@
 
 #include "atari.h"
 
+#define VIDEO_CODEC_AUTO 0
 #define VIDEO_CODEC_MRLE 1
 #define VIDEO_CODEC_PNG 2
 #ifdef HAVE_LIBPNG
@@ -12,6 +13,8 @@
 #endif
 
 int File_Export_Initialise(int *argc, char *argv[]);
+int File_Export_ReadConfig(char *string, char *ptr);
+void File_Export_WriteConfig(FILE *fp);
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);

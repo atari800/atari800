@@ -62,6 +62,9 @@
 #ifdef SOUND
 #include "sound.h"
 #endif
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+#include "file_export.h"
+#endif
 
 int CFG_save_on_exit = FALSE;
 
@@ -335,6 +338,10 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			else if (Sound_ReadConfig(string, ptr)) {
 			}
 #endif /* defined(SOUND) && defined(SOUND_THIN_API) */
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+			else if (File_Export_ReadConfig(string, ptr)) {
+			}
+#endif
 			else {
 #ifdef SUPPORTS_PLATFORM_CONFIGURE
 				if (!PLATFORM_Configure(string, ptr)) {
@@ -476,6 +483,9 @@ int CFG_WriteConfig(void)
 #if defined(SOUND) && defined(SOUND_THIN_API)
 	Sound_WriteConfig(fp);
 #endif /* defined(SOUND) && defined(SOUND_THIN_API) */
+#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+	File_Export_WriteConfig(fp);
+#endif
 #ifdef SUPPORTS_PLATFORM_CONFIGSAVE
 	PLATFORM_ConfigSave(fp);
 #endif

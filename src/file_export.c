@@ -27,6 +27,7 @@
 #include "file_export.h"
 #include "screen.h"
 #include "colours.h"
+#include "cfg.h"
 #include "util.h"
 #include "log.h"
 #ifdef SOUND
@@ -120,7 +121,8 @@ static int current_audio_samples = -1;
 
 static int num_streams;
 
-static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+static int requested_video_codec = VIDEO_CODEC_AUTO;
+static int effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
 
@@ -146,13 +148,15 @@ int File_Export_Initialise(int *argc, char *argv[])
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "rle") == 0)
-					video_codec = VIDEO_CODEC_MRLE;
+					requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
 #ifdef HAVE_LIBPNG
 				else if (strcmp(mode, "png") == 0)
-					video_codec = VIDEO_CODEC_PNG;
+					requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
 #endif
-				else if (strcmp(mode, "auto") == 0)
-					video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+				else if (strcmp(mode, "auto") == 0) {
+					requested_video_codec = VIDEO_CODEC_AUTO;
+					effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+				}
 				else {
 					a_i = TRUE;
 				}
@@ -200,6 +204,53 @@ int File_Export_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	return TRUE;
+}
+
+int File_Export_ReadConfig(char *string, char *ptr)
+{
+	if (strcmp(string, "VIDEO_CODEC") == 0) {
+		if (Util_stricmp(ptr, "rle") == 0)
+			requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
+#ifdef HAVE_LIBPNG
+		else if (Util_stricmp(ptr, "png") == 0)
+			requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
+#endif
+		else if (Util_stricmp(ptr, "auto") == 0) {
+			requested_video_codec = VIDEO_CODEC_AUTO;
+			effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+		}
+		else return FALSE;
+	}
+#ifdef HAVE_LIBPNG
+	else if (strcmp(string, "PNG_COMPRESSION_LEVEL") == 0) {
+		int num = Util_sscandec(ptr);
+		if (num >= 0 && num <= 9)
+			png_compression_level = num;
+		else return FALSE;
+	}
+#endif
+	else return FALSE;
+	return TRUE;
+}
+
+void File_Export_WriteConfig(FILE *fp)
+{
+	switch (requested_video_codec) {
+		case VIDEO_CODEC_AUTO:
+			fprintf(fp, "VIDEO_CODEC=AUTO\n");
+			break;
+		case VIDEO_CODEC_MRLE:
+			fprintf(fp, "VIDEO_CODEC=RLE\n");
+			break;
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			fprintf(fp, "VIDEO_CODEC=PNG\n");
+			break;
+#endif
+	}
+#ifdef HAVE_LIBPNG
+	fprintf(fp, "PNG_COMPRESSION_LEVEL=%d\n", png_compression_level);
+#endif
 }
 
 
@@ -710,7 +761,7 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes for stream header data */
 	fputs("vids", fp); /* video stream */
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			fputs("MPNG", fp); /* MPNG format (Motion-PNG, ala Motion-JPEG */
@@ -744,7 +795,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(video_height, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			fputs("MPNG", fp); /* compression: MPNG format requires fourcc name here */
@@ -1101,7 +1152,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 		return 0;
 	}
 
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			PNG_SaveScreen(NULL, (UBYTE *)Screen_atari, NULL);
