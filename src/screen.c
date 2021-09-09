@@ -419,15 +419,6 @@ void Screen_Draw1200LED(void)
 }
 
 #ifndef DREAMCAST
-static int striendswith(const char *s1, const char *s2)
-{
-	int pos;
-	pos = strlen(s1) - strlen(s2);
-	if (pos < 0)
-		return 0;
-	return Util_stricmp(s1 + pos, s2) == 0;
-}
-
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
 	int is_png;
@@ -435,10 +426,10 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	ULONG *main_screen_atari;
 	UBYTE *ptr1;
 	UBYTE *ptr2;
-	if (striendswith(filename, ".pcx"))
+	if (Util_striendswith(filename, ".pcx"))
 		is_png = 0;
 #ifdef HAVE_LIBPNG
-	else if (striendswith(filename, ".png"))
+	else if (Util_striendswith(filename, ".png"))
 		is_png = 1;
 #endif
 	else

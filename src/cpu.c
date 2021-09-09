@@ -846,7 +846,8 @@ void CPU_GO(int limit)
 	OPCODE(00)				/* BRK */
 #ifdef LIBATARI800
 #ifdef HAVE_SETJMP
-		longjmp(libatari800_cpu_crash, LIBATARI800_BRK_INSTRUCTION);
+		if (!libatari800_continue_on_brk)
+			longjmp(libatari800_cpu_crash, LIBATARI800_BRK_INSTRUCTION);
 #endif /* HAVE_SETJMP */
 #else /* LIBATARI800 */
 #ifdef MONITOR_BREAK

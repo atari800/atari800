@@ -34,6 +34,9 @@ int Util_stricmp(const char *str1, const char *str2);
 #define Util_stricmp stricmp
 #endif
 
+/* Returns TRUE if str1 ends with the characters in str2, regardless of case. */
+int Util_striendswith(const char *str1, const char *str2);
+
 /* Same as strncasecmp(), compare 2 strings, limited to size. */
 int Util_strnicmp(const char *str1, const char *str2, size_t size);
 

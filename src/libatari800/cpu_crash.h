@@ -12,4 +12,6 @@ extern jmp_buf libatari800_cpu_crash;
 
 #include "libatari800/libatari800.h"
 
+extern int libatari800_continue_on_brk;
+
 #endif /* LIBATARI800_API_H_ */

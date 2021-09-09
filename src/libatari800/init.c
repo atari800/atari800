@@ -27,11 +27,24 @@
 #include <string.h>
 
 #include "atari.h"
+#include "cfg.h"
+#include "util.h"
 #include "libatari800/init.h"
+#include "libatari800/cpu_crash.h"
 
 
 int LIBATARI800_Initialise(void)
 {
+	libatari800_continue_on_brk = FALSE;
+	return TRUE;
+}
+
+int LIBATARI800_ReadConfig(char *option, char *parameters)
+{
+	if (strcmp(option, "LIBATARI800_CONTINUE_ON_BRK") == 0)
+		return (libatari800_continue_on_brk = Util_sscanbool(parameters)) != -1;
+	else
+		return FALSE;
 	return TRUE;
 }
 

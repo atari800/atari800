@@ -55,6 +55,9 @@
 jmp_buf libatari800_cpu_crash;
 #endif
 
+/* global variable indicating that BRK instruction should exit emulation */
+int libatari800_continue_on_brk = 0;
+
 /* global variable indicating last error code */
 int libatari800_error_code;
 
@@ -97,7 +100,7 @@ int libatari800_init(int argc, char **argv) {
 		}
 		argc = i;
 	}
-	if ((argc == 0) || ((argc > 0) && argv[0] && (strcmp(argv[0], "atari800") != 0))) {
+	if ((argc == 0) || ((argc > 0) && argv[0] && (!Util_striendswith(argv[0], "atari800")))) {
 		argv_alloced = argc + 1;
 		argv_ptr = (Util_malloc(sizeof(char *) * argv_alloced));
 		argv_ptr[0] = NULL;
@@ -149,6 +152,22 @@ const char *libatari800_error_message() {
 		return unknown_error;
 	}
 	return error_messages[libatari800_error_code];
+}
+
+
+/** Set whether encountering a BRK instruction exits emulation.
+ * 
+ * Choose what happens when a BRK instruction is encountered. Most often this will lead
+ * to the program inside the emulator failing and forcing the emulator into a lockup
+ * condition. But some programs trap the BRK instruction to implement extra functionality
+ * like a debugger.
+ * 
+ * @param cont if True, the emulation will continue without notification when a BRK is
+ * encountered. If False, emulation immediately exits with the error code
+ * LIBATARI800_BRK_INSTRUCTION
+ */
+void libatari800_continue_emulation_on_brk(int cont) {
+	libatari800_continue_on_brk = cont;
 }
 
 

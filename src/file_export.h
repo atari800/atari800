@@ -3,15 +3,14 @@
 
 #include "atari.h"
 
+#define VIDEO_CODEC_AUTO 0
 #define VIDEO_CODEC_MRLE 1
 #define VIDEO_CODEC_PNG 2
-#ifdef HAVE_LIBPNG
-#define VIDEO_CODEC_BEST_AVAILABLE 2
-#else
 #define VIDEO_CODEC_BEST_AVAILABLE 1
-#endif
 
 int File_Export_Initialise(int *argc, char *argv[]);
+int File_Export_ReadConfig(char *string, char *ptr);
+void File_Export_WriteConfig(FILE *fp);
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
@@ -29,7 +28,6 @@ int WAV_CloseFile(FILE *fp);
 #endif
 
 #ifdef AVI_VIDEO_RECORDING
-int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source);
 FILE *AVI_OpenFile(const char *szFileName);
 int AVI_CloseFile(FILE *fp);
 int AVI_AddVideoFrame(FILE *fp);

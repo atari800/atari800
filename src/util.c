@@ -88,6 +88,15 @@ int Util_stricmp(const char *str1, const char *str2)
 }
 #endif
 
+int Util_striendswith(const char *s1, const char *s2)
+{
+	int pos;
+	pos = strlen(s1) - strlen(s2);
+	if (pos < 0)
+		return 0;
+	return Util_stricmp(s1 + pos, s2) == 0;
+}
+
 int Util_strnicmp(const char *str1, const char *str2, size_t size)
 {
 	int retval = 0;

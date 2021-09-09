@@ -27,6 +27,7 @@
 #include "file_export.h"
 #include "screen.h"
 #include "colours.h"
+#include "cfg.h"
 #include "util.h"
 #include "log.h"
 #ifdef SOUND
@@ -109,7 +110,20 @@ static ULONG *frame_indexes;
 static int num_frames_allocated;
 static int rle_buffer_size = 0;
 static UBYTE *rle_buffer = NULL;
+static int reference_screen_size = 0;
+static UBYTE *reference_screen = NULL;
+
+/* current_screen_size is used as a flag before the frame is generated. -1 means
+   awaiting frame generation, -2 means error, and 0 or greater means the video
+   frame has been encoded. Note that some encoders can create inter-frames with
+   zero length */
 static int current_screen_size = -1;
+
+/* Some codecs allow for keyframes (full frame compression) and inter-frames
+   (only the differences from the previous frame) */
+static int keyframe_interval = 1000;
+static float keyframe_residual;
+static int current_is_keyframe = 0;
 
 #ifdef SOUND
 static ULONG samples_written;
@@ -120,7 +134,8 @@ static int current_audio_samples = -1;
 
 static int num_streams;
 
-static int video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+static int requested_video_codec = VIDEO_CODEC_AUTO;
+static int effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
 
@@ -146,15 +161,27 @@ int File_Export_Initialise(int *argc, char *argv[])
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "rle") == 0)
-					video_codec = VIDEO_CODEC_MRLE;
+					requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
 #ifdef HAVE_LIBPNG
 				else if (strcmp(mode, "png") == 0)
-					video_codec = VIDEO_CODEC_PNG;
+					requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
 #endif
-				else if (strcmp(mode, "auto") == 0)
-					video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+				else if (strcmp(mode, "auto") == 0) {
+					requested_video_codec = VIDEO_CODEC_AUTO;
+					effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+				}
 				else {
 					a_i = TRUE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-keyframe-interval") == 0) {
+			if (i_a) {
+				keyframe_interval = Util_sscandec(argv[++i]);
+				if (keyframe_interval < 1) {
+					Log_print("Invalid keyframe interval time, must be 1 millisecond or greater.");
+					return FALSE;
 				}
 			}
 			else a_m = TRUE;
@@ -181,6 +208,8 @@ int File_Export_Initialise(int *argc, char *argv[])
 #endif
 				);
 				Log_print("\t                 Select video codec, (default: auto)");
+				Log_print("\t-keyframe-interval <ms>");
+				Log_print("\t                 Select interval between video keyframes in milliseconds");
 #endif
 #ifdef HAVE_LIBPNG
 				Log_print("\t-pnglevel <n>    Set PNG image compression level 0-9 (default 6)");
@@ -200,6 +229,65 @@ int File_Export_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	return TRUE;
+}
+
+int File_Export_ReadConfig(char *string, char *ptr)
+{
+	if (0) {}
+#ifdef AVI_VIDEO_RECORDING
+	else if (strcmp(string, "VIDEO_CODEC") == 0) {
+		if (Util_stricmp(ptr, "rle") == 0)
+			requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
+#ifdef HAVE_LIBPNG
+		else if (Util_stricmp(ptr, "png") == 0)
+			requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
+#endif
+		else if (Util_stricmp(ptr, "auto") == 0) {
+			requested_video_codec = VIDEO_CODEC_AUTO;
+			effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
+		}
+		else return FALSE;
+	}
+	else if (strcmp(string, "VIDEO_CODEC_KEYFRAME_INTERVAL") == 0) {
+		int num = Util_sscandec(ptr);
+		if (num > 0)
+			keyframe_interval = num;
+		else return FALSE;
+	}
+#endif
+#ifdef HAVE_LIBPNG
+	else if (strcmp(string, "PNG_COMPRESSION_LEVEL") == 0) {
+		int num = Util_sscandec(ptr);
+		if (num >= 0 && num <= 9)
+			png_compression_level = num;
+		else return FALSE;
+	}
+#endif
+	else return FALSE;
+	return TRUE;
+}
+
+void File_Export_WriteConfig(FILE *fp)
+{
+#ifdef AVI_VIDEO_RECORDING
+	switch (requested_video_codec) {
+		case VIDEO_CODEC_AUTO:
+			fprintf(fp, "VIDEO_CODEC=AUTO\n");
+			break;
+		case VIDEO_CODEC_MRLE:
+			fprintf(fp, "VIDEO_CODEC=RLE\n");
+			break;
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			fprintf(fp, "VIDEO_CODEC=PNG\n");
+			break;
+#endif
+	}
+	fprintf(fp, "VIDEO_CODEC_KEYFRAME_INTERVAL=%d\n", keyframe_interval);
+#endif
+#ifdef HAVE_LIBPNG
+	fprintf(fp, "PNG_COMPRESSION_LEVEL=%d\n", png_compression_level);
+#endif
 }
 
 
@@ -397,7 +485,7 @@ static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t len
 		}
 		else {
 			Log_print("AVI write error: video compression buffer size too small.");
-			current_screen_size = -1;
+			current_screen_size = -2;
 		}
 	}
 }
@@ -435,6 +523,7 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	}
 #ifdef AVI_VIDEO_RECORDING
 	if (fp == NULL) {
+		current_screen_size = 0;
 		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
 	}
 	else
@@ -710,7 +799,7 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes for stream header data */
 	fputs("vids", fp); /* video stream */
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			fputs("MPNG", fp); /* MPNG format (Motion-PNG, ala Motion-JPEG */
@@ -744,7 +833,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(video_height, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			fputs("MPNG", fp); /* compression: MPNG format requires fourcc name here */
@@ -867,7 +956,9 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
-	current_screen_size = 0;
+	keyframe_residual = 0.0;
+	current_is_keyframe = 1; /* first frame always a keyframe */
+	current_screen_size = -1; /* screen not generated yet */
 
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
 	set_video_margins();
@@ -876,11 +967,27 @@ FILE *AVI_OpenFile(const char *szFileName)
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
-	rle_buffer_size = Screen_WIDTH * Screen_HEIGHT;
+	/* worst case for RLE compression is where no pixel has the same color as
+	   its neighbor, resulting in 256 bytes per 254 pixels, plus the end of line
+	   marker for each line plus the end of bitmap marker. */
+	rle_buffer_size = ((((int)(ceil(video_width / 254)) * 2) + video_width + 2) * video_height) + 2;
 	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
 
+	switch (effective_video_codec) {
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			reference_screen_size = 0;
+			reference_screen = NULL;
+			break;
+#endif
+		default:
+			reference_screen_size = Screen_WIDTH * Screen_HEIGHT;
+			reference_screen = (UBYTE *)Util_malloc(reference_screen_size);
+			break;
+	}
+
 #ifdef SOUND
-	current_audio_samples = 0;
+	current_audio_samples = -1;
 	samples_written = 0;
 
 	if (Sound_enabled) {
@@ -962,6 +1069,9 @@ static int AVI_WriteFrame(FILE *fp) {
 		+ 0x10000 * audio_size
 #endif
 		;
+	if (current_is_keyframe) {
+		frame_indexes[frames_written] |= 0x80000000;
+	}
 	frames_written++;
 	if (frames_written >= num_frames_allocated) {
 		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
@@ -984,10 +1094,31 @@ static int AVI_WriteFrame(FILE *fp) {
 		largest_video_frame = current_screen_size;
 	}
 
+	/* A keyframe is requested when the interval has passed, unless Motion-PNG
+	   is used. Motion-PNG doesn't have the concept of deltas from the previous
+	   frame; instead, everything is a keyframe. */
+	switch (effective_video_codec) {
+#ifdef HAVE_LIBPNG
+		case VIDEO_CODEC_PNG:
+			current_is_keyframe = TRUE;
+			break;
+#endif
+		default:
+			keyframe_residual += 1000.0 / fps;
+			if (keyframe_residual > keyframe_interval) {
+				current_is_keyframe = TRUE;
+				keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
+			}
+			else {
+				current_is_keyframe = FALSE;
+			}
+			break;
+	}
+
 	/* reset size indicators for next frame */
-	current_screen_size = 0;
+	current_screen_size = -1;
 #ifdef SOUND
-	current_audio_samples = 0;
+	current_audio_samples = -1;
 #endif
 
 	if (size_limit > MAX_RECORDING_SIZE) {
@@ -1004,35 +1135,86 @@ static int AVI_WriteFrame(FILE *fp) {
    mpv), as well as proprietary applications like Windows Media Player. See
    https://wiki.multimedia.cx/index.php?title=Microsoft_RLE for a description of
    the format. */
-static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
-	int x;
-	int size;
-	UBYTE last;
-	UBYTE count;
 
-	x = 0;
-	size = 0;
+static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
+	int extra;
+	int count;
+	UBYTE last;
+	UBYTE *buf_start;
+	const UBYTE *run_start;
+	const UBYTE *ptr_end;
+
+	buf_start = buf;
+	ptr_end = ptr + width;
 	do {
 		last = *ptr;
-		count = 0;
+		run_start = ptr;
 		do {
 			ptr++;
-			count++;
-			x++;
-		} while (last == *ptr && x < width && count < 255);
-		*buf++ = count;
-		*buf++ = last;
-		size += 2;
-	} while (x < width);
-	return size;
+		} while (last == *ptr && ptr < ptr_end);
+		count = ptr - run_start;
+		if (count > 1) {
+			/* Run of same color pixels */
+			while (count > 0) {
+				if (count > 254) {
+					*buf++ = 254;
+					count -= 254;
+				}
+				else {
+					*buf++ = count;
+					count = 0;
+				}
+				*buf++ = last;
+			}
+			/* try to match another run of a color */
+			continue;
+		}
+		else {
+			/* run of different pixels, stopping at next pair of matching pixels */
+			while (ptr < ptr_end - 1 && *ptr != *(ptr+1) && *(ptr+1) != *(ptr+2)) {
+				ptr++;
+			}
+			while (run_start < ptr) {
+				count = ptr - run_start;
+				if (count > 254) {
+					/* stop at 254 to avoid use of padding byte for this chunk */
+					count = 254;
+				}
+
+				if (count < 3) {
+					/* can't do a data copy length of 1 or 2 directly */
+					*buf++ = 1;
+					*buf++ = *run_start++;
+					if (count == 2) {
+						*buf++ = 1;
+						*buf++ = *run_start++;
+					}
+				}
+				else {
+					/* data copy of length 3 to 255 can be done in one encoding */
+					*buf++ = 0;
+					*buf++ = count;
+					extra = count & 1;
+					while (count-- > 0) {
+						*buf++ = *run_start++;
+					}
+					if (extra) *buf++ = 0;
+				}
+			}
+		}
+	} while (ptr < ptr_end);
+
+	/* mark end of line */
+	*buf++ = 0;
+	*buf++ = 0;
+	return buf - buf_start;
 }
 
-/* MRLE_CreateFrame fills the output buffer with the fourcc type 'mrle' run
+/* MRLE_CreateKeyframe fills the output buffer with the fourcc type 'mrle' run
    length encoding data using the paletted data of the Atari screen.
 
-   RETURNS: number of encoded bytes, or -1 if buffer not large enough to hold
-   encoded data */
-int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
+   RETURNS: number of encoded bytes */
+static int MRLE_CreateKeyframe(UBYTE *buf, int bufsize, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
 	int y;
@@ -1046,22 +1228,8 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 	for (y = (video_top_margin + video_height)-1; y >= video_top_margin; y--) {
 		ptr = source + (y * Screen_WIDTH) + video_left_margin;
 
-		/* worst case for RLE compression is where no pixel has the same color
-		   as its neighbor,  resulting in twice the number of bytes as pixels.
-		   Each line needs the end of line marker, plus possibly the end of
-		   bitmap marker. If buffer size remaining is less than this, it's too
-		   small. */
-		if (bufsize < (video_width * 2 + 2 + 2)) {
-			Log_print("AVI write error: video compression buffer size too small.");
-			return -1;
-		}
 		size = MRLE_CompressLine(buf, ptr, video_width);
 		buf += size;
-		bufsize -= size + 2;
-
-		/* mark end of line */
-		*buf++ = 0;
-		*buf++ = 0;
 	}
 
 	/* mark end of bitmap */
@@ -1071,13 +1239,190 @@ int MRLE_CreateFrame(UBYTE *buf, int bufsize, const UBYTE *source) {
 	return buf - buf_start;
 }
 
+static int MRLE_CompressDelta(UBYTE *buf, const UBYTE *ptr, UBYTE *ref, int width, int *dy) {
+	int extra;
+	int count;
+	UBYTE last;
+	UBYTE *buf_start;
+	const UBYTE *run_start;
+	const UBYTE *ptr_end;
+	UBYTE *ref_end;
+
+	buf_start = buf;
+	ptr_end = ptr + width;
+	ref_end = ref + width;
+
+	/* right margin won't change, so find it outside the main loop */
+	while (*(ptr_end - 1) == *(ref_end - 1) && ptr < ptr_end) {
+		ptr_end--;
+		ref_end--;
+	}
+
+	while (ptr < ptr_end) {
+		run_start = ptr;
+
+		/* check for next change from reference screen */
+		while (*ptr == *ref && ptr < ptr_end) {
+			ptr++;
+			ref++;
+		}
+		if (ptr == ptr_end) break; /* no more differences in rest of scan line! */
+
+		/* skipping pixels that are the same as the reference image */
+		count = ptr - run_start;
+
+		/* it takes 4 bytes to encode a skip, so it's possible that the skip
+		   takes more space than just encoding. Force the skip if the pixel
+		   count is big enough, otherwise reset the pointer and just encode as
+		   normal. */
+		if (count > 4 || *dy) {
+			do {
+				*buf++ = 0;
+				*buf++ = 2;
+				*buf++ = (UBYTE)(count > 255 ? 255 : count);
+				*buf++ = (UBYTE)*dy;
+
+				count -= 255;
+				*dy = 0; /* dy will never be more than 255 because there are only 240 lines in Screen_atari! */
+			} while (count > 0);
+		}
+		else {
+			ptr -= count;
+			ref -= count;
+		}
+
+		/* encode the differences */
+		last = *ptr;
+		run_start = ptr;
+		do {
+			ptr++;
+			ref++;
+		} while (last == *ptr && ptr < ptr_end);
+		count = ptr - run_start;
+		if (count > 1) {
+			/* Run of same color pixels */
+			while (count > 0) {
+				if (count > 254) {
+					*buf++ = 254;
+					count -= 254;
+				}
+				else {
+					*buf++ = count;
+					count = 0;
+				}
+				*buf++ = last;
+			}
+			/* try to match another run of a color */
+			continue;
+		}
+		else {
+			/* run of different pixels, stopping at next pair of matching pixels */
+			while (ptr < ptr_end - 1 && *ptr != *(ptr+1) && *(ptr+1) != *(ptr+2)) {
+				ptr++;
+				ref++;
+			}
+			while (run_start < ptr) {
+				count = ptr - run_start;
+				if (count > 254) {
+					/* stop at 254 to avoid use of padding byte for this chunk */
+					count = 254;
+				}
+
+				if (count < 3) {
+					/* can't do a data copy length of 1 or 2 directly */
+					*buf++ = 1;
+					*buf++ = *run_start++;
+					if (count == 2) {
+						*buf++ = 1;
+						*buf++ = *run_start++;
+					}
+				}
+				else {
+					/* data copy of length 3 to 255 can be done in one encoding */
+					*buf++ = 0;
+					*buf++ = count;
+					extra = count & 1;
+					while (count-- > 0) {
+						*buf++ = *run_start++;
+					}
+					if (extra) *buf++ = 0;
+				}
+			}
+		}
+	}
+
+	if (buf > buf_start) {
+		/* mark end of line */
+		*buf++ = 0;
+		*buf++ = 0;
+	}
+	else {
+		/* no end of line marker when a blank line is encountered */
+		*dy = *dy + 1;
+	}
+	return buf - buf_start;
+}
+
+/* MRLE_CreateInterframe compares the current screen to the reference screen and
+   fills the output buffer with the MRLE encoded differences. It also updates
+   the reference screen to hold the current screen.
+
+   RETURNS: number of encoded bytes, which may be zero if identical to previous
+   frame */
+static int MRLE_CreateInterframe(UBYTE *buf, int bufsize, const UBYTE *source, UBYTE *reference) {
+	UBYTE *buf_start;
+	const UBYTE *ptr;
+	UBYTE *ref;
+	int y;
+	int dy;
+	int size;
+
+	buf_start = buf;
+
+	/* dy is used to keep track of consecutive blank lines encoutered in the line
+	   encoder */
+	dy = 0;
+
+	for (y = (video_top_margin + video_height)-1; y >= video_top_margin; y--) {
+		ptr = source + (y * Screen_WIDTH) + video_left_margin;
+		ref = reference + (y * Screen_WIDTH) + video_left_margin;
+
+		size = MRLE_CompressDelta(buf, ptr, ref, video_width, &dy);
+		buf += size;
+	}
+
+	if (buf > buf_start) {
+		/* mark end of bitmap */
+		*buf++ = 0;
+		*buf++ = 1;
+	}
+
+	return buf - buf_start;
+}
+
+static int MRLE_CreateFrame(const UBYTE *source) {
+	int size;
+
+	if (current_is_keyframe) {
+		size = MRLE_CreateKeyframe(rle_buffer, rle_buffer_size, source);
+	}
+	else {
+		size = MRLE_CreateInterframe(rle_buffer, rle_buffer_size, source, reference_screen);
+	}
+
+	/* save new reference screen */
+	memcpy(reference_screen, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
+
+	return size;
+}
+
 /* AVI_AddVideoFrame adds a video frame to the stream. If an existing video
    frame & audio data exist, save it to the file before starting a new frame.
    Note that AVI_AddVideoFrame and AVI_AddAudioSamples may be called in either
    order, but you must call both video and audio functions before the same
    function again. */
 int AVI_AddVideoFrame(FILE *fp) {
-	if (current_screen_size > 0) {
+	if (current_screen_size >= 0) {
 #ifdef SOUND
 		if (num_streams == 1 || current_audio_samples > 0) {
 #endif
@@ -1092,26 +1437,26 @@ int AVI_AddVideoFrame(FILE *fp) {
 		}
 #endif
 	}
-	else if (current_screen_size < 0
+	else if (current_screen_size < -1
 #ifdef SOUND
-			 || current_audio_samples < 0
+			 || current_audio_samples < -1
 #endif
 			) {
 		/* error condition; force close of file */
 		return 0;
 	}
 
-	switch (video_codec) {
+	switch (effective_video_codec) {
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			PNG_SaveScreen(NULL, (UBYTE *)Screen_atari, NULL);
 			break;
 #endif
 		default:
-			current_screen_size = MRLE_CreateFrame(rle_buffer, rle_buffer_size, (const UBYTE *)Screen_atari);
+			current_screen_size = MRLE_CreateFrame((const UBYTE *)Screen_atari);
 			break;
 	}
-	return current_screen_size > 0;
+	return current_screen_size >= 0;
 }
 
 #ifdef SOUND
@@ -1123,8 +1468,8 @@ int AVI_AddVideoFrame(FILE *fp) {
 int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	int size;
 
-	if (current_audio_samples > 0) {
-		if (current_screen_size > 0) {
+	if (current_audio_samples >= 0) {
+		if (current_screen_size >= 0) {
 			if (!AVI_WriteFrame(fp)) {
 				return 0;
 			}
@@ -1134,7 +1479,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 			return 0;
 		}
 	}
-	else if (current_screen_size < 0 || current_audio_samples < 0) {
+	else if (current_screen_size < -1 || current_audio_samples < -1) {
 		/* error condition; force close of file */
 		return 0;
 	}
@@ -1143,7 +1488,7 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	if (size > audio_buffer_size) {
 		Log_print("AVI write error: audio buffer size too small to hold %d samples", num_samples);
 		/* set error condition */
-		current_audio_samples = -1;
+		current_audio_samples = -2;
 		return 0;
 	}
 	current_audio_samples = num_samples;
@@ -1159,6 +1504,8 @@ static int AVI_WriteIndex(FILE *fp) {
 	int size;
 	int index_size;
 	int bytes_written;
+	ULONG index;
+	int is_keyframe;
 
 	if (frames_written == 0) return 0;
 
@@ -1178,10 +1525,13 @@ static int AVI_WriteIndex(FILE *fp) {
 	fputl(index_size, fp);
 
 	for (i = 0; i < frames_written; i++) {
+		index = frame_indexes[i];
+		is_keyframe = index & 0x80000000 ? 0x10 : 0;
+
 		fputs("00dc", fp); /* stream 0, a compressed video frame */
-		fputl(0x10, fp); /* flags: is a keyframe */
+		fputl(is_keyframe, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = frame_indexes[i] & 0xffff;
+		size = index & 0xffff;
 		fputl(size, fp); /* size of video frame */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 
@@ -1189,7 +1539,7 @@ static int AVI_WriteIndex(FILE *fp) {
 		fputs("01wb", fp); /* stream 1, audio data */
 		fputl(0, fp); /* flags: audio is not a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = frame_indexes[i] / 0x10000;
+		size = (index / 0x10000) & 0x7fff;
 		fputl(size, fp); /* size of audio data */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 #endif
@@ -1211,9 +1561,9 @@ int AVI_CloseFile(FILE *fp)
 	int result;
 
 	/* write out final frame if one exists */
-	if (current_screen_size > 0
+	if (current_screen_size >= 0
 #ifdef SOUND
-		&& current_audio_samples > 0
+		&& current_audio_samples >= 0
 #endif
 			) {
 		result = AVI_WriteFrame(fp);
@@ -1247,6 +1597,11 @@ int AVI_CloseFile(FILE *fp)
 	free(rle_buffer);
 	rle_buffer = NULL;
 	rle_buffer_size = 0;
+	if (reference_screen_size > 0) {
+		free(reference_screen);
+		reference_screen = NULL;
+		reference_screen_size = 0;
+	}
 	current_screen_size = -1;
 	free(frame_indexes);
 	frame_indexes = NULL;

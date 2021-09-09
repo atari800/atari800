@@ -395,6 +395,7 @@ dnl BeOS has a real issue with redundant-decls
         ;;
     libatari800)
         AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
+        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
         ;;
     x11*)
         AC_DEFINE(X11,1,[Target: Standard X11.])
