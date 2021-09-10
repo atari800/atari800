@@ -41,6 +41,7 @@
 
 #ifdef HAVE_LIBPNG
 #include <png.h>
+#include "video_codec_mpng.h"
 #endif
 
 #ifdef SOUND
@@ -111,14 +112,14 @@ static ULONG *frame_indexes;
 static int num_frames_allocated;
 static int rle_buffer_size = 0;
 static UBYTE *rle_buffer = NULL;
-static int reference_screen_size = 0;
-static UBYTE *reference_screen = NULL;
 
 /* current_screen_size is used as a flag before the frame is generated. -1 means
    awaiting frame generation, -2 means error, and 0 or greater means the video
    frame has been encoded. Note that some encoders can create inter-frames with
    zero length */
 static int current_screen_size = -1;
+
+static VIDEO_CODEC_t *video_codec = NULL;
 
 /* Some codecs allow for keyframes (full frame compression) and inter-frames
    (only the differences from the previous frame) */
@@ -136,7 +137,6 @@ static int current_audio_samples = -1;
 static int num_streams;
 
 static int requested_video_codec = VIDEO_CODEC_AUTO;
-static int effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 
 #endif /* AVI_VIDEO_RECORDING */
 
@@ -162,14 +162,13 @@ int File_Export_Initialise(int *argc, char *argv[])
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "rle") == 0)
-					requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
+					requested_video_codec = VIDEO_CODEC_MRLE;
 #ifdef HAVE_LIBPNG
 				else if (strcmp(mode, "png") == 0)
-					requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
+					requested_video_codec = VIDEO_CODEC_PNG;
 #endif
 				else if (strcmp(mode, "auto") == 0) {
 					requested_video_codec = VIDEO_CODEC_AUTO;
-					effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 				}
 				else {
 					a_i = TRUE;
@@ -238,14 +237,13 @@ int File_Export_ReadConfig(char *string, char *ptr)
 #ifdef AVI_VIDEO_RECORDING
 	else if (strcmp(string, "VIDEO_CODEC") == 0) {
 		if (Util_stricmp(ptr, "rle") == 0)
-			requested_video_codec = effective_video_codec = VIDEO_CODEC_MRLE;
+			requested_video_codec = VIDEO_CODEC_MRLE;
 #ifdef HAVE_LIBPNG
 		else if (Util_stricmp(ptr, "png") == 0)
-			requested_video_codec = effective_video_codec = VIDEO_CODEC_PNG;
+			requested_video_codec = VIDEO_CODEC_PNG;
 #endif
 		else if (Util_stricmp(ptr, "auto") == 0) {
 			requested_video_codec = VIDEO_CODEC_AUTO;
-			effective_video_codec = VIDEO_CODEC_BEST_AVAILABLE;
 		}
 		else return FALSE;
 	}
@@ -505,7 +503,7 @@ static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t len
                 the interlaced scan lines to blend with ptr1. Set to NULL if no
 				interlacing.
 */
-void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
+int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 {
 	png_structp png_ptr;
 	png_infop info_ptr;
@@ -516,11 +514,11 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		NULL, NULL, NULL
 	);
 	if (png_ptr == NULL)
-		return;
+		return 0;
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
 		png_destroy_write_struct(&png_ptr, NULL);
-		return;
+		return 0;
 	}
 #ifdef AVI_VIDEO_RECORDING
 	if (fp == NULL) {
@@ -582,6 +580,12 @@ void PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	png_destroy_write_struct(&png_ptr, &info_ptr);
 	if (ptr2 != NULL)
 		free(rows[0]);
+
+#ifdef AVI_VIDEO_RECORDING
+	return current_screen_size;
+#else
+	return 0;
+#endif
 }
 #endif /* HAVE_LIBPNG */
 #endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
@@ -800,16 +804,7 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes for stream header data */
 	fputs("vids", fp); /* video stream */
-	switch (effective_video_codec) {
-#ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
-			fputs("MPNG", fp); /* MPNG format (Motion-PNG, ala Motion-JPEG */
-			break;
-#endif
-		default:
-			fputs("mrle", fp); /* Microsoft Run-Length Encoding format */
-			break;
-	}
+	fwrite(video_codec->fourcc, 4, 1, fp);
 	fputl(0, fp); /* flags */
 	fputw(0, fp); /* priority */
 	fputw(0, fp); /* language */
@@ -834,16 +829,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl(video_height, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
-	switch (effective_video_codec) {
-#ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
-			fputs("MPNG", fp); /* compression: MPNG format requires fourcc name here */
-			break;
-#endif
-		default:
-			fputl(1, fp); /* compression: MRLE format requires a binary 1 */
-			break;
-	}
+	fwrite(video_codec->avi_compression, 4, 1, fp);
 	fputl(video_width * video_height * 3, fp); /* image_size */
 	fputl(0, fp); /* x pixels per meter (!) */
 	fputl(0, fp); /* y pikels per meter */
@@ -950,6 +936,7 @@ static int AVI_WriteHeader(FILE *fp) {
 FILE *AVI_OpenFile(const char *szFileName)
 {
 	FILE *fp;
+	int codec_id;
 
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
@@ -968,25 +955,33 @@ FILE *AVI_OpenFile(const char *szFileName)
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
-	/* worst case for RLE compression is where no pixel has the same color as
-	   its neighbor, resulting in 256 bytes per 254 pixels, plus the end of line
-	   marker for each line plus the end of bitmap marker. */
-	rle_buffer_size = ((((int)(ceil(video_width / 254)) * 2) + video_width + 2) * video_height) + 2;
-	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
-
-	switch (effective_video_codec) {
+	if (!video_codec) {
+		if (requested_video_codec == VIDEO_CODEC_AUTO) {
+			codec_id = VIDEO_CODEC_BEST_AVAILABLE;
+		}
+		else {
+			codec_id = requested_video_codec;
+		}
+		switch (codec_id) {
 #ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
-			reference_screen_size = 0;
-			reference_screen = NULL;
-			break;
+			case VIDEO_CODEC_PNG:
+				video_codec = &Video_Codec_MPNG;
+				break;
 #endif
-		default:
-			reference_screen_size = Screen_WIDTH * Screen_HEIGHT;
-			reference_screen = (UBYTE *)Util_malloc(reference_screen_size);
-			break;
+			case VIDEO_CODEC_MRLE:
+			default:
+				video_codec = &Video_Codec_MRLE;
+				break;
+		}
 	}
 
+	rle_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
+	if (rle_buffer_size < 0) {
+		Log_print("Failed to initialize video codec");
+		fclose(fp);
+		return NULL;
+	}
+	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
 #ifdef SOUND
 	current_audio_samples = -1;
 	samples_written = 0;
@@ -1008,6 +1003,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 #endif
 
 	if (!AVI_WriteHeader(fp)) {
+		video_codec->end();
 		fclose(fp);
 		return NULL;
 	}
@@ -1098,22 +1094,18 @@ static int AVI_WriteFrame(FILE *fp) {
 	/* A keyframe is requested when the interval has passed, unless Motion-PNG
 	   is used. Motion-PNG doesn't have the concept of deltas from the previous
 	   frame; instead, everything is a keyframe. */
-	switch (effective_video_codec) {
-#ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
+	if (video_codec->uses_interframes) {
+		keyframe_residual += 1000.0 / fps;
+		if (keyframe_residual > keyframe_interval) {
 			current_is_keyframe = TRUE;
-			break;
-#endif
-		default:
-			keyframe_residual += 1000.0 / fps;
-			if (keyframe_residual > keyframe_interval) {
-				current_is_keyframe = TRUE;
-				keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
-			}
-			else {
-				current_is_keyframe = FALSE;
-			}
-			break;
+			keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
+		}
+		else {
+			current_is_keyframe = FALSE;
+		}
+	}
+	else {
+		current_is_keyframe = TRUE;
 	}
 
 	/* reset size indicators for next frame */
@@ -1160,16 +1152,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 		return 0;
 	}
 
-	switch (effective_video_codec) {
-#ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
-			PNG_SaveScreen(NULL, (UBYTE *)Screen_atari, NULL);
-			break;
-#endif
-		default:
-			current_screen_size = MRLE_CreateFrame((const UBYTE *)Screen_atari, current_is_keyframe, rle_buffer, rle_buffer_size, reference_screen, video_width, video_height, video_left_margin, video_top_margin);
-			break;
-	}
+	current_screen_size = video_codec->frame((UBYTE *)Screen_atari, current_is_keyframe, rle_buffer, rle_buffer_size);
 	return current_screen_size >= 0;
 }
 
@@ -1308,14 +1291,10 @@ int AVI_CloseFile(FILE *fp)
 	audio_buffer_size = 0;
 	current_audio_samples = -1;
 #endif
+	video_codec->end();
 	free(rle_buffer);
 	rle_buffer = NULL;
 	rle_buffer_size = 0;
-	if (reference_screen_size > 0) {
-		free(reference_screen);
-		reference_screen = NULL;
-		reference_screen_size = 0;
-	}
 	current_screen_size = -1;
 	free(frame_indexes);
 	frame_indexes = NULL;

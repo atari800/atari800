@@ -2,8 +2,9 @@
 #define VIDEO_CODEC_MRLE_H_
 
 #include "atari.h"
+#include "file_export.h"
 
-int MRLE_CreateFrame(const UBYTE *source, int keyframe, UBYTE *buf, int bufsize, UBYTE *reference_screen, int width, int height, int left_margin, int top_margin);
+extern VIDEO_CODEC_t Video_Codec_MRLE;
 
 #endif /* VIDEO_CODEC_MRLE_H_ */
 

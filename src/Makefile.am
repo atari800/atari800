@@ -128,9 +128,11 @@ if WITH_MULTIMEDIA
 atari800_SOURCES += multimedia.c multimedia.h
 endif
 if WITH_FILE_EXPORT
-atari800_SOURCES += file_export.c file_export.h video_codec_mrle.c video_codec_mrle.h
+atari800_SOURCES += \
+	file_export.c file_export.h \
+	video_codec_mrle.c video_codec_mrle.h \
+	video_codec_mpng.c video_codec_mpng.h
 endif
-
 
 
 if CONFIGURE_TARGET_FALCON

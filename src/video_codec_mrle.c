@@ -1,8 +1,8 @@
 /*
  * video_codec_mrle.c - Video codec for Microsoft Run-Length Encoding format
  *
- * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 2021 Rob McMullen
+ * Copyright (C) 1998-2021 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -23,9 +23,20 @@
 */
 
 #include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include "file_export.h"
 #include "video_codec_mrle.h"
 #include "screen.h"
+#include "util.h"
 
+static int reference_screen_size = 0;
+static UBYTE *reference_screen = NULL;
+
+static int video_left_margin;
+static int video_top_margin;
+static int video_width;
+static int video_height;
 
 /* This file implements the Microsoft Run Length Encoding video codec, fourcc
    code of 'mrle'.
@@ -39,7 +50,7 @@
    
    for a description of the format. */
 
-static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
+static int compress_line(UBYTE *buf, const UBYTE *ptr) {
 	int extra;
 	int count;
 	UBYTE last;
@@ -48,7 +59,7 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
 	const UBYTE *ptr_end;
 
 	buf_start = buf;
-	ptr_end = ptr + width;
+	ptr_end = ptr + video_width;
 	do {
 		last = *ptr;
 		run_start = ptr;
@@ -117,7 +128,7 @@ static int MRLE_CompressLine(UBYTE *buf, const UBYTE *ptr, int width) {
    length encoding data using the paletted data of the Atari screen.
 
    RETURNS: number of encoded bytes */
-static int MRLE_CreateKeyframe(UBYTE *buf, int bufsize, const UBYTE *source, int width, int height, int left_margin, int top_margin) {
+static int create_keyframe(UBYTE *buf, int bufsize, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
 	int y;
@@ -128,10 +139,10 @@ static int MRLE_CreateKeyframe(UBYTE *buf, int bufsize, const UBYTE *source, int
 	/* MRLE codec requires image origin at bottom left, so start saving at last scan
 	   line and work back to the zeroth scan line. */
 
-	for (y = (top_margin + height)-1; y >= top_margin; y--) {
-		ptr = source + (y * Screen_WIDTH) + left_margin;
+	for (y = (video_top_margin + video_height)-1; y >= video_top_margin; y--) {
+		ptr = source + (y * Screen_WIDTH) + video_left_margin;
 
-		size = MRLE_CompressLine(buf, ptr, width);
+		size = compress_line(buf, ptr);
 		buf += size;
 	}
 
@@ -142,7 +153,7 @@ static int MRLE_CreateKeyframe(UBYTE *buf, int bufsize, const UBYTE *source, int
 	return buf - buf_start;
 }
 
-static int MRLE_CompressDelta(UBYTE *buf, const UBYTE *ptr, UBYTE *ref, int width, int *dy) {
+static int compress_line_delta(UBYTE *buf, const UBYTE *ptr, UBYTE *ref, int *dy) {
 	int extra;
 	int count;
 	UBYTE last;
@@ -152,8 +163,8 @@ static int MRLE_CompressDelta(UBYTE *buf, const UBYTE *ptr, UBYTE *ref, int widt
 	UBYTE *ref_end;
 
 	buf_start = buf;
-	ptr_end = ptr + width;
-	ref_end = ref + width;
+	ptr_end = ptr + video_width;
+	ref_end = ref + video_width;
 
 	/* right margin won't change, so find it outside the main loop */
 	while (*(ptr_end - 1) == *(ref_end - 1) && ptr < ptr_end) {
@@ -272,7 +283,7 @@ static int MRLE_CompressDelta(UBYTE *buf, const UBYTE *ptr, UBYTE *ref, int widt
 
    RETURNS: number of encoded bytes, which may be zero if identical to previous
    frame */
-static int MRLE_CreateInterframe(UBYTE *buf, int bufsize, const UBYTE *source, UBYTE *reference, int width, int height, int left_margin, int top_margin) {
+static int create_interframe(UBYTE *buf, int bufsize, const UBYTE *source) {
 	UBYTE *buf_start;
 	const UBYTE *ptr;
 	UBYTE *ref;
@@ -286,11 +297,11 @@ static int MRLE_CreateInterframe(UBYTE *buf, int bufsize, const UBYTE *source, U
 	   encoder */
 	dy = 0;
 
-	for (y = (top_margin + height)-1; y >= top_margin; y--) {
-		ptr = source + (y * Screen_WIDTH) + left_margin;
-		ref = reference + (y * Screen_WIDTH) + left_margin;
+	for (y = (video_top_margin + video_height)-1; y >= video_top_margin; y--) {
+		ptr = source + (y * Screen_WIDTH) + video_left_margin;
+		ref = reference_screen + (y * Screen_WIDTH) + video_left_margin;
 
-		size = MRLE_CompressDelta(buf, ptr, ref, width, &dy);
+		size = compress_line_delta(buf, ptr, ref, &dy);
 		buf += size;
 	}
 
@@ -303,14 +314,34 @@ static int MRLE_CreateInterframe(UBYTE *buf, int bufsize, const UBYTE *source, U
 	return buf - buf_start;
 }
 
-int MRLE_CreateFrame(const UBYTE *source, int keyframe, UBYTE *buf, int bufsize, UBYTE *reference_screen, int width, int height, int left_margin, int top_margin) {
+static int MRLE_Init(int width, int height, int left_margin, int top_margin)
+{
+	int size;
+
+	video_width = width;
+	video_height = height;
+	video_left_margin = left_margin;
+	video_top_margin = top_margin;
+
+	/* worst case for RLE compression is where no pixel has the same color as
+	   its neighbor, resulting in 256 bytes per 254 pixels, plus the end of line
+	   marker for each line plus the end of bitmap marker. */
+	size = ((((int)(ceil(width / 254)) * 2) + width + 2) * height) + 2;
+
+	reference_screen_size = Screen_WIDTH * Screen_HEIGHT;
+	reference_screen = (UBYTE *)Util_malloc(reference_screen_size);
+
+	return size;
+}
+
+static int MRLE_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize) {
 	int size;
 
 	if (keyframe) {
-		size = MRLE_CreateKeyframe(buf, bufsize, source, width, height, left_margin, top_margin);
+		size = create_keyframe(buf, bufsize, source);
 	}
 	else {
-		size = MRLE_CreateInterframe(buf, bufsize, source, reference_screen, width, height, left_margin, top_margin);
+		size = create_interframe(buf, bufsize, source);
 	}
 
 	/* save new reference screen */
@@ -318,3 +349,22 @@ int MRLE_CreateFrame(const UBYTE *source, int keyframe, UBYTE *buf, int bufsize,
 
 	return size;
 }
+
+static int MRLE_End(void)
+{
+	free(reference_screen);
+	reference_screen = NULL;
+	reference_screen_size = 0;
+
+	return 1;
+}
+
+VIDEO_CODEC_t Video_Codec_MRLE = {
+	VIDEO_CODEC_MRLE,
+	{'m', 'r', 'l', 'e'},
+	{1, 0, 0, 0},
+	TRUE,
+	&MRLE_Init,
+	&MRLE_CreateFrame,
+	&MRLE_End,
+};
