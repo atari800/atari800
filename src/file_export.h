@@ -6,6 +6,7 @@
 #define VIDEO_CODEC_AUTO 0
 #define VIDEO_CODEC_MRLE 1
 #define VIDEO_CODEC_PNG 2
+#define VIDEO_CODEC_ZMBV 3
 #define VIDEO_CODEC_BEST_AVAILABLE 1
 
 /* Video codec initialization function. It must set up any internal

@@ -44,6 +44,10 @@
 #include "video_codec_mpng.h"
 #endif
 
+#ifdef HAVE_LIBZ
+#include "video_codec_zmbv.h"
+#endif
+
 #ifdef SOUND
 /* number of bytes written to the currently open multimedia file */
 static ULONG byteswritten;
@@ -106,12 +110,23 @@ static ULONG largest_video_frame;
 static ULONG frames_written;
 static float fps;
 
-/* Some data must be dynamically allocated for file creation */
+/* Video/audio frame data is stored in a packed ULONG array. Each video frame is
+   limited to 0x3ffff bytes (256k) and each audio frame is limited to 0x1fff
+   bytes (8k). The maximum audio sample rate is 65kHz (common are 44.1kHz and
+   48kHz), so the largest possible audio frame size will be with stereo POKEYs
+   at 65kHz with 16 bit samples at PAL frequency, so 2 * 65kHz * 2 / 50 frames
+   per second = 5243 samples/frame. It fits. */
 #define FRAME_INDEX_ALLOC_SIZE 1000
-static ULONG *frame_indexes;
 static int num_frames_allocated;
-static int rle_buffer_size = 0;
-static UBYTE *rle_buffer = NULL;
+static ULONG *frame_indexes;
+#define VIDEO_BITMASK    0x0003ffff
+#define AUDIO_BITSHIFT   0x00040000
+#define AUDIO_BITMASK    0x7ffc0000
+#define KEYFRAME_BITMASK 0x80000000
+
+/* dynamically allocated workspace for image compression */
+static int video_buffer_size = 0;
+static UBYTE *video_buffer = NULL;
 
 /* current_screen_size is used as a flag before the frame is generated. -1 means
    awaiting frame generation, -2 means error, and 0 or greater means the video
@@ -167,6 +182,10 @@ int File_Export_Initialise(int *argc, char *argv[])
 				else if (strcmp(mode, "png") == 0)
 					requested_video_codec = VIDEO_CODEC_PNG;
 #endif
+#ifdef HAVE_LIBZ
+				else if (strcmp(mode, "zmbv") == 0)
+					requested_video_codec = VIDEO_CODEC_ZMBV;
+#endif
 				else if (strcmp(mode, "auto") == 0) {
 					requested_video_codec = VIDEO_CODEC_AUTO;
 				}
@@ -206,6 +225,9 @@ int File_Export_Initialise(int *argc, char *argv[])
 #ifdef HAVE_LIBPNG
 					"|png"
 #endif
+#ifdef HAVE_LIBZ
+					"|zmbv"
+#endif
 				);
 				Log_print("\t                 Select video codec, (default: auto)");
 				Log_print("\t-keyframe-interval <ms>");
@@ -241,6 +263,10 @@ int File_Export_ReadConfig(char *string, char *ptr)
 #ifdef HAVE_LIBPNG
 		else if (Util_stricmp(ptr, "png") == 0)
 			requested_video_codec = VIDEO_CODEC_PNG;
+#endif
+#ifdef HAVE_LIBZ
+		else if (Util_stricmp(ptr, "zmbv") == 0)
+			requested_video_codec = VIDEO_CODEC_ZMBV;
 #endif
 		else if (Util_stricmp(ptr, "auto") == 0) {
 			requested_video_codec = VIDEO_CODEC_AUTO;
@@ -279,6 +305,11 @@ void File_Export_WriteConfig(FILE *fp)
 #ifdef HAVE_LIBPNG
 		case VIDEO_CODEC_PNG:
 			fprintf(fp, "VIDEO_CODEC=PNG\n");
+			break;
+#endif
+#ifdef HAVE_LIBZ
+		case VIDEO_CODEC_ZMBV:
+			fprintf(fp, "VIDEO_CODEC=ZMBV\n");
 			break;
 #endif
 	}
@@ -478,8 +509,8 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	if (current_screen_size >= 0) {
-		if (current_screen_size + length < rle_buffer_size) {
-			memcpy(rle_buffer + current_screen_size, data, length);
+		if (current_screen_size + length < video_buffer_size) {
+			memcpy(video_buffer + current_screen_size, data, length);
 			current_screen_size += length;
 		}
 		else {
@@ -968,6 +999,9 @@ FILE *AVI_OpenFile(const char *szFileName)
 				video_codec = &Video_Codec_MPNG;
 				break;
 #endif
+			case VIDEO_CODEC_ZMBV:
+				video_codec = &Video_Codec_ZMBV;
+				break;
 			case VIDEO_CODEC_MRLE:
 			default:
 				video_codec = &Video_Codec_MRLE;
@@ -975,13 +1009,13 @@ FILE *AVI_OpenFile(const char *szFileName)
 		}
 	}
 
-	rle_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
-	if (rle_buffer_size < 0) {
+	video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
+	if (video_buffer_size < 0) {
 		Log_print("Failed to initialize video codec");
 		fclose(fp);
 		return NULL;
 	}
-	rle_buffer = (UBYTE *)Util_malloc(rle_buffer_size);
+	video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
 #ifdef SOUND
 	current_audio_samples = -1;
 	samples_written = 0;
@@ -1037,7 +1071,7 @@ static int AVI_WriteFrame(FILE *fp) {
 	video_padding = current_screen_size % 2;
 	fputs("00dc", fp);
 	fputl(current_screen_size, fp);
-	fwrite(rle_buffer, 1, current_screen_size, fp);
+	fwrite(video_buffer, 1, current_screen_size, fp);
 	if (video_padding) {
 		fputc(0, fp);
 	}
@@ -1063,11 +1097,11 @@ static int AVI_WriteFrame(FILE *fp) {
 
 	frame_indexes[frames_written] = current_screen_size
 #ifdef SOUND
-		+ 0x10000 * audio_size
+		+ AUDIO_BITSHIFT * audio_size
 #endif
 		;
 	if (current_is_keyframe) {
-		frame_indexes[frames_written] |= 0x80000000;
+		frame_indexes[frames_written] |= KEYFRAME_BITMASK;
 	}
 	frames_written++;
 	if (frames_written >= num_frames_allocated) {
@@ -1152,7 +1186,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 		return 0;
 	}
 
-	current_screen_size = video_codec->frame((UBYTE *)Screen_atari, current_is_keyframe, rle_buffer, rle_buffer_size);
+	current_screen_size = video_codec->frame((UBYTE *)Screen_atari, current_is_keyframe, video_buffer, video_buffer_size);
 	return current_screen_size >= 0;
 }
 
@@ -1223,12 +1257,12 @@ static int AVI_WriteIndex(FILE *fp) {
 
 	for (i = 0; i < frames_written; i++) {
 		index = frame_indexes[i];
-		is_keyframe = index & 0x80000000 ? 0x10 : 0;
+		is_keyframe = index & KEYFRAME_BITMASK ? 0x10 : 0;
 
 		fputs("00dc", fp); /* stream 0, a compressed video frame */
 		fputl(is_keyframe, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = index & 0xffff;
+		size = index & VIDEO_BITMASK;
 		fputl(size, fp); /* size of video frame */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 
@@ -1236,7 +1270,7 @@ static int AVI_WriteIndex(FILE *fp) {
 		fputs("01wb", fp); /* stream 1, audio data */
 		fputl(0, fp); /* flags: audio is not a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = (index / 0x10000) & 0x7fff;
+		size = (index & AUDIO_BITMASK) / AUDIO_BITSHIFT;
 		fputl(size, fp); /* size of audio data */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
 #endif
@@ -1292,9 +1326,9 @@ int AVI_CloseFile(FILE *fp)
 	current_audio_samples = -1;
 #endif
 	video_codec->end();
-	free(rle_buffer);
-	rle_buffer = NULL;
-	rle_buffer_size = 0;
+	free(video_buffer);
+	video_buffer = NULL;
+	video_buffer_size = 0;
 	current_screen_size = -1;
 	free(frame_indexes);
 	frame_indexes = NULL;
