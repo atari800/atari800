@@ -195,9 +195,20 @@ int ARTIFACT_Initialise(int *argc, char *argv[])
 
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Log_print("\t-ntsc-artif none|ntsc-old|ntsc-new|ntsc-full");
+				Log_print("\t-ntsc-artif none|ntsc-old|ntsc-new"
+#if NTSC_FILTER
+						"|ntsc-full"
+#endif
+				);
 				Log_print("\t                 Select video artifacts for NTSC");
-				Log_print("\t-pal-artif none|pal-simple|pal-accu");
+				Log_print("\t-pal-artif none"
+#ifndef NO_SIMPLE_PAL_BLENDING
+						"|pal-simple"
+#endif
+#ifdef PAL_BLENDING
+						"|pal-blend"
+#endif
+				);
 				Log_print("\t                 Select video artifacts for PAL");
 			}
 			argv[j++] = argv[i];
