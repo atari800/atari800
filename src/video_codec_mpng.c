@@ -30,7 +30,16 @@
 
 static int MPNG_Init(int width, int height, int left_margin, int top_margin)
 {
-	return width * height;
+	int comp_size = width * height;
+
+	/* In the worst case, PNG can store uncompressed image. Due to the overhead
+	   in the format the resulting data will be larger than the source data.
+	   Because PNG uses the deflate algorithm, the same calculation is used here
+	   as in ZMBV. */
+
+	/* Conservative upper bound taken from zlib v1.2.1 source via lcl.c */
+	comp_size = comp_size + ((comp_size + 7) >> 3) + ((comp_size + 63) >> 6) + 11;
+	return comp_size;
 }
 
 static int MPNG_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize)
