@@ -790,7 +790,7 @@ Set sound latency in milliseconds.
 Increase it if you experience gaps of silence during sound playback.
 
 .TP
-\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR
+\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR|\fBzmbv\fR
 Select the video codec used to compress and store image frames in AVI video recordings:
 .PP
 .RS
@@ -801,14 +801,25 @@ The default.
 Use the codec that provides the best average compression ratio.
 .TP
 .B rle
-Use run-length encoding for low compression of video frames. This codec is
+Use run-length encoding for very good compression of video frames. This codec is
 always available.
 .TP
 .B png
-Use PNG image compression for high compression of video frames. This codec is only
+Use PNG image compression for moderate compression of video frames. This codec is only
 available if PNG support was compiled into the emulator.
+.TP
+.B zmbv
+Use Zip Motion Blocks Video for the best possible compression of video frames.
+This codec is only available if support for the ZLIB compression library was
+compiled into the emulator.
 .PD
 .RE
+.TP
+.B \-showstats
+Show elapsed recording time and file size on screen during recording of video or audio.
+.TP
+.B \-no-showstats
+Don't show multimedia statistics during recording of video or audio
 .TP
 .BI \-keyframe-interval\  ms
 Set the time between keyframes in milliseconds (default 1000 ms).
@@ -1599,27 +1610,77 @@ choice of video codecs is available, while audio is stored as raw PCM data using
 the sample size specified by the \fB\-audio16\fR or \fB\-audio8\fR options. To
 record without sound, specify the \fB\-nosound\fR option.
 .PP
-The default codec and the one best suited for most recording is based on
-run-length encoding (RLE), and produces its high compression due to its use of
-inter-frames to encode only changes from the previous frame. It can be specified
-by the \fB\-videocodec rle\fR option. It is supported by players like VLC and
-ffmpeg-based players, as well as legacy players like Windows Media Player. It is
-not supported by GStreamer-based players.
+The most efficient video codec is the Zip Motion Block Video (ZBMV) codec. 
+This codec uses keyframes and inter-frames, and achieves its high compression
+because inter-frames use motion estimation when calculating differences to the
+previous frame. It is a compile-time option when building the emulator, and
+is the default if available.
 .PP
-An alternate codec based on PNG images is a compile-time option when building
-the emulator, and if available can be specified by the \fB\-videocodec png\fR
-option. Testing shows that its strength is scrolling games with complex
-backgrounds. Because it does not have inter-frames, its compression suffers in
-comparison to RLE when the emulation produces more static backgrounds. Videos
-produced by this codec are supported by ffmpeg and GStreamer-based players, but
-not VLC or Windows Media Player.
+The Run-Length Encoding (RLE) video codec also uses keyframes and inter-frames.
+Its inter-frame compression is not as efficient as ZMBV, but still produces
+high compression in cases where only small parts of the screen change between
+frames. This codec is always available and is the default if ZMBV is not
+available.
 .PP
-The AVI files produced by \fBatari800\fR can be imported into YouTube regardless
-of the selected codec.
+The PNG video codec has moderate compression because it uses only keyframes.
+It is useful in certain cases if the ZBMV codec is not available. It is a
+compile-time option when building the emulator.
+.PP
+Video Support:
+.TS
+tab(@), center, box;
+l | c | c | c c c
+l | c | c | cB cB cB.
+Application@Type@Platform@RLE@PNG@ZMBV
+_
+YouTube@Website@Browser@Yes@Yes@Yes
+Twitter@Website@Browser@No[1]@No[1]@No[1]
+FFmpeg@Transcoder@Win/Mac/Linux@Yes@Yes@Yes
+Handbrake@Transcoder@Win/Mac/Linux@Yes@Yes@Yes
+VLC@Player@Win/Mac/Linux@Yes@No[2]@Yes
+Windows Media Player@Player@Windows@Yes@No@No
+Windows 10 Movies & TV@Player@Windows@No@No@No
+IINA@Player@Mac@Yes@Yes@Yes
+QuickTime@Player@Mac@No@No@No
+Totem (Gnome Videos)@Player@Linux@No@Yes@Yes
+MPV (Celluloid)@Player@Linux@Yes@Yes@Yes
+MPlayer@Player@Linux@Yes@Yes@Yes
+.TE
+.PP
+        [1] Twitter only accepts \fBmp4\fR files using the \fBh264\fR video codec and the
+            \fBaac\fR audio codec. The \fBavi\fR files produced by \fBatari800\fR must be
+            transcoded with an application like FFmpeg or Handbrake. Videos are
+            limited to 2 minutes and 20 seconds.
+.PP
+        [2] VLC recognizes and plays PNG-encoded video, but decodes the video
+            incorrectly resulting in garbled images.
 .PP
 Currently there is a limit of 4GB for video size. The maximum recording time for
 this size limit depends on many factors. Some examples can be seen in the tables
 below:
+.PP
+ZMBV codec (default compression level):
+.TS
+tab(@), center, box;
+l | c | c s s | c s s
+c | c | _ _ _ | _ _ _
+c | c | c c c | c c c
+l | c | c c c | c c c
+l | cB | cB cB cB | cB cB cB.
+@Average@NTSC recording time@PAL recording time
+Game@video@
+@frame@no@8-bit@16-bit@no@8-bit@16-bit
+@size@audio@audio@audio@audio@audio@audio
+_
+
+Jumpman@0.08k@187 hr@22 hr@12 hr@225 hr@23 hr@12 hr@
+Miner 2049er@0.13k@126 hr@21 hr@12 hr@151 hr@22 hr@12 hr@
+Alley Cat@0.37k@49 hr@17 hr@10 hr@59 hr@18 hr@10 hr@
+Dropzone@0.82k@23 hr@12 hr@8h 25m@27 hr@13 hr@8h 55m@
+AtariBlast!@1.2k@15 hr@9h 50m@7h 10m@19 hr@11 hr@7h 50m@
+Boulder Dash@0.17k@100 hr@20 hr@11 hr@120 hr@21 hr@12 hr@
+.TE
+
 .PP
 RLE codec:
 .TS
@@ -1635,11 +1696,11 @@ Game@video@
 @size@audio@audio@audio@audio@audio@audio
 _
 
-Miner 2049er@0.5k@37 hr@15 hr@9h 45m@44 hr@16 hr@10 hr@
-Jumpman@0.4k@45 hr@16 hr@10 hr@55 hr@17 hr@10 hr@
-Alley Cat@0.8k@23 hr@12 hr@8h 30m@28 hr@13 hr@9h 00m@
-Dropzone@1.8k@10 hr@7h 30m@5h 50m@12 hr@8h 35m@6h 30m@
-AtariBlast!@5.7k@3h 20m@3h 00m@2h 40m@4h 00m@3h 30m@3h 05m@
+Jumpman@0.36k@50 hr@17 hr@10 hr@60 hr@18 hr@10 hr@
+Miner 2049er@0.39k@46 hr@16 hr@10 hr@56 hr@17 hr@10 hr@
+Alley Cat@1.0k@18 hr@11 hr@7h 45m@22 hr@12 hr@8h 20m@
+Dropzone@2.3k@8h 20m@6h 20m@5h 05m@10 hr@7h 15m@5h 40m@
+AtariBlast!@6.9k@2h 45m@2h 30m@2h 15m@3h 20m@2h 55m@2h 40m@
 Boulder Dash@9.1k@2h 05m@1h 55m@1h 50m@2h 30m@2h 15m@2h 05m@
 .TE
 
@@ -1658,36 +1719,14 @@ Game@video@
 @size@audio@audio@audio@audio@audio@audio
 _
 
-Miner 2049er@2.2k@8h 40m@6h 30m@5h 15m@10 hr@7h 25m@5h 50m@
 Jumpman@2.4k@8h 00m@6h 05m@5h 00m@9h 35m@7h 00m@5h 35m@
+Miner 2049er@2.2k@8h 40m@6h 30m@5h 15m@10 hr@7h 25m@5h 50m@
 Alley Cat@4.1k@4h 40m@3h 55m@3h 25m@5h 35m@4h 35m@3h 55m@
 Dropzone@2.8k@6h 50m@5h 25m@4h 30m@8h 15m@6h 15m@5h 05m@
-AtariBlast!@4.2k@4h 35m@3h 50m@3h 20m@5h 30m@4h 30m@3h 50m@
+AtariBlast!@4.4k@4h 20m@3h 45m@3h 15m@5h 15m@4h 20m@3h 45m@
 Boulder Dash@4.5k@4h 15m@3h 40m@3h 10m@5h 05m@4h 15m@3h 40m@
 .TE
 
-.PP
-PNG codec (compression level 9):
-.TS
-tab(@), center, box;
-l | c | c s s | c s s
-c | c | _ _ _ | _ _ _
-c | c | c c c | c c c
-l | c | c c c | c c c
-l | cB | cB cB cB | cB cB cB.
-@Average@NTSC recording time@PAL recording time
-Game@video@
-@frame@no@8-bit@16-bit@no@8-bit@16-bit
-@size@audio@audio@audio@audio@audio@audio
-_
-
-Miner 2049er@2.0k@9h 35m@7h 00m@5h 30m@11 hr@8h 00m@6h 10m@
-Jumpman@2.1k@9h 05m@6h 45m@5h 25m@10 hr@7h 40m@6h 00m@
-Alley Cat@3.8k@5h 00m@4h 15m@3h 40m@6h 05m@4h 55m@4h 10m@
-Dropzone@2.7k@7h 05m@5h 35m@4h 35m@8h 30m@6h 25m@5h 10m@
-AtariBlast!@3.8k@5h 00m@4h 15m@3h 40m@6h 05m@4h 55m@4h 10m@
-Boulder Dash@2.5k@7h 40m@5h 55m@4h 50m@9h 10m@6h 50m@5h 25m@
-.TE
 
 .PP
 Audio is uncompressed and takes about 1.4k per frame for NTSC (about 1.8k per
