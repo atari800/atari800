@@ -43,6 +43,7 @@ extern int Screen_show_atari_speed;
 extern int Screen_show_disk_led;
 extern int Screen_show_sector_counter;
 extern int Screen_show_1200_leds;
+extern int Screen_show_multimedia_stats;
 
 int Screen_Initialise(int *argc, char *argv[]);
 int Screen_ReadConfig(char *string, char *ptr);
@@ -50,6 +51,7 @@ void Screen_WriteConfig(FILE *fp);
 void Screen_DrawAtariSpeed(double);
 void Screen_DrawDiskLED(void);
 void Screen_Draw1200LED(void);
+void Screen_DrawMultimediaStats(void);
 void Screen_FindScreenshotFilename(char *buffer, unsigned bufsize);
 int Screen_SaveScreenshot(const char *filename, int interlaced);
 void Screen_SaveNextScreenshot(int interlaced);

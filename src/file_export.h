@@ -25,6 +25,8 @@ typedef int (*VIDEO_CODEC_End)(void);
 
 typedef struct {
     int codec_id;
+    char *short_description;
+    char *long_description;
     char fourcc[4];
     char avi_compression[4];
     int uses_interframes;
@@ -36,6 +38,12 @@ typedef struct {
 int File_Export_Initialise(int *argc, char *argv[]);
 int File_Export_ReadConfig(char *string, char *ptr);
 void File_Export_WriteConfig(FILE *fp);
+
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+int File_Export_ElapsedTime(void);
+int File_Export_CurrentSize(void);
+char *File_Export_Description(void);
+#endif
 
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);

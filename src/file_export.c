@@ -48,10 +48,21 @@
 #include "video_codec_zmbv.h"
 #endif
 
-#ifdef SOUND
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+/* RIFF files (WAV, AVI) are limited to 4GB in size, so define a reasonable max
+   that's lower than 4GB */
+#define MAX_RECORDING_SIZE (0xfff00000)
+
 /* number of bytes written to the currently open multimedia file */
 static ULONG byteswritten;
 
+/* These variables are needed for statistics and on-screen information display. */
+static ULONG frames_written;
+static float fps;
+static char description[16];
+#endif
+
+#ifdef SOUND
 /* sample size in bytes; will not change during a recording */
 static int sample_size;
 #endif
@@ -99,16 +110,9 @@ static ULONG size_movi;
 
    The video will automatically be stopped should the recording length approach
    the file size limit. */
-#define MAX_RECORDING_SIZE (0xfff00000)
-static ULONG size_limit;
 static ULONG total_video_size;
 static ULONG smallest_video_frame;
 static ULONG largest_video_frame;
-
-/* We also need to track some other variables for the header; these will be
-   updated as frames are added to the video. */
-static ULONG frames_written;
-static float fps;
 
 /* Video/audio frame data is stored in a packed ULONG array. Each video frame is
    limited to 0x3ffff bytes (256k) and each audio frame is limited to 0x1fff
@@ -320,6 +324,32 @@ void File_Export_WriteConfig(FILE *fp)
 #endif
 }
 
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+/* File_Export_ElapsedTime returns the current duration of the multimedia file.
+   */
+int File_Export_ElapsedTime(void)
+{
+	return (int)(frames_written / fps);
+}
+
+/* File_Export_CurrentSize returns the current size of the multimedia file in
+   bytes. This should be considered approximate and not used in calculations
+   related to the actual position in the written file.
+   */
+int File_Export_CurrentSize(void)
+{
+	return byteswritten;
+}
+
+/* File_Export_CurrentSize returns the current size of the multimedia file in
+   bytes. This should be considered approximate and not used in calculations
+   related to the actual position in the written file.
+   */
+char *File_Export_Description(void)
+{
+	return description;
+}
+#endif
 
 /* fputw, fputl, and fwritele are utility functions to write values as
    little-endian format regardless of the endianness of the platform. */
@@ -666,6 +696,9 @@ FILE *WAV_OpenFile(const char *szFileName)
 	Good description of WAVE format: http://www.sonicspot.com/guide/wavefiles.html
 	*/
 	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
+	frames_written = 0;
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+	strcpy(description, "WAV");
 
 	fputs("RIFF", fp);
 	fputl(0, fp); /* length to be filled in upon file close */
@@ -712,6 +745,10 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *f
 		}
 
 		byteswritten += result;
+		frames_written++;
+		if (byteswritten > MAX_RECORDING_SIZE) {
+			return 0;
+		}
 		return result;
 	}
 
@@ -1008,6 +1045,8 @@ FILE *AVI_OpenFile(const char *szFileName)
 				break;
 		}
 	}
+	strcpy(description, "AVI ");
+	strcat(description, video_codec->short_description);
 
 	video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
 	if (video_buffer_size < 0) {
@@ -1043,7 +1082,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 	}
 
 	/* set up video statistics */
-	size_limit = ftell(fp) + 8; /* current size + index header */
+	byteswritten = ftell(fp) + 8; /* current size + index header */
 	total_video_size = 0;
 	smallest_video_frame = 0xffffffff;
 	largest_video_frame = 0;
@@ -1114,7 +1153,7 @@ static int AVI_WriteFrame(FILE *fp) {
 	result = (frame_size == expected_frame_size);
 
 	/* update size limit calculation including the 32 bytes needed for each index entry */
-	size_limit += frame_size + 32;
+	byteswritten += frame_size + 32;
 
 	/* update statistics */
 	total_video_size += current_screen_size;
@@ -1148,7 +1187,7 @@ static int AVI_WriteFrame(FILE *fp) {
 	current_audio_samples = -1;
 #endif
 
-	if (size_limit > MAX_RECORDING_SIZE) {
+	if (byteswritten > MAX_RECORDING_SIZE) {
 		/* force file close when at the limit */
 		return 0;
 	}
@@ -1234,13 +1273,13 @@ static int AVI_WriteIndex(FILE *fp) {
 	int offset;
 	int size;
 	int index_size;
-	int bytes_written;
+	int chunk_size;
 	ULONG index;
 	int is_keyframe;
 
 	if (frames_written == 0) return 0;
 
-	bytes_written = ftell(fp);
+	chunk_size = ftell(fp);
 	offset = 4;
 	index_size = frames_written * 16
 #ifdef SOUND
@@ -1276,8 +1315,8 @@ static int AVI_WriteIndex(FILE *fp) {
 #endif
 	}
 
-	bytes_written = ftell(fp) - bytes_written;
-	return (bytes_written == 8 + index_size);
+	chunk_size = ftell(fp) - chunk_size;
+	return (chunk_size == 8 + index_size);
 }
 
 /* AVI_CloseFile must be called to create a valid AVI file, because the header
@@ -1305,7 +1344,7 @@ int AVI_CloseFile(FILE *fp)
 
 	if (frames_written > 0) {
 		seconds = (int)(frames_written / fps);
-		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size_limit / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
+		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
 	}
 
 	if (result > 0) {

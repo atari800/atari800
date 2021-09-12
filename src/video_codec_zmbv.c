@@ -348,6 +348,8 @@ static int ZMBV_Init(int width, int height, int left_margin, int top_margin)
 
 VIDEO_CODEC_t Video_Codec_ZMBV = {
 	VIDEO_CODEC_ZMBV,
+    "ZMBV",
+    "Zip Motion Blocks Video",
 	{'Z', 'M', 'B', 'V'},
 	{'Z', 'M', 'B', 'V'},
 	TRUE,

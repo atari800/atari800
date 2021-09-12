@@ -45,6 +45,8 @@ static int MPNG_End(void)
 
 VIDEO_CODEC_t Video_Codec_MPNG = {
 	VIDEO_CODEC_PNG,
+	"PNG",
+	"Motion-PNG",
 	{'M', 'P', 'N', 'G'},
 	{'M', 'P', 'N', 'G'},
 	FALSE,
