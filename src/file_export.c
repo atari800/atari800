@@ -41,10 +41,12 @@
 
 #ifdef HAVE_LIBPNG
 #include <png.h>
+#ifdef VIDEO_CODEC_PNG
 #include "video_codec_mpng.h"
 #endif
+#endif
 
-#ifdef HAVE_LIBZ
+#ifdef VIDEO_CODEC_ZMBV
 #include "video_codec_zmbv.h"
 #endif
 
@@ -139,6 +141,17 @@ static UBYTE *video_buffer = NULL;
 static int current_screen_size = -1;
 
 static VIDEO_CODEC_t *video_codec = NULL;
+static VIDEO_CODEC_t *requested_video_codec = NULL;
+static VIDEO_CODEC_t *known_video_codecs[] = {
+	&Video_Codec_MRLE,
+#ifdef VIDEO_CODEC_PNG
+	&Video_Codec_MPNG,
+#endif
+#ifdef VIDEO_CODEC_ZMBV
+	&Video_Codec_ZMBV,
+#endif
+	NULL,
+};
 
 /* Some codecs allow for keyframes (full frame compression) and inter-frames
    (only the differences from the previous frame) */
@@ -155,14 +168,53 @@ static int current_audio_samples = -1;
 
 static int num_streams;
 
-static int requested_video_codec = VIDEO_CODEC_AUTO;
-
 #endif /* AVI_VIDEO_RECORDING */
 
-#ifdef HAVE_LIBPNG
-static int png_compression_level = 6;
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+int FILE_EXPORT_compression_level = 6;
 #endif
 
+
+static VIDEO_CODEC_t *match_video_codec(char *id)
+{
+	VIDEO_CODEC_t **v = known_video_codecs;
+	VIDEO_CODEC_t *found = NULL;
+
+	while (*v) {
+		if (Util_stricmp(id, (*v)->codec_id) == 0) {
+			found = *v;
+			break;
+		}
+		v++;
+	}
+	return found;
+}
+
+static VIDEO_CODEC_t *get_best_video_codec(void)
+{
+	/* ZMBV is the default if we also have zlib because compressed ZMBV is far
+	   superior to the others. If zlib is not available, RLE becomes the default
+	   because it's better than uncompressed ZMBV in most cases. PNG is never
+	   the default. */
+#if defined(VIDEO_CODEC_ZMBV) && defined(HAVE_LIBZ)
+	return &Video_Codec_ZMBV;
+#else
+	return &Video_Codec_MRLE;
+#endif
+}
+
+static char *video_codec_args(char *buf)
+{
+	VIDEO_CODEC_t **v = known_video_codecs;
+
+	strcpy(buf, "\t-videocodec auto");
+	while (*v) {
+		strcat(buf, "|");
+		strcat(buf, (*v)->codec_id);
+		v++;
+	}
+	return buf;
+}
 
 int File_Export_Initialise(int *argc, char *argv[])
 {
@@ -180,21 +232,14 @@ int File_Export_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-videocodec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
-				if (strcmp(mode, "rle") == 0)
-					requested_video_codec = VIDEO_CODEC_MRLE;
-#ifdef HAVE_LIBPNG
-				else if (strcmp(mode, "png") == 0)
-					requested_video_codec = VIDEO_CODEC_PNG;
-#endif
-#ifdef HAVE_LIBZ
-				else if (strcmp(mode, "zmbv") == 0)
-					requested_video_codec = VIDEO_CODEC_ZMBV;
-#endif
-				else if (strcmp(mode, "auto") == 0) {
-					requested_video_codec = VIDEO_CODEC_AUTO;
+				if (strcmp(mode, "auto") == 0) {
+					requested_video_codec = NULL; /* want best available */
 				}
 				else {
-					a_i = TRUE;
+					requested_video_codec = match_video_codec(mode);
+					if (!requested_video_codec) {
+						a_i = TRUE;
+					}
 				}
 			}
 			else a_m = TRUE;
@@ -210,12 +255,12 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif
-#ifdef HAVE_LIBPNG
-		else if (strcmp(argv[i], "-pnglevel") == 0) {
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+		else if (strcmp(argv[i], "-compression-level") == 0) {
 			if (i_a) {
-				png_compression_level = Util_sscandec(argv[++i]);
-				if (png_compression_level < 0 || png_compression_level > 9) {
-					Log_print("Invalid PNG image compression level - must be between 0 and 9");
+				FILE_EXPORT_compression_level = Util_sscandec(argv[++i]);
+				if (FILE_EXPORT_compression_level < 0 || FILE_EXPORT_compression_level > 9) {
+					Log_print("Invalid png/zlib compression level - must be between 0 and 9");
 					return FALSE;
 				}
 			}
@@ -225,20 +270,15 @@ int File_Export_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 #ifdef AVI_VIDEO_RECORDING
-				Log_print("\t-videocodec auto|rle"
-#ifdef HAVE_LIBPNG
-					"|png"
-#endif
-#ifdef HAVE_LIBZ
-					"|zmbv"
-#endif
-				);
-				Log_print("\t                 Select video codec, (default: auto)");
+				char buf[256];
+				Log_print(video_codec_args(buf));
+				Log_print("\t                 Select video codec (default: auto)");
 				Log_print("\t-keyframe-interval <ms>");
 				Log_print("\t                 Select interval between video keyframes in milliseconds");
 #endif
-#ifdef HAVE_LIBPNG
-				Log_print("\t-pnglevel <n>    Set PNG image compression level 0-9 (default 6)");
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+				Log_print("\t-compression-level <n>");
+				Log_print("\t                 Set zlib/PNG compression level 0-9 (default 6)");
 #endif
 			}
 			argv[j++] = argv[i];
@@ -262,20 +302,15 @@ int File_Export_ReadConfig(char *string, char *ptr)
 	if (0) {}
 #ifdef AVI_VIDEO_RECORDING
 	else if (strcmp(string, "VIDEO_CODEC") == 0) {
-		if (Util_stricmp(ptr, "rle") == 0)
-			requested_video_codec = VIDEO_CODEC_MRLE;
-#ifdef HAVE_LIBPNG
-		else if (Util_stricmp(ptr, "png") == 0)
-			requested_video_codec = VIDEO_CODEC_PNG;
-#endif
-#ifdef HAVE_LIBZ
-		else if (Util_stricmp(ptr, "zmbv") == 0)
-			requested_video_codec = VIDEO_CODEC_ZMBV;
-#endif
-		else if (Util_stricmp(ptr, "auto") == 0) {
-			requested_video_codec = VIDEO_CODEC_AUTO;
+		if (Util_stricmp(ptr, "auto") == 0) {
+			requested_video_codec = NULL; /* want best available */
 		}
-		else return FALSE;
+		else {
+			requested_video_codec = match_video_codec(ptr);
+			if (!requested_video_codec) {
+				return FALSE;
+			}
+		}
 	}
 	else if (strcmp(string, "VIDEO_CODEC_KEYFRAME_INTERVAL") == 0) {
 		int num = Util_sscandec(ptr);
@@ -284,11 +319,11 @@ int File_Export_ReadConfig(char *string, char *ptr)
 		else return FALSE;
 	}
 #endif
-#ifdef HAVE_LIBPNG
-	else if (strcmp(string, "PNG_COMPRESSION_LEVEL") == 0) {
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+	else if (strcmp(string, "COMPRESSION_LEVEL") == 0) {
 		int num = Util_sscandec(ptr);
 		if (num >= 0 && num <= 9)
-			png_compression_level = num;
+			FILE_EXPORT_compression_level = num;
 		else return FALSE;
 	}
 #endif
@@ -299,28 +334,16 @@ int File_Export_ReadConfig(char *string, char *ptr)
 void File_Export_WriteConfig(FILE *fp)
 {
 #ifdef AVI_VIDEO_RECORDING
-	switch (requested_video_codec) {
-		case VIDEO_CODEC_AUTO:
-			fprintf(fp, "VIDEO_CODEC=AUTO\n");
-			break;
-		case VIDEO_CODEC_MRLE:
-			fprintf(fp, "VIDEO_CODEC=RLE\n");
-			break;
-#ifdef HAVE_LIBPNG
-		case VIDEO_CODEC_PNG:
-			fprintf(fp, "VIDEO_CODEC=PNG\n");
-			break;
-#endif
-#ifdef HAVE_LIBZ
-		case VIDEO_CODEC_ZMBV:
-			fprintf(fp, "VIDEO_CODEC=ZMBV\n");
-			break;
-#endif
+	if (!requested_video_codec) {
+		fprintf(fp, "VIDEO_CODEC=AUTO\n");
+	}
+	else {
+		fprintf(fp, "VIDEO_CODEC=%s\n", requested_video_codec->codec_id);
 	}
 	fprintf(fp, "VIDEO_CODEC_KEYFRAME_INTERVAL=%d\n", keyframe_interval);
 #endif
-#ifdef HAVE_LIBPNG
-	fprintf(fp, "PNG_COMPRESSION_LEVEL=%d\n", png_compression_level);
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+	fprintf(fp, "COMPRESSION_LEVEL=%d\n", FILE_EXPORT_compression_level);
 #endif
 }
 
@@ -535,7 +558,7 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 }
 
 #ifdef HAVE_LIBPNG
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_CODEC_PNG
 static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	if (current_screen_size >= 0) {
@@ -549,7 +572,7 @@ static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t len
 		}
 	}
 }
-#endif /* AVI_VIDEO_RECORDING */
+#endif /* VIDEO_CODEC_PNG */
 
 /* PNG_SaveScreen saves the screen data to the file in PNG format, optionally
    using interlace if ptr2 is not NULL.
@@ -581,7 +604,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_destroy_write_struct(&png_ptr, NULL);
 		return 0;
 	}
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_CODEC_PNG
 	if (fp == NULL) {
 		current_screen_size = 0;
 		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
@@ -593,7 +616,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		png_init_io(png_ptr, fp);
 	}
 
-	png_set_compression_level(png_ptr, png_compression_level);
+	png_set_compression_level(png_ptr, FILE_EXPORT_compression_level);
 	png_set_IHDR(
 		png_ptr, info_ptr, video_width, video_height,
 		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
@@ -642,7 +665,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	if (ptr2 != NULL)
 		free(rows[0]);
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_CODEC_PNG
 	return current_screen_size;
 #else
 	return 0;
@@ -1004,7 +1027,6 @@ static int AVI_WriteHeader(FILE *fp) {
 FILE *AVI_OpenFile(const char *szFileName)
 {
 	FILE *fp;
-	int codec_id;
 
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
@@ -1024,29 +1046,15 @@ FILE *AVI_OpenFile(const char *szFileName)
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
 	if (!video_codec) {
-		if (requested_video_codec == VIDEO_CODEC_AUTO) {
-			codec_id = VIDEO_CODEC_BEST_AVAILABLE;
+		if (!requested_video_codec) {
+			video_codec = get_best_video_codec();
 		}
 		else {
-			codec_id = requested_video_codec;
-		}
-		switch (codec_id) {
-#ifdef HAVE_LIBPNG
-			case VIDEO_CODEC_PNG:
-				video_codec = &Video_Codec_MPNG;
-				break;
-#endif
-			case VIDEO_CODEC_ZMBV:
-				video_codec = &Video_Codec_ZMBV;
-				break;
-			case VIDEO_CODEC_MRLE:
-			default:
-				video_codec = &Video_Codec_MRLE;
-				break;
+			video_codec = requested_video_codec;
 		}
 	}
 	strcpy(description, "AVI ");
-	strcat(description, video_codec->short_description);
+	strcat(description, video_codec->codec_id);
 
 	video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
 	if (video_buffer_size < 0) {

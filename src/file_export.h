@@ -3,12 +3,6 @@
 
 #include "atari.h"
 
-#define VIDEO_CODEC_AUTO 0
-#define VIDEO_CODEC_MRLE 1
-#define VIDEO_CODEC_PNG 2
-#define VIDEO_CODEC_ZMBV 3
-#define VIDEO_CODEC_BEST_AVAILABLE 1
-
 /* Video codec initialization function. It must set up any internal
    configuration needed by the codec. Return the maximum size of the buffer
    needed to store the compressed video frame, or -1 on error. */
@@ -24,9 +18,8 @@ typedef int (*VIDEO_CODEC_CreateFrame)(UBYTE *source, int keyframe, UBYTE *buf, 
 typedef int (*VIDEO_CODEC_End)(void);
 
 typedef struct {
-    int codec_id;
-    char *short_description;
-    char *long_description;
+    char *codec_id;
+    char *description;
     char fourcc[4];
     char avi_compression[4];
     int uses_interframes;
@@ -34,6 +27,10 @@ typedef struct {
     VIDEO_CODEC_CreateFrame frame;
     VIDEO_CODEC_End end;
 } VIDEO_CODEC_t;
+
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
+extern int FILE_EXPORT_compression_level;
+#endif
 
 int File_Export_Initialise(int *argc, char *argv[]);
 int File_Export_ReadConfig(char *string, char *ptr);

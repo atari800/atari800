@@ -360,8 +360,7 @@ static int MRLE_End(void)
 }
 
 VIDEO_CODEC_t Video_Codec_MRLE = {
-	VIDEO_CODEC_MRLE,
-	"RLE",
+	"rle",
 	"Microsoft Run-Length Encoding",
 	{'m', 'r', 'l', 'e'},
 	{1, 0, 0, 0},

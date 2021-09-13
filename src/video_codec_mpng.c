@@ -26,7 +26,8 @@
 #include "file_export.h"
 #include "video_codec_mpng.h"
 
-#ifdef HAVE_LIBPNG
+/* This file is only included in compilation when PNG is available, so no need to
+   test for HAVE_LIBPNG. */
 
 static int MPNG_Init(int width, int height, int left_margin, int top_margin)
 {
@@ -53,8 +54,7 @@ static int MPNG_End(void)
 }
 
 VIDEO_CODEC_t Video_Codec_MPNG = {
-	VIDEO_CODEC_PNG,
-	"PNG",
+	"png",
 	"Motion-PNG",
 	{'M', 'P', 'N', 'G'},
 	{'M', 'P', 'N', 'G'},
@@ -63,5 +63,3 @@ VIDEO_CODEC_t Video_Codec_MPNG = {
 	&MPNG_CreateFrame,
 	&MPNG_End,
 };
-
-#endif /* HAVE_LIBPNG */

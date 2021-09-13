@@ -790,7 +790,7 @@ Set sound latency in milliseconds.
 Increase it if you experience gaps of silence during sound playback.
 
 .TP
-\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR|\fBzmbv\fR
+\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR|\fBzmbv\fR|\fBuzmbv\fR
 Select the video codec used to compress and store image frames in AVI video recordings:
 .PP
 .RS
@@ -810,8 +810,12 @@ available if PNG support was compiled into the emulator.
 .TP
 .B zmbv
 Use Zip Motion Blocks Video for the best possible compression of video frames.
-This codec is only available if support for the ZLIB compression library was
+This codec is only available if support for the zlib compression library was
 compiled into the emulator.
+.TP
+.B uzmbv
+Uncompressed Zip Motion Blocks Video is only available when compiled without the
+zlib compression library.
 .PD
 .RE
 .TP
@@ -1610,21 +1614,29 @@ choice of video codecs is available, while audio is stored as raw PCM data using
 the sample size specified by the \fB\-audio16\fR or \fB\-audio8\fR options. To
 record without sound, specify the \fB\-nosound\fR option.
 .PP
-The most efficient video codec is the Zip Motion Block Video (ZBMV) codec. 
+The most efficient video codec is the Zip Motion Block Video (ZMBV) codec. 
 This codec uses keyframes and inter-frames, and achieves its high compression
 because inter-frames use motion estimation when calculating differences to the
 previous frame. It is a compile-time option when building the emulator, and
-is the default if available.
+is the default if available. There is an uncompressed variant that is available
+when compiled without zlib; see the note below.
 .PP
 The Run-Length Encoding (RLE) video codec also uses keyframes and inter-frames.
-Its inter-frame compression is not as efficient as ZMBV, but still produces
-high compression in cases where only small parts of the screen change between
-frames. This codec is always available and is the default if ZMBV is not
+Its inter-frame compression is not as efficient as ZMBV, but still produces high
+compression in cases where only small parts of the screen change between frames.
+This codec is always available and is the default if compressed ZMBV is not
 available.
 .PP
 The PNG video codec has moderate compression because it uses only keyframes.
-It is useful in certain cases if the ZBMV codec is not available. It is a
+It is useful in certain cases if the ZMBV codec is not available. It is a
 compile-time option when building the emulator.
+.PP
+Uncompressed ZMBV is typically inferior to RLE and PNG and is not recommended in
+general. There are a few limited instances (like detailed scrolling backgrounds)
+where uncompressed ZMBV will outperform RLE or PNG, and for that reason it is
+made available as the \fBuzmbv\fR codec when compiled without zlib. For testing
+purposes when compiled with zlib, uncompressed ZMBV video can be generated with
+the \fB-compression-level 0\fR command line argument.
 .PP
 Video Support:
 .TS

@@ -128,11 +128,16 @@ if WITH_MULTIMEDIA
 atari800_SOURCES += multimedia.c multimedia.h
 endif
 if WITH_FILE_EXPORT
-atari800_SOURCES += \
-	file_export.c file_export.h \
-	video_codec_mrle.c video_codec_mrle.h \
-	video_codec_mpng.c video_codec_mpng.h \
-	video_codec_zmbv.c video_codec_zmbv.h
+atari800_SOURCES += file_export.c file_export.h
+endif
+if WITH_VIDEO_RECORDING
+atari800_SOURCES += video_codec_mrle.c video_codec_mrle.h
+if WITH_VIDEO_CODEC_PNG
+atari800_SOURCES += video_codec_mpng.c video_codec_mpng.h
+endif
+if WITH_VIDEO_CODEC_ZMBV
+atari800_SOURCES += video_codec_zmbv.c video_codec_zmbv.h
+endif
 endif
 
 

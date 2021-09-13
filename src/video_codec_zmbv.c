@@ -29,6 +29,9 @@
 
    - only 8 bit-per-pixel image format is supported
    - palette changes within video stream are not supported
+   - if compression level is zero, raw uncompressed data is stored rather than
+     the zlib stream with compression level 0 data
+   - motion estimation range is fixed to a value suited to Atari graphics
 */  
 
 
@@ -39,6 +42,16 @@
 #include "colours.h"
 #include "log.h"
 #include "util.h"
+
+/* When zlib is available, ZMBV is the most efficient video codec in atari800
+   and is the default. Without zlib, the RLE codec becomes the default because
+   uncompressed ZMBV produces much larger output than RLE except in certain
+   cases like scrolling games.
+
+   If compiled without zlib, the codec is given the name "uzmbv" to prevent
+   confusion. This forces the user to request this uncompressed codec over the
+   RLE codec that is the default in this case.
+   */
 
 #ifdef HAVE_LIBZ
 #include <zlib.h>
@@ -57,8 +70,6 @@
    format is supported here. The original FFmpeg code supported many more types. */
 #define ZMBV_FMT_8BPP 4
 
-int compression_level = 6; /* compression level between 0 and 9 inclusive */
-
 static int video_left_margin;
 static int video_top_margin;
 static int video_width;
@@ -69,9 +80,8 @@ static UBYTE *work_buf;
 static UBYTE pal[768];
 static UBYTE *prev_buf, *prev_buf_start;
 static int pstride;
-static int comp_size;
-static int zlib_init_ok;
 #ifdef HAVE_LIBZ
+static int zlib_init_ok;
 static z_stream zstream;
 #endif
 static int score_tab[ZMBV_BLOCK * ZMBV_BLOCK * 4 + 1];
@@ -155,19 +165,46 @@ static int ZMBV_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize
 {
 	UBYTE *src;
 	UBYTE *prev;
+	UBYTE *work;
 	int fl;
 	int work_size = 0;
 	int bw, bh;
 	int i, j;
 	int size;
 
+	fl = (keyframe ? 1 : 0);
+	*buf++ = fl;
+	size = 1;
+	if (keyframe) {
+		*buf++ = 0; /* hi ver */
+		*buf++ = 1; /* lo ver */
+#ifdef HAVE_LIBZ
+		*buf++ = zlib_init_ok; /* comp */
+#else
+		*buf++ = 0;
+#endif
+		*buf++ = ZMBV_FMT_8BPP; /* format */
+		*buf++ = ZMBV_BLOCK; /* block width */
+		*buf++ = ZMBV_BLOCK; /* block height */
+		size += 6;
+	}
+
+#ifdef HAVE_LIBZ
+	if (zlib_init_ok) {
+		work = work_buf;
+	}
+	else
+#endif
+	{
+		work = buf;
+	}
 	src = source + (Screen_WIDTH * video_top_margin) + video_left_margin;
 	prev = prev_buf_start;
 	if(keyframe){
 		work_size = 768;
-		memcpy(work_buf, pal, work_size);
+		memcpy(work, pal, work_size);
 		for(i = 0; i < video_height; i++){
-			memcpy(work_buf + work_size, src, video_width);
+			memcpy(work + work_size, src, video_width);
 			src += Screen_WIDTH;
 			work_size += video_width;
 		}
@@ -180,8 +217,8 @@ static int ZMBV_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize
 
 		bw = (video_width + ZMBV_BLOCK - 1) / ZMBV_BLOCK;
 		bh = (video_height + ZMBV_BLOCK - 1) / ZMBV_BLOCK;
-		mv = work_buf + work_size;
-		memset(work_buf + work_size, 0, (bw * bh * 2 + 3) & ~3);
+		mv = work + work_size;
+		memset(work + work_size, 0, (bw * bh * 2 + 3) & ~3);
 		work_size += (bw * bh * 2 + 3) & ~3;
 		/* for now just XOR'ing */
 		for(y = 0; y < video_height; y += ZMBV_BLOCK) {
@@ -199,7 +236,7 @@ static int ZMBV_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize
 				if(xored){
 					for(j = 0; j < bh2; j++){
 						for(i = 0; i < bw2; i++)
-							work_buf[work_size++] = tsrc[i] ^ tprev[i];
+							work[work_size++] = tsrc[i] ^ tprev[i];
 						tsrc += Screen_WIDTH;
 						tprev += pstride;
 					}
@@ -219,54 +256,40 @@ static int ZMBV_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize
 	}
 
 #ifdef HAVE_LIBZ
-	if (keyframe)
-		deflateReset(&zstream);
+	if (zlib_init_ok) {
+		if (keyframe)
+			deflateReset(&zstream);
 
-	zstream.next_in = work_buf;
-	zstream.avail_in = work_size;
-	zstream.total_in = 0;
-#endif
+		zstream.next_in = work_buf;
+		zstream.avail_in = work_size;
+		zstream.total_in = 0;
 
-	fl = (keyframe ? 1 : 0);
-	*buf++ = fl;
-	size = 1;
-	if (keyframe) {
-		*buf++ = 0; /* hi ver */
-		*buf++ = 1; /* lo ver */
-#ifdef HAVE_LIBZ
-		*buf++ = 1; /* comp */
-#else
-		*buf++ = 0;
-#endif
-		*buf++ = ZMBV_FMT_8BPP; /* format */
-		*buf++ = ZMBV_BLOCK; /* block width */
-		*buf++ = ZMBV_BLOCK; /* block height */
-		size += 6;
+		zstream.next_out = buf;
+		zstream.avail_out = bufsize - size;
+		zstream.total_out = 0;
+		if(deflate(&zstream, Z_SYNC_FLUSH) != Z_OK){
+			Log_print("Error compressing data\n");
+			return -1;
+		}
+		size += zstream.total_out;
 	}
-#ifdef HAVE_LIBZ
-	zstream.next_out = buf;
-	zstream.avail_out = bufsize - size;
-	zstream.total_out = 0;
-	if(deflate(&zstream, Z_SYNC_FLUSH) != Z_OK){
-		Log_print("Error compressing data\n");
-		return -1;
-	}
-	size += zstream.total_out;
-#else
-	memcpy(buf, work_buf, work_size);
-	size += work_size;
+	else
 #endif
+	{
+		size += work_size;
+	}
 
 	return size;
 }
 
 static int ZMBV_End(void)
 {
-	free(work_buf);
 	free(prev_buf);
 #ifdef HAVE_LIBZ
-	if (zlib_init_ok)
+	if (zlib_init_ok) {
+		free(work_buf);
 		deflateEnd(&zstream);
+	}
 #endif
 	return 0;
 }
@@ -276,6 +299,8 @@ static int ZMBV_Init(int width, int height, int left_margin, int top_margin)
 {
 	int i;
 	int prev_size, prev_offset;
+	int work_size;
+	int comp_size;
 	UBYTE *ptr;
 
 	video_width = width;
@@ -300,20 +325,13 @@ static int ZMBV_Init(int width, int height, int left_margin, int top_margin)
 
 	/* Motion estimation range: maximum distance is -64..63 */
 	lrange = urange = 2;
-#if 0
-	if(avctx->me_range > 0){
-		lrange = FFMIN(avctx->me_range, 64);
-		urange = FFMIN(avctx->me_range, 63);
-	}
-#endif
 
-	comp_size = video_width * video_height + 1024 +
+	work_size = video_width * video_height + 1024 +
 		((video_width + ZMBV_BLOCK - 1) / ZMBV_BLOCK) * ((video_height + ZMBV_BLOCK - 1) / ZMBV_BLOCK) * 2 + 4;
-	work_buf = (UBYTE *)Util_malloc(comp_size);
 
 	/* Conservative upper bound taken from zlib v1.2.1 source via lcl.c */
-	comp_size = comp_size + ((comp_size + 7) >> 3) +
-						   ((comp_size + 63) >> 6) + 11;
+	comp_size = work_size + ((work_size + 7) >> 3) +
+						   ((work_size + 63) >> 6) + 11;
 
 
 	/* Allocate prev buffer - pad around the image to allow out-of-edge ME:
@@ -332,24 +350,35 @@ static int ZMBV_Init(int width, int height, int left_margin, int top_margin)
 	prev_buf_start = prev_buf + prev_offset;
 
 #ifdef HAVE_LIBZ
-	zstream.zalloc = Z_NULL;
-	zstream.zfree = Z_NULL;
-	zstream.opaque = Z_NULL;
-	i = deflateInit(&zstream, compression_level);
-	if (i != Z_OK) {
-		Log_print("Inflate init error: %d\n", i);
-		return -1;
+	if (FILE_EXPORT_compression_level > 0) {
+		work_buf = (UBYTE *)Util_malloc(work_size);
+		zstream.zalloc = Z_NULL;
+		zstream.zfree = Z_NULL;
+		zstream.opaque = Z_NULL;
+		i = deflateInit(&zstream, FILE_EXPORT_compression_level);
+		if (i != Z_OK) {
+			Log_print("Inflate init error: %d\n", i);
+			return -1;
+		}
+		zlib_init_ok = 1;
 	}
-	zlib_init_ok = 1;
+	else {
+		work_buf = NULL; /* not needed if there's no compression! */
+		zlib_init_ok = 0;
+	}
 #endif
 
 	return comp_size;
 }
 
 VIDEO_CODEC_t Video_Codec_ZMBV = {
-	VIDEO_CODEC_ZMBV,
-    "ZMBV",
-    "Zip Motion Blocks Video",
+#ifdef HAVE_LIBZ
+	"zmbv",
+	"Zip Motion Blocks Video",
+#else
+	"uzmbv",
+	"Uncompressed Zip Motion Blocks Video",
+#endif
 	{'Z', 'M', 'B', 'V'},
 	{'Z', 'M', 'B', 'V'},
 	TRUE,
