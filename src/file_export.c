@@ -1315,7 +1315,7 @@ static int AVI_WriteIndex(FILE *fp) {
 
 #ifdef SOUND
 		fputs("01wb", fp); /* stream 1, audio data */
-		fputl(0, fp); /* flags: audio is not a keyframe */
+		fputl(0x10, fp); /* flags: PCM audio is always a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
 		size = (index & AUDIO_BITMASK) / AUDIO_BITSHIFT;
 		fputl(size, fp); /* size of audio data */
