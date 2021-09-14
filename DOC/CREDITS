@@ -308,6 +308,10 @@ Perry McFarlane <ce596@freenet.toronto.on.ca>
     - various bugfixes in all areas of Atari800
     - and much much more, including general source clean up in 2.1.0
 
+Rob McMullen <feedback@playermissile.com>
+    - libatari800 compile target (atari800 as a library)
+    - multimedia framework, video codecs, and AVI video support
+
 Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
     - rawkey support for svgalib
 

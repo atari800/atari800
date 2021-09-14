@@ -314,10 +314,17 @@ elif [[ "$a8_target" = "libatari800" ]]; then
     AC_CHECK_FUNCS(setjmp)
 else
 	AC_CHECK_LIB(z,gzopen)
-	AC_CHECK_LIB(png,png_get_libpng_ver)
+
+    dnl Need SUPPORTS_LIBPNG shell variable for PNG video codec test below
+	AC_CHECK_LIB(png,png_get_libpng_ver,[LIBS="-lpng $LIBS"; SUPPORTS_LIBPNG=yes],[SUPPORTS_LIBPNG=no])
+    if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+        AC_DEFINE(HAVE_LIBPNG,1,[Supports PNG image compression library.])
+    fi
+
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 fi
+
 
 dnl Set OBJS and libraries depending on host and target...
 
@@ -1081,6 +1088,34 @@ dnl file_export.c is needed when sound is enabled (for WAV recording) or when AV
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
 AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
 
+dnl Set video recording configuration options
+
+if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
+    supported_video_codecs="rle"
+    if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+        A8_OPTION(pngcodec,"yes",
+                [Support PNG video codec (default=ON)],
+                VIDEO_CODEC_PNG,[Define to enable support for PNG video codec.]
+                )
+        if [[ "$WANT_VIDEO_CODEC_PNG" = "yes" ]]; then
+            supported_video_codecs="$supported_video_codecs png"
+        fi
+    else
+        WANT_VIDEO_CODEC_PNG=no
+    fi
+    A8_OPTION(zmbvcodec,"yes",
+            [Support ZMBV video codec (default=ON)],
+            VIDEO_CODEC_ZMBV,[Define to enable support for ZMBV video codec.]
+            )
+    if [[ "$WANT_VIDEO_CODEC_ZMBV" = "yes" ]]; then
+        supported_video_codecs="$supported_video_codecs zmbv"
+    fi
+fi
+
+AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_AVI_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
+
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
           IDE,[Define to add IDE harddisk emulation.]
@@ -1334,6 +1369,10 @@ else
     echo "    (Sound sub-options disabled)"
 fi
 echo "Using video recording?................: $WANT_AVI_VIDEO_RECORDING"
+if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
+    echo "Supported video codecs................: $supported_video_codecs"
+fi
+
 if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"
 fi

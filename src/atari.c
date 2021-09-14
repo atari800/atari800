@@ -1348,6 +1348,10 @@ void Atari800_Frame(void)
 #ifdef SOUND
 	Sound_Update();
 #endif
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+	/* multimedia stats are drawn here so they don't get recorded in the video */
+	Screen_DrawMultimediaStats();
+#endif
 	Atari800_nframes++;
 #ifndef LIBATARI800
 #ifdef BENCHMARK

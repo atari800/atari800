@@ -258,3 +258,26 @@ int Multimedia_WriteVideo()
 }
 
 #endif /* AVI_VIDEO_RECORDING */
+
+/* Multimedia_GetStats gets the elapsed time in seconds and size in kilobytes of
+   the currently recording file.
+
+   RETURNS: TRUE if a file is currently being written, FALSE if not
+   */
+int Multimedia_GetStats(int *seconds, int *size, char **media_type)
+{
+	if (0
+#ifdef SOUND
+		|| sndoutput
+#endif
+#ifdef AVI_VIDEO_RECORDING
+		|| avioutput
+#endif
+		) {
+		*seconds = File_Export_ElapsedTime();
+		*size = File_Export_CurrentSize();
+		*media_type = File_Export_Description();
+		return 1;
+	}
+	return 0;
+}

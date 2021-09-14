@@ -19,5 +19,9 @@ int Multimedia_OpenVideoFile(const char *szFileName);
 int Multimedia_WriteVideo(void);
 #endif
 
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+int Multimedia_GetStats(int *seconds, int *size, char **media_type);
+#endif
+
 #endif /* MULTIMEDIA_H_ */
 
