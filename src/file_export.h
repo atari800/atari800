@@ -3,6 +3,7 @@
 
 #include "atari.h"
 
+#ifdef AVI_VIDEO_RECORDING
 /* Video codec initialization function. It must set up any internal
    configuration needed by the codec. Return the maximum size of the buffer
    needed to store the compressed video frame, or -1 on error. */
@@ -27,6 +28,33 @@ typedef struct {
     VIDEO_CODEC_CreateFrame frame;
     VIDEO_CODEC_End end;
 } VIDEO_CODEC_t;
+
+#ifdef SOUND
+/* Audio codec initialization function. It must set up any internal
+   configuration needed by the codec. Return the maximum size of the buffer
+   needed to store the compressed audio frame, or -1 on error. */
+typedef int (*AUDIO_CODEC_Init)(int sample_rate, int approx_fps, int sample_size, int num_channels);
+
+/* Audio codec frame creation function. Given the pointer to the sample data and
+   the number of samples, store the compressed frame into buf. Return the size
+   of the compressed frame in bytes, or -1 on error. */
+typedef int (*AUDIO_CODEC_CreateFrame)(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize);
+
+/* Audio codec cleanup function. Free any data allocated in the init function. Return 1 on
+   success, or zero on error. */
+typedef int (*AUDIO_CODEC_End)(void);
+
+typedef struct {
+    char *codec_id;
+    char *description;
+    char fourcc[4];
+    UWORD format_type;
+    AUDIO_CODEC_Init init;
+    AUDIO_CODEC_CreateFrame frame;
+    AUDIO_CODEC_End end;
+} AUDIO_CODEC_t;
+#endif /* SOUND */
+#endif /* AVI_VIDEO_RECORDING */
 
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 extern int FILE_EXPORT_compression_level;

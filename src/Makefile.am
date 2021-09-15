@@ -138,6 +138,9 @@ endif
 if WITH_VIDEO_CODEC_ZMBV
 atari800_SOURCES += video_codec_zmbv.c video_codec_zmbv.h
 endif
+if WITH_SOUND
+atari800_SOURCES += audio_codec_pcm.c audio_codec_pcm.h
+endif
 endif
 
 

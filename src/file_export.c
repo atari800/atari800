@@ -50,6 +50,10 @@
 #include "video_codec_zmbv.h"
 #endif
 
+#if defined(SOUND) && defined(AVI_VIDEO_RECORDING)
+#include "audio_codec_pcm.h"
+#endif
+
 #if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
 /* RIFF files (WAV, AVI) are limited to 4GB in size, so define a reasonable max
    that's lower than 4GB */
@@ -150,6 +154,13 @@ static float keyframe_residual;
 static ULONG samples_written;
 static int audio_buffer_size = 0;
 static UBYTE *audio_buffer = NULL;
+
+static AUDIO_CODEC_t *audio_codec = NULL;
+static AUDIO_CODEC_t *requested_audio_codec = NULL;
+static AUDIO_CODEC_t *known_audio_codecs[] = {
+	&Audio_Codec_PCM,
+	NULL,
+};
 #endif
 
 static int num_streams;
@@ -160,7 +171,7 @@ static int num_streams;
 int FILE_EXPORT_compression_level = 6;
 #endif
 
-
+#ifdef AVI_VIDEO_RECORDING
 static VIDEO_CODEC_t *match_video_codec(char *id)
 {
 	VIDEO_CODEC_t **v = known_video_codecs;
@@ -202,6 +213,42 @@ static char *video_codec_args(char *buf)
 	return buf;
 }
 
+#ifdef SOUND
+static AUDIO_CODEC_t *match_audio_codec(char *id)
+{
+	AUDIO_CODEC_t **a = known_audio_codecs;
+	AUDIO_CODEC_t *found = NULL;
+
+	while (*a) {
+		if (Util_stricmp(id, (*a)->codec_id) == 0) {
+			found = *a;
+			break;
+		}
+		a++;
+	}
+	return found;
+}
+
+static AUDIO_CODEC_t *get_best_audio_codec(void)
+{
+	return &Audio_Codec_PCM;
+}
+
+static char *audio_codec_args(char *buf)
+{
+	AUDIO_CODEC_t **a = known_audio_codecs;
+
+	strcpy(buf, "\t-audiocodec auto");
+	while (*a) {
+		strcat(buf, "|");
+		strcat(buf, (*a)->codec_id);
+		a++;
+	}
+	return buf;
+}
+#endif /* SOUND */
+#endif /* AVI_VIDEO_RECORDING */
+
 int File_Export_Initialise(int *argc, char *argv[])
 {
 
@@ -230,6 +277,23 @@ int File_Export_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
+#ifdef SOUND
+		else if (strcmp(argv[i], "-audiocodec") == 0) {
+			if (i_a) {
+				char *mode = argv[++i];
+				if (strcmp(mode, "auto") == 0) {
+					requested_audio_codec = NULL; /* want best available */
+				}
+				else {
+					requested_audio_codec = match_audio_codec(mode);
+					if (!requested_audio_codec) {
+						a_i = TRUE;
+					}
+				}
+			}
+			else a_m = TRUE;
+		}
+#endif
 		else if (strcmp(argv[i], "-keyframe-interval") == 0) {
 			if (i_a) {
 				keyframe_interval = Util_sscandec(argv[++i]);
@@ -261,6 +325,10 @@ int File_Export_Initialise(int *argc, char *argv[])
 				Log_print("\t                 Select video codec (default: auto)");
 				Log_print("\t-keyframe-interval <ms>");
 				Log_print("\t                 Select interval between video keyframes in milliseconds");
+#ifdef SOUND
+				Log_print(audio_codec_args(buf));
+				Log_print("\t                 Select audio codec (default: auto)");
+#endif
 #endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 				Log_print("\t-compression-level <n>");
@@ -304,6 +372,19 @@ int File_Export_ReadConfig(char *string, char *ptr)
 			keyframe_interval = num;
 		else return FALSE;
 	}
+#ifdef SOUND
+	else if (strcmp(string, "AUDIO_CODEC") == 0) {
+		if (Util_stricmp(ptr, "auto") == 0) {
+			requested_audio_codec = NULL; /* want best available */
+		}
+		else {
+			requested_audio_codec = match_audio_codec(ptr);
+			if (!requested_audio_codec) {
+				return FALSE;
+			}
+		}
+	}
+#endif
 #endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	else if (strcmp(string, "COMPRESSION_LEVEL") == 0) {
@@ -327,6 +408,14 @@ void File_Export_WriteConfig(FILE *fp)
 		fprintf(fp, "VIDEO_CODEC=%s\n", requested_video_codec->codec_id);
 	}
 	fprintf(fp, "VIDEO_CODEC_KEYFRAME_INTERVAL=%d\n", keyframe_interval);
+#ifdef SOUND
+	if (!requested_audio_codec) {
+		fprintf(fp, "AUDIO_CODEC=AUTO\n");
+	}
+	else {
+		fprintf(fp, "AUDIO_CODEC=%s\n", requested_audio_codec->codec_id);
+	}
+#endif
 #endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	fprintf(fp, "COMPRESSION_LEVEL=%d\n", FILE_EXPORT_compression_level);
@@ -954,7 +1043,7 @@ static int AVI_WriteHeader(FILE *fp) {
 
 		/* 56 bytes for stream header data */
 		fputs("auds", fp); /* video stream */
-		fputl(1, fp); /* 1 = uncompressed audio */
+		fwrite(audio_codec->fourcc, 4, 1, fp);
 		fputl(0, fp); /* flags */
 		fputw(0, fp); /* priority */
 		fputw(0, fp); /* language */
@@ -974,7 +1063,7 @@ static int AVI_WriteHeader(FILE *fp) {
 		fputl(18, fp); /* length of header */
 
 		/* 18 bytes for stream format data */
-		fputw(1, fp); /* format_type */
+		fputw(audio_codec->format_type, fp); /* format_type */
 		fputw(POKEYSND_num_pokeys, fp); /* channels */
 		fputl(POKEYSND_playback_freq, fp); /* sample_rate */
 		fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
@@ -1050,12 +1139,23 @@ FILE *AVI_OpenFile(const char *szFileName)
 	}
 	video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
 #ifdef SOUND
+	if (!audio_codec) {
+		if (!requested_audio_codec) {
+			audio_codec = get_best_audio_codec();
+		}
+		else {
+			audio_codec = requested_audio_codec;
+		}
+	}
+	strcat(description, " ");
+	strcat(description, audio_codec->codec_id);
+
 	samples_written = 0;
 
 	if (Sound_enabled) {
 		num_streams = 2;
 		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
-		audio_buffer_size = (int)(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size / fps) + 1024;
+		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, (int)fps, sample_size, POKEYSND_num_pokeys);
 		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
 	}
 	else {
@@ -1098,17 +1198,12 @@ static int AVI_WriteFrame(FILE *fp, UBYTE *buf, int size, int frame_type, int is
 	padding = size % 2;
 	if (frame_type == VIDEO_FRAME_FLAG) {
 		fputs("00dc", fp);
-		fputl(size, fp);
-		fwrite(buf, 1, size, fp);
 	}
 	else {
 		fputs("01wb", fp);
-		fputl(size, fp);
-		/* it's possible we're on a big endian machine, so force the samples to
-		   be written in little-endian format where the unit size of the data is
-		   sample_size numbers of bytes */
-		fwritele(buf, sample_size, size / sample_size, fp);
 	}
+	fputl(size, fp);
+	fwrite(buf, 1, size, fp);
 	if (padding) {
 		fputc(0, fp);
 	}
@@ -1188,15 +1283,17 @@ int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	int size;
 	int result;
 
-	size = num_samples * sample_size;
-	if (size > audio_buffer_size) {
-		Log_print("AVI write error: audio buffer size too small to hold %d samples", num_samples);
-		/* set error condition */
+	size = audio_codec->frame(buf, num_samples, audio_buffer, audio_buffer_size);
+	if (size < 0) {
+		/* failed creating video frame; force close of file */
 		return 0;
 	}
-	memcpy(audio_buffer, buf, size);
 
 	result = AVI_WriteFrame(fp, audio_buffer, size, AUDIO_FRAME_FLAG, TRUE);
+	if (!result) {
+		/* failed during write; force close of file */
+		return 0;
+	}
 	samples_written += num_samples;
 
 	return result;
