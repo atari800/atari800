@@ -116,29 +116,17 @@ static ULONG total_video_size;
 static ULONG smallest_video_frame;
 static ULONG largest_video_frame;
 
-/* Video/audio frame data is stored in a packed ULONG array. Each video frame is
-   limited to 0x3ffff bytes (256k) and each audio frame is limited to 0x1fff
-   bytes (8k). The maximum audio sample rate is 65kHz (common are 44.1kHz and
-   48kHz), so the largest possible audio frame size will be with stereo POKEYs
-   at 65kHz with 16 bit samples at PAL frequency, so 2 * 65kHz * 2 / 50 frames
-   per second = 5243 samples/frame. It fits. */
 #define FRAME_INDEX_ALLOC_SIZE 1000
 static int num_frames_allocated;
 static ULONG *frame_indexes;
-#define VIDEO_BITMASK    0x0003ffff
-#define AUDIO_BITSHIFT   0x00040000
-#define AUDIO_BITMASK    0x7ffc0000
-#define KEYFRAME_BITMASK 0x80000000
+#define FRAME_SIZE_MASK  0x1fffffff
+#define VIDEO_FRAME_FLAG 0x20000000
+#define AUDIO_FRAME_FLAG 0x40000000
+#define KEYFRAME_FLAG    0x80000000
 
 /* dynamically allocated workspace for image compression */
 static int video_buffer_size = 0;
 static UBYTE *video_buffer = NULL;
-
-/* current_screen_size is used as a flag before the frame is generated. -1 means
-   awaiting frame generation, -2 means error, and 0 or greater means the video
-   frame has been encoded. Note that some encoders can create inter-frames with
-   zero length */
-static int current_screen_size = -1;
 
 static VIDEO_CODEC_t *video_codec = NULL;
 static VIDEO_CODEC_t *requested_video_codec = NULL;
@@ -157,13 +145,11 @@ static VIDEO_CODEC_t *known_video_codecs[] = {
    (only the differences from the previous frame) */
 static int keyframe_interval = 1000;
 static float keyframe_residual;
-static int current_is_keyframe = 0;
 
 #ifdef SOUND
 static ULONG samples_written;
 static int audio_buffer_size = 0;
 static UBYTE *audio_buffer = NULL;
-static int current_audio_samples = -1;
 #endif
 
 static int num_streams;
@@ -559,16 +545,18 @@ void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 
 #ifdef HAVE_LIBPNG
 #ifdef VIDEO_CODEC_PNG
+static int current_png_size;
+
 static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-	if (current_screen_size >= 0) {
-		if (current_screen_size + length < video_buffer_size) {
-			memcpy(video_buffer + current_screen_size, data, length);
-			current_screen_size += length;
+	if (current_png_size >= 0) {
+		if (current_png_size + length < video_buffer_size) {
+			memcpy(video_buffer + current_png_size, data, length);
+			current_png_size += length;
 		}
 		else {
 			Log_print("AVI write error: video compression buffer size too small.");
-			current_screen_size = -2;
+			current_png_size = -1;
 		}
 	}
 }
@@ -606,7 +594,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 	}
 #ifdef VIDEO_CODEC_PNG
 	if (fp == NULL) {
-		current_screen_size = 0;
+		current_png_size = 0;
 		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
 	}
 	else
@@ -666,7 +654,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 		free(rows[0]);
 
 #ifdef VIDEO_CODEC_PNG
-	return current_screen_size;
+	return current_png_size;
 #else
 	return 0;
 #endif
@@ -1034,9 +1022,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
-	keyframe_residual = 0.0;
-	current_is_keyframe = 1; /* first frame always a keyframe */
-	current_screen_size = -1; /* screen not generated yet */
+	keyframe_residual = keyframe_interval; /* force first frame to be keyframe */
 
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
 	set_video_margins();
@@ -1064,7 +1050,6 @@ FILE *AVI_OpenFile(const char *szFileName)
 	}
 	video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
 #ifdef SOUND
-	current_audio_samples = -1;
 	samples_written = 0;
 
 	if (Sound_enabled) {
@@ -1098,181 +1083,123 @@ FILE *AVI_OpenFile(const char *szFileName)
 	return fp;
 }
 
-/* AVI_WriteFrame writes out a single frame of video and audio, and saves the
+/* AVI_WriteFrame writes out a single frame of video or audio, and saves the
    index data for the end-of-file index chunk */
-static int AVI_WriteFrame(FILE *fp) {
-	int video_padding;
+static int AVI_WriteFrame(FILE *fp, UBYTE *buf, int size, int frame_type, int is_keyframe) {
+	int padding;
 	int frame_size;
 	int expected_frame_size;
-	int result;
-#ifdef SOUND
-	int audio_size;
-	int audio_padding;
-#endif
 
 	frame_size = ftell(fp);
 
 	/* AVI chunks must be word-aligned, i.e. lengths must be multiples of 2 bytes.
 	   If the size is an odd number, the data is padded with a zero but the length
 	   value still reports the actual length, not the padded length */
-	video_padding = current_screen_size % 2;
-	fputs("00dc", fp);
-	fputl(current_screen_size, fp);
-	fwrite(video_buffer, 1, current_screen_size, fp);
-	if (video_padding) {
-		fputc(0, fp);
-	}
-	expected_frame_size = 8 + current_screen_size + video_padding;
-
-#ifdef SOUND
-	if (num_streams == 2) {
-		audio_size = current_audio_samples * sample_size;
-		audio_padding = audio_size % 2;
-		fputs("01wb", fp);
-		fputl(audio_size, fp);
-		fwritele(audio_buffer, sample_size, current_audio_samples, fp);
-		if (audio_padding) {
-			fputc(0, fp);
-		}
-		samples_written += current_audio_samples;
-		expected_frame_size += 8 + audio_size + audio_padding;
+	padding = size % 2;
+	if (frame_type == VIDEO_FRAME_FLAG) {
+		fputs("00dc", fp);
+		fputl(size, fp);
+		fwrite(buf, 1, size, fp);
 	}
 	else {
-		audio_size = 0;
+		fputs("01wb", fp);
+		fputl(size, fp);
+		/* it's possible we're on a big endian machine, so force the samples to
+		   be written in little-endian format where the unit size of the data is
+		   sample_size numbers of bytes */
+		fwritele(buf, sample_size, size / sample_size, fp);
 	}
-#endif
+	if (padding) {
+		fputc(0, fp);
+	}
+	expected_frame_size = 8 + size + padding;
 
-	frame_indexes[frames_written] = current_screen_size
-#ifdef SOUND
-		+ AUDIO_BITSHIFT * audio_size
-#endif
-		;
-	if (current_is_keyframe) {
-		frame_indexes[frames_written] |= KEYFRAME_BITMASK;
-	}
+	size |= frame_type;
+	if (is_keyframe) size |= KEYFRAME_FLAG;
+	frame_indexes[frames_written] = size;
 	frames_written++;
 	if (frames_written >= num_frames_allocated) {
 		num_frames_allocated += FRAME_INDEX_ALLOC_SIZE;
 		frame_indexes = (ULONG *)Util_realloc(frame_indexes, num_frames_allocated * sizeof(ULONG));
 	}
 
-	/* check expected file data written equals the calculated size */
-	frame_size = ftell(fp) - frame_size;
-	result = (frame_size == expected_frame_size);
-
-	/* update size limit calculation including the 32 bytes needed for each index entry */
-	byteswritten += frame_size + 32;
-
-	/* update statistics */
-	total_video_size += current_screen_size;
-	if (current_screen_size < smallest_video_frame) {
-		smallest_video_frame = current_screen_size;
-	}
-	if (current_screen_size > largest_video_frame) {
-		largest_video_frame = current_screen_size;
-	}
-
-	/* A keyframe is requested when the interval has passed, unless Motion-PNG
-	   is used. Motion-PNG doesn't have the concept of deltas from the previous
-	   frame; instead, everything is a keyframe. */
-	if (video_codec->uses_interframes) {
-		keyframe_residual += 1000.0 / fps;
-		if (keyframe_residual > keyframe_interval) {
-			current_is_keyframe = TRUE;
-			keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
-		}
-		else {
-			current_is_keyframe = FALSE;
-		}
-	}
-	else {
-		current_is_keyframe = TRUE;
-	}
-
-	/* reset size indicators for next frame */
-	current_screen_size = -1;
-#ifdef SOUND
-	current_audio_samples = -1;
-#endif
-
+	/* update size limit calculation including the 16 bytes needed for each index entry */
+	byteswritten += frame_size + 16;
 	if (byteswritten > MAX_RECORDING_SIZE) {
 		/* force file close when at the limit */
 		return 0;
 	}
 
-	return result;
+	/* check expected file data written equals the calculated size */
+	frame_size = ftell(fp) - frame_size;
+	return frame_size == expected_frame_size;
 }
 
-/* AVI_AddVideoFrame adds a video frame to the stream. If an existing video
-   frame & audio data exist, save it to the file before starting a new frame.
-   Note that AVI_AddVideoFrame and AVI_AddAudioSamples may be called in either
-   order, but you must call both video and audio functions before the same
-   function again. */
+/* AVI_AddVideoFrame adds a video frame to the stream and updates the video
+   statistics. */
 int AVI_AddVideoFrame(FILE *fp) {
-	if (current_screen_size >= 0) {
-#ifdef SOUND
-		if (num_streams == 1 || current_audio_samples > 0) {
-#endif
-			if (!AVI_WriteFrame(fp)) {
-				return 0;
-			}
-#ifdef SOUND
+	int size;
+	int result;
+	int is_keyframe;
+
+	/* When a codec uses interframes (deltas from the previous frame), a
+	   keyframe is needed every keyframe interval. */
+	if (video_codec->uses_interframes) {
+		keyframe_residual += 1000.0 / fps;
+		if (keyframe_residual > keyframe_interval) {
+			is_keyframe = TRUE;
+			keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
 		}
 		else {
-			Log_print("AVI write error: attempted to write video frame without audio data");
-			return 0;
+			is_keyframe = FALSE;
 		}
-#endif
 	}
-	else if (current_screen_size < -1
-#ifdef SOUND
-			 || current_audio_samples < -1
-#endif
-			) {
-		/* error condition; force close of file */
+	else {
+		is_keyframe = TRUE;
+	}
+
+	size = video_codec->frame((UBYTE *)Screen_atari, is_keyframe, video_buffer, video_buffer_size);
+	if (size < 0) {
+		/* failed creating video frame; force close of file */
+		return 0;
+	}
+	result = AVI_WriteFrame(fp, video_buffer, size, VIDEO_FRAME_FLAG, is_keyframe);
+	if (!result) {
+		/* failed during write; force close of file */
 		return 0;
 	}
 
-	current_screen_size = video_codec->frame((UBYTE *)Screen_atari, current_is_keyframe, video_buffer, video_buffer_size);
-	return current_screen_size >= 0;
+	/* update statistics */
+	total_video_size += size;
+	if (size < smallest_video_frame) {
+		smallest_video_frame = size;
+	}
+	if (size > largest_video_frame) {
+		largest_video_frame = size;
+	}
+
+	return 1;
 }
 
 #ifdef SOUND
-/* AVI_AddAudioSamples adds audio data to the stream for the current video
-   frame. If an existing video frame & audio data exist, save it to the file
-   before starting a new frame. Note that AVI_AddVideoFrame and
-   AVI_AddAudioSamples may be called in either order, but you must call both
-   video and audio functions before the same function again. */
+/* AVI_AddAudioSamples adds audio data to the stream and update the audio
+   statistics. */
 int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp) {
 	int size;
-
-	if (current_audio_samples >= 0) {
-		if (current_screen_size >= 0) {
-			if (!AVI_WriteFrame(fp)) {
-				return 0;
-			}
-		}
-		else {
-			Log_print("AVI write error: attempted to write audio data without video frame");
-			return 0;
-		}
-	}
-	else if (current_screen_size < -1 || current_audio_samples < -1) {
-		/* error condition; force close of file */
-		return 0;
-	}
+	int result;
 
 	size = num_samples * sample_size;
 	if (size > audio_buffer_size) {
 		Log_print("AVI write error: audio buffer size too small to hold %d samples", num_samples);
 		/* set error condition */
-		current_audio_samples = -2;
 		return 0;
 	}
-	current_audio_samples = num_samples;
 	memcpy(audio_buffer, buf, size);
 
-	return 1;
+	result = AVI_WriteFrame(fp, audio_buffer, size, AUDIO_FRAME_FLAG, TRUE);
+	samples_written += num_samples;
+
+	return result;
 }
 #endif
 
@@ -1289,11 +1216,7 @@ static int AVI_WriteIndex(FILE *fp) {
 
 	chunk_size = ftell(fp);
 	offset = 4;
-	index_size = frames_written * 16
-#ifdef SOUND
-		* 2
-#endif
-		;
+	index_size = frames_written * 16;
 
 	/* The index format used here is tag 'idx1" (index version 1.0) & documented at
 	https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/Aviriff/ns-aviriff-avioldindex
@@ -1304,23 +1227,16 @@ static int AVI_WriteIndex(FILE *fp) {
 
 	for (i = 0; i < frames_written; i++) {
 		index = frame_indexes[i];
-		is_keyframe = index & KEYFRAME_BITMASK ? 0x10 : 0;
-
-		fputs("00dc", fp); /* stream 0, a compressed video frame */
+		is_keyframe = index & KEYFRAME_FLAG ? 0x10 : 0;
+		size = index & FRAME_SIZE_MASK;
+		if (index & VIDEO_FRAME_FLAG)
+			fputs("00dc", fp); /* stream 0, a compressed video frame */
+		else
+			fputs("01wb", fp); /* stream 1, audio data */
 		fputl(is_keyframe, fp); /* flags: is a keyframe */
 		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = index & VIDEO_BITMASK;
-		fputl(size, fp); /* size of video frame */
+		fputl(size, fp); /* size of frame */
 		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
-
-#ifdef SOUND
-		fputs("01wb", fp); /* stream 1, audio data */
-		fputl(0x10, fp); /* flags: PCM audio is always a keyframe */
-		fputl(offset, fp); /* offset in bytes from start of the 'movi' list */
-		size = (index & AUDIO_BITMASK) / AUDIO_BITSHIFT;
-		fputl(size, fp); /* size of audio data */
-		offset += size + 8 + (size % 2); /* make sure to word-align next offset */
-#endif
 	}
 
 	chunk_size = ftell(fp) - chunk_size;
@@ -1338,27 +1254,13 @@ int AVI_CloseFile(FILE *fp)
 	int seconds;
 	int result;
 
-	/* write out final frame if one exists */
-	if (current_screen_size >= 0
-#ifdef SOUND
-		&& current_audio_samples >= 0
-#endif
-			) {
-		result = AVI_WriteFrame(fp);
-	}
-	else {
-		result = 1;
-	}
-
 	if (frames_written > 0) {
 		seconds = (int)(frames_written / fps);
 		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, frames_written, total_video_size / frames_written / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
 	}
 
-	if (result > 0) {
-		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
-		result = AVI_WriteIndex(fp);
-	}
+	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
+	result = AVI_WriteIndex(fp);
 	if (result > 0) {
 		size_riff = ftell(fp) - 8;
 		result = AVI_WriteHeader(fp);
@@ -1370,13 +1272,11 @@ int AVI_CloseFile(FILE *fp)
 		audio_buffer = NULL;
 	}
 	audio_buffer_size = 0;
-	current_audio_samples = -1;
 #endif
 	video_codec->end();
 	free(video_buffer);
 	video_buffer = NULL;
 	video_buffer_size = 0;
-	current_screen_size = -1;
 	free(frame_indexes);
 	frame_indexes = NULL;
 	num_frames_allocated = 0;
