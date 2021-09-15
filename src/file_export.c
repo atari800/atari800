@@ -52,6 +52,7 @@
 
 #if defined(SOUND) && defined(AVI_VIDEO_RECORDING)
 #include "audio_codec_pcm.h"
+#include "audio_codec_mulaw.h"
 #endif
 
 #if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
@@ -66,11 +67,6 @@ static ULONG byteswritten;
 static ULONG frames_written;
 static float fps;
 static char description[16];
-#endif
-
-#ifdef SOUND
-/* sample size in bytes; will not change during a recording */
-static int sample_size;
 #endif
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
@@ -159,8 +155,10 @@ static AUDIO_CODEC_t *audio_codec = NULL;
 static AUDIO_CODEC_t *requested_audio_codec = NULL;
 static AUDIO_CODEC_t *known_audio_codecs[] = {
 	&Audio_Codec_PCM,
+	&Audio_Codec_MULAW,
 	NULL,
 };
+static AUDIO_OUT_t *audio_out = NULL;
 #endif
 
 static int num_streams;
@@ -763,6 +761,7 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 FILE *WAV_OpenFile(const char *szFileName)
 {
 	FILE *fp;
+	int sample_size;
 
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
@@ -835,7 +834,9 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *f
 {
 	if (fp && buf && num_samples) {
 		int result;
+		int sample_size;
 
+		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
 		result = fwritele(buf, sample_size, num_samples, fp);
 		if (result != num_samples) {
 			result = 0;
@@ -1049,12 +1050,12 @@ static int AVI_WriteHeader(FILE *fp) {
 		fputw(0, fp); /* language */
 		fputl(0, fp); /* initial_frames */
 		fputl(1, fp); /* scale */
-		fputl(POKEYSND_playback_freq, fp); /* rate, i.e. samples per second */
+		fputl(audio_out->sample_rate, fp); /* rate, i.e. samples per second */
 		fputl(0, fp); /* start time; zero = no delay */
 		fputl(samples_written, fp); /* length (for audio is number of samples) */
-		fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* suggested buffer size */
+		fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size, fp); /* suggested buffer size */
 		fputl(0, fp); /* quality (-1 = default quality?) */
-		fputl(POKEYSND_num_pokeys * sample_size, fp); /* sample size */
+		fputl(audio_out->num_channels * audio_out->sample_size, fp); /* sample size */
 		fputl(0, fp); /* rcRect, ignored */
 		fputl(0, fp);
 
@@ -1064,11 +1065,11 @@ static int AVI_WriteHeader(FILE *fp) {
 
 		/* 18 bytes for stream format data */
 		fputw(audio_codec->format_type, fp); /* format_type */
-		fputw(POKEYSND_num_pokeys, fp); /* channels */
-		fputl(POKEYSND_playback_freq, fp); /* sample_rate */
-		fputl(POKEYSND_playback_freq * POKEYSND_num_pokeys * sample_size, fp); /* bytes_per_second */
-		fputw(POKEYSND_num_pokeys * sample_size, fp); /* bytes per frame */
-		fputw(sample_size * 8, fp); /* bits_per_sample */
+		fputw(audio_out->num_channels, fp); /* channels */
+		fputl(audio_out->sample_rate, fp); /* sample_rate */
+		fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size, fp); /* bytes_per_second */
+		fputw(audio_out->num_channels * audio_out->sample_size, fp); /* bytes per frame */
+		fputw(audio_out->sample_size * 8, fp); /* bits_per_sample */
 		fputw(0, fp); /* size */
 
 		/* 8 bytes for stream name indicator */
@@ -1154,15 +1155,15 @@ FILE *AVI_OpenFile(const char *szFileName)
 
 	if (Sound_enabled) {
 		num_streams = 2;
-		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
-		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, (int)fps, sample_size, POKEYSND_num_pokeys);
+		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, (int)fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
 		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+		audio_out = audio_codec->audio_out();
 	}
 	else {
 		num_streams = 1;
-		sample_size = 0;
 		audio_buffer_size = 0;
 		audio_buffer = NULL;
+		audio_out = NULL;
 	}
 #else
 	num_streams = 1;

@@ -35,6 +35,16 @@ typedef struct {
    needed to store the compressed audio frame, or -1 on error. */
 typedef int (*AUDIO_CODEC_Init)(int sample_rate, int approx_fps, int sample_size, int num_channels);
 
+typedef struct {
+    int sample_rate;
+    int sample_size;
+    int num_channels;
+} AUDIO_OUT_t;
+
+/* Audio codec output data function. Return a pointer to the AUDIO_OUT_t structure
+   that provides information on the audio output format. */
+typedef AUDIO_OUT_t *(*AUDIO_CODEC_AudioOut)(void);
+
 /* Audio codec frame creation function. Given the pointer to the sample data and
    the number of samples, store the compressed frame into buf. Return the size
    of the compressed frame in bytes, or -1 on error. */
@@ -50,6 +60,7 @@ typedef struct {
     char fourcc[4];
     UWORD format_type;
     AUDIO_CODEC_Init init;
+    AUDIO_CODEC_AudioOut audio_out;
     AUDIO_CODEC_CreateFrame frame;
     AUDIO_CODEC_End end;
 } AUDIO_CODEC_t;

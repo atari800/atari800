@@ -26,32 +26,34 @@
 #include "file_export.h"
 #include "audio_codec_pcm.h"
 
-static int sample_rate;
-static int sample_size;
-static int num_channels;
+static AUDIO_OUT_t audio_out;
 
-static int PCM_Init(int rate, int fps, int size, int channels)
+static int PCM_Init(int sample_rate, int fps, int sample_size, int num_channels)
 {
 	int comp_size;
 
-	sample_rate = rate;
-	sample_size = size;
-	num_channels = channels;
+	audio_out.sample_rate = sample_rate;
+	audio_out.sample_size = sample_size;
+	audio_out.num_channels = num_channels;
 
-	comp_size = rate * size * channels / fps;
+	comp_size = sample_rate * sample_size * num_channels / fps;
 	return comp_size;
+}
+
+static AUDIO_OUT_t *PCM_AudioOut(void) {
+	return &audio_out;
 }
 
 static int PCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize)
 {
 	int size;
 
-	size = num_samples * sample_size;
+	size = num_samples * audio_out.sample_size;
 	if (size > bufsize) {
 		return -1;
 	}
 #ifdef WORDS_BIGENDIAN
-	if (sample_size == 2) {
+	if (audio_out.sample_size == 2) {
 		UBYTE c;
 
 		while (num_samples > 0) {
@@ -80,6 +82,7 @@ AUDIO_CODEC_t Audio_Codec_PCM = {
 	{1, 0, 0, 0}, /* fourcc */
 	1, /* format type */
 	&PCM_Init,
+	&PCM_AudioOut,
 	&PCM_CreateFrame,
 	&PCM_End,
 };
