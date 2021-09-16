@@ -140,6 +140,7 @@ atari800_SOURCES += video_codec_zmbv.c video_codec_zmbv.h
 endif
 if WITH_SOUND
 atari800_SOURCES += audio_codec_pcm.c audio_codec_pcm.h \
+	audio_codec_adpcm.c audio_codec_adpcm.h \
 	audio_codec_mulaw.c audio_codec_mulaw.h
 endif
 endif

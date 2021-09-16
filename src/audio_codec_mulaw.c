@@ -83,7 +83,7 @@ static UBYTE interval_lookup[256] = {
 	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
 };
 
-static int MULAW_Init(int sample_rate, int fps, int sample_size, int num_channels)
+static int MULAW_Init(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
 
@@ -91,9 +91,15 @@ static int MULAW_Init(int sample_rate, int fps, int sample_size, int num_channel
 		return -1;
 	audio_out.sample_rate = sample_rate;
 	audio_out.sample_size = 1;
+	audio_out.bits_per_sample = 8;
 	audio_out.num_channels = num_channels;
+	audio_out.block_align = num_channels;
+	audio_out.scale = 1;
+	audio_out.rate = sample_rate;
+	audio_out.length = 0;
+	audio_out.extra_data_size = 0;
 
-	comp_size = sample_rate * sample_size * num_channels / fps;
+	comp_size = sample_rate * sample_size * num_channels / (int)fps;
 	return comp_size;
 }
 
@@ -116,6 +122,7 @@ static int MULAW_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	if (size > bufsize) {
 		return -1;
 	}
+	audio_out.length += num_samples;
 	words = (const SWORD *)source;
 	while (num_samples > 0) {
 		sample = *words++;
@@ -151,7 +158,7 @@ static int MULAW_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	return size;
 }
 
-static int MULAW_End(void)
+static int MULAW_End(float duration)
 {
 	return 1;
 }
@@ -164,5 +171,6 @@ AUDIO_CODEC_t Audio_Codec_MULAW = {
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,
+	NULL,
 	&MULAW_End,
 };

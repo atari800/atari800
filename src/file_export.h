@@ -33,12 +33,19 @@ typedef struct {
 /* Audio codec initialization function. It must set up any internal
    configuration needed by the codec. Return the maximum size of the buffer
    needed to store the compressed audio frame, or -1 on error. */
-typedef int (*AUDIO_CODEC_Init)(int sample_rate, int approx_fps, int sample_size, int num_channels);
+typedef int (*AUDIO_CODEC_Init)(int sample_rate, float fps, int sample_size, int num_channels);
 
 typedef struct {
     int sample_rate;
     int sample_size;
+    int bits_per_sample;
     int num_channels;
+    int block_align;
+    int scale;
+    int rate;
+    int length;
+    int extra_data_size;
+    UBYTE extra_data[256];
 } AUDIO_OUT_t;
 
 /* Audio codec output data function. Return a pointer to the AUDIO_OUT_t structure
@@ -50,9 +57,12 @@ typedef AUDIO_OUT_t *(*AUDIO_CODEC_AudioOut)(void);
    of the compressed frame in bytes, or -1 on error. */
 typedef int (*AUDIO_CODEC_CreateFrame)(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize);
 
+/* Audio codec has another frame to output. */
+typedef int (*AUDIO_CODEC_FrameReady)(int final_frame);
+
 /* Audio codec cleanup function. Free any data allocated in the init function. Return 1 on
    success, or zero on error. */
-typedef int (*AUDIO_CODEC_End)(void);
+typedef int (*AUDIO_CODEC_End)(float duration);
 
 typedef struct {
     char *codec_id;
@@ -62,6 +72,7 @@ typedef struct {
     AUDIO_CODEC_Init init;
     AUDIO_CODEC_AudioOut audio_out;
     AUDIO_CODEC_CreateFrame frame;
+    AUDIO_CODEC_FrameReady another_frame;
     AUDIO_CODEC_End end;
 } AUDIO_CODEC_t;
 #endif /* SOUND */

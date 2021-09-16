@@ -28,15 +28,21 @@
 
 static AUDIO_OUT_t audio_out;
 
-static int PCM_Init(int sample_rate, int fps, int sample_size, int num_channels)
+static int PCM_Init(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
 
 	audio_out.sample_rate = sample_rate;
 	audio_out.sample_size = sample_size;
+	audio_out.bits_per_sample = sample_size * 8;
 	audio_out.num_channels = num_channels;
+	audio_out.block_align = num_channels * sample_size;
+	audio_out.scale = 1;
+	audio_out.rate = sample_rate;
+	audio_out.length = 0;
+	audio_out.extra_data_size = 0;
 
-	comp_size = sample_rate * sample_size * num_channels / fps;
+	comp_size = sample_rate * sample_size * num_channels / (int)fps;
 	return comp_size;
 }
 
@@ -68,10 +74,11 @@ static int PCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 	{
 		memcpy(buf, source, size);
 	}
+	audio_out.length += num_samples;
 	return size;
 }
 
-static int PCM_End(void)
+static int PCM_End(float duration)
 {
 	return 1;
 }
@@ -84,5 +91,6 @@ AUDIO_CODEC_t Audio_Codec_PCM = {
 	&PCM_Init,
 	&PCM_AudioOut,
 	&PCM_CreateFrame,
+	NULL,
 	&PCM_End,
 };
