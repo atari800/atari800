@@ -216,6 +216,7 @@ static char *video_codec_args(char *buf)
 	}
 	return buf;
 }
+#endif /* AVI_VIDEO_RECORDING */
 
 #ifdef SOUND
 static AUDIO_CODEC_t *match_audio_codec(char *id)
@@ -251,7 +252,7 @@ static char *audio_codec_args(char *buf)
 	return buf;
 }
 #endif /* SOUND */
-#endif /* AVI_VIDEO_RECORDING */
+
 
 int File_Export_Initialise(int *argc, char *argv[])
 {
@@ -757,6 +758,109 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 #endif /* HAVE_LIBPNG */
 #endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
 
+#if defined(AVI_VIDEO_RECORDING) || defined(SOUND)
+
+static int init_codecs(int video, int audio)
+{
+	strcpy(description, "");
+	video_frame_count = 0;
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+
+#ifdef AVI_VIDEO_RECORDING
+	if (video) {
+		set_video_margins();
+
+		if (!video_codec) {
+			if (!requested_video_codec) {
+				video_codec = get_best_video_codec();
+			}
+			else {
+				video_codec = requested_video_codec;
+			}
+		}
+		strcat(description, "AVI ");
+		strcat(description, video_codec->codec_id);
+
+		video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
+		if (video_buffer_size < 0) {
+			Log_print("Failed to initialize %s video codec", video_codec->codec_id);
+			return 0;
+		}
+		total_video_size = 0;
+		smallest_video_frame = 0xffffffff;
+		largest_video_frame = 0;
+	}
+	else {
+		video_buffer_size = 0;
+		video_buffer = NULL;
+		video_codec = NULL;
+	}
+#endif /* AVI_VIDEO_RECORDING */
+#ifdef SOUND
+	if (audio && Sound_enabled) {
+		if (!audio_codec) {
+			if (!requested_audio_codec) {
+				audio_codec = get_best_audio_codec();
+			}
+			else {
+				audio_codec = requested_audio_codec;
+			}
+		}
+
+		if (video)
+			strcat(description, " ");
+		else
+			strcat(description, "WAV ");
+		strcat(description, audio_codec->codec_id);
+		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
+		if (audio_buffer_size < 0) {
+			Log_print("Failed to initialize %s audio codec", audio_codec->codec_id);
+			return 0;
+		}
+		audio_out = audio_codec->audio_out();
+	}
+	else {
+		audio_buffer_size = 0;
+		audio_buffer = NULL;
+		audio_codec = NULL;
+		audio_out = NULL;
+	}
+#endif /* SOUND */
+
+	/* delay alloc until after error conditions have been checked */
+#ifdef AVI_VIDEO_RECORDING
+	if (video && video_codec && video_buffer_size) {
+		video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
+	}
+#endif /* AVI_VIDEO_RECORDING */
+#ifdef SOUND
+	if (audio && audio_codec && audio_buffer_size) {
+		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
+	}
+#endif /* SOUND */
+
+	return 1;
+}
+
+static void codec_memory_cleanup()
+{
+#ifdef AVI_VIDEO_RECORDING
+	if (video_buffer) {
+		free(video_buffer);
+		video_buffer_size = 0;
+		video_buffer = NULL;
+	}
+#endif /* AVI_VIDEO_RECORDING */
+#ifdef SOUND
+	if (audio_buffer) {
+		free(audio_buffer);
+		audio_buffer_size = 0;
+		audio_buffer = NULL;
+	}
+#endif /* SOUND */
+}
+#endif /* SOUND || AVI_VIDEO_RECORDING */
+
 
 #ifdef SOUND
 /* WAV_OpenFile will start a new sound file and write out the header. Note that
@@ -769,7 +873,6 @@ int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 FILE *WAV_OpenFile(const char *szFileName)
 {
 	FILE *fp;
-	int sample_size;
 
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
@@ -802,28 +905,28 @@ FILE *WAV_OpenFile(const char *szFileName)
 
 	Good description of WAVE format: http://www.sonicspot.com/guide/wavefiles.html
 	*/
-	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
-	video_frame_count = 0;
-	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	strcpy(description, "WAV");
+	init_codecs(0, 1);
 
 	fputs("RIFF", fp);
 	fputl(0, fp); /* length to be filled in upon file close */
 	fputs("WAVE", fp);
 
 	fputs("fmt ", fp);
-	fputl(16, fp);
-	fputw(1, fp);
-	fputw(POKEYSND_num_pokeys, fp);
-	fputl(POKEYSND_playback_freq, fp);
-	fputl(POKEYSND_playback_freq * sample_size, fp);
-	fputw(POKEYSND_num_pokeys * sample_size, fp);
-	fputw(sample_size * 8, fp);
+	fputl(16 + audio_out->extra_data_size, fp);
+	fputw(audio_codec->format_type, fp);
+	fputw(audio_out->num_channels, fp);
+	fputl(audio_out->sample_rate, fp);
+	fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size, fp);
+	fputw(audio_out->block_align, fp);
+	fputw(audio_out->bits_per_sample, fp);
+	if (audio_out->extra_data_size > 0) {
+		fwrite(audio_out->extra_data, audio_out->extra_data_size, 1, fp);
+	}
 
 	fputs("data", fp);
 	fputl(0, fp); /* length to be filled in upon file close */
 
-	if (ftell(fp) != 44) {
+	if (ftell(fp) != 44 + audio_out->extra_data_size) {
 		fclose(fp);
 		return NULL;
 	}
@@ -840,28 +943,51 @@ FILE *WAV_OpenFile(const char *szFileName)
    input num_samples * sample size) */
 int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp)
 {
-	if (fp && buf && num_samples) {
-		int result;
-		int sample_size;
+	int size;
 
-		sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
-		result = fwritele(buf, sample_size, num_samples, fp);
-		if (result != num_samples) {
-			result = 0;
-		}
-		else {
-			result *= sample_size;
-		}
+	if (!fp) return 0;
 
-		byteswritten += result;
-		video_frame_count++;
-		if (byteswritten > MAX_RECORDING_SIZE) {
-			return 0;
+	if (!buf) {
+		/* This happens at file close time, checking if audio codec has samples
+		   remaining */
+		if (!audio_codec->another_frame || !audio_codec->another_frame(TRUE)) {
+			/* If the codec doesn't support buffered frames or there's nothing
+			   remaining, there's no need to try to write another frame */
+			return 1;
 		}
-		return result;
 	}
 
-	return 0;
+	do {
+		video_frame_count++;
+
+		size = audio_codec->frame(buf, num_samples, audio_buffer, audio_buffer_size);
+		if (size < 0) {
+			/* failed creating video frame; force close of file */
+			Log_print("audio codec %s failed encoding frame", audio_codec->codec_id);
+			return 0;
+		}
+
+		/* If audio frame size is zero, that means the codec needs more samples
+		   before it can create a frame. See audio_codec_adpcm.c for an example.
+		   Only if there is some data do we write the frame to the file. */
+		if (size > 0) {
+			size = fwrite(audio_buffer, 1, size, fp);
+			if (!size) {
+				/* failed during write; force close of file */
+				return 0;
+			}
+			byteswritten += size;
+
+			/* for next loop, only output samples remaining from previous frame */
+			num_samples = 0;
+		}
+		else {
+			/* report success if there weren't enough samples to fill a frame. */
+			return 1;
+		}
+	} while (audio_codec->another_frame && audio_codec->another_frame(FALSE));
+
+	return 1;
 }
 
 
@@ -873,40 +999,52 @@ int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *f
    */
 int WAV_CloseFile(FILE *fp)
 {
-	int bSuccess = TRUE;
+	int result = TRUE;
 	char aligned = 0;
+	int seconds;
 
 	if (fp != NULL) {
-		/* A RIFF file's chunks must be word-aligned. So let's align. */
-		if (byteswritten & 1) {
-			if (putc(0, fp) == EOF)
-				bSuccess = FALSE;
-			else
-				aligned = 1;
-		}
+		/* Force audio codec to write out the last frame. This only occurs in codecs
+		with fixed block alignments */
+		result = WAV_WriteSamples(NULL, 0, fp);
 
-		if (bSuccess) {
-			/* Sound file is finished, so modify header and close it. */
-			if (fseek(fp, 4, SEEK_SET) != 0)	/* Seek past RIFF */
-				bSuccess = FALSE;
-			else {
-				/* RIFF header's size field must equal the size of all chunks
-				 * with alignment, so the alignment byte is added.
-				 */
-				fputl(byteswritten + 36 + aligned, fp);
-				if (fseek(fp, 40, SEEK_SET) != 0)
-					bSuccess = FALSE;
+		if (result) {
+			/* A RIFF file's chunks must be word-aligned. So let's align. */
+			if (byteswritten & 1) {
+				if (putc(0, fp) == EOF)
+					result = FALSE;
+				else
+					aligned = 1;
+			}
+
+			if (result) {
+				audio_codec->end((float)(video_frame_count / fps));
+
+				/* Sound file is finished, so modify header and close it. */
+				if (fseek(fp, 4, SEEK_SET) != 0)	/* Seek past RIFF */
+					result = FALSE;
 				else {
-					/* But in the "data" chunk size field, the alignment byte
-					 * should be ignored. */
-					fputl(byteswritten, fp);
+					/* RIFF header's size field must equal the size of all chunks
+					* with alignment, so the alignment byte is added.
+					*/
+					fputl(byteswritten + 36 + aligned, fp);
+					if (fseek(fp, 40 + audio_out->extra_data_size, SEEK_SET) != 0)
+						result = FALSE;
+					else {
+						/* But in the "data" chunk size field, the alignment byte
+						* should be ignored. */
+						fputl(byteswritten, fp);
+						seconds = (int)(video_frame_count / fps);
+						Log_print("WAV stats: %d:%02d:%02d, %dMB, %d frames", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count);
+					}
 				}
 			}
 		}
 		fclose(fp);
+		codec_memory_cleanup();
 	}
 
-	return bSuccess;
+	return result;
 }
 #endif /* SOUND */
 
@@ -1125,92 +1263,33 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
-	video_frame_count = 0;
 	keyframe_residual = keyframe_interval; /* force first frame to be keyframe */
-
-	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	set_video_margins();
 
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
 	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
-	if (!video_codec) {
-		if (!requested_video_codec) {
-			video_codec = get_best_video_codec();
-		}
-		else {
-			video_codec = requested_video_codec;
-		}
-	}
-	strcpy(description, "AVI ");
-	strcat(description, video_codec->codec_id);
+	init_codecs(1, 1);
 
-	video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
-	if (video_buffer_size < 0) {
-		Log_print("Failed to initialize %s video codec", video_codec->codec_id);
-		fclose(fp);
-		return NULL;
-	}
 #ifdef SOUND
-	if (!audio_codec) {
-		if (!requested_audio_codec) {
-			audio_codec = get_best_audio_codec();
-		}
-		else {
-			audio_codec = requested_audio_codec;
-		}
-	}
-	strcat(description, " ");
-	strcat(description, audio_codec->codec_id);
-
 	samples_written = 0;
-
-	if (Sound_enabled) {
+	if (audio_codec) {
 		num_streams = 2;
-		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
-		if (audio_buffer_size < 0) {
-			Log_print("Failed to initialize %s audio codec", audio_codec->codec_id);
-			fclose(fp);
-			return NULL;
-		}
-		audio_out = audio_codec->audio_out();
 	}
-	else {
-		num_streams = 1;
-		audio_buffer_size = 0;
-		audio_buffer = NULL;
-		audio_out = NULL;
-	}
-#else
-	num_streams = 1;
+	else
 #endif
+	{
+		num_streams = 1;
+	}
 
 	if (!AVI_WriteHeader(fp)) {
-		video_codec->end();
-#ifdef SOUND
-		if (num_streams == 2) {
-			audio_codec->end(0);
-		}
-#endif
+		codec_memory_cleanup();
 		fclose(fp);
 		return NULL;
 	}
-
-	/* delay allocating buffers till now so we don't have to free them if an
-	   error occurs in one of the earlier steps. */
-	video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
-#ifdef SOUND
-	if (num_streams == 2) {
-		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
-	}
-#endif
 
 	/* set up video statistics */
 	byteswritten = ftell(fp) + 8; /* current size + index header */
-	total_video_size = 0;
-	smallest_video_frame = 0xffffffff;
-	largest_video_frame = 0;
 
 	return fp;
 }
@@ -1425,15 +1504,10 @@ int AVI_CloseFile(FILE *fp)
 #ifdef SOUND
 	if (audio_buffer_size > 0) {
 		audio_codec->end((float)(video_frame_count / fps));
-		free(audio_buffer);
-		audio_buffer = NULL;
 	}
-	audio_buffer_size = 0;
 #endif
 	video_codec->end();
-	free(video_buffer);
-	video_buffer = NULL;
-	video_buffer_size = 0;
+	codec_memory_cleanup();
 
 	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
 	result = AVI_WriteIndex(fp);
