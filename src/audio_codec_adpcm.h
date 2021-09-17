@@ -5,6 +5,7 @@
 #include "file_export.h"
 
 extern AUDIO_CODEC_t Audio_Codec_ADPCM;
+extern AUDIO_CODEC_t Audio_Codec_ADPCM_MS;
 
 typedef struct ADPCMChannelStatus {
 	int sample1;

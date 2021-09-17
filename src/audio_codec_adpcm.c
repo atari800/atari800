@@ -172,7 +172,6 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	int st;
 	int samples_consumed;
 	const SWORD *samples;
-	const SWORD *samples_start;
 
 	if (audio_out.block_align > bufsize) {
 		return -1;
@@ -204,7 +203,6 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 		return 0;
 	}
 
-    samples_start = samples;
 	st = audio_out.num_channels == 2;
 
 	for (i = 0; i < audio_out.num_channels; i++) {
@@ -270,6 +268,18 @@ static int ADPCM_End(float duration)
 
 AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	"adpcm",
+	"Microsoft ADPCM",
+	{1, 0, 0, 0}, /* fourcc */
+	2, /* format type */
+	&ADPCM_Init,
+	&ADPCM_AudioOut,
+	&ADPCM_CreateFrame,
+	&ADPCM_AnotherFrame,
+	&ADPCM_End,
+};
+
+AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
+	"adpcm_ms",
 	"Microsoft ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	2, /* format type */

@@ -174,3 +174,15 @@ AUDIO_CODEC_t Audio_Codec_MULAW = {
 	NULL,
 	&MULAW_End,
 };
+
+AUDIO_CODEC_t Audio_Codec_PCM_MULAW = {
+	"pcm_mulaw",
+	"mu-law 8-bit Telephony Codec",
+	{1, 0, 0, 0}, /* fourcc */
+	7, /* mu-law */
+	&MULAW_Init,
+	&MULAW_AudioOut,
+	&MULAW_CreateFrame,
+	NULL,
+	&MULAW_End,
+};

@@ -791,6 +791,45 @@ Set sound output format to 16-bit
 .B \-audio8
 Set sound output format to 8-bit
 .TP
+.BI \-aname\  pattern
+Set filename pattern for audio recordings.
+Use to override the default pattern of \fIatari###.wav\fR which produces
+\fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
+Hashes are replaced with raising numbers.
+.TP
+\fB\-acodec auto\fR|\fBpcm\fR|\fBadpcm\fR|\fBadpcm_ms\fR|\fBmulaw\fR|\fBpcm_mulaw\fR
+Select the audio codec used when saving to AVI or WAV files. Some codecs are
+lossy, meaning they reduce storage space while attempting to sound as close as
+possible to the original audio.
+
+.PP
+.RS
+.PD 0
+.TP
+.B auto
+The default.
+Use the codec that provides the best audio quality, which is PCM.
+.TP
+.B pcm
+Use uncompressed pulse-code modulated (PCM) samples. Lossless.
+.TP
+.B adpcm
+Use adaptive dynamic pulse-code modulated (ADPCM) samples. Lossy; provides about
+4x reduction in size over PCM samples. Comparible acoustic quality to a 64kbps MP3
+file.
+.TP
+.B adpcm_ms
+Sames as adpcm, included to match ffmpeg codec name.
+.TP
+.B mulaw
+Use mu-law encoding. Lossy; only available with 16-bit audio, and provides 2x
+reduction in size. Comparible acoustic quality to a 192kbps MP3 file.
+.TP
+.B pcm_mulaw
+Sames as mulaw, included to match ffmpeg codec name.
+.PD
+.RE
+.TP
 .BI \-snd\-buflen\  ms
 Set length of the hardware sound buffer in milliseconds.
 Setting to 0 (the default) causes the length to be set automatically.
@@ -802,19 +841,30 @@ Set sound latency in milliseconds.
 Increase it if you experience gaps of silence during sound playback.
 
 .TP
-\fB\-videocodec auto\fR|\fBrle\fR|\fBpng\fR|\fBzmbv\fR|\fBuzmbv\fR
-Select the video codec used to compress and store image frames in AVI video recordings:
+.BI \-vname\  pattern
+Set filename pattern for video recordings.
+Use to override the default pattern of \fIatari###.avi\fR which produces
+\fIatari000.avi\fR, \fIatari001.avi\fR etc. filenames.
+Hashes are replaced with raising numbers.
+.TP
+\fB\-vcodec auto\fR|\fBrle\fR|\fBmsrle\fR|\fBpng\fR|\fBzmbv\fR|\fBuzmbv\fR
+Select the video codec used to store image frames in AVI video recordings.
+All video codecs use lossless compression.
 .PP
 .RS
 .PD 0
 .TP
 .B auto
 The default.
-Use the codec that provides the best average compression ratio.
+Use the codec that provides the best average compression ratio which is \fBzmbv\fR
+if available, otherwise \fBrle\fR.
 .TP
 .B rle
 Use run-length encoding for very good compression of video frames. This codec is
 always available.
+.TP
+.B msrle
+Sames as rle, included to match ffmpeg codec name.
 .TP
 .B png
 Use PNG image compression for moderate compression of video frames. This codec is only
@@ -843,25 +893,12 @@ Some video codecs use keyframes and inter-frames, which encode full frames and
 differences between frames, respectively. Inter-frames are typically much smaller
 than full frames, but most video players can only seek to keyframes.
 .TP
-.BI \-pnglevel\  num
-Set PNG image compression level 0-9 (default 6). Zero means no compression and
-larger numbers correspond to higher compression and smaller image sizes, at the
-cost of increased time to generate the compressed image. This affects both
-screenshots and the video codec.
+.BI \-compression-level\  num
+Set compression level 0-9 (default 6) PNG or zlib compression used in the
+emulator. Zero means no compression and larger numbers correspond to higher
+compression and smaller image sizes, at the cost of increased time to generate
+the compressed image. This affects both screenshots and the video codec.
 
-.TP
-.BI \-soundfilename\  pattern
-Set filename pattern for audio recordings.
-Use to override the default pattern of \fIatari###.wav\fR which produces
-\fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
-Hashes are replaced with raising numbers.
-
-.TP
-.BI \-videofilename\  pattern
-Set filename pattern for video recordings.
-Use to override the default pattern of \fIatari###.avi\fR which produces
-\fIatari000.avi\fR, \fIatari001.avi\fR etc. filenames.
-Hashes are replaced with raising numbers.
 
 .SS Curses Options
 
@@ -1631,12 +1668,48 @@ the screen. The mouse button acts as the trigger.  On Linux, standard
 joysticks are also supported.
 
 .PD 1
+.SH AUDIO RECORDING
+Audio can be recorded to WAV format sound files or as the audio track of AVI
+format multimedia files (described in the next section). A choice of audio
+codecs is available, some using lossy compression to reduce file size as
+compared to uncompressed audio. All lossy codecs require 16 bit sample sizes
+using the \fB\-audio16\fR option.
+
+The term "lossy" means the recorded sound is not bit-for-bit identical to the
+output of the emulator. Each codec provides a different method to reduce size,
+possibly reducing the audio quality. In practice, the audio produced by these
+codecs is not perceptibly worse than lossless encoding when using sample rates
+of 44.1kHz or 48kHz. However, the possibility exists that recompressing lossy
+audio (for instance by uploading to YouTube) could reduce quality.
+.PP
+The only lossless codec provided is the pulse-code modulation (PCM) codec, which
+simply stores the raw data generated by the POKEY emulation. This takes the most
+space of any codec, but provides the best possible audio quality. The sample
+size is specified by the \fB\-audio16\fR or \fB\-audio8\fR options. This is the
+recommended codec unless extremely long recording times are desired. See the
+tables in the \fBVIDEO RECORDING\fR section below.
+.PP
+The mu-law codec uses a logarithmic scale to convert 16 bit samples into 8 bits
+of data, resulting in half the size of 16 bit PCM audio. This codec does not
+work with 8 bit audio. Waveform analysis shows the acoustic quality is similar
+to a 192kbps MP3 file, although not as efficient a codec in terms of storage as
+the MP3 would be half the size. Surprisingly, in many cases the acoustic quality
+of mu-law can be better than 8 bit PCM samples even though it takes the same
+storage space.
+.PP
+Adaptive differential pulse-code modulation (ADPCM) also requires 16 bit audio.
+It exploits the relatively small difference between successive samples as its
+main encoding technique, resulting in an average of 4 bits used to store a
+sample. The audio output is therefore a quarter of the size of the output from
+the PCM codec. The acoustic quality is similar to a 64kbps MP3 file, although
+the MP3 would be one third the size.
+.PD 1
 .SH VIDEO RECORDING
 .B atari800
-is capable of recording the emulation session to AVI format multimedia files. A
-choice of video codecs is available, while audio is stored as raw PCM data using
-the sample size specified by the \fB\-audio16\fR or \fB\-audio8\fR options. To
-record without sound, specify the \fB\-nosound\fR option.
+is capable of recording the emulated video and audio to AVI format multimedia
+files. A choice of lossless video codecs is available, while audio is stored
+with any of the lossless or lossy codecs as described above. To record without
+sound, specify the \fB\-nosound\fR option.
 .PP
 The most efficient video codec is the Zip Motion Block Video (ZMBV) codec. 
 This codec uses keyframes and inter-frames, and achieves its high compression
@@ -1705,16 +1778,16 @@ l | c | c c c | c c c
 l | cB | cB cB cB | cB cB cB.
 @Average@NTSC recording time@PAL recording time
 Game@video@
-@frame@no@8-bit@16-bit@no@8-bit@16-bit
+@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
 @size@audio@audio@audio@audio@audio@audio
 _
 
-Jumpman@0.08k@187 hr@22 hr@12 hr@225 hr@23 hr@12 hr@
-Miner 2049er@0.13k@126 hr@21 hr@12 hr@151 hr@22 hr@12 hr@
-Alley Cat@0.37k@49 hr@17 hr@10 hr@59 hr@18 hr@10 hr@
-Dropzone@0.82k@23 hr@12 hr@8h 25m@27 hr@13 hr@8h 55m@
-AtariBlast!@1.2k@15 hr@9h 50m@7h 10m@19 hr@11 hr@7h 50m@
-Boulder Dash@0.17k@100 hr@20 hr@11 hr@120 hr@21 hr@12 hr@
+Jumpman@0.08k@41 hr@22 hr@12 hr@43 hr@23 hr@12 hr@
+Miner 2049er@0.13k@37 hr@21 hr@12 hr@39 hr@22 hr@12 hr@
+Alley Cat@0.37k@25 hr@17 hr@10 hr@28 hr@18 hr@10 hr@
+Dropzone@0.82k@16 hr@12 hr@8h 25m@18 hr@13 hr@8h 55m@
+AtariBlast!@1.2k@12 hr@9h 50m@7h 10m@14 hr@11 hr@7h 50m@
+Boulder Dash@0.17k@35 hr@20 hr@11 hr@37 hr@21 hr@12 hr@
 .TE
 
 .PP
@@ -1728,16 +1801,16 @@ l | c | c c c | c c c
 l | cB | cB cB cB | cB cB cB.
 @Average@NTSC recording time@PAL recording time
 Game@video@
-@frame@no@8-bit@16-bit@no@8-bit@16-bit
+@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
 @size@audio@audio@audio@audio@audio@audio
 _
 
-Jumpman@0.36k@50 hr@17 hr@10 hr@60 hr@18 hr@10 hr@
-Miner 2049er@0.39k@46 hr@16 hr@10 hr@56 hr@17 hr@10 hr@
-Alley Cat@1.0k@18 hr@11 hr@7h 45m@22 hr@12 hr@8h 20m@
-Dropzone@2.3k@8h 20m@6h 20m@5h 05m@10 hr@7h 15m@5h 40m@
-AtariBlast!@6.9k@2h 45m@2h 30m@2h 15m@3h 20m@2h 55m@2h 40m@
-Boulder Dash@9.1k@2h 05m@1h 55m@1h 50m@2h 30m@2h 15m@2h 05m@
+Jumpman@0.36k@26 hr@17 hr@10 hr@28 hr@18 hr@10 hr@
+Miner 2049er@0.39k@25 hr@16 hr@10 hr@27 hr@17 hr@10 hr@
+Alley Cat@1.0k@14 hr@11 hr@7h 45m@16 hr@12 hr@8h 20m@
+Dropzone@2.3k@7h 10m@6h 20m@5h 05m@8h 25m@7h 15m@5h 40m@
+AtariBlast!@6.9k@2h 35m@2h 30m@2h 15m@3h 10m@2h 55m@2h 40m@
+Boulder Dash@9.1k@2h 00m@1h 55m@1h 50m@2h 25m@2h 15m@2h 05m@
 .TE
 
 .PP
@@ -1751,24 +1824,26 @@ l | c | c c c | c c c
 l | cB | cB cB cB | cB cB cB.
 @Average@NTSC recording time@PAL recording time
 Game@video@
-@frame@no@8-bit@16-bit@no@8-bit@16-bit
+@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
 @size@audio@audio@audio@audio@audio@audio
 _
 
-Jumpman@2.4k@8h 00m@6h 05m@5h 00m@9h 35m@7h 00m@5h 35m@
-Miner 2049er@2.2k@8h 40m@6h 30m@5h 15m@10 hr@7h 25m@5h 50m@
-Alley Cat@4.1k@4h 40m@3h 55m@3h 25m@5h 35m@4h 35m@3h 55m@
-Dropzone@2.8k@6h 50m@5h 25m@4h 30m@8h 15m@6h 15m@5h 05m@
-AtariBlast!@4.4k@4h 20m@3h 45m@3h 15m@5h 15m@4h 20m@3h 45m@
-Boulder Dash@4.5k@4h 15m@3h 40m@3h 10m@5h 05m@4h 15m@3h 40m@
+Jumpman@2.4k@6h 55m@6h 05m@5h 00m@8h 05m@7h 00m@5h 35m@
+Miner 2049er@2.2k@7h 30m@6h 30m@5h 15m@8h 45m@7h 25m@5h 50m@
+Alley Cat@4.1k@4h 15m@3h 55m@3h 25m@5h 05m@4h 35m@3h 55m@
+Dropzone@2.8k@6h 05m@5h 25m@4h 30m@7h 05m@6h 15m@5h 05m@
+AtariBlast!@4.4k@4h 00m@3h 45m@3h 15m@4h 45m@4h 20m@3h 45m@
+Boulder Dash@4.5k@3h 55m@3h 40m@3h 10m@4h 40m@4h 15m@3h 40m@
 .TE
 
-
 .PP
-Audio is uncompressed and takes about 1.4k per frame for NTSC (about 1.8k per
-frame for PAL), and is larger than the average video frame size in many cases.
-Using 8-bit audio is one simple way to increase recording time if 16-bit POKEY
-audio is not used during emulation.
+In most cases audio takes up more space than video; uncompressed 16 bit PCM
+samples consume about 1.4k per frame for NTSC (about 1.8k per frame for PAL).
+The choice of audio codec is important to maximize recording time. If the goal
+is to upload to YouTube, the PCM codec is the best choice for audio quality
+because YouTube reencodes all uploads. For other uses, a compressed audio codec
+like ADPCM can reduce audio sizes to fewer than 400 bytes per frame, providing
+longer recording times with imperceptible differences in audio quality.
 .PP
 Longer recording times are available when emulating at the PAL frame rate
 because there are 10 fewer video frames per second as compared to NTSC, while

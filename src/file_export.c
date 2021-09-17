@@ -134,6 +134,7 @@ static VIDEO_CODEC_t *video_codec = NULL;
 static VIDEO_CODEC_t *requested_video_codec = NULL;
 static VIDEO_CODEC_t *known_video_codecs[] = {
 	&Video_Codec_MRLE,
+	&Video_Codec_MSRLE,
 #ifdef VIDEO_CODEC_PNG
 	&Video_Codec_MPNG,
 #endif
@@ -158,7 +159,9 @@ static AUDIO_CODEC_t *requested_audio_codec = NULL;
 static AUDIO_CODEC_t *known_audio_codecs[] = {
 	&Audio_Codec_PCM,
 	&Audio_Codec_ADPCM,
+	&Audio_Codec_ADPCM_MS,
 	&Audio_Codec_MULAW,
+	&Audio_Codec_PCM_MULAW,
 	NULL,
 };
 static AUDIO_OUT_t *audio_out = NULL;
@@ -205,7 +208,7 @@ static char *video_codec_args(char *buf)
 {
 	VIDEO_CODEC_t **v = known_video_codecs;
 
-	strcpy(buf, "\t-videocodec auto");
+	strcpy(buf, "\t-vcodec auto");
 	while (*v) {
 		strcat(buf, "|");
 		strcat(buf, (*v)->codec_id);
@@ -239,7 +242,7 @@ static char *audio_codec_args(char *buf)
 {
 	AUDIO_CODEC_t **a = known_audio_codecs;
 
-	strcpy(buf, "\t-audiocodec auto");
+	strcpy(buf, "\t-acodec auto");
 	while (*a) {
 		strcat(buf, "|");
 		strcat(buf, (*a)->codec_id);
@@ -263,7 +266,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 
 		if (0) {}
 #ifdef AVI_VIDEO_RECORDING
-		else if (strcmp(argv[i], "-videocodec") == 0) {
+		else if (strcmp(argv[i], "-vcodec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "auto") == 0) {
@@ -279,7 +282,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #ifdef SOUND
-		else if (strcmp(argv[i], "-audiocodec") == 0) {
+		else if (strcmp(argv[i], "-acodec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "auto") == 0) {
@@ -320,16 +323,18 @@ int File_Export_Initialise(int *argc, char *argv[])
 #endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-#ifdef AVI_VIDEO_RECORDING
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
 				char buf[256];
-				Log_print(video_codec_args(buf));
-				Log_print("\t                 Select video codec (default: auto)");
-				Log_print("\t-keyframe-interval <ms>");
-				Log_print("\t                 Select interval between video keyframes in milliseconds");
+#endif
 #ifdef SOUND
 				Log_print(audio_codec_args(buf));
 				Log_print("\t                 Select audio codec (default: auto)");
 #endif
+#ifdef AVI_VIDEO_RECORDING
+				Log_print(video_codec_args(buf));
+				Log_print("\t                 Select video codec (default: auto)");
+				Log_print("\t-keyframe-interval <ms>");
+				Log_print("\t                 Select interval between video keyframes in milliseconds");
 #endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 				Log_print("\t-compression-level <n>");

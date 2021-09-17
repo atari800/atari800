@@ -369,3 +369,14 @@ VIDEO_CODEC_t Video_Codec_MRLE = {
 	&MRLE_CreateFrame,
 	&MRLE_End,
 };
+
+VIDEO_CODEC_t Video_Codec_MSRLE = {
+	"msrle",
+	"Microsoft Run-Length Encoding",
+	{'m', 'r', 'l', 'e'},
+	{1, 0, 0, 0},
+	TRUE,
+	&MRLE_Init,
+	&MRLE_CreateFrame,
+	&MRLE_End,
+};

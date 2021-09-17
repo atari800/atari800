@@ -68,14 +68,14 @@ int Multimedia_Initialise(int *argc, char *argv[])
 
 		if (0) {}
 #ifdef SOUND
-		else if (strcmp(argv[i], "-soundfilename") == 0) {
+		else if (strcmp(argv[i], "-aname") == 0) {
 			if (i_a)
 				sound_no_max = Util_filenamepattern(argv[++i], sound_filename_format, FILENAME_MAX, DEFAULT_SOUND_FILENAME_FORMAT);
 			else a_m = TRUE;
 		}
 #endif
 #ifdef AVI_VIDEO_RECORDING
-		else if (strcmp(argv[i], "-videofilename") == 0) {
+		else if (strcmp(argv[i], "-vname") == 0) {
 			if (i_a)
 				video_no_max = Util_filenamepattern(argv[++i], video_filename_format, FILENAME_MAX, DEFAULT_VIDEO_FILENAME_FORMAT);
 			else a_m = TRUE;
@@ -84,10 +84,10 @@ int Multimedia_Initialise(int *argc, char *argv[])
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 #ifdef SOUND
-				Log_print("\t-soundfilename <p>   Set filename pattern for audio recording");
+				Log_print("\t-aname <p>       Set filename pattern for audio recording");
 #endif /* !DREAMCAST */
 #ifdef AVI_VIDEO_RECORDING
-				Log_print("\t-videofilename <p>   Set filename pattern for video recording");
+				Log_print("\t-vname <p>       Set filename pattern for video recording");
 #endif /* !DREAMCAST */
 			}
 			argv[j++] = argv[i];
