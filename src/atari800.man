@@ -887,11 +887,12 @@ Show elapsed recording time and file size on screen during recording of video or
 .B \-no-showstats
 Don't show multimedia statistics during recording of video or audio
 .TP
-.BI \-keyframe-interval\  ms
-Set the time between keyframes in milliseconds (default 1000 ms).
-Some video codecs use keyframes and inter-frames, which encode full frames and
-differences between frames, respectively. Inter-frames are typically much smaller
-than full frames, but most video players can only seek to keyframes.
+.BI \-keyint\  num
+Set the keyframe interval to one keyframe every \fInum\fR frames (default is 50
+for PAL, 60 for NTSC). Some video codecs use keyframes and inter-frames, which
+encode full frames and differences between frames, respectively. Inter-frames
+are typically much smaller than full frames, but most video players can only
+seek to keyframes.
 .TP
 .BI \-compression-level\  num
 Set compression level 0-9 (default 6) PNG or zlib compression used in the

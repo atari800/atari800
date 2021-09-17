@@ -146,8 +146,8 @@ static VIDEO_CODEC_t *known_video_codecs[] = {
 
 /* Some codecs allow for keyframes (full frame compression) and inter-frames
    (only the differences from the previous frame) */
-static int keyframe_interval = 1000;
-static float keyframe_residual;
+static int keyframe_interval = 0;
+static int keyframe_count;
 
 #ifdef SOUND
 static ULONG samples_written;
@@ -299,11 +299,11 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif
-		else if (strcmp(argv[i], "-keyframe-interval") == 0) {
+		else if (strcmp(argv[i], "-keyint") == 0) {
 			if (i_a) {
 				keyframe_interval = Util_sscandec(argv[++i]);
-				if (keyframe_interval < 1) {
-					Log_print("Invalid keyframe interval time, must be 1 millisecond or greater.");
+				if (keyframe_interval < 1 || keyframe_interval > 500) {
+					Log_print("Invalid keyframe interval, must be between 1 and 500 frames.");
 					return FALSE;
 				}
 			}
@@ -334,8 +334,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 #ifdef AVI_VIDEO_RECORDING
 				Log_print(video_codec_args(buf));
 				Log_print("\t                 Select video codec (default: auto)");
-				Log_print("\t-keyframe-interval <ms>");
-				Log_print("\t                 Select interval between video keyframes in milliseconds");
+				Log_print("\t-keyint <num>    Set video keyframe interval to one keyframe every num frames");
 #endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 				Log_print("\t-compression-level <n>");
@@ -765,6 +764,8 @@ static int init_codecs(int video, int audio)
 	strcpy(description, "");
 	video_frame_count = 0;
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+	if (keyframe_interval == 0)
+		keyframe_interval = (int)(fps + 1);
 
 #ifdef AVI_VIDEO_RECORDING
 	if (video) {
@@ -1263,7 +1264,7 @@ FILE *AVI_OpenFile(const char *szFileName)
 	size_riff = 0;
 	size_movi = 0;
 	frames_written = 0;
-	keyframe_residual = keyframe_interval; /* force first frame to be keyframe */
+	keyframe_count = 0; /* force first frame to be keyframe */
 
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
 	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
@@ -1352,10 +1353,10 @@ int AVI_AddVideoFrame(FILE *fp) {
 	/* When a codec uses interframes (deltas from the previous frame), a
 	   keyframe is needed every keyframe interval. */
 	if (video_codec->uses_interframes) {
-		keyframe_residual += 1000.0 / fps;
-		if (keyframe_residual > keyframe_interval) {
+		keyframe_count--;
+		if (keyframe_count <= 0) {
 			is_keyframe = TRUE;
-			keyframe_residual = keyframe_residual - ((int)(keyframe_residual / keyframe_interval) * keyframe_interval);
+			keyframe_count = keyframe_interval;
 		}
 		else {
 			is_keyframe = FALSE;
