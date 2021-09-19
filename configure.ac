@@ -324,6 +324,7 @@ else
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 fi
+AM_CONDITIONAL([WITH_LIBPNG], test "$SUPPORTS_LIBPNG" = "yes")
 
 
 dnl Set OBJS and libraries depending on host and target...
@@ -1077,6 +1078,10 @@ if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
             [Support video recording to AVI files (default=ON)],
             AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
+    supported_image_formats="pcx"
+    if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+        supported_image_formats="$supported_image_formats png"
+    fi
 else
     have_bitmapped_screen="no"
     WANT_AVI_VIDEO_RECORDING="no"
@@ -1327,6 +1332,7 @@ if [[ "$a8_target" = default ]]; then
 fi
 if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
+        echo "Supported screenshot formats..........: $supported_image_formats"
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
     fi

@@ -1,5 +1,5 @@
 /*
- * audio_codec_pcm.c - Audio codec for raw PCM samples
+ * audio_pcm.c - Audio codec for raw PCM samples
  *
  * Copyright (C) 2021 Rob McMullen
  * Copyright (C) 1998-2021 Atari800 development team (see DOC/CREDITS)
@@ -23,43 +23,43 @@
 */
 
 #include <string.h>
-#include "file_export.h"
-#include "audio_codec_pcm.h"
+#include "codecs/audio.h"
+#include "codecs/audio_pcm.h"
 
-static AUDIO_OUT_t audio_out;
+static AUDIO_OUT_t out;
 
 static int PCM_Init(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
 
-	audio_out.sample_rate = sample_rate;
-	audio_out.sample_size = sample_size;
-	audio_out.bits_per_sample = sample_size * 8;
-	audio_out.num_channels = num_channels;
-	audio_out.block_align = num_channels * sample_size;
-	audio_out.scale = 1;
-	audio_out.rate = sample_rate;
-	audio_out.length = 0;
-	audio_out.extra_data_size = 0;
+	out.sample_rate = sample_rate;
+	out.sample_size = sample_size;
+	out.bits_per_sample = sample_size * 8;
+	out.num_channels = num_channels;
+	out.block_align = num_channels * sample_size;
+	out.scale = 1;
+	out.rate = sample_rate;
+	out.length = 0;
+	out.extra_data_size = 0;
 
 	comp_size = sample_rate * sample_size * num_channels / (int)fps;
 	return comp_size;
 }
 
 static AUDIO_OUT_t *PCM_AudioOut(void) {
-	return &audio_out;
+	return &out;
 }
 
 static int PCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize)
 {
 	int size;
 
-	size = num_samples * audio_out.sample_size;
+	size = num_samples * out.sample_size;
 	if (size > bufsize) {
 		return -1;
 	}
 #ifdef WORDS_BIGENDIAN
-	if (audio_out.sample_size == 2) {
+	if (out.sample_size == 2) {
 		UBYTE c;
 
 		while (num_samples > 0) {
@@ -74,7 +74,7 @@ static int PCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 	{
 		memcpy(buf, source, size);
 	}
-	audio_out.length += num_samples;
+	out.length += num_samples;
 	return size;
 }
 

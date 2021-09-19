@@ -1,5 +1,5 @@
 /*
- * audio_codec_mulaw.c - Audio codec for mu-law telephony encoding
+ * audio_mulaw.c - Audio codec for mu-law telephony encoding
  *
  * Copyright (C) 2021 Rob McMullen
  * Copyright (C) 1998-2021 Atari800 development team (see DOC/CREDITS)
@@ -23,20 +23,20 @@
 */
 
 #include <string.h>
-#include "file_export.h"
-#include "audio_codec_pcm.h"
+#include "codecs/audio.h"
+#include "audio_pcm.h"
 
 /* NOTE: mu-law is simple codec that taxes 16-bit PCM samples as input and
    outputs an encoding of 8 bits per sample. Its original design goal was to
    minimize losses over low-bandwidth connections, like telephone lines. It's
    not necessarily a great codec for recording Atari audio, although it sounds
    much better than I expected. It is included here as more of an example for
-   further codec implementers, as it populates the audio_out array with
-   different parameterts than the input: it requires 16-bit samples, and outputs
-   8 bits of data for each sample. The number of channels and sample rate remain
-   the same. */
+   further codec implementers, as it populates the out array with different
+   parameters than the input: it requires 16-bit samples, and outputs 8 bits of
+   data for each sample. The number of channels and sample rate remain the same.
+   */
 
-static AUDIO_OUT_t audio_out;
+static AUDIO_OUT_t out;
 
 /* From https://en.wikipedia.org/wiki/%CE%9C-law_algorithm the mulaw encoding is
    based on converting samples to 14 bits and then categorizing them in the
@@ -89,22 +89,22 @@ static int MULAW_Init(int sample_rate, float fps, int sample_size, int num_chann
 
 	if (sample_size < 2)
 		return -1;
-	audio_out.sample_rate = sample_rate;
-	audio_out.sample_size = 1;
-	audio_out.bits_per_sample = 8;
-	audio_out.num_channels = num_channels;
-	audio_out.block_align = num_channels;
-	audio_out.scale = 1;
-	audio_out.rate = sample_rate;
-	audio_out.length = 0;
-	audio_out.extra_data_size = 0;
+	out.sample_rate = sample_rate;
+	out.sample_size = 1;
+	out.bits_per_sample = 8;
+	out.num_channels = num_channels;
+	out.block_align = num_channels;
+	out.scale = 1;
+	out.rate = sample_rate;
+	out.length = 0;
+	out.extra_data_size = 0;
 
 	comp_size = sample_rate * sample_size * num_channels / (int)fps;
 	return comp_size;
 }
 
 static AUDIO_OUT_t *MULAW_AudioOut(void) {
-	return &audio_out;
+	return &out;
 }
 
 static int MULAW_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize)
@@ -122,7 +122,7 @@ static int MULAW_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	if (size > bufsize) {
 		return -1;
 	}
-	audio_out.length += num_samples;
+	out.length += num_samples;
 	words = (const SWORD *)source;
 	while (num_samples > 0) {
 		sample = *words++;

@@ -1,5 +1,5 @@
 /*
- * video_codec_mpng.c - Video codec for Motion-PNG
+ * video_mpng.c - Video codec for Motion-PNG
  *
  * Copyright (C) 2021 Rob McMullen
  * Copyright (C) 1998-2021 Atari800 development team (see DOC/CREDITS)
@@ -22,12 +22,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <string.h>
-#include "file_export.h"
-#include "video_codec_mpng.h"
 
-/* This file is only included in compilation when PNG is available, so no need to
-   test for HAVE_LIBPNG. */
+/* This file is only compiled when HAVE_LIBPNG and VIDEO_CODEC_PNG are defined. */
+
+#include <string.h>
+#include "codecs/video.h"
+#include "codecs/image_png.h"
+#include "codecs/video_mpng.h"
 
 static int MPNG_Init(int width, int height, int left_margin, int top_margin)
 {
@@ -45,7 +46,7 @@ static int MPNG_Init(int width, int height, int left_margin, int top_margin)
 
 static int MPNG_CreateFrame(UBYTE *source, int keyframe, UBYTE *buf, int bufsize)
 {
-	return PNG_SaveScreen(NULL, source, NULL);
+	return Image_Codec_PNG.to_buffer(buf, bufsize, source, NULL);
 }
 
 static int MPNG_End(void)

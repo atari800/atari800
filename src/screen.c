@@ -39,8 +39,11 @@
 #include "sio.h"
 #include "util.h"
 #include "file_export.h"
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+#ifndef DREAMCAST
+#include "codecs/image.h"
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
 #include "multimedia.h"
+#endif
 #endif
 
 ULONG *Screen_atari = NULL;
@@ -69,7 +72,6 @@ int Screen_show_atari_speed = FALSE;
 int Screen_show_disk_led = TRUE;
 int Screen_show_sector_counter = FALSE;
 int Screen_show_1200_leds = TRUE;
-int Screen_show_multimedia_stats = TRUE;
 
 #ifndef DREAMCAST
 #ifdef HAVE_LIBPNG
@@ -82,6 +84,9 @@ static char screenshot_filename_format[FILENAME_MAX];
 static int screenshot_no_last = -1;
 static int screenshot_no_max = 0;
 
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+int Screen_show_multimedia_stats = TRUE;
+#endif
 #endif /* !DREAMCAST */
 
 int Screen_Initialise(int *argc, char *argv[])
@@ -168,8 +173,10 @@ int Screen_ReadConfig(char *string, char *ptr)
 		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(string, "SCREEN_SHOW_1200XL_LEDS") == 0)
 		return (Screen_show_1200_leds = Util_sscanbool(ptr)) != -1;
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(AVI_VIDEO_RECORDING))
 	else if (strcmp(string, "SCREEN_SHOW_MULTIMEDIA_STATS") == 0)
 		return (Screen_show_multimedia_stats = Util_sscanbool(ptr)) != -1;
+#endif
 	else return FALSE;
 	return TRUE;
 }
@@ -180,7 +187,9 @@ void Screen_WriteConfig(FILE *fp)
 	fprintf(fp, "SCREEN_SHOW_IO_ACTIVITY=%d\n", Screen_show_disk_led);
 	fprintf(fp, "SCREEN_SHOW_IO_COUNTER=%d\n", Screen_show_sector_counter);
 	fprintf(fp, "SCREEN_SHOW_1200XL_LEDS=%d\n", Screen_show_1200_leds);
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(AVI_VIDEO_RECORDING))
 	fprintf(fp, "SCREEN_SHOW_MULTIMEDIA_STATS=%d\n", Screen_show_multimedia_stats);
+#endif
 }
 
 #define SMALLFONT_WIDTH    5
@@ -702,7 +711,8 @@ void Screen_Draw1200LED(void)
 	}
 }
 
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+#ifndef DREAMCAST
+#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -827,24 +837,19 @@ void Screen_DrawMultimediaStats(void)
 		}
 	}
 }
-#endif
+#endif /* defined(SOUND) || defined(AVI_VIDEO_RECORDING) */
 
-#ifndef DREAMCAST
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
-	int is_png;
 	FILE *fp;
 	ULONG *main_screen_atari;
 	UBYTE *ptr1;
 	UBYTE *ptr2;
-	if (Util_striendswith(filename, ".pcx"))
-		is_png = 0;
-#ifdef HAVE_LIBPNG
-	else if (Util_striendswith(filename, ".png"))
-		is_png = 1;
-#endif
-	else
+
+	if (!CODECS_IMAGE_Init(filename)) {
+		Log_print("Unsupported image type for file: %s", filename);
 		return FALSE;
+	}
 	fp = fopen(filename, "wb");
 	if (fp == NULL)
 		return FALSE;
@@ -858,13 +863,7 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	else {
 		ptr2 = NULL;
 	}
-	if (is_png) {
-#ifdef HAVE_LIBPNG
-		PNG_SaveScreen(fp, ptr1, ptr2);
-#endif
-	}
-	else
-		PCX_SaveScreen(fp, ptr1, ptr2);
+	CODECS_IMAGE_SaveScreen(fp, ptr1, ptr2);
 	fclose(fp);
 	if (interlaced) {
 		free(Screen_atari);

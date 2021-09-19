@@ -1,5 +1,5 @@
 /*
- * audio_codec_pcm.c - Audio codec for Microsoft ADPCM adaptive PCM coding
+ * audio_adpcm.c - Audio codec for Microsoft ADPCM adaptive PCM coding
  *
  * This is a derivative work of code from the FFmpeg project. The FFmpeg code
  * used here is licensed under the LGPLv2.1; Provisions within that license
@@ -28,12 +28,12 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "file_export.h"
+#include "codecs/audio.h"
 #include "util.h"
 #include "log.h"
-#include "audio_codec_adpcm.h"
+#include "audio_adpcm.h"
 
-static AUDIO_OUT_t audio_out;
+static AUDIO_OUT_t out;
 
 static ADPCMChannelStatus channel_status[2];
 
@@ -127,17 +127,17 @@ static int ADPCM_Init(int sample_rate, float fps, int sample_size, int num_chann
 
 	if (sample_size < 2)
 		return -1;
-	audio_out.sample_rate = sample_rate;
-	audio_out.sample_size = 1;
-	audio_out.bits_per_sample = 4;
-	audio_out.num_channels = num_channels;
-	audio_out.block_align = 1024;
-	audio_out.scale = 1000000;
-	audio_out.rate = (int)(fps * 1000000);
-	audio_out.length = 0;
-	audio_out.extra_data_size = 32;
-	extra = audio_out.extra_data;
-	samples_per_block = (audio_out.block_align - 7 * num_channels) * 2 / num_channels + 2;
+	out.sample_rate = sample_rate;
+	out.sample_size = 1;
+	out.bits_per_sample = 4;
+	out.num_channels = num_channels;
+	out.block_align = 1024;
+	out.scale = 1000000;
+	out.rate = (int)(fps * 1000000);
+	out.length = 0;
+	out.extra_data_size = 32;
+	extra = out.extra_data;
+	samples_per_block = (out.block_align - 7 * num_channels) * 2 / num_channels + 2;
 	PUT_LE_WORD(extra, samples_per_block);
 	PUT_LE_WORD(extra, 7);
 	for (i = 0; i < 7; i++) {
@@ -162,7 +162,7 @@ static int ADPCM_Init(int sample_rate, float fps, int sample_size, int num_chann
 }
 
 static AUDIO_OUT_t *ADPCM_AudioOut(void) {
-	return &audio_out;
+	return &out;
 }
 
 static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int bufsize)
@@ -173,7 +173,7 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	int samples_consumed;
 	const SWORD *samples;
 
-	if (audio_out.block_align > bufsize) {
+	if (out.block_align > bufsize) {
 		return -1;
 	}
 
@@ -192,7 +192,7 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	}
 	leftover_samples_end += num_samples;
 	if (leftover_samples_end > leftover_samples_boundary) {
-		Log_print("audio_codec_adpcm: leftover sample buffer too small!\n");
+		Log_print("audio_adpcm: leftover sample buffer too small!\n");
 		return -1;
 	}
 
@@ -203,29 +203,29 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 		return 0;
 	}
 
-	st = audio_out.num_channels == 2;
+	st = out.num_channels == 2;
 
-	for (i = 0; i < audio_out.num_channels; i++) {
+	for (i = 0; i < out.num_channels; i++) {
 		int predictor = 0;
 		*buf++ = predictor;
 		channel_status[i].coeff1 = adpcm_AdaptCoeff1[predictor];
 		channel_status[i].coeff2 = adpcm_AdaptCoeff2[predictor];
 	}
-	for (i = 0; i < audio_out.num_channels; i++) {
+	for (i = 0; i < out.num_channels; i++) {
 		if (channel_status[i].idelta < 16)
 			channel_status[i].idelta = 16;
 		PUT_LE_WORD(buf, channel_status[i].idelta);
 	}
-	for (i = 0; i < audio_out.num_channels; i++)
+	for (i = 0; i < out.num_channels; i++)
 		channel_status[i].sample2 = *samples++;
-	for (i = 0; i < audio_out.num_channels; i++) {
+	for (i = 0; i < out.num_channels; i++) {
 		channel_status[i].sample1 = *samples++;
 		PUT_LE_WORD(buf, channel_status[i].sample1);
 	}
-	for (i = 0; i < audio_out.num_channels; i++)
+	for (i = 0; i < out.num_channels; i++)
 		PUT_LE_WORD(buf, channel_status[i].sample2);
 
-	for (i = 7 * audio_out.num_channels; i < audio_out.block_align; i++) {
+	for (i = 7 * out.num_channels; i < out.block_align; i++) {
 		int nibble;
 		nibble  = adpcm_ms_compress_sample(&channel_status[ 0], *samples++) << 4;
 		nibble |= adpcm_ms_compress_sample(&channel_status[st], *samples++);
@@ -238,7 +238,7 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	memmove(leftover_samples, samples, (num_samples - samples_consumed) * 2);
 	leftover_samples_end = leftover_samples + (num_samples - samples_consumed);
 
-	audio_out.length++;
+	out.length++;
 
 	return buf - buf_start;
 }
@@ -259,8 +259,8 @@ static int ADPCM_End(float duration)
 	   video frames get added, we need to compute rate of audio frames using
 	   number of video frames to calculate the total duration of the AVI. */
 	if (duration > 0) {
-		rate = (float)audio_out.length / duration;
-		audio_out.rate = (int)(rate * 1000000);
+		rate = (float)out.length / duration;
+		out.rate = (int)(rate * 1000000);
 	}
 	free(leftover_samples);
 	return 1;

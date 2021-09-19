@@ -129,19 +129,21 @@ atari800_SOURCES += multimedia.c multimedia.h
 endif
 if WITH_FILE_EXPORT
 atari800_SOURCES += file_export.c file_export.h
+if WITH_SOUND
+atari800_SOURCES += codecs/audio.c codecs/audio.h \
+	codecs/audio_pcm.c codecs/audio_pcm.h \
+	codecs/audio_adpcm.c codecs/audio_adpcm.h \
+	codecs/audio_mulaw.c codecs/audio_mulaw.h
+endif
 endif
 if WITH_VIDEO_RECORDING
-atari800_SOURCES += video_codec_mrle.c video_codec_mrle.h
+atari800_SOURCES += codecs/video.c codecs/video.h \
+	codecs/video_mrle.c codecs/video_mrle.h
 if WITH_VIDEO_CODEC_PNG
-atari800_SOURCES += video_codec_mpng.c video_codec_mpng.h
+atari800_SOURCES += codecs/video_mpng.c codecs/video_mpng.h
 endif
 if WITH_VIDEO_CODEC_ZMBV
-atari800_SOURCES += video_codec_zmbv.c video_codec_zmbv.h
-endif
-if WITH_SOUND
-atari800_SOURCES += audio_codec_pcm.c audio_codec_pcm.h \
-	audio_codec_adpcm.c audio_codec_adpcm.h \
-	audio_codec_mulaw.c audio_codec_mulaw.h
+atari800_SOURCES += codecs/video_zmbv.c codecs/video_zmbv.h
 endif
 endif
 
@@ -221,7 +223,12 @@ atari800_SOURCES += \
 	colours_ntsc.c colours_ntsc.h \
 	colours_pal.c colours_pal.h \
 	colours_external.c colours_external.h \
-	screen.c screen.h
+	screen.c screen.h \
+	codecs/image.c codecs/image.h \
+	codecs/image_pcx.c codecs/image_pcx.h
+if WITH_LIBPNG
+atari800_SOURCES += codecs/image_png.c codecs/image_png.h
+endif
 if WANT_NEW_CYCLE_EXACT
 atari800_SOURCES += cycle_map.c cycle_map.h
 endif

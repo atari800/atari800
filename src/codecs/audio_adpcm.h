@@ -1,8 +1,8 @@
-#ifndef AUDIO_CODEC_ADPCM_H_
-#define AUDIO_CODEC_ADPCM_H_
+#ifndef CODECS_AUDIO_ADPCM_H_
+#define CODECS_AUDIO_ADPCM_H_
 
 #include "atari.h"
-#include "file_export.h"
+#include "codecs/audio.h"
 
 extern AUDIO_CODEC_t Audio_Codec_ADPCM;
 extern AUDIO_CODEC_t Audio_Codec_ADPCM_MS;
@@ -16,4 +16,4 @@ typedef struct ADPCMChannelStatus {
 } ADPCMChannelStatus;
 
 
-#endif /* AUDIO_CODEC_ADPCM_H_ */
+#endif /* CODECS_AUDIO_ADPCM_H_ */

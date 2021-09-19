@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_export.h"
-#include "video_codec_mrle.h"
+#include "codecs/video_mrle.h"
 #include "screen.h"
 #include "colours.h"
 #include "cfg.h"
@@ -34,26 +34,15 @@
 #ifdef SOUND
 #include "sound.h"
 #include "pokeysnd.h"
+#include "codecs/audio.h"
 #endif
 #ifdef SUPPORTS_CHANGE_VIDEOMODE
 #include "videomode.h"
 #endif
 
-#ifdef HAVE_LIBPNG
-#include <png.h>
-#ifdef VIDEO_CODEC_PNG
-#include "video_codec_mpng.h"
-#endif
-#endif
-
-#ifdef VIDEO_CODEC_ZMBV
-#include "video_codec_zmbv.h"
-#endif
-
-#if defined(SOUND) && defined(AVI_VIDEO_RECORDING)
-#include "audio_codec_pcm.h"
-#include "audio_codec_adpcm.h"
-#include "audio_codec_mulaw.h"
+#ifdef AVI_VIDEO_RECORDING
+#include "codecs/image.h"
+#include "codecs/video.h"
 #endif
 
 #if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
@@ -71,13 +60,7 @@ static char description[16];
 #endif
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
-
-/* image size will be determined in a call to set_video_margins() below */
-static int video_left_margin;
-static int video_top_margin;
-static int video_width;
-static int video_height;
-
+#include "codecs/image.h"
 #endif
 
 #ifdef AVI_VIDEO_RECORDING
@@ -126,45 +109,14 @@ static ULONG *frame_indexes;
 #define AUDIO_FRAME_FLAG 0x40000000
 #define KEYFRAME_FLAG    0x80000000
 
-/* dynamically allocated workspace for image compression */
-static int video_buffer_size = 0;
-static UBYTE *video_buffer = NULL;
-
-static VIDEO_CODEC_t *video_codec = NULL;
-static VIDEO_CODEC_t *requested_video_codec = NULL;
-static VIDEO_CODEC_t *known_video_codecs[] = {
-	&Video_Codec_MRLE,
-	&Video_Codec_MSRLE,
-#ifdef VIDEO_CODEC_PNG
-	&Video_Codec_MPNG,
-#endif
-#ifdef VIDEO_CODEC_ZMBV
-	&Video_Codec_ZMBV,
-#endif
-	NULL,
-};
 
 /* Some codecs allow for keyframes (full frame compression) and inter-frames
    (only the differences from the previous frame) */
-static int keyframe_interval = 0;
 static int keyframe_count;
 
 #ifdef SOUND
 static ULONG samples_written;
-static int audio_buffer_size = 0;
-static UBYTE *audio_buffer = NULL;
 
-static AUDIO_CODEC_t *audio_codec = NULL;
-static AUDIO_CODEC_t *requested_audio_codec = NULL;
-static AUDIO_CODEC_t *known_audio_codecs[] = {
-	&Audio_Codec_PCM,
-	&Audio_Codec_ADPCM,
-	&Audio_Codec_ADPCM_MS,
-	&Audio_Codec_MULAW,
-	&Audio_Codec_PCM_MULAW,
-	NULL,
-};
-static AUDIO_OUT_t *audio_out = NULL;
 #endif
 
 static int num_streams;
@@ -175,88 +127,10 @@ static int num_streams;
 int FILE_EXPORT_compression_level = 6;
 #endif
 
-#ifdef AVI_VIDEO_RECORDING
-static VIDEO_CODEC_t *match_video_codec(char *id)
-{
-	VIDEO_CODEC_t **v = known_video_codecs;
-	VIDEO_CODEC_t *found = NULL;
-
-	while (*v) {
-		if (Util_stricmp(id, (*v)->codec_id) == 0) {
-			found = *v;
-			break;
-		}
-		v++;
-	}
-	return found;
-}
-
-static VIDEO_CODEC_t *get_best_video_codec(void)
-{
-	/* ZMBV is the default if we also have zlib because compressed ZMBV is far
-	   superior to the others. If zlib is not available, RLE becomes the default
-	   because it's better than uncompressed ZMBV in most cases. PNG is never
-	   the default. */
-#if defined(VIDEO_CODEC_ZMBV) && defined(HAVE_LIBZ)
-	return &Video_Codec_ZMBV;
-#else
-	return &Video_Codec_MRLE;
-#endif
-}
-
-static char *video_codec_args(char *buf)
-{
-	VIDEO_CODEC_t **v = known_video_codecs;
-
-	strcpy(buf, "\t-vcodec auto");
-	while (*v) {
-		strcat(buf, "|");
-		strcat(buf, (*v)->codec_id);
-		v++;
-	}
-	return buf;
-}
-#endif /* AVI_VIDEO_RECORDING */
-
-#ifdef SOUND
-static AUDIO_CODEC_t *match_audio_codec(char *id)
-{
-	AUDIO_CODEC_t **a = known_audio_codecs;
-	AUDIO_CODEC_t *found = NULL;
-
-	while (*a) {
-		if (Util_stricmp(id, (*a)->codec_id) == 0) {
-			found = *a;
-			break;
-		}
-		a++;
-	}
-	return found;
-}
-
-static AUDIO_CODEC_t *get_best_audio_codec(void)
-{
-	return &Audio_Codec_PCM;
-}
-
-static char *audio_codec_args(char *buf)
-{
-	AUDIO_CODEC_t **a = known_audio_codecs;
-
-	strcpy(buf, "\t-acodec auto");
-	while (*a) {
-		strcat(buf, "|");
-		strcat(buf, (*a)->codec_id);
-		a++;
-	}
-	return buf;
-}
-#endif /* SOUND */
-
 
 int File_Export_Initialise(int *argc, char *argv[])
 {
-
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	int i;
 	int j;
 
@@ -266,51 +140,6 @@ int File_Export_Initialise(int *argc, char *argv[])
 		int a_i = FALSE; /* error, argument invalid! */
 
 		if (0) {}
-#ifdef AVI_VIDEO_RECORDING
-		else if (strcmp(argv[i], "-vcodec") == 0) {
-			if (i_a) {
-				char *mode = argv[++i];
-				if (strcmp(mode, "auto") == 0) {
-					requested_video_codec = NULL; /* want best available */
-				}
-				else {
-					requested_video_codec = match_video_codec(mode);
-					if (!requested_video_codec) {
-						a_i = TRUE;
-					}
-				}
-			}
-			else a_m = TRUE;
-		}
-#ifdef SOUND
-		else if (strcmp(argv[i], "-acodec") == 0) {
-			if (i_a) {
-				char *mode = argv[++i];
-				if (strcmp(mode, "auto") == 0) {
-					requested_audio_codec = NULL; /* want best available */
-				}
-				else {
-					requested_audio_codec = match_audio_codec(mode);
-					if (!requested_audio_codec) {
-						a_i = TRUE;
-					}
-				}
-			}
-			else a_m = TRUE;
-		}
-#endif
-		else if (strcmp(argv[i], "-keyint") == 0) {
-			if (i_a) {
-				keyframe_interval = Util_sscandec(argv[++i]);
-				if (keyframe_interval < 1 || keyframe_interval > 500) {
-					Log_print("Invalid keyframe interval, must be between 1 and 500 frames.");
-					return FALSE;
-				}
-			}
-			else a_m = TRUE;
-		}
-#endif
-#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 		else if (strcmp(argv[i], "-compression-level") == 0) {
 			if (i_a) {
 				FILE_EXPORT_compression_level = Util_sscandec(argv[++i]);
@@ -321,25 +150,10 @@ int File_Export_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-#endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
-				char buf[256];
-#endif
-#ifdef SOUND
-				Log_print(audio_codec_args(buf));
-				Log_print("\t                 Select audio codec (default: auto)");
-#endif
-#ifdef AVI_VIDEO_RECORDING
-				Log_print(video_codec_args(buf));
-				Log_print("\t                 Select video codec (default: auto)");
-				Log_print("\t-keyint <num>    Set video keyframe interval to one keyframe every num frames");
-#endif
-#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 				Log_print("\t-compression-level <n>");
 				Log_print("\t                 Set zlib/PNG compression level 0-9 (default 6)");
-#endif
 			}
 			argv[j++] = argv[i];
 		}
@@ -353,45 +167,21 @@ int File_Export_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
+#endif
 
-	return TRUE;
+	return TRUE
+#ifdef AVI_VIDEO_RECORDING
+		&& CODECS_VIDEO_Initialise(argc, argv)
+#endif
+#ifdef SOUND
+		&& CODECS_AUDIO_Initialise(argc, argv)
+#endif
+	;
 }
 
 int File_Export_ReadConfig(char *string, char *ptr)
 {
 	if (0) {}
-#ifdef AVI_VIDEO_RECORDING
-	else if (strcmp(string, "VIDEO_CODEC") == 0) {
-		if (Util_stricmp(ptr, "auto") == 0) {
-			requested_video_codec = NULL; /* want best available */
-		}
-		else {
-			requested_video_codec = match_video_codec(ptr);
-			if (!requested_video_codec) {
-				return FALSE;
-			}
-		}
-	}
-	else if (strcmp(string, "VIDEO_CODEC_KEYFRAME_INTERVAL") == 0) {
-		int num = Util_sscandec(ptr);
-		if (num > 0)
-			keyframe_interval = num;
-		else return FALSE;
-	}
-#ifdef SOUND
-	else if (strcmp(string, "AUDIO_CODEC") == 0) {
-		if (Util_stricmp(ptr, "auto") == 0) {
-			requested_audio_codec = NULL; /* want best available */
-		}
-		else {
-			requested_audio_codec = match_audio_codec(ptr);
-			if (!requested_audio_codec) {
-				return FALSE;
-			}
-		}
-	}
-#endif
-#endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	else if (strcmp(string, "COMPRESSION_LEVEL") == 0) {
 		int num = Util_sscandec(ptr);
@@ -400,31 +190,28 @@ int File_Export_ReadConfig(char *string, char *ptr)
 		else return FALSE;
 	}
 #endif
-	else return FALSE;
-	return TRUE;
+#ifdef AVI_VIDEO_RECORDING
+	else if (CODECS_VIDEO_ReadConfig(string, ptr)) {
+	}
+#endif
+#ifdef SOUND
+	else if (CODECS_AUDIO_ReadConfig(string, ptr)) {
+	}
+#endif
+	else return FALSE; /* no match */
+	return TRUE; /* matched something */
 }
 
 void File_Export_WriteConfig(FILE *fp)
 {
-#ifdef AVI_VIDEO_RECORDING
-	if (!requested_video_codec) {
-		fprintf(fp, "VIDEO_CODEC=AUTO\n");
-	}
-	else {
-		fprintf(fp, "VIDEO_CODEC=%s\n", requested_video_codec->codec_id);
-	}
-	fprintf(fp, "VIDEO_CODEC_KEYFRAME_INTERVAL=%d\n", keyframe_interval);
-#ifdef SOUND
-	if (!requested_audio_codec) {
-		fprintf(fp, "AUDIO_CODEC=AUTO\n");
-	}
-	else {
-		fprintf(fp, "AUDIO_CODEC=%s\n", requested_audio_codec->codec_id);
-	}
-#endif
-#endif
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	fprintf(fp, "COMPRESSION_LEVEL=%d\n", FILE_EXPORT_compression_level);
+#endif
+#ifdef AVI_VIDEO_RECORDING
+	CODECS_VIDEO_WriteConfig(fp);
+#endif
+#ifdef SOUND
+	CODECS_AUDIO_WriteConfig(fp);
 #endif
 }
 
@@ -524,344 +311,6 @@ size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 	return fwrite(ptr, size, nmemb, fp);
 }
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
-
-static void set_video_margins(void)
-{
-#ifdef SUPPORTS_CHANGE_VIDEOMODE
-	video_left_margin = VIDEOMODE_src_offset_left;
-	video_width = VIDEOMODE_src_offset_left + VIDEOMODE_src_width - video_left_margin;
-#else
-	video_left_margin = Screen_visible_x1;
-	video_width = Screen_visible_x2 - video_left_margin;
-#endif
-	video_top_margin = Screen_visible_y1;
-	video_height = Screen_visible_y2 - video_top_margin;
-}
-
-/* PCX_SaveScreen saves the screen data to the file in PCX format, optionally
-   using interlace if ptr2 is not NULL.
-
-   PCX format is a lossless image file format derived from PC Paintbrush, a
-   DOS-era paint program, and is widely supported by image viewers. The
-   compression method is run-length encoding, which is simple to implement but
-   only compresses well when groups of neighboring pixels on a scan line have
-   the same color.
-
-   The PNG format (see PNG_SaveScreen below) compresses much better, but depends
-   on the external libpng library. No external dependencies are needed for PCX
-   format.
-
-   fp:          file pointer of file open for writing
-   ptr1:        pointer to Screen_atari
-   ptr2:        (optional) pointer to another array of size Screen_atari containing
-                the interlaced scan lines to blend with ptr1. Set to NULL if no
-				interlacing.
-*/
-void PCX_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
-{
-	int i;
-	int x;
-	int y;
-	UBYTE plane = 16;	/* 16 = Red, 8 = Green, 0 = Blue */
-	UBYTE last;
-	UBYTE count;
-
-	set_video_margins();
-
-	fputc(0xa, fp);   /* pcx signature */
-	fputc(0x5, fp);   /* version 5 */
-	fputc(0x1, fp);   /* RLE encoding */
-	fputc(0x8, fp);   /* bits per pixel */
-	fputw(0, fp);     /* XMin */
-	fputw(0, fp);     /* YMin */
-	fputw(video_width - 1, fp); /* XMax */
-	fputw(video_height - 1, fp);        /* YMax */
-	fputw(0, fp);     /* HRes */
-	fputw(0, fp);     /* VRes */
-	for (i = 0; i < 48; i++)
-		fputc(0, fp); /* EGA color palette */
-	fputc(0, fp);     /* reserved */
-	fputc(ptr2 != NULL ? 3 : 1, fp); /* number of bit planes */
-	fputw(video_width, fp);  /* number of bytes per scan line per color plane */
-	fputw(1, fp);     /* palette info */
-	fputw(video_width, fp); /* screen resolution */
-	fputw(video_height, fp);
-	for (i = 0; i < 54; i++)
-		fputc(0, fp);  /* unused */
-
-	ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
-	if (ptr2 != NULL) {
-		ptr2 += (Screen_WIDTH * video_top_margin) + video_left_margin;
-	}
-	for (y = 0; y < video_height; ) {
-		x = 0;
-		do {
-			last = ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1;
-			count = 0xc0;
-			do {
-				ptr1++;
-				if (ptr2 != NULL)
-					ptr2++;
-				count++;
-				x++;
-			} while (last == (ptr2 != NULL ? (((Colours_table[*ptr1] >> plane) & 0xff) + ((Colours_table[*ptr2] >> plane) & 0xff)) >> 1 : *ptr1)
-						&& count < 0xff && x < video_width);
-			if (count > 0xc1 || last >= 0xc0)
-				fputc(count, fp);
-			fputc(last, fp);
-		} while (x < video_width);
-
-		if (ptr2 != NULL && plane) {
-			ptr1 -= video_width;
-			ptr2 -= video_width;
-			plane -= 8;
-		}
-		else {
-			ptr1 += Screen_WIDTH - video_width;
-			if (ptr2 != NULL) {
-				ptr2 += Screen_WIDTH - video_width;
-				plane = 16;
-			}
-			y++;
-		}
-	}
-
-	if (ptr2 == NULL) {
-		/* write palette */
-		fputc(0xc, fp);
-		for (i = 0; i < 256; i++) {
-			fputc(Colours_GetR(i), fp);
-			fputc(Colours_GetG(i), fp);
-			fputc(Colours_GetB(i), fp);
-		}
-	}
-}
-
-#ifdef HAVE_LIBPNG
-#ifdef VIDEO_CODEC_PNG
-static int current_png_size;
-
-static void PNG_SaveToBuffer(png_structp png_ptr, png_bytep data, png_size_t length)
-{
-	if (current_png_size >= 0) {
-		if (current_png_size + length < video_buffer_size) {
-			memcpy(video_buffer + current_png_size, data, length);
-			current_png_size += length;
-		}
-		else {
-			Log_print("AVI write error: video compression buffer size too small.");
-			current_png_size = -1;
-		}
-	}
-}
-#endif /* VIDEO_CODEC_PNG */
-
-/* PNG_SaveScreen saves the screen data to the file in PNG format, optionally
-   using interlace if ptr2 is not NULL.
-
-   PNG format is a lossless image file format that compresses much better than
-   PCX. Because it depends on the external libpng library, it is only compiled
-   in atari800 if requested and libpng is found on the system.
-
-   fp:          file pointer of file open for writing
-   ptr1:        pointer to Screen_atari
-   ptr2:        (optional) pointer to another array of size Screen_atari containing
-                the interlaced scan lines to blend with ptr1. Set to NULL if no
-				interlacing.
-*/
-int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
-{
-	png_structp png_ptr;
-	png_infop info_ptr;
-	png_bytep rows[Screen_HEIGHT];
-
-	png_ptr = png_create_write_struct(
-		PNG_LIBPNG_VER_STRING,
-		NULL, NULL, NULL
-	);
-	if (png_ptr == NULL)
-		return 0;
-	info_ptr = png_create_info_struct(png_ptr);
-	if (info_ptr == NULL) {
-		png_destroy_write_struct(&png_ptr, NULL);
-		return 0;
-	}
-#ifdef VIDEO_CODEC_PNG
-	if (fp == NULL) {
-		current_png_size = 0;
-		png_set_write_fn(png_ptr, NULL, PNG_SaveToBuffer, NULL);
-	}
-	else
-#endif
-	{
-		set_video_margins();
-		png_init_io(png_ptr, fp);
-	}
-
-	png_set_compression_level(png_ptr, FILE_EXPORT_compression_level);
-	png_set_IHDR(
-		png_ptr, info_ptr, video_width, video_height,
-		8, ptr2 == NULL ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
-		PNG_INTERLACE_NONE,
-		PNG_COMPRESSION_TYPE_DEFAULT,
-		PNG_FILTER_TYPE_DEFAULT
-	);
-	if (ptr2 == NULL) {
-		int i;
-		png_color palette[256];
-		for (i = 0; i < 256; i++) {
-			palette[i].red = Colours_GetR(i);
-			palette[i].green = Colours_GetG(i);
-			palette[i].blue = Colours_GetB(i);
-		}
-		png_set_PLTE(png_ptr, info_ptr, palette, 256);
-		ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
-		for (i = 0; i < video_height; i++) {
-			rows[i] = ptr1;
-			ptr1 += Screen_WIDTH;
-		}
-	}
-	else {
-		png_bytep ptr3;
-		int x;
-		int y;
-		ptr1 += (Screen_WIDTH * video_top_margin) + video_left_margin;
-		ptr2 += (Screen_WIDTH * video_top_margin) + video_left_margin;
-		ptr3 = (png_bytep) Util_malloc(3 * video_width * video_height);
-		for (y = 0; y < video_height; y++) {
-			rows[y] = ptr3;
-			for (x = 0; x < video_width; x++) {
-				*ptr3++ = (png_byte) ((Colours_GetR(*ptr1) + Colours_GetR(*ptr2)) >> 1);
-				*ptr3++ = (png_byte) ((Colours_GetG(*ptr1) + Colours_GetG(*ptr2)) >> 1);
-				*ptr3++ = (png_byte) ((Colours_GetB(*ptr1) + Colours_GetB(*ptr2)) >> 1);
-				ptr1++;
-				ptr2++;
-			}
-			ptr1 += Screen_WIDTH - video_width;
-			ptr2 += Screen_WIDTH - video_width;
-		}
-	}
-	png_set_rows(png_ptr, info_ptr, rows);
-	png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
-	png_destroy_write_struct(&png_ptr, &info_ptr);
-	if (ptr2 != NULL)
-		free(rows[0]);
-
-#ifdef VIDEO_CODEC_PNG
-	return current_png_size;
-#else
-	return 0;
-#endif
-}
-#endif /* HAVE_LIBPNG */
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
-
-#if defined(AVI_VIDEO_RECORDING) || defined(SOUND)
-
-static int init_codecs(int video, int audio)
-{
-	strcpy(description, "");
-	video_frame_count = 0;
-	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	if (keyframe_interval == 0)
-		keyframe_interval = (int)(fps + 1);
-
-#ifdef AVI_VIDEO_RECORDING
-	if (video) {
-		set_video_margins();
-
-		if (!video_codec) {
-			if (!requested_video_codec) {
-				video_codec = get_best_video_codec();
-			}
-			else {
-				video_codec = requested_video_codec;
-			}
-		}
-		strcat(description, "AVI ");
-		strcat(description, video_codec->codec_id);
-
-		video_buffer_size = video_codec->init(video_width, video_height, video_left_margin, video_top_margin);
-		if (video_buffer_size < 0) {
-			Log_print("Failed to initialize %s video codec", video_codec->codec_id);
-			return 0;
-		}
-		total_video_size = 0;
-		smallest_video_frame = 0xffffffff;
-		largest_video_frame = 0;
-	}
-	else {
-		video_buffer_size = 0;
-		video_buffer = NULL;
-		video_codec = NULL;
-	}
-#endif /* AVI_VIDEO_RECORDING */
-#ifdef SOUND
-	if (audio && Sound_enabled) {
-		if (!audio_codec) {
-			if (!requested_audio_codec) {
-				audio_codec = get_best_audio_codec();
-			}
-			else {
-				audio_codec = requested_audio_codec;
-			}
-		}
-
-		if (video)
-			strcat(description, " ");
-		else
-			strcat(description, "WAV ");
-		strcat(description, audio_codec->codec_id);
-		audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
-		if (audio_buffer_size < 0) {
-			Log_print("Failed to initialize %s audio codec", audio_codec->codec_id);
-			return 0;
-		}
-		audio_out = audio_codec->audio_out();
-	}
-	else {
-		audio_buffer_size = 0;
-		audio_buffer = NULL;
-		audio_codec = NULL;
-		audio_out = NULL;
-	}
-#endif /* SOUND */
-
-	/* delay alloc until after error conditions have been checked */
-#ifdef AVI_VIDEO_RECORDING
-	if (video && video_codec && video_buffer_size) {
-		video_buffer = (UBYTE *)Util_malloc(video_buffer_size);
-	}
-#endif /* AVI_VIDEO_RECORDING */
-#ifdef SOUND
-	if (audio && audio_codec && audio_buffer_size) {
-		audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);
-	}
-#endif /* SOUND */
-
-	return 1;
-}
-
-static void codec_memory_cleanup()
-{
-#ifdef AVI_VIDEO_RECORDING
-	if (video_buffer) {
-		free(video_buffer);
-		video_buffer_size = 0;
-		video_buffer = NULL;
-	}
-#endif /* AVI_VIDEO_RECORDING */
-#ifdef SOUND
-	if (audio_buffer) {
-		free(audio_buffer);
-		audio_buffer_size = 0;
-		audio_buffer = NULL;
-	}
-#endif /* SOUND */
-}
-#endif /* SOUND || AVI_VIDEO_RECORDING */
-
 
 #ifdef SOUND
 /* WAV_OpenFile will start a new sound file and write out the header. Note that
@@ -874,6 +323,12 @@ static void codec_memory_cleanup()
 FILE *WAV_OpenFile(const char *szFileName)
 {
 	FILE *fp;
+
+	if (!Sound_enabled || !CODECS_AUDIO_Init()) {
+		return NULL;
+	}
+	strcpy(description, "WAV ");
+	strcat(description, audio_codec->codec_id);
 
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
@@ -906,7 +361,6 @@ FILE *WAV_OpenFile(const char *szFileName)
 
 	Good description of WAVE format: http://www.sonicspot.com/guide/wavefiles.html
 	*/
-	init_codecs(0, 1);
 
 	fputs("RIFF", fp);
 	fputl(0, fp); /* length to be filled in upon file close */
@@ -932,6 +386,8 @@ FILE *WAV_OpenFile(const char *szFileName)
 		return NULL;
 	}
 
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+	video_frame_count = 0;
 	byteswritten = 0;
 	return fp;
 }
@@ -1019,7 +475,7 @@ int WAV_CloseFile(FILE *fp)
 			}
 
 			if (result) {
-				audio_codec->end((float)(video_frame_count / fps));
+				CODECS_AUDIO_End((float)(video_frame_count / fps));
 
 				/* Sound file is finished, so modify header and close it. */
 				if (fseek(fp, 4, SEEK_SET) != 0)	/* Seek past RIFF */
@@ -1042,7 +498,6 @@ int WAV_CloseFile(FILE *fp)
 			}
 		}
 		fclose(fp);
-		codec_memory_cleanup();
 	}
 
 	return result;
@@ -1092,15 +547,15 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 56 bytes */
 	fputl((ULONG)(1000000 / fps), fp); /* microseconds per frame */
-	fputl(video_width * video_height * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
+	fputl(image_codec_width * image_codec_height * 3, fp); /* approximate bytes per second of video + audio FIXME: should likely be (width * height * 3 + audio) * fps */
 	fputl(0, fp); /* reserved */
 	fputl(0x10, fp); /* flags; 0x10 indicates the index at the end of the file */
 	fputl(video_frame_count, fp); /* number of frames in the video */
 	fputl(0, fp); /* initial frames, always zero for us */
 	fputl(num_streams, fp); /* 2 = video and audio, 1 = video only */
-	fputl(video_width * video_height * 3, fp); /* suggested buffer size */
-	fputl(video_width, fp); /* video width */
-	fputl(video_height, fp); /* video height */
+	fputl(image_codec_width * image_codec_height * 3, fp); /* suggested buffer size */
+	fputl(image_codec_width, fp); /* video width */
+	fputl(image_codec_height, fp); /* video height */
 	fputl(0, fp); /* reserved */
 	fputl(0, fp);
 	fputl(0, fp);
@@ -1131,7 +586,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputl((ULONG)(fps * 1000000), fp); /* rate = frames per second / scale */
 	fputl(0, fp); /* start */
 	fputl(video_frame_count, fp); /* length (for video is number of frames) */
-	fputl(video_width * video_height * 3, fp); /* suggested buffer size */
+	fputl(image_codec_width * image_codec_height * 3, fp); /* suggested buffer size */
 	fputl(0, fp); /* quality */
 	fputl(0, fp); /* sample size (0 = variable sample size) */
 	fputl(0, fp); /* rcRect, ignored */
@@ -1143,12 +598,12 @@ static int AVI_WriteHeader(FILE *fp) {
 
 	/* 40 bytes for stream format data */
 	fputl(40, fp); /* header_size */
-	fputl(video_width, fp); /* width */
-	fputl(video_height, fp); /* height */
+	fputl(image_codec_width, fp); /* width */
+	fputl(image_codec_height, fp); /* height */
 	fputw(1, fp); /* number of bitplanes */
 	fputw(8, fp); /* bits per pixel: 8 = paletted */
 	fwrite(video_codec->avi_compression, 4, 1, fp);
-	fputl(video_width * video_height * 3, fp); /* image_size */
+	fputl(image_codec_width * image_codec_height * 3, fp); /* image_size */
 	fputl(0, fp); /* x pixels per meter (!) */
 	fputl(0, fp); /* y pikels per meter */
 	fputl(256, fp); /* colors_used */
@@ -1261,21 +716,20 @@ FILE *AVI_OpenFile(const char *szFileName)
 	if (!(fp = fopen(szFileName, "wb")))
 		return NULL;
 
-	size_riff = 0;
-	size_movi = 0;
-	frames_written = 0;
-	keyframe_count = 0; /* force first frame to be keyframe */
-
-	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
-	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
-	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
-
-	init_codecs(1, 1);
-
+	if (!CODECS_VIDEO_Init()) {
+		return NULL;
+	}
+	strcpy(description, "AVI ");
+	strcat(description, video_codec->codec_id);
 #ifdef SOUND
-	samples_written = 0;
-	if (audio_codec) {
+	if (Sound_enabled) {
+		if (!CODECS_AUDIO_Init()) {
+			CODECS_VIDEO_End();
+			return NULL;
+		}
 		num_streams = 2;
+		strcat(description, " ");
+		strcat(description, audio_codec->codec_id);
 	}
 	else
 #endif
@@ -1283,14 +737,35 @@ FILE *AVI_OpenFile(const char *szFileName)
 		num_streams = 1;
 	}
 
+	/* some variables must exist before the call to WriteHeader */
+	size_riff = 0;
+	size_movi = 0;
+	video_frame_count = 0;
 	if (!AVI_WriteHeader(fp)) {
-		codec_memory_cleanup();
+		CODECS_VIDEO_End();
+#ifdef SOUND
+		if (num_streams == 2) {
+			CODECS_AUDIO_End(0);
+		}
+#endif
 		fclose(fp);
 		return NULL;
 	}
 
 	/* set up video statistics */
+	frames_written = 0;
+	keyframe_count = 0; /* force first frame to be keyframe */
+
 	byteswritten = ftell(fp) + 8; /* current size + index header */
+	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
+	total_video_size = 0;
+	smallest_video_frame = 0xffffffff;
+	largest_video_frame = 0;
+
+	/* allocate space for index which is written at the end of the file */
+	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
+	frame_indexes = (ULONG *)Util_malloc(num_frames_allocated * sizeof(ULONG));
+	memset(frame_indexes, 0, num_frames_allocated * sizeof(ULONG));
 
 	return fp;
 }
@@ -1356,7 +831,7 @@ int AVI_AddVideoFrame(FILE *fp) {
 		keyframe_count--;
 		if (keyframe_count <= 0) {
 			is_keyframe = TRUE;
-			keyframe_count = keyframe_interval;
+			keyframe_count = video_codec_keyframe_interval;
 		}
 		else {
 			is_keyframe = FALSE;
@@ -1491,11 +966,19 @@ int AVI_CloseFile(FILE *fp)
 	int seconds;
 	int result;
 
+#ifdef SOUND
 	/* Force audio codec to write out the last frame. This only occurs in codecs
 	   with fixed block alignments */
-	result = AVI_AddAudioSamples(NULL, 0, fp);
+	if (num_streams == 2) {
+		result = AVI_AddAudioSamples(NULL, 0, fp);
+	}
+	else
+#endif
+	{
+		result = 1;
+	}
 
-	if (video_frame_count > 0) {
+	if (result && video_frame_count > 0) {
 		seconds = (int)(video_frame_count / fps);
 		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count, total_video_size / video_frame_count / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
 	}
@@ -1503,18 +986,19 @@ int AVI_CloseFile(FILE *fp)
 	/* end codecs so they have a chance to update any final statistics needed for
 	   the header. */
 #ifdef SOUND
-	if (audio_buffer_size > 0) {
-		audio_codec->end((float)(video_frame_count / fps));
+	if (num_streams == 2) {
+		CODECS_AUDIO_End((float)(video_frame_count / fps));
 	}
 #endif
-	video_codec->end();
-	codec_memory_cleanup();
+	CODECS_VIDEO_End();
 
-	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
-	result = AVI_WriteIndex(fp);
-	if (result > 0) {
-		size_riff = ftell(fp) - 8;
-		result = AVI_WriteHeader(fp);
+	if (result) {
+		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
+		result = AVI_WriteIndex(fp);
+		if (result > 0) {
+			size_riff = ftell(fp) - 8;
+			result = AVI_WriteHeader(fp);
+		}
 	}
 	fclose(fp);
 
