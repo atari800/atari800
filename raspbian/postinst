@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e 
+
+if [ "$1" = "configure" -a -x /usr/bin/update-menus ]; then update-menus ; fi
