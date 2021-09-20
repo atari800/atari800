@@ -16,6 +16,7 @@ typedef struct {
     IMAGE_CODEC_SaveToBuffer to_buffer;
 } IMAGE_CODEC_t;
 
+extern IMAGE_CODEC_t *image_codec;
 extern int image_codec_left_margin;
 extern int image_codec_top_margin;
 extern int image_codec_width;

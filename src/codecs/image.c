@@ -37,7 +37,7 @@
 #include "codecs/image_png.h"
 #endif
 
-static IMAGE_CODEC_t *image_codec = NULL;
+IMAGE_CODEC_t *image_codec = NULL;
 
 /* image size will be determined in a call to CODECS_IMAGE_SetMargins() below */
 int image_codec_left_margin;
@@ -90,15 +90,4 @@ int CODECS_IMAGE_Init(const char *filename)
 	image_codec = match_image_codec(filename);
 	CODECS_IMAGE_SetMargins();
 	return (image_codec != NULL);
-}
-
-/* Convenience function to save the atari screen to an already-opened file. If ptr2
-   is not NULL, then it is an interlaced image and the colors are blended between
-   the images from ptr1 and ptr2. */
-int CODECS_IMAGE_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
-{
-	if (!image_codec)
-		return 0;
-	
-	return image_codec->to_file(fp, ptr1, ptr2);
 }

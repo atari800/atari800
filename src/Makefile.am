@@ -124,26 +124,28 @@ endif
 if WANT_POKEYREC
 atari800_SOURCES += pokeyrec.c pokeyrec.h
 endif
-if WITH_MULTIMEDIA
-atari800_SOURCES += multimedia.c multimedia.h
-endif
 if WITH_FILE_EXPORT
 atari800_SOURCES += file_export.c file_export.h
+if WITH_MULTIMEDIA
+atari800_SOURCES += codecs/container.c codecs/container.h
 if WITH_SOUND
-atari800_SOURCES += codecs/audio.c codecs/audio.h \
+atari800_SOURCES += codecs/container_wav.c codecs/container_wav.h \
+	codecs/audio.c codecs/audio.h \
 	codecs/audio_pcm.c codecs/audio_pcm.h \
 	codecs/audio_adpcm.c codecs/audio_adpcm.h \
 	codecs/audio_mulaw.c codecs/audio_mulaw.h
 endif
-endif
 if WITH_VIDEO_RECORDING
-atari800_SOURCES += codecs/video.c codecs/video.h \
+atari800_SOURCES += codecs/container_avi.c codecs/container_avi.h \
+	codecs/video.c codecs/video.h \
 	codecs/video_mrle.c codecs/video_mrle.h
 if WITH_VIDEO_CODEC_PNG
 atari800_SOURCES += codecs/video_mpng.c codecs/video_mpng.h
 endif
 if WITH_VIDEO_CODEC_ZMBV
 atari800_SOURCES += codecs/video_zmbv.c codecs/video_zmbv.h
+endif
+endif
 endif
 endif
 

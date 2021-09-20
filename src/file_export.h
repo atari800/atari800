@@ -11,30 +11,31 @@ int File_Export_Initialise(int *argc, char *argv[]);
 int File_Export_ReadConfig(char *string, char *ptr);
 void File_Export_WriteConfig(FILE *fp);
 
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
-int File_Export_ElapsedTime(void);
-int File_Export_CurrentSize(void);
-char *File_Export_Description(void);
-#endif
-
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
-size_t fwritele(const void *ptr, size_t size, size_t nmemb, FILE *fp);
+
+#ifdef MULTIMEDIA
+int File_Export_IsRecording(void);
+int File_Export_StopRecording(void);
+int File_Export_StartRecording(const char *fileName);
 
 #ifdef SOUND
-FILE *WAV_OpenFile(const char *szFileName);
-int WAV_WriteSamples(const unsigned char *buf, unsigned int num_samples, FILE *fp);
-int WAV_CloseFile(FILE *fp);
+int File_Export_GetNextSoundFile(char *buffer, int bufsize);
+int File_Export_WriteAudio(const UBYTE *samples, int num_samples);
 #endif
 
 #ifdef AVI_VIDEO_RECORDING
-FILE *AVI_OpenFile(const char *szFileName);
-int AVI_CloseFile(FILE *fp);
-int AVI_AddVideoFrame(FILE *fp);
-#ifdef SOUND
-int AVI_AddAudioSamples(const UBYTE *buf, int num_samples, FILE *fp);
-#endif /* SOUND */
-#endif /* AVI_VIDEO_RECORDING */
+int File_Export_GetNextVideoFile(char *buffer, int bufsize);
+int File_Export_WriteVideo(void);
+#endif
+
+int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type);
+#endif /* MULTIMEDIA */
+
+#if !defined(BASIC) && !defined(CURSES_BASIC)
+int File_Export_ImageTypeSupported(const char *id);
+int File_Export_SaveScreen(const char *filename, UBYTE *ptr1, UBYTE *ptr2);
+#endif
 
 #endif /* FILE_EXPORT_H_ */
 

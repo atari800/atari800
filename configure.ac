@@ -1087,6 +1087,9 @@ else
     WANT_AVI_VIDEO_RECORDING="no"
 fi
 
+if [[ "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = yes ]]; then
+    AC_DEFINE(MULTIMEDIA, 1, [Define to provide multimedia recording capability.])
+fi
 AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording

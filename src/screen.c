@@ -38,12 +38,8 @@
 #include "screen.h"
 #include "sio.h"
 #include "util.h"
-#include "file_export.h"
 #ifndef DREAMCAST
-#include "codecs/image.h"
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
-#include "multimedia.h"
-#endif
+#include "file_export.h"
 #endif
 
 ULONG *Screen_atari = NULL;
@@ -779,7 +775,7 @@ void Screen_DrawMultimediaStats(void)
 		char *media_description;
 		UBYTE *screen;
 
-		if (Multimedia_GetStats(&elapsed_time, &size, &media_description)) {
+		if (File_Export_GetRecordingStats(&elapsed_time, &size, &media_description)) {
 			num = 10 + strlen(media_description) + 2 + 7 + 2 + 6;
 			screen = (UBYTE *) Screen_atari + Screen_visible_x1 + (Screen_visible_x2 - Screen_visible_x1) / 2 - (num * SMALLFONT_WIDTH) / 2 + (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 
@@ -841,18 +837,15 @@ void Screen_DrawMultimediaStats(void)
 
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
-	FILE *fp;
+	int result;
 	ULONG *main_screen_atari;
 	UBYTE *ptr1;
 	UBYTE *ptr2;
 
-	if (!CODECS_IMAGE_Init(filename)) {
+	if (!File_Export_ImageTypeSupported(filename)) {
 		Log_print("Unsupported image type for file: %s", filename);
 		return FALSE;
 	}
-	fp = fopen(filename, "wb");
-	if (fp == NULL)
-		return FALSE;
 	main_screen_atari = Screen_atari;
 	ptr1 = (UBYTE *) Screen_atari;
 	if (interlaced) {
@@ -863,13 +856,15 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	else {
 		ptr2 = NULL;
 	}
-	CODECS_IMAGE_SaveScreen(fp, ptr1, ptr2);
-	fclose(fp);
+	result = File_Export_SaveScreen(filename, ptr1, ptr2);
+	if (!result) {
+		Log_print("Failed saving to file: %s", filename);
+	}
 	if (interlaced) {
 		free(Screen_atari);
 		Screen_atari = main_screen_atari;
 	}
-	return TRUE;
+	return result;
 }
 
 void Screen_SaveNextScreenshot(int interlaced)

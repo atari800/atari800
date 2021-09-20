@@ -90,6 +90,9 @@
 #include "colours.h"
 #include "screen.h"
 #endif
+#if !defined(DREAMCAST) && defined(MULTIMEDIA)
+#include "file_export.h"
+#endif
 #ifndef BASIC
 #include "statesav.h"
 #ifndef __PLUS
@@ -99,10 +102,6 @@
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
 #include "sound.h"
-#endif
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-#include "file_export.h"
-#include "multimedia.h"
 #endif
 #ifdef R_IO_DEVICE
 #include "rdevice.h"
@@ -810,10 +809,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 		|| !Screen_Initialise(argc, argv)
 		|| !UI_Initialise(argc, argv)
-#endif
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-		|| !Multimedia_Initialise(argc, argv)
+#if !defined(DREAMCAST) && defined(MULTIMEDIA)
 		|| !File_Export_Initialise(argc, argv)
+#endif
 #endif
 		/* Initialise Custom Chips */
 		|| !ANTIC_Initialise(argc, argv)
@@ -1042,8 +1040,8 @@ int Atari800_Exit(int run_monitor)
 #ifdef R_IO_DEVICE
 		RDevice_Exit(); /* R: Device cleanup */
 #endif
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-		Multimedia_CloseFile();
+#if !defined(DREAMCAST) && defined(MULTIMEDIA)
+		File_Export_StopRecording();
 #endif
 		MONITOR_Exit();
 #ifdef SDL
@@ -1371,12 +1369,12 @@ void Atari800_Frame(void)
 #endif /* BASIC */
 	POKEY_Frame();
 #ifdef AVI_VIDEO_RECORDING
-	Multimedia_WriteVideo();
+	File_Export_WriteVideo();
 #endif
 #ifdef SOUND
 	Sound_Update();
 #endif
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(MULTIMEDIA) && (!defined(BASIC) && !defined(CURSES_BASIC))
 	/* multimedia stats are drawn here so they don't get recorded in the video */
 	Screen_DrawMultimediaStats();
 #endif
