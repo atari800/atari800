@@ -33,12 +33,12 @@
 #include "log.h"
 #include "audio_adpcm.h"
 
+#define FFMIN(a,b) ((a) > (b) ? (b) : (a))
+
 static AUDIO_OUT_t out;
 
 static ADPCMChannelStatus channel_status[2];
 
-static int debug_samples_in;
-static int debug_samples_consumed;
 static int samples_per_block;
 static SWORD *leftover_samples;
 static SWORD *leftover_samples_boundary;
@@ -61,6 +61,16 @@ const SBYTE adpcm_AdaptCoeff2[] = {
 	0, -64, 0, 16, 0, -52, -58
 };
 
+const SWORD adpcm_yamaha_indexscale[] = {
+    230, 230, 230, 230, 307, 409, 512, 614,
+    230, 230, 230, 230, 307, 409, 512, 614
+};
+
+const SBYTE adpcm_yamaha_difflookup[] = {
+     1,  3,  5,  7,  9,  11,  13,  15,
+    -1, -3, -5, -7, -9, -11, -13, -15
+};
+
 /* Clip a signed integer value into the -32768,32767 range.
  * @param a value to clip
  * @return clipped value
@@ -78,48 +88,94 @@ static inline const SWORD clip_int16(int a)
  */
 static inline const int clip_intp2(int a, int p)
 {
-    if (((unsigned)a + (1 << p)) & ~((2 << p) - 1))
-        return (a >> 31) ^ ((1 << p) - 1);
-    else
-        return a;
+	if (((unsigned)a + (1 << p)) & ~((2 << p) - 1))
+		return (a >> 31) ^ ((1 << p) - 1);
+	else
+		return a;
+}
+
+/**
+ * Clip a signed integer value into the amin-amax range.
+ * @param a value to clip
+ * @param amin minimum value of the clip range
+ * @param amax maximum value of the clip range
+ * @return clipped value
+ */
+static inline const int clip(int a, int amin, int amax)
+{
+	if      (a < amin) return amin;
+	else if (a > amax) return amax;
+	else               return a;
 }
 
 static inline UBYTE adpcm_ms_compress_sample(ADPCMChannelStatus *c, SWORD sample)
 {
-    int predictor, nibble, bias;
+	int predictor, nibble, bias;
 
-    predictor = (((c->sample1) * (c->coeff1)) +
-                (( c->sample2) * (c->coeff2))) / 64;
+	predictor = (((c->sample1) * (c->coeff1)) +
+				(( c->sample2) * (c->coeff2))) / 64;
 
-    nibble = sample - predictor;
-    if (nibble >= 0)
-        bias =  c->idelta / 2;
-    else
-        bias = -c->idelta / 2;
+	nibble = sample - predictor;
+	if (nibble >= 0)
+		bias =  c->idelta / 2;
+	else
+		bias = -c->idelta / 2;
 
-    nibble = (nibble + bias) / c->idelta;
-    nibble = clip_intp2(nibble, 3) & 0x0F;
+	nibble = (nibble + bias) / c->idelta;
+	nibble = clip_intp2(nibble, 3) & 0x0F;
 
-    predictor += ((nibble & 0x08) ? (nibble - 0x10) : nibble) * c->idelta;
+	predictor += ((nibble & 0x08) ? (nibble - 0x10) : nibble) * c->idelta;
 
-    c->sample2 = c->sample1;
-    c->sample1 = clip_int16(predictor);
+	c->sample2 = c->sample1;
+	c->sample1 = clip_int16(predictor);
 
-    c->idelta = (adpcm_AdaptationTable[nibble] * c->idelta) >> 8;
-    if (c->idelta < 16)
-        c->idelta = 16;
+	c->idelta = (adpcm_AdaptationTable[nibble] * c->idelta) >> 8;
+	if (c->idelta < 16)
+		c->idelta = 16;
 
-    return nibble;
+	return nibble;
+}
+
+static inline UBYTE adpcm_yamaha_compress_sample(ADPCMChannelStatus *c, SWORD sample)
+{
+	int nibble, delta;
+
+	if (!c->step) {
+		c->predictor = 0;
+		c->step      = 127;
+	}
+
+	delta = sample - c->predictor;
+
+	nibble = FFMIN(7, abs(delta) * 4 / c->step) + (delta < 0) * 8;
+
+	c->predictor += ((c->step * adpcm_yamaha_difflookup[nibble]) / 8);
+	c->predictor = clip_int16(c->predictor);
+	c->step = (c->step * adpcm_yamaha_indexscale[nibble]) >> 8;
+	c->step = clip(c->step, 127, 24576);
+
+	return nibble;
 }
 
 #define PUT_LE_WORD(p, val) do {         \
-        UWORD d = (val);             \
-        ((UBYTE*)(p))[0] = (d);      \
-        ((UBYTE*)(p))[1] = (d)>>8;   \
+		UWORD d = (val);             \
+		((UBYTE*)(p))[0] = (d);      \
+		((UBYTE*)(p))[1] = (d)>>8;   \
 		p += 2;                      \
-    } while(0)
+	} while(0)
 
-static int ADPCM_Init(int sample_rate, float fps, int sample_size, int num_channels)
+static void reserve_leftover_buffer(void)
+{
+	int num_samples;
+
+	num_samples = samples_per_block * out.num_channels * 2;
+
+	leftover_samples = (SWORD *)Util_malloc(num_samples * 2);
+	leftover_samples_boundary = leftover_samples + num_samples;
+	leftover_samples_end = leftover_samples;
+}
+
+static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
 	int i;
@@ -145,18 +201,44 @@ static int ADPCM_Init(int sample_rate, float fps, int sample_size, int num_chann
 		PUT_LE_WORD(extra, adpcm_AdaptCoeff2[i] * 4);
 	}
 
-	/* only channel status values that must be initialized; others are set each frame */
+	/* only idelta values must be initialized; others are set each frame */
 	channel_status[0].idelta = 0;
 	channel_status[1].idelta = 0;
 
 	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
 
-	leftover_samples = (SWORD *)Util_malloc(comp_size * 4);
-	leftover_samples_boundary = leftover_samples + comp_size * 2;
-	leftover_samples_end = leftover_samples;
+	reserve_leftover_buffer();
 
-	debug_samples_in = 0;
-	debug_samples_consumed = 0;
+	return comp_size;
+}
+
+
+static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int num_channels)
+{
+	int comp_size;
+
+	if (sample_size < 2)
+		return -1;
+	out.sample_rate = sample_rate;
+	out.sample_size = 1;
+	out.bits_per_sample = 4;
+	out.num_channels = num_channels;
+	out.block_align = 1024;
+	out.scale = 1000000;
+	out.rate = (int)(fps * 1000000);
+	out.length = 0;
+	out.extra_data_size = 0;
+	samples_per_block = (out.block_align * 2) / num_channels;
+
+	/* only predictor and step values are used in Yamaha */
+	channel_status[0].predictor = 0;
+	channel_status[0].step = 0;
+	channel_status[1].predictor = 0;
+	channel_status[1].step = 0;
+
+	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
+
+	reserve_leftover_buffer();
 
 	return comp_size;
 }
@@ -205,31 +287,42 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 
 	st = out.num_channels == 2;
 
-	for (i = 0; i < out.num_channels; i++) {
-		int predictor = 0;
-		*buf++ = predictor;
-		channel_status[i].coeff1 = adpcm_AdaptCoeff1[predictor];
-		channel_status[i].coeff2 = adpcm_AdaptCoeff2[predictor];
-	}
-	for (i = 0; i < out.num_channels; i++) {
-		if (channel_status[i].idelta < 16)
-			channel_status[i].idelta = 16;
-		PUT_LE_WORD(buf, channel_status[i].idelta);
-	}
-	for (i = 0; i < out.num_channels; i++)
-		channel_status[i].sample2 = *samples++;
-	for (i = 0; i < out.num_channels; i++) {
-		channel_status[i].sample1 = *samples++;
-		PUT_LE_WORD(buf, channel_status[i].sample1);
-	}
-	for (i = 0; i < out.num_channels; i++)
-		PUT_LE_WORD(buf, channel_status[i].sample2);
+	if (out.extra_data_size == 32) { /* Microsoft ADPCM */
+		for (i = 0; i < out.num_channels; i++) {
+			int predictor = 0;
+			*buf++ = predictor;
+			channel_status[i].coeff1 = adpcm_AdaptCoeff1[predictor];
+			channel_status[i].coeff2 = adpcm_AdaptCoeff2[predictor];
+		}
+		for (i = 0; i < out.num_channels; i++) {
+			if (channel_status[i].idelta < 16)
+				channel_status[i].idelta = 16;
+			PUT_LE_WORD(buf, channel_status[i].idelta);
+		}
+		for (i = 0; i < out.num_channels; i++)
+			channel_status[i].sample2 = *samples++;
+		for (i = 0; i < out.num_channels; i++) {
+			channel_status[i].sample1 = *samples++;
+			PUT_LE_WORD(buf, channel_status[i].sample1);
+		}
+		for (i = 0; i < out.num_channels; i++)
+			PUT_LE_WORD(buf, channel_status[i].sample2);
 
-	for (i = 7 * out.num_channels; i < out.block_align; i++) {
-		int nibble;
-		nibble  = adpcm_ms_compress_sample(&channel_status[ 0], *samples++) << 4;
-		nibble |= adpcm_ms_compress_sample(&channel_status[st], *samples++);
-		*buf++  = nibble;
+		for (i = 7 * out.num_channels; i < out.block_align; i++) {
+			int nibble;
+			nibble  = adpcm_ms_compress_sample(&channel_status[ 0], *samples++) << 4;
+			nibble |= adpcm_ms_compress_sample(&channel_status[st], *samples++);
+			*buf++  = nibble;
+		}
+	}
+	else { /* Yamaha ADPCM */
+		int n = samples_per_block / 2;
+		for (n *= out.num_channels; n > 0; n--) {
+			int nibble;
+			nibble  = adpcm_yamaha_compress_sample(&channel_status[ 0], *samples++);
+			nibble |= adpcm_yamaha_compress_sample(&channel_status[st], *samples++) << 4;
+			*buf++  = nibble;
+		}
 	}
 
 	samples_consumed = (int)(samples - leftover_samples);
@@ -266,12 +359,25 @@ static int ADPCM_End(float duration)
 	return 1;
 }
 
+/* Yamaha ADPCM seems to be better than MS for square waves, so it's the default */
 AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	"adpcm",
-	"Microsoft ADPCM",
+	"Yamaha ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
-	2, /* format type */
-	&ADPCM_Init,
+	0x20, /* format type */
+	&ADPCM_Init_Yamaha,
+	&ADPCM_AudioOut,
+	&ADPCM_CreateFrame,
+	&ADPCM_AnotherFrame,
+	&ADPCM_End,
+};
+
+AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
+	"adpcm_yamaha",
+	"Yamaha ADPCM",
+	{1, 0, 0, 0}, /* fourcc */
+	0x20, /* format type */
+	&ADPCM_Init_Yamaha,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
@@ -283,7 +389,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
 	"Microsoft ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	2, /* format type */
-	&ADPCM_Init,
+	&ADPCM_Init_MS,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,

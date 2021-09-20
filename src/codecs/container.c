@@ -44,7 +44,7 @@ CONTAINER_t *container = NULL;
 ULONG byteswritten;
 ULONG video_frame_count;
 float fps;
-char description[16];
+char description[32];
 
 static CONTAINER_t *known_containers[] = {
 #ifdef SOUND

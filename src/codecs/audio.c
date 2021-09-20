@@ -46,10 +46,11 @@ UBYTE *audio_buffer = NULL;
 
 static AUDIO_CODEC_t *known_audio_codecs[] = {
 	&Audio_Codec_PCM,
-	&Audio_Codec_ADPCM,
-	&Audio_Codec_ADPCM_MS,
 	&Audio_Codec_MULAW,
 	&Audio_Codec_PCM_MULAW,
+	&Audio_Codec_ADPCM,
+	&Audio_Codec_ADPCM_YAMAHA,
+	&Audio_Codec_ADPCM_MS,
 	NULL,
 };
 

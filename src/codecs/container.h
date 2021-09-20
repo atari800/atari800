@@ -34,7 +34,7 @@ extern ULONG byteswritten;
 /* These variables are needed for statistics and on-screen information display. */
 extern ULONG video_frame_count;
 extern float fps;
-extern char description[16];
+extern char description[32];
 
 /* Currently open container */
 extern CONTAINER_t *container;

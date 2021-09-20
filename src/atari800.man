@@ -797,7 +797,7 @@ Use to override the default pattern of \fIatari###.wav\fR which produces
 \fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
 Hashes are replaced with raising numbers.
 .TP
-\fB\-acodec auto\fR|\fBpcm\fR|\fBadpcm\fR|\fBadpcm_ms\fR|\fBmulaw\fR|\fBpcm_mulaw\fR
+\fB\-acodec auto\fR|\fBpcm\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
 Select the audio codec used when saving to AVI or WAV files. Some codecs are
 lossy, meaning they reduce storage space while attempting to sound as close as
 possible to the original audio.
@@ -813,20 +813,24 @@ Use the codec that provides the best audio quality, which is PCM.
 .B pcm
 Use uncompressed pulse-code modulated (PCM) samples. Lossless.
 .TP
-.B adpcm
-Use adaptive dynamic pulse-code modulated (ADPCM) samples. Lossy; provides about
-4x reduction in size over PCM samples. Comparible acoustic quality to a 64kbps MP3
-file.
-.TP
-.B adpcm_ms
-Sames as adpcm, included to match ffmpeg codec name.
-.TP
 .B mulaw
 Use mu-law encoding. Lossy; only available with 16-bit audio, and provides 2x
 reduction in size. Comparible acoustic quality to a 192kbps MP3 file.
 .TP
 .B pcm_mulaw
 Sames as mulaw, included to match ffmpeg codec name.
+.TP
+.B adpcm
+Use the best adaptive dynamic pulse-code modulated (ADPCM) codec. Lossy; all
+ADCPM codecs provide about 4x reduction in size over PCM samples. Comparible
+acoustic quality to a 64kbps MP3 file.
+.TP
+.B adpcm_yamaha
+Use the Yamaha ADPCM algorithm. This seems to perform better on POKEY waveforms
+than other ADPCM algorithms and will be used when \fBadpcm\fR is selected.
+.TP
+.B adpcm_ms
+Use the Microsoft ADPCM algorithm.
 .PD
 .RE
 .TP
@@ -1699,11 +1703,12 @@ of mu-law can be better than 8 bit PCM samples even though it takes the same
 storage space.
 .PP
 Adaptive differential pulse-code modulation (ADPCM) also requires 16 bit audio.
-It exploits the relatively small difference between successive samples as its
-main encoding technique, resulting in an average of 4 bits used to store a
-sample. The audio output is therefore a quarter of the size of the output from
-the PCM codec. The acoustic quality is similar to a 64kbps MP3 file, although
-the MP3 would be one third the size.
+It encodes differences between successive samples into 4 bits, therefore the
+output is one quarter of the size of the PCM codec. The acoustic quality is
+similar to a 64kbps MP3 file, although again not as efficient a codec as MP3 and
+the MP3 would be one third the size. Some audio distortion may be perceptible
+with high volume square waves, but this is usually not an issue with normal game
+audio and sound effects.
 .PD 1
 .SH VIDEO RECORDING
 .B atari800
