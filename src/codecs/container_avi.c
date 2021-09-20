@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/* This file is only compiled when AVI_VIDEO_RECORDING is defined. */
+/* This file is only compiled when VIDEO_RECORDING is defined. */
 
 #include <stdio.h>
 #include <stdlib.h>

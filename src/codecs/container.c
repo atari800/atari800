@@ -23,7 +23,7 @@
 */
 
 
-/* This file is only compiled when either SOUND or AVI_VIDEO_RECORDING is defined. */
+/* This file is only compiled when either SOUND or VIDEO_RECORDING is defined. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,7 @@
 #include "codecs/audio.h"
 #include "codecs/container_wav.h"
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 #include "codecs/video.h"
 #include "codecs/container_avi.h"
 #endif
@@ -50,7 +50,7 @@ static CONTAINER_t *known_containers[] = {
 #ifdef SOUND
 	&Container_WAV,
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 	&Container_AVI,
 #endif
 	NULL,
@@ -100,7 +100,7 @@ int CODECS_CONTAINER_Open(const char *filename)
 			audio_codec = NULL;
 		}
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		if (container->save_video) {
 			if (!CODECS_VIDEO_Init()) {
 #ifdef SOUND
@@ -117,7 +117,7 @@ int CODECS_CONTAINER_Open(const char *filename)
 		}
 #endif
 		strcpy(description, container->container_id);
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		if (video_codec) {
 			strcat(description, " ");
 			strcat(description, video_codec->codec_id);
@@ -131,7 +131,7 @@ int CODECS_CONTAINER_Open(const char *filename)
 #endif
 
 		if (!container->open(filename)) {
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 			if (video_codec) {
 				CODECS_VIDEO_End();
 				video_codec = NULL;

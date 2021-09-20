@@ -80,7 +80,7 @@ static char screenshot_filename_format[FILENAME_MAX];
 static int screenshot_no_last = -1;
 static int screenshot_no_max = 0;
 
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 int Screen_show_multimedia_stats = TRUE;
 #endif
 #endif /* !DREAMCAST */
@@ -101,7 +101,7 @@ int Screen_Initialise(int *argc, char *argv[])
 				screenshot_no_max = Util_filenamepattern(argv[++i], screenshot_filename_format, FILENAME_MAX, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 			else a_m = TRUE;
 		}
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 		else if (strcmp(argv[i], "-showstats") == 0) {
 			Screen_show_multimedia_stats = TRUE;
 		}
@@ -119,7 +119,7 @@ int Screen_Initialise(int *argc, char *argv[])
 				help_only = TRUE;
 #ifndef DREAMCAST
 				Log_print("\t-screenshots <p> Set filename pattern for screenshots");
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 				Log_print("\t-showstats       Show recording stats of video or audio");
 				Log_print("\t-no-showstats    Don't show recording stats of video or audio");
 #endif
@@ -169,7 +169,7 @@ int Screen_ReadConfig(char *string, char *ptr)
 		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(string, "SCREEN_SHOW_1200XL_LEDS") == 0)
 		return (Screen_show_1200_leds = Util_sscanbool(ptr)) != -1;
-#if !defined(DREAMCAST) && (defined(SOUND) || defined(AVI_VIDEO_RECORDING))
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
 	else if (strcmp(string, "SCREEN_SHOW_MULTIMEDIA_STATS") == 0)
 		return (Screen_show_multimedia_stats = Util_sscanbool(ptr)) != -1;
 #endif
@@ -183,7 +183,7 @@ void Screen_WriteConfig(FILE *fp)
 	fprintf(fp, "SCREEN_SHOW_IO_ACTIVITY=%d\n", Screen_show_disk_led);
 	fprintf(fp, "SCREEN_SHOW_IO_COUNTER=%d\n", Screen_show_sector_counter);
 	fprintf(fp, "SCREEN_SHOW_1200XL_LEDS=%d\n", Screen_show_1200_leds);
-#if !defined(DREAMCAST) && (defined(SOUND) || defined(AVI_VIDEO_RECORDING))
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
 	fprintf(fp, "SCREEN_SHOW_MULTIMEDIA_STATS=%d\n", Screen_show_multimedia_stats);
 #endif
 }
@@ -708,7 +708,7 @@ void Screen_Draw1200LED(void)
 }
 
 #ifndef DREAMCAST
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -833,7 +833,7 @@ void Screen_DrawMultimediaStats(void)
 		}
 	}
 }
-#endif /* defined(SOUND) || defined(AVI_VIDEO_RECORDING) */
+#endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
 
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {

@@ -24,7 +24,7 @@ int File_Export_GetNextSoundFile(char *buffer, int bufsize);
 int File_Export_WriteAudio(const UBYTE *samples, int num_samples);
 #endif
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 int File_Export_GetNextVideoFile(char *buffer, int bufsize);
 int File_Export_WriteVideo(void);
 #endif

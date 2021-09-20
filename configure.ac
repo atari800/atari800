@@ -1076,7 +1076,7 @@ if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     have_bitmapped_screen=yes
     A8_OPTION(videorecording,"yes",
             [Support video recording to AVI files (default=ON)],
-            AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
+            VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
     supported_image_formats="pcx"
     if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
@@ -1084,13 +1084,13 @@ if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     fi
 else
     have_bitmapped_screen="no"
-    WANT_AVI_VIDEO_RECORDING="no"
+    WANT_VIDEO_RECORDING="no"
 fi
 
-if [[ "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = yes ]]; then
+if [[ "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = yes ]]; then
     AC_DEFINE(MULTIMEDIA, 1, [Define to provide multimedia recording capability.])
 fi
-AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
@@ -1098,7 +1098,7 @@ AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_
 
 dnl Set video recording configuration options
 
-if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
+if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
     supported_video_codecs="rle"
     if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
         A8_OPTION(pngcodec,"yes",
@@ -1120,9 +1120,9 @@ if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
     fi
 fi
 
-AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_AVI_VIDEO_RECORDING" = "yes")
-AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
-AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
@@ -1377,8 +1377,8 @@ if [[ "$with_sound" != no ]]; then
 else
     echo "    (Sound sub-options disabled)"
 fi
-echo "Using video recording?................: $WANT_AVI_VIDEO_RECORDING"
-if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
+echo "Using video recording?................: $WANT_VIDEO_RECORDING"
+if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
     echo "Supported video codecs................: $supported_video_codecs"
 fi
 

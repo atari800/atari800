@@ -42,7 +42,7 @@
 #include "codecs/audio.h"
 #endif
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 #include "codecs/video.h"
 #endif
 
@@ -62,12 +62,12 @@ static int sound_no_last = -1;
 static int sound_no_max = 0;
 #endif /* SOUND */
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 #define DEFAULT_VIDEO_FILENAME_FORMAT "atari###.avi"
 static char video_filename_format[FILENAME_MAX];
 static int video_no_last = -1;
 static int video_no_max = 0;
-#endif /* AVI_VIDEO_RECORDING */
+#endif /* VIDEO_RECORDING */
 
 #endif /* MULTIMEDIA */
 
@@ -103,7 +103,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		else if (strcmp(argv[i], "-vname") == 0) {
 			if (i_a)
 				video_no_max = Util_filenamepattern(argv[++i], video_filename_format, FILENAME_MAX, DEFAULT_VIDEO_FILENAME_FORMAT);
@@ -119,7 +119,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 				Log_print("\t-aname <p>       Set filename pattern for audio recording");
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 				Log_print("\t-vname <p>       Set filename pattern for video recording");
 #endif
 			}
@@ -141,7 +141,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 #ifdef SOUND
 		&& CODECS_AUDIO_Initialise(argc, argv)
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		&& CODECS_VIDEO_Initialise(argc, argv)
 #endif
 	;
@@ -158,7 +158,7 @@ int File_Export_ReadConfig(char *string, char *ptr)
 		else return FALSE;
 	}
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 	else if (CODECS_VIDEO_ReadConfig(string, ptr)) {
 	}
 #endif
@@ -175,7 +175,7 @@ void File_Export_WriteConfig(FILE *fp)
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 	fprintf(fp, "COMPRESSION_LEVEL=%d\n", FILE_EXPORT_compression_level);
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 	CODECS_VIDEO_WriteConfig(fp);
 #endif
 #ifdef SOUND
@@ -287,7 +287,7 @@ int File_Export_WriteAudio(const UBYTE *samples, int num_samples)
 }
 #endif /* SOUND */
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 /* Get the next filename in the video_file_format pattern.
    RETURNS: True if filename is available, false if no filenames left in the pattern. */
 int File_Export_GetNextVideoFile(char *buffer, int bufsize) {
@@ -314,7 +314,7 @@ int File_Export_WriteVideo()
 	return result;
 }
 
-#endif /* AVI_VIDEO_RECORDING */
+#endif /* VIDEO_RECORDING */
 
 /* File_Export_GetStats gets the elapsed time in seconds and size in kilobytes of
    the currently recording file.

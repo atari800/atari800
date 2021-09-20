@@ -82,9 +82,9 @@
 #include "pokeysnd.h"
 #include "sound.h"
 #endif /* SOUND */
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 #include "file_export.h"
-#endif /* defined(SOUND) || defined(AVI_VIDEO_RECORDING) */
+#endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
 #ifdef DIRECTX
 #include "win32\main.h"
 #include "win32\joystick.h"
@@ -1296,7 +1296,7 @@ static void SoundRecording(void)
 }
 #endif /* defined(SOUND) && !defined(DREAMCAST) */
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 static void VideoRecording(void)
 {
 	if (!File_Export_IsRecording()) {
@@ -1315,7 +1315,7 @@ static void VideoRecording(void)
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
-#endif /* AVI_VIDEO_RECORDING */
+#endif /* VIDEO_RECORDING */
 
 static int AutostartFile(void)
 {
@@ -4250,7 +4250,7 @@ void UI_Run(void)
 		UI_MENU_ACTION_ACCEL(UI_MENU_SOUND_RECORDING, "Sound Recording Start/Stop", "Alt+W"),
 #endif
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		UI_MENU_ACTION_ACCEL(UI_MENU_VIDEO_RECORDING, "Video Recording Start/Stop", "Alt+V"),
 #endif
 #ifndef CURSES_BASIC
@@ -4376,7 +4376,7 @@ void UI_Run(void)
 			break;
 #endif
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		case UI_MENU_VIDEO_RECORDING:
 			VideoRecording();
 			break;
