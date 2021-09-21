@@ -756,7 +756,7 @@ static UBYTE *SmallFont_DrawString(UBYTE *screen, char *s, UBYTE color1, UBYTE c
 	while (*s) {
 		cin = *s++;
 		if ((cin >= '0') && (cin <= '9')) {
-			cout = cin = '0';
+			cout = cin - '0';
 		}
 		else if ((cin >= 'A') && (cin <= 'Z')) {
 			cout = cin - 'A' + SMALLFONT_A;
