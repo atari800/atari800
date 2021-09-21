@@ -526,6 +526,26 @@ int Atari800_Initialise(int *argc, char *argv[])
 			Atari800_builtin_game = FALSE;
 			Atari800_keyboard_detached = FALSE;
 		}
+		else if (strcmp(argv[i], "-576xe") == 0) {
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 576;
+			Atari800_builtin_basic = TRUE;
+			Atari800_keyboard_leds = FALSE;
+			Atari800_f_keys = FALSE;
+			Atari800_jumper = FALSE;
+			Atari800_builtin_game = FALSE;
+			Atari800_keyboard_detached = FALSE;
+		}
+		else if (strcmp(argv[i], "-1088xe") == 0) {
+			Atari800_machine_type = Atari800_MACHINE_XLXE;
+			MEMORY_ram_size = 1088;
+			Atari800_builtin_basic = TRUE;
+			Atari800_keyboard_leds = FALSE;
+			Atari800_f_keys = FALSE;
+			Atari800_jumper = FALSE;
+			Atari800_builtin_game = FALSE;
+			Atari800_keyboard_detached = FALSE;
+		}
 		else if (strcmp(argv[i], "-xegs") == 0) {
 			Atari800_machine_type = Atari800_MACHINE_XLXE;
 			MEMORY_ram_size = 64;
