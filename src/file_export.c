@@ -228,7 +228,7 @@ int File_Export_IsRecording(void)
    File_Export_StartRecording, or an error is encountered while writing audio or
    video.
 
-   RETURNS: TRUE if file closed with no problems, FALSE if failure during close
+   RETURNS: TRUE if file closed successfully, FALSE if failure during close
    */
 int File_Export_StopRecording(void)
 {
@@ -246,7 +246,7 @@ int File_Export_StopRecording(void)
    is determined by the filename. If an existing multimedia file is open, it will
    close that and start the new one.
 
-   RETURNS: TRUE if file opened with no problems, FALSE if failure during open
+   RETURNS: TRUE if file opened successfully, FALSE if failure during open
    */
 int File_Export_StartRecording(const char *filename)
 {
@@ -297,12 +297,14 @@ int File_Export_GetNextVideoFile(char *buffer, int bufsize) {
 	return Util_findnextfilename(video_filename_format, &video_no_last, video_no_max, buffer, bufsize, FALSE);
 }
 
-/* File_Export_WriteVideo will dump the Atari screen to the AVI file. A call to
-   File_Export_WriteAudio must be called before calling File_Export_WriteVideo
-   again, but the audio and video functions may be called in either order.
+/* File_Export_WriteVideo will dump the Atari screen to the video file. If sound
+   is being recorded, a call to File_Export_WriteAudio must be called before
+   calling File_Export_WriteVideo again, but the audio and video functions may
+   be called in either order.
 
-   RETURNS: the number of bytes written to the file (should be equivalent to the
-   input uiSize parm) */
+   RETURNS: non-zero if successfully added the video frame to the file
+   (indicating the size of the video frame in bytes) or 0 if failed when
+   creating the video frame or adding it to the file. */
 int File_Export_WriteVideo()
 {
 	int result = 0;
@@ -316,8 +318,8 @@ int File_Export_WriteVideo()
 
 #endif /* VIDEO_RECORDING */
 
-/* File_Export_GetStats gets the elapsed time in seconds and size in kilobytes of
-   the currently recording file.
+/* File_Export_GetStats gets the elapsed time in seconds, the size in kilobytes,
+   and the description of the currently recording file.
 
    RETURNS: TRUE if a file is currently being written, FALSE if not
    */
@@ -325,7 +327,7 @@ int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type)
 {
 	if (container) {
 		*seconds = (int)(video_frame_count / fps);
-		*size = byteswritten;
+		*size = byteswritten / 1024;
 		*media_type = description;
 		return 1;
 	}
@@ -336,10 +338,20 @@ int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type)
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 
+/* Convenience function to check whether the specifed image type is supported.
+
+   Image types are identified by file extension, and this function will
+   successfully indentify a file type as long as the last characters in id match
+   a codec_id in the known_image_codecs array.
+
+   Returns: TRUE if matched, FALSE if not. */
 int File_Export_ImageTypeSupported(const char *id) {
 	return CODECS_IMAGE_Init(id);
 }
 
+/* Convenience function to save the current emulated screen to a file.
+
+   Returns: TRUE if matched, FALSE if not. */
 int File_Export_SaveScreen(const char *filename, UBYTE *ptr1, UBYTE *ptr2) {
 	int result = 0;
 	FILE *fp;

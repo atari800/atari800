@@ -39,11 +39,28 @@
 #include "codecs/container_avi.h"
 #endif
 
+/* Global pointer to current multimedia container, or NULL if one has not been
+   initialized. This pointer should not be used after a call to
+   container->close(). */
 CONTAINER_t *container = NULL;
 
+/* Global variable containing the amount of bytes written to the currently open
+   container. This value is updated as the container adds video and audio
+   frames, so may be used during the creation of the file */
 ULONG byteswritten;
+
+/* Global variable containing the number of video frames processed during the
+   creation of the multimedia file. This is updated even when audio-only files
+   are being created, because the duration of the file must be tracked to write
+   audio header information. */
 ULONG video_frame_count;
+
+/* Global variable containing the frames per second at time of file creation,
+   either Atari800_FPS_NTSC or Atari800_FPS_PAL. */
 float fps;
+
+/* Global variable containing the text description of the current container type
+   and the video and audio codecs being used to write data into the file. */
 char description[32];
 
 static CONTAINER_t *known_containers[] = {

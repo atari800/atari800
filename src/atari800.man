@@ -815,14 +815,14 @@ Use uncompressed pulse-code modulated (PCM) samples. Lossless.
 .TP
 .B mulaw
 Use mu-law encoding. Lossy; only available with 16-bit audio, and provides 2x
-reduction in size. Comparible acoustic quality to a 192kbps MP3 file.
+reduction in size from PCM samples. Comparible acoustic quality to a 192kbps MP3 file.
 .TP
 .B pcm_mulaw
-Sames as mulaw, included to match ffmpeg codec name.
+Sames as \fBmulaw\fR, included to match ffmpeg codec name.
 .TP
 .B adpcm
 Use the best adaptive dynamic pulse-code modulated (ADPCM) codec. Lossy; all
-ADCPM codecs provide about 4x reduction in size over PCM samples. Comparible
+ADCPM codecs provide 4x reduction in size over PCM samples. Comparible
 acoustic quality to a 64kbps MP3 file.
 .TP
 .B adpcm_ima_wav
@@ -867,18 +867,18 @@ Use the codec that provides the best average compression ratio which is \fBzmbv\
 if available, otherwise \fBrle\fR.
 .TP
 .B rle
-Use run-length encoding for very good compression of video frames. This codec is
+Use run-length encoding (RLE) for very good compression of video frames. This codec is
 always available.
 .TP
 .B msrle
-Sames as rle, included to match ffmpeg codec name.
+Sames as \fBrle\fR, included to match ffmpeg codec name.
 .TP
 .B png
 Use PNG image compression for moderate compression of video frames. This codec is only
 available if PNG support was compiled into the emulator.
 .TP
 .B zmbv
-Use Zip Motion Blocks Video for the best possible compression of video frames.
+Use Zip Motion Blocks Video (ZMBV) for the best compression of video frames.
 This codec is only available if support for the zlib compression library was
 compiled into the emulator.
 .TP
@@ -896,7 +896,7 @@ Don't show multimedia statistics during recording of video or audio
 .TP
 .BI \-keyint\  num
 Set the keyframe interval to one keyframe every \fInum\fR frames (default is 50
-for PAL, 60 for NTSC). Some video codecs use keyframes and inter-frames, which
+for PAL, 60 for NTSC). The RLE and ZMBV codecs use keyframes and inter-frames, which
 encode full frames and differences between frames, respectively. Inter-frames
 are typically much smaller than full frames, but most video players can only
 seek to keyframes.

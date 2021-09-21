@@ -221,7 +221,8 @@ void Screen_WriteConfig(FILE *fp)
 #define SMALLFONT_SLASH    38
 #define SMALLFONT_COLON    39
 #define SMALLFONT_DOT      40
-#define SMALLFONT_COUNT    41
+#define SMALLFONT_UNDER    41
+#define SMALLFONT_COUNT    42
 #define SMALLFONT_____ 0x00
 #define SMALLFONT____X 0x01
 #define SMALLFONT___X_ 0x02
@@ -606,6 +607,15 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT_____,
 			SMALLFONT__X__,
 			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_XXX_
 		}
 	};
 	int y;
@@ -754,6 +764,9 @@ static UBYTE *SmallFont_DrawString(UBYTE *screen, char *s, UBYTE color1, UBYTE c
 		else if ((cin >= 'a') && (cin <= 'z')) {
 			cout = cin - 'a' + SMALLFONT_A;
 		}
+		else if (cin == '_') {
+			cout = SMALLFONT_UNDER;
+		}
 		else {
 			cout = SMALLFONT_SPACE;
 		}
@@ -803,7 +816,6 @@ void Screen_DrawMultimediaStats(void)
 			SmallFont_DrawInt(screen, num, 0x0f, 0x34);
 			screen = SmallFont_DrawString(screen + SMALLFONT_WIDTH, "     ", 0x0f, 0x34);
 
-			size = size / 1024;
 			if (size < 1024) {
 				/* draw 9999KB */
 				SmallFont_DrawInt(screen, size, 0x0f, 0x34);
