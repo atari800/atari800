@@ -1356,10 +1356,10 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
 				Log_print("\t-nojoystick      Disable joystick");
-                                Log_print("\t-joy0hat         Use hat of joystick 0");
-                                Log_print("\t-joy1hat         Use hat of joystick 1");
-                                Log_print("\t-joy2hat         Use hat of joystick 1");
-                                Log_print("\t-joy3hat         Use hat of joystick 1");
+				Log_print("\t-joy0hat         Use hat of joystick 0");
+				Log_print("\t-joy1hat         Use hat of joystick 1");
+				Log_print("\t-joy2hat         Use hat of joystick 2");
+				Log_print("\t-joy3hat         Use hat of joystick 3");
 #ifdef LPTJOY
 				Log_print("\t-joy0 <pathname> Select LPTjoy0 device");
 				Log_print("\t-joy1 <pathname> Select LPTjoy1 device");
