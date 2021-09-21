@@ -773,6 +773,12 @@ Disable sound
 Set sound output frequency in Hz.
 The default is 44100 Hz.
 .TP
+.B \-stereo
+Enable stereo sound
+.TP
+.B \-nostereo
+Disable stereo sound
+.TP
 .B \-audio16
 Set sound output format to 16-bit
 .TP
