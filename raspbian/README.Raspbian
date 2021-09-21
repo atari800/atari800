@@ -1,4 +1,4 @@
-The Raspbian Directory
+THE RASPBIAN DIRECTORY
 ======================
 
 atari800/raspbian is a modification of atari800/debian.
@@ -12,4 +12,4 @@ and three bash scripts:
     atari800rpi - Executes atari800rpi_bin with default config file .atari800rpi.cfg
     atari800stk - Executes atari800stk_bin with default config file .atari800stk.cfg
 
-plus menu items and documentation.
+Instructions for use are in DOC/BUILD.linux_rpi_package.
