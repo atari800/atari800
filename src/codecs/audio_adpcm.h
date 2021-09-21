@@ -5,6 +5,7 @@
 #include "codecs/audio.h"
 
 extern AUDIO_CODEC_t Audio_Codec_ADPCM;
+extern AUDIO_CODEC_t Audio_Codec_ADPCM_IMA;
 extern AUDIO_CODEC_t Audio_Codec_ADPCM_MS;
 extern AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA;
 

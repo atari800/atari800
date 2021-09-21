@@ -35,40 +35,63 @@
 
 #define FFMIN(a,b) ((a) > (b) ? (b) : (a))
 
+#define FORMAT_MS 0x02
+#define FORMAT_IMA 0x11
+#define FORMAT_YAMAHA 0x20
+
 static AUDIO_OUT_t out;
 
 static ADPCMChannelStatus channel_status[2];
 
 static int samples_per_block;
+static int format_type;
 static SWORD *leftover_samples;
 static SWORD *leftover_samples_boundary;
 static SWORD *leftover_samples_end;
 
+/* adpcm_step_table[] and adpcm_index_table[] are from the ADPCM reference source */
+static const SBYTE adpcm_index_table[16] = {
+	-1, -1, -1, -1, 2, 4, 6, 8,
+	-1, -1, -1, -1, 2, 4, 6, 8,
+};
+
+static const SWORD adpcm_step_table[89] = {
+		7,     8,     9,    10,    11,    12,    13,    14,    16,    17,
+	   19,    21,    23,    25,    28,    31,    34,    37,    41,    45,
+	   50,    55,    60,    66,    73,    80,    88,    97,   107,   118,
+	  130,   143,   157,   173,   190,   209,   230,   253,   279,   307,
+	  337,   371,   408,   449,   494,   544,   598,   658,   724,   796,
+	  876,   963,  1060,  1166,  1282,  1411,  1552,  1707,  1878,  2066,
+	 2272,  2499,  2749,  3024,  3327,  3660,  4026,  4428,  4871,  5358,
+	 5894,  6484,  7132,  7845,  8630,  9493, 10442, 11487, 12635, 13899,
+	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
+};
+
 /* adpcm_AdaptationTable[], adpcm_AdaptCoeff1[], and
    adpcm_AdaptCoeff2[] are from libsndfile */
-const SWORD adpcm_AdaptationTable[] = {
+static const SWORD adpcm_AdaptationTable[] = {
 	230, 230, 230, 230, 307, 409, 512, 614,
 	768, 614, 512, 409, 307, 230, 230, 230
 };
 
 /* Divided by 4 to fit in 8-bit integers */
-const UBYTE adpcm_AdaptCoeff1[] = {
+static const UBYTE adpcm_AdaptCoeff1[] = {
 	64, 128, 0, 48, 60, 115, 98
 };
 
 /* Divided by 4 to fit in 8-bit integers */
-const SBYTE adpcm_AdaptCoeff2[] = {
+static const SBYTE adpcm_AdaptCoeff2[] = {
 	0, -64, 0, 16, 0, -52, -58
 };
 
-const SWORD adpcm_yamaha_indexscale[] = {
-    230, 230, 230, 230, 307, 409, 512, 614,
-    230, 230, 230, 230, 307, 409, 512, 614
+static const SWORD adpcm_yamaha_indexscale[] = {
+	230, 230, 230, 230, 307, 409, 512, 614,
+	230, 230, 230, 230, 307, 409, 512, 614
 };
 
-const SBYTE adpcm_yamaha_difflookup[] = {
-     1,  3,  5,  7,  9,  11,  13,  15,
-    -1, -3, -5, -7, -9, -11, -13, -15
+static const SBYTE adpcm_yamaha_difflookup[] = {
+	 1,  3,  5,  7,  9,  11,  13,  15,
+	-1, -3, -5, -7, -9, -11, -13, -15
 };
 
 /* Clip a signed integer value into the -32768,32767 range.
@@ -106,6 +129,18 @@ static inline const int clip(int a, int amin, int amax)
 	if      (a < amin) return amin;
 	else if (a > amax) return amax;
 	else               return a;
+}
+
+static inline UBYTE adpcm_ima_compress_sample(ADPCMChannelStatus *c, SWORD sample)
+{
+	int delta  = sample - c->sample1;
+	int nibble = FFMIN(7, abs(delta) * 4 /
+					   adpcm_step_table[c->step]) + (delta < 0) * 8;
+	c->sample1 += ((adpcm_step_table[c->step] *
+						adpcm_yamaha_difflookup[nibble]) / 8);
+	c->sample1 = clip_int16(c->sample1);
+	c->step  = clip(c->step + adpcm_index_table[nibble], 0, 88);
+	return nibble;
 }
 
 static inline UBYTE adpcm_ms_compress_sample(ADPCMChannelStatus *c, SWORD sample)
@@ -175,6 +210,35 @@ static void reserve_leftover_buffer(void)
 	leftover_samples_end = leftover_samples;
 }
 
+static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_channels)
+{
+	int comp_size;
+
+	if (sample_size < 2)
+		return -1;
+	out.sample_rate = sample_rate;
+	out.sample_size = 1;
+	out.bits_per_sample = 4;
+	out.num_channels = num_channels;
+	out.block_align = 1024;
+	out.scale = 1000000;
+	out.rate = (int)(fps * 1000000);
+	out.length = 0;
+	out.extra_data_size = 0;
+	format_type = FORMAT_IMA;
+	samples_per_block = (out.block_align - 4 * num_channels) * 8 / (4 * num_channels) + 1;
+
+	/* only step index must be initialized; others are set each frame */
+	channel_status[0].step = 0;
+	channel_status[1].step = 0;
+
+	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
+
+	reserve_leftover_buffer();
+
+	return comp_size;
+}
+
 static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
@@ -193,6 +257,7 @@ static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_ch
 	out.length = 0;
 	out.extra_data_size = 32;
 	extra = out.extra_data;
+	format_type = FORMAT_MS;
 	samples_per_block = (out.block_align - 7 * num_channels) * 2 / num_channels + 2;
 	PUT_LE_WORD(extra, samples_per_block);
 	PUT_LE_WORD(extra, 7);
@@ -212,7 +277,6 @@ static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_ch
 	return comp_size;
 }
 
-
 static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	int comp_size;
@@ -228,6 +292,7 @@ static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int nu
 	out.rate = (int)(fps * 1000000);
 	out.length = 0;
 	out.extra_data_size = 0;
+	format_type = FORMAT_YAMAHA;
 	samples_per_block = (out.block_align * 2) / num_channels;
 
 	/* only predictor and step values are used in Yamaha */
@@ -251,9 +316,12 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 {
 	UBYTE *buf_start;
 	int i;
+	int j;
+	int ch;
 	int st;
 	int samples_consumed;
 	const SWORD *samples;
+	ADPCMChannelStatus *status;
 
 	if (out.block_align > bufsize) {
 		return -1;
@@ -287,7 +355,7 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 
 	st = out.num_channels == 2;
 
-	if (out.extra_data_size == 32) { /* Microsoft ADPCM */
+	if (format_type == FORMAT_MS) { /* Microsoft ADPCM */
 		for (i = 0; i < out.num_channels; i++) {
 			int predictor = 0;
 			*buf++ = predictor;
@@ -315,13 +383,53 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 			*buf++  = nibble;
 		}
 	}
-	else { /* Yamaha ADPCM */
+	else if (format_type == FORMAT_YAMAHA) { /* Yamaha ADPCM */
 		int n = samples_per_block / 2;
 		for (n *= out.num_channels; n > 0; n--) {
 			int nibble;
 			nibble  = adpcm_yamaha_compress_sample(&channel_status[ 0], *samples++);
 			nibble |= adpcm_yamaha_compress_sample(&channel_status[st], *samples++) << 4;
 			*buf++  = nibble;
+		}
+	}
+	else { /* IMA ADPCM */
+		for (ch = 0; ch < out.num_channels; ch++) {
+			status = &channel_status[ch];
+			status->sample1 = *samples++;
+			/* status->step = 0;
+			   XXX: not sure how to init the state machine */
+			PUT_LE_WORD(buf, status->sample1);
+			*buf++ = status->step;
+			*buf++ = 0; /* unknown */
+		}
+        /* stereo: 4 bytes (8 samples) for left, 4 bytes for right */
+		/* 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 */
+		if (st) {
+			int blocks = (samples_per_block - 1) / 8;
+
+			for (i = 0; i < blocks; i++) {
+				for (ch = 0; ch < 2; ch++) {
+					status = &channel_status[ch];
+					for (j = 0; j < 16; j += 4) {
+						UBYTE nibble;
+
+						nibble = adpcm_ima_compress_sample(status, samples[ch + j]);
+						nibble |= adpcm_ima_compress_sample(status, samples[ch + j + 2]) << 4;
+						*buf++ = nibble;
+					}
+				}
+				samples += 16;
+			}
+		}
+		else {
+			status = &channel_status[0];
+			for (i = 0; i < samples_per_block - 1; i+=2) {
+				UBYTE nibble;
+
+				nibble = adpcm_ima_compress_sample(status, *samples++);
+				nibble |= adpcm_ima_compress_sample(status, *samples++) << 4;
+				*buf++ = nibble;
+			}
 		}
 	}
 
@@ -362,22 +470,22 @@ static int ADPCM_End(float duration)
 /* Yamaha ADPCM seems to be better than MS for square waves, so it's the default */
 AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	"adpcm",
-	"Yamaha ADPCM",
+	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
-	0x20, /* format type */
-	&ADPCM_Init_Yamaha,
+	FORMAT_IMA, /* format type */
+	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
 	&ADPCM_End,
 };
 
-AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
-	"adpcm_yamaha",
-	"Yamaha ADPCM",
+AUDIO_CODEC_t Audio_Codec_ADPCM_IMA = {
+	"adpcm_ima_wav",
+	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
-	0x20, /* format type */
-	&ADPCM_Init_Yamaha,
+	FORMAT_IMA, /* format type */
+	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
@@ -388,8 +496,20 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
 	"adpcm_ms",
 	"Microsoft ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
-	2, /* format type */
+	FORMAT_MS, /* format type */
 	&ADPCM_Init_MS,
+	&ADPCM_AudioOut,
+	&ADPCM_CreateFrame,
+	&ADPCM_AnotherFrame,
+	&ADPCM_End,
+};
+
+AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
+	"adpcm_yamaha",
+	"Yamaha ADPCM",
+	{1, 0, 0, 0}, /* fourcc */
+	FORMAT_YAMAHA, /* format type */
+	&ADPCM_Init_Yamaha,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,

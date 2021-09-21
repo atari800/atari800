@@ -797,7 +797,7 @@ Use to override the default pattern of \fIatari###.wav\fR which produces
 \fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
 Hashes are replaced with raising numbers.
 .TP
-\fB\-acodec auto\fR|\fBpcm\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
+\fB\-acodec auto\fR|\fBpcm\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_ima_wav\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
 Select the audio codec used when saving to AVI or WAV files. Some codecs are
 lossy, meaning they reduce storage space while attempting to sound as close as
 possible to the original audio.
@@ -825,9 +825,12 @@ Use the best adaptive dynamic pulse-code modulated (ADPCM) codec. Lossy; all
 ADCPM codecs provide about 4x reduction in size over PCM samples. Comparible
 acoustic quality to a 64kbps MP3 file.
 .TP
-.B adpcm_yamaha
-Use the Yamaha ADPCM algorithm. This seems to perform better on POKEY waveforms
+.B adpcm_ima_wav
+Use the DVI IMA ADPCM algorithm. This seems to perform better on POKEY waveforms
 than other ADPCM algorithms and will be used when \fBadpcm\fR is selected.
+.TP
+.B adpcm_yamaha
+Use the Yamaha ADPCM algorithm.
 .TP
 .B adpcm_ms
 Use the Microsoft ADPCM algorithm.
@@ -1705,10 +1708,10 @@ storage space.
 Adaptive differential pulse-code modulation (ADPCM) also requires 16 bit audio.
 It encodes differences between successive samples into 4 bits, therefore the
 output is one quarter of the size of the PCM codec. The acoustic quality is
-similar to a 64kbps MP3 file, although again not as efficient a codec as MP3 and
-the MP3 would be one third the size. Some audio distortion may be perceptible
-with high volume square waves, but this is usually not an issue with normal game
-audio and sound effects.
+similar to a 64kbps MP3 file, so audio artifacts may be audible under certain
+conditions. Normal game audio and sound effects do not normally produce a
+perceptible loss in quality, but for example the Microsoft ADPCM algorithm
+produces audio distortion with high volume square waves.
 .PD 1
 .SH VIDEO RECORDING
 .B atari800
