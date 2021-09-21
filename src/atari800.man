@@ -1100,6 +1100,18 @@ Deactivates showing output of an 80 column hardware.
 .B \-nojoystick
 Do not initialize SDL joysticks
 .TP
+.B \-joy0hat
+Use hat of joystick 0 rather than the axis for joystick movement.
+.TP
+.B \-joy1hat
+Use hat of joystick 1 rather than the axis for joystick movement.
+.TP
+.B \-joy2hat
+Use hat of joystick 2 rather than the axis for joystick movement.
+.TP
+.B \-joy3hat
+Use hat of joystick 3 rather than the axis for joystick movement.
+.TP
 .BI \-joy0\  path\-to\-device
 Define path to device used in LPTjoy 0. Available on linux-ia32 only.
 .TP
