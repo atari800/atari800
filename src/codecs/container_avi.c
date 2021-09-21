@@ -326,7 +326,7 @@ static int AVI_OpenFile(const char *filename)
 		CODECS_VIDEO_End();
 #ifdef SOUND
 		if (num_streams == 2) {
-			CODECS_AUDIO_End(0);
+			CODECS_AUDIO_End();
 		}
 #endif
 		fclose(fp);
@@ -457,7 +457,7 @@ static int AVI_AddAudioSamples(const UBYTE *buf, int num_samples) {
 	if (!buf) {
 		/* This happens at file close time, checking if audio codec has samples
 		   remaining */
-		if (!audio_codec->another_frame || !audio_codec->another_frame(TRUE)) {
+		if (!audio_codec->another_frame()) {
 			/* If the codec doesn't support buffered frames or there's nothing
 			   remaining, there's no need to try to write another frame */
 			return 1;
@@ -486,13 +486,9 @@ static int AVI_AddAudioSamples(const UBYTE *buf, int num_samples) {
 			/* for next loop, only output samples remaining from previous frame */
 			num_samples = 0;
 		}
-		else {
-			/* report success if there weren't enough samples to fill a frame. */
-			return 1;
-		}
-	} while (audio_codec->another_frame && audio_codec->another_frame(FALSE));
+	} while (audio_codec->another_frame());
 
-	return result;
+	return 1;
 }
 #endif
 
@@ -545,33 +541,19 @@ static int AVI_WriteIndex(void) {
 static int AVI_CloseFile(void)
 {
 	int seconds;
-	int result;
+	int result = 1;
 
 #ifdef SOUND
 	/* Force audio codec to write out the last frame. This only occurs in codecs
 	   with fixed block alignments */
 	if (num_streams == 2) {
-		result = AVI_AddAudioSamples(NULL, 0);
-	}
-	else
-#endif
-	{
-		result = 1;
-	}
-
-	if (result && video_frame_count > 0) {
-		seconds = (int)(video_frame_count / fps);
-		Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count, total_video_size / video_frame_count / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
-	}
-
-	/* end codecs so they have a chance to update any final statistics needed for
-	   the header. */
-#ifdef SOUND
-	if (num_streams == 2) {
-		CODECS_AUDIO_End((float)(video_frame_count / fps));
+		if (audio_codec->flush((float)(video_frame_count / fps))) {
+			/* Force audio codec to write out any remaining frames. This only
+			   occurs in codecs that buffer frames or force fixed block sizes */
+			result = AVI_AddAudioSamples(NULL, 0);
+		}
 	}
 #endif
-	CODECS_VIDEO_End();
 
 	if (result) {
 		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
@@ -579,10 +561,28 @@ static int AVI_CloseFile(void)
 		if (result > 0) {
 			size_riff = ftell(fp) - 8;
 			result = AVI_WriteHeader();
+
+			if (result &&  video_frame_count > 0) {
+				seconds = (int)(video_frame_count / fps);
+				Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count, total_video_size / video_frame_count / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
+			}
+			else {
+				Log_print("Failed writing AVI header; file will not be playable.");
+			}
+		}
+		else {
+			Log_print("Failed writing AVI index; file will not be playable.");
 		}
 	}
 	fclose(fp);
 	fp = NULL;
+
+#ifdef SOUND
+	if (num_streams == 2) {
+		CODECS_AUDIO_End();
+	}
+#endif
+	CODECS_VIDEO_End();
 
 	free(frame_indexes);
 	frame_indexes = NULL;

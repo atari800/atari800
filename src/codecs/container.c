@@ -105,7 +105,7 @@ int CODECS_CONTAINER_Open(const char *filename)
 			if (!CODECS_VIDEO_Init()) {
 #ifdef SOUND
 				if (audio_codec) {
-					CODECS_AUDIO_End(0);
+					CODECS_AUDIO_End();
 				}
 #endif
 				container = NULL;
@@ -139,7 +139,7 @@ int CODECS_CONTAINER_Open(const char *filename)
 #endif
 #ifdef SOUND
 			if (audio_codec) {
-				CODECS_AUDIO_End(0);
+				CODECS_AUDIO_End();
 				audio_codec = NULL;
 			}
 #endif

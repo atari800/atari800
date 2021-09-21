@@ -158,7 +158,19 @@ static int MULAW_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	return size;
 }
 
-static int MULAW_End(float duration)
+static int MULAW_AnotherFrame(void)
+{
+	/* This codec doesn't buffer frames */
+	return 0;
+}
+
+static int MULAW_Flush(float duration)
+{
+	/* This codec will never have any extra frames */
+	return 0;
+}
+
+static int MULAW_End(void)
 {
 	return 1;
 }
@@ -171,7 +183,8 @@ AUDIO_CODEC_t Audio_Codec_MULAW = {
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,
-	NULL,
+	&MULAW_AnotherFrame,
+	&MULAW_Flush,
 	&MULAW_End,
 };
 
@@ -183,6 +196,7 @@ AUDIO_CODEC_t Audio_Codec_PCM_MULAW = {
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,
-	NULL,
+	&MULAW_AnotherFrame,
+	&MULAW_Flush,
 	&MULAW_End,
 };

@@ -45,6 +45,7 @@ static ADPCMChannelStatus channel_status[2];
 
 static int samples_per_block;
 static int format_type;
+static float final_duration;
 static SWORD *leftover_samples;
 static SWORD *leftover_samples_boundary;
 static SWORD *leftover_samples_end;
@@ -199,7 +200,7 @@ static inline UBYTE adpcm_yamaha_compress_sample(ADPCMChannelStatus *c, SWORD sa
 		p += 2;                      \
 	} while(0)
 
-static void reserve_leftover_buffer(void)
+static int reserve_buffers(void)
 {
 	int num_samples;
 
@@ -208,14 +209,14 @@ static void reserve_leftover_buffer(void)
 	leftover_samples = (SWORD *)Util_malloc(num_samples * 2);
 	leftover_samples_boundary = leftover_samples + num_samples;
 	leftover_samples_end = leftover_samples;
+
+	return out.block_align;
 }
 
-static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_channels)
+static int init_common(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	int comp_size;
-
 	if (sample_size < 2)
-		return -1;
+		return 0;
 	out.sample_rate = sample_rate;
 	out.sample_size = 1;
 	out.bits_per_sample = 4;
@@ -225,6 +226,16 @@ static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_c
 	out.rate = (int)(fps * 1000000);
 	out.length = 0;
 	out.extra_data_size = 0;
+
+	final_duration = 0.0;
+	return 1;
+}
+
+static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_channels)
+{
+	if (!init_common(sample_rate, fps, sample_size, num_channels))
+		return -1;
+
 	format_type = FORMAT_IMA;
 	samples_per_block = (out.block_align - 4 * num_channels) * 8 / (4 * num_channels) + 1;
 
@@ -232,29 +243,17 @@ static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_c
 	channel_status[0].step = 0;
 	channel_status[1].step = 0;
 
-	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
-
-	reserve_leftover_buffer();
-
-	return comp_size;
+	return reserve_buffers();
 }
 
 static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	int comp_size;
 	int i;
 	UBYTE *extra;
 
-	if (sample_size < 2)
+	if (!init_common(sample_rate, fps, sample_size, num_channels))
 		return -1;
-	out.sample_rate = sample_rate;
-	out.sample_size = 1;
-	out.bits_per_sample = 4;
-	out.num_channels = num_channels;
-	out.block_align = 1024;
-	out.scale = 1000000;
-	out.rate = (int)(fps * 1000000);
-	out.length = 0;
+
 	out.extra_data_size = 32;
 	extra = out.extra_data;
 	format_type = FORMAT_MS;
@@ -270,28 +269,14 @@ static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_ch
 	channel_status[0].idelta = 0;
 	channel_status[1].idelta = 0;
 
-	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
-
-	reserve_leftover_buffer();
-
-	return comp_size;
+	return reserve_buffers();
 }
 
 static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	int comp_size;
-
-	if (sample_size < 2)
+	if (!init_common(sample_rate, fps, sample_size, num_channels))
 		return -1;
-	out.sample_rate = sample_rate;
-	out.sample_size = 1;
-	out.bits_per_sample = 4;
-	out.num_channels = num_channels;
-	out.block_align = 1024;
-	out.scale = 1000000;
-	out.rate = (int)(fps * 1000000);
-	out.length = 0;
-	out.extra_data_size = 0;
+
 	format_type = FORMAT_YAMAHA;
 	samples_per_block = (out.block_align * 2) / num_channels;
 
@@ -301,11 +286,7 @@ static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int nu
 	channel_status[1].predictor = 0;
 	channel_status[1].step = 0;
 
-	comp_size = sample_rate * sample_size * num_channels / (int)(fps);
-
-	reserve_leftover_buffer();
-
-	return comp_size;
+	return reserve_buffers();
 }
 
 static AUDIO_OUT_t *ADPCM_AudioOut(void) {
@@ -323,13 +304,13 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	const SWORD *samples;
 	ADPCMChannelStatus *status;
 
-	if (out.block_align > bufsize) {
-		return -1;
-	}
-
 	buf_start = buf;
 	samples = (const SWORD *)leftover_samples;
 
+	if (leftover_samples_end + num_samples > leftover_samples_boundary) {
+		Log_print("audio_adpcm: leftover sample buffer too small!\n");
+		return -1;
+	}
 	if (!source) {
 		/* we have reached the end of the file, so we need to flush the last frame.
 		   by filling the buffer with enough zeros to guarantee a full frame. */
@@ -341,11 +322,9 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 		memcpy(leftover_samples_end, source, num_samples * 2);
 	}
 	leftover_samples_end += num_samples;
-	if (leftover_samples_end > leftover_samples_boundary) {
-		Log_print("audio_adpcm: leftover sample buffer too small!\n");
-		return -1;
-	}
 
+	/* incoming samples have been added to the list of leftover samples; adjust
+	   total number of samples to reflect total size of leftover samples buffer */
 	num_samples = (int)(leftover_samples_end - samples);
 	if (num_samples < samples_per_block) {
 		/* not enough samples to fill a block, so we have to wait until a
@@ -444,25 +423,40 @@ static int ADPCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, i
 	return buf - buf_start;
 }
 
-static int ADPCM_AnotherFrame(int final_frame)
+/* Because this codec adds audio frames to the AVI at a different rate than
+   video frames get added, we need to compute rate of audio frames using number
+   of video frames to calculate the total duration of the AVI. */
+static void update_rate(void)
 {
-	if (final_frame) {
+	float rate;
+
+	if (final_duration > 0) {
+		rate = (float)out.length / final_duration;
+		out.rate = (int)(rate * 1000000);
+	}
+}
+
+static int ADPCM_AnotherFrame(void)
+{
+	if (final_duration) {
+		/* every time we add another frame, have to update the output rate to
+		   make sure the correct value will be written to the AVI header. */
+		update_rate();
 		return (int)(leftover_samples_end - leftover_samples) > 0;
 	}
 	return (int)(leftover_samples_end - leftover_samples) >= samples_per_block;
 }
 
-static int ADPCM_End(float duration)
+static int ADPCM_Flush(float duration)
 {
-	float rate;
+	final_duration = duration;
+	update_rate();
 
-	/* Because this codec adds audio frames to the AVI at a different rate than
-	   video frames get added, we need to compute rate of audio frames using
-	   number of video frames to calculate the total duration of the AVI. */
-	if (duration > 0) {
-		rate = (float)out.length / duration;
-		out.rate = (int)(rate * 1000000);
-	}
+	return (int)(leftover_samples_end - leftover_samples) > 0;
+}
+
+static int ADPCM_End(void)
+{
 	free(leftover_samples);
 	return 1;
 }
@@ -477,6 +471,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
+	&ADPCM_Flush,
 	&ADPCM_End,
 };
 
@@ -489,6 +484,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_IMA = {
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
+	&ADPCM_Flush,
 	&ADPCM_End,
 };
 
@@ -501,6 +497,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
+	&ADPCM_Flush,
 	&ADPCM_End,
 };
 
@@ -513,5 +510,6 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
 	&ADPCM_AnotherFrame,
+	&ADPCM_Flush,
 	&ADPCM_End,
 };

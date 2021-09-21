@@ -125,7 +125,7 @@ static int WAV_WriteSamples(const UBYTE *buf, int num_samples)
 	if (!buf) {
 		/* This happens at file close time, checking if audio codec has samples
 		   remaining */
-		if (!audio_codec->another_frame || !audio_codec->another_frame(TRUE)) {
+		if (!audio_codec->another_frame()) {
 			/* If the codec doesn't support buffered frames or there's nothing
 			   remaining, there's no need to try to write another frame */
 			return 1;
@@ -156,11 +156,7 @@ static int WAV_WriteSamples(const UBYTE *buf, int num_samples)
 			/* for next loop, only output samples remaining from previous frame */
 			num_samples = 0;
 		}
-		else {
-			/* report success if there weren't enough samples to fill a frame. */
-			return 1;
-		}
-	} while (audio_codec->another_frame && audio_codec->another_frame(FALSE));
+	} while (audio_codec->another_frame());
 
 	return 1;
 }
@@ -179,9 +175,11 @@ static int WAV_CloseFile(void)
 	int seconds;
 
 	if (fp != NULL) {
-		/* Force audio codec to write out the last frame. This only occurs in codecs
-		with fixed block alignments */
-		result = WAV_WriteSamples(NULL, 0);
+		if (audio_codec->flush((float)(video_frame_count / fps))) {
+			/* Force audio codec to write out any remaining frames. This only
+			   occurs in codecs that buffer frames or force fixed block sizes */
+			result = WAV_WriteSamples(NULL, 0);
+		}
 
 		if (result) {
 			/* A RIFF file's chunks must be word-aligned. So let's align. */
@@ -193,7 +191,7 @@ static int WAV_CloseFile(void)
 			}
 
 			if (result) {
-				CODECS_AUDIO_End((float)(video_frame_count / fps));
+				CODECS_AUDIO_End();
 
 				/* Sound file is finished, so modify header and close it. */
 				if (fseek(fp, 4, SEEK_SET) != 0)	/* Seek past RIFF */

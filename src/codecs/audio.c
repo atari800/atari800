@@ -191,12 +191,13 @@ int CODECS_AUDIO_Init(void)
 	return 1;
 }
 
-void CODECS_AUDIO_End(float duration)
+void CODECS_AUDIO_End(void)
 {
-	audio_codec->end(duration);
+	audio_codec->end();
 	if (audio_buffer) {
 		free(audio_buffer);
 		audio_buffer_size = 0;
 		audio_buffer = NULL;
 	}
+	audio_codec = NULL;
 }

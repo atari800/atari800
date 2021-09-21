@@ -235,4 +235,5 @@ void CODECS_VIDEO_End(void)
 		video_buffer_size = 0;
 		video_buffer = NULL;
 	}
+	video_codec = NULL;
 }

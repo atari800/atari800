@@ -78,7 +78,19 @@ static int PCM_CreateFrame(const UBYTE *source, int num_samples, UBYTE *buf, int
 	return size;
 }
 
-static int PCM_End(float duration)
+static int PCM_AnotherFrame(void)
+{
+	/* This codec doesn't buffer frames */
+	return 0;
+}
+
+static int PCM_Flush(float duration)
+{
+	/* This codec will never have any extra frames */
+	return 0;
+}
+
+static int PCM_End(void)
 {
 	return 1;
 }
@@ -91,6 +103,7 @@ AUDIO_CODEC_t Audio_Codec_PCM = {
 	&PCM_Init,
 	&PCM_AudioOut,
 	&PCM_CreateFrame,
-	NULL,
+	&PCM_AnotherFrame,
+	&PCM_Flush,
 	&PCM_End,
 };
