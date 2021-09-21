@@ -77,7 +77,7 @@ Edit these lines as appropriate.  For example:
 
       * New upstream version 4.2.0
 
-    -- Cliff Hatch <contact via atari800-users@lists.sourceforge.net> 
+    -- Cliff Hatch <hatchcw@btopenworld.com> 
         Sat, 04 Jul 2020 10:06:18 +0100
 
 The version number '4.2.0-1' will be used to construct the name of the
@@ -93,8 +93,8 @@ Set urgency to 'low', or 'medium' for major updates.
 
 Enter your name and contact details.  In Debian releases the name of an
 accredited Debian member (the package manager) belongs here, but this is not
-a Debian release, so these details are informal - but nevertheless
-useful because they provide a contact for enquiries.
+a Debian release, so these details are informal, but nevertheless
+useful because they provide a build record and a contact for enquiries.
    
 BUILD THE PACKAGE
 =================
