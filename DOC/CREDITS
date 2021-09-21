@@ -310,7 +310,7 @@ Perry McFarlane <ce596@freenet.toronto.on.ca>
 
 Rob McMullen <feedback@playermissile.com>
     - libatari800 compile target (atari800 as a library)
-    - multimedia framework, video codecs, and AVI video support
+    - multimedia framework, audio codecs, video codecs, and AVI video support
 
 Petr Mojzisek <mojzisek@bimbo.fjfi.cvut.cz>
     - rawkey support for svgalib
