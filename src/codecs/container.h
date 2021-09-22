@@ -39,6 +39,7 @@ extern char description[32];
 /* Currently open container */
 extern CONTAINER_t *container;
 
+int CODECS_CONTAINER_IsSupported(const char *filename);
 int CODECS_CONTAINER_Open(const char *filename);
 
 #endif /* CODECS_CONTAINER_H_ */

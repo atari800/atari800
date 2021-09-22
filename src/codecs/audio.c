@@ -35,6 +35,9 @@
 
 #include "codecs/audio.h"
 #include "codecs/audio_pcm.h"
+#ifdef HAVE_LIBMP3LAME
+#include "codecs/audio_mp3.h"
+#endif
 #include "codecs/audio_adpcm.h"
 #include "codecs/audio_mulaw.h"
 
@@ -57,6 +60,9 @@ static AUDIO_CODEC_t *requested_audio_codec = NULL;
 
 static AUDIO_CODEC_t *known_audio_codecs[] = {
 	&Audio_Codec_PCM,
+#ifdef HAVE_LIBMP3LAME
+	&Audio_Codec_MP3,
+#endif
 	&Audio_Codec_MULAW,
 	&Audio_Codec_PCM_MULAW,
 	&Audio_Codec_ADPCM,
@@ -66,6 +72,11 @@ static AUDIO_CODEC_t *known_audio_codecs[] = {
 	NULL,
 };
 
+#ifdef HAVE_LIBMP3LAME
+int audio_param_bitrate = 128;
+int audio_param_samplerate = -1;
+int audio_param_quality = 4;
+#endif
 
 static AUDIO_CODEC_t *match_audio_codec(char *id)
 {
@@ -112,8 +123,7 @@ int CODECS_AUDIO_Initialise(int *argc, char *argv[])
 		int a_m = FALSE; /* error, argument missing! */
 		int a_i = FALSE; /* error, argument invalid! */
 
-		if (0) {}
-		else if (strcmp(argv[i], "-acodec") == 0) {
+		if (strcmp(argv[i], "-acodec") == 0) {
 			if (i_a) {
 				char *mode = argv[++i];
 				if (strcmp(mode, "auto") == 0) {
@@ -128,11 +138,48 @@ int CODECS_AUDIO_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
+#ifdef HAVE_LIBMP3LAME
+		else if (strcmp(argv[i], "-ab") == 0) {
+			if (i_a) {
+				audio_param_bitrate = Util_sscandec(argv[++i]);
+				if (audio_param_bitrate < 8 || audio_param_bitrate > 320) {
+					Log_print("Invalid bitrate; must be between 8 and 320 kbps");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-ar") == 0) {
+			if (i_a) {
+				audio_param_samplerate = Util_sscandec(argv[++i]);
+				if (audio_param_samplerate < 8000 || audio_param_samplerate > 48000) {
+					Log_print("Invalid output samplerate; must be between 8000 and 48000 Hz");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
+		else if (strcmp(argv[i], "-aq") == 0) {
+			if (i_a) {
+				audio_param_quality = Util_sscandec(argv[++i]);
+				if (audio_param_quality < 0 || audio_param_quality > 9) {
+					Log_print("Invalid audio quality; must be between 0 and 9");
+					return FALSE;
+				}
+			}
+			else a_m = TRUE;
+		}
+#endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				char buf[256];
 				Log_print(audio_codec_args(buf));
 				Log_print("\t                 Select audio codec (default: auto)");
+#ifdef HAVE_LIBMP3LAME
+				Log_print("\t-ab <num>        Set audio recording bitrate in kbps (8..320, default: 128)");
+				Log_print("\t-ar <num>        Set audio recording sample rate in Hz (8000..48000, default: same as -dsprate)");
+				Log_print("\t-aq <num>        Set audio recording quality (0..9, default 5)");
+#endif
 			}
 			argv[j++] = argv[i];
 		}
@@ -204,7 +251,8 @@ int CODECS_AUDIO_Init(void)
 
 void CODECS_AUDIO_End(void)
 {
-	audio_codec->end();
+	if (audio_codec)
+		audio_codec->end();
 	if (audio_buffer) {
 		free(audio_buffer);
 		audio_buffer_size = 0;

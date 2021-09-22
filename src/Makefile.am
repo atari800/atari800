@@ -134,6 +134,10 @@ atari800_SOURCES += codecs/container_wav.c codecs/container_wav.h \
 	codecs/audio_pcm.c codecs/audio_pcm.h \
 	codecs/audio_adpcm.c codecs/audio_adpcm.h \
 	codecs/audio_mulaw.c codecs/audio_mulaw.h
+if WITH_AUDIO_CODEC_MP3
+atari800_SOURCES += codecs/audio_mp3.c codecs/audio_mp3.h \
+	codecs/container_mp3.c codecs/container_mp3.h
+endif
 endif
 if WITH_VIDEO_RECORDING
 atari800_SOURCES += codecs/container_avi.c codecs/container_avi.h \

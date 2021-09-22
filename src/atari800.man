@@ -797,7 +797,7 @@ Use to override the default pattern of \fIatari###.wav\fR which produces
 \fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
 Hashes are replaced with raising numbers.
 .TP
-\fB\-acodec auto\fR|\fBpcm\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_ima_wav\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
+\fB\-acodec auto\fR|\fBpcm\fR|\fBmp3\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_ima_wav\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
 Select the audio codec used when saving to AVI or WAV files. Some codecs are
 lossy, meaning they reduce storage space while attempting to sound as close as
 possible to the original audio.
@@ -811,7 +811,14 @@ The default.
 Use the codec that provides the best audio quality, which is PCM.
 .TP
 .B pcm
-Use uncompressed pulse-code modulated (PCM) samples. Lossless.
+Use uncompressed pulse-code modulated (PCM) samples. Lossless. Produces very
+large audio files.
+.TP
+.B mp3
+Use MP3 encoding. Lossy; only available with 16-bit audio, and provides the best
+possible quality of all the lossy codecs while also using the least storage space.
+This codec is only available if the libmp3lame library is available when
+compiling the emulator.
 .TP
 .B mulaw
 Use mu-law encoding. Lossy; only available with 16-bit audio, and provides 2x
@@ -836,6 +843,22 @@ Use the Yamaha ADPCM algorithm.
 Use the Microsoft ADPCM algorithm.
 .PD
 .RE
+.TP
+.BI \-ab\  kbps
+Set the bitrate in kbps of the MP3 codec. The default is 128, and can range
+between 8 and 320. Higher numbers mean better quality at the cost of increased
+file size.
+.TP
+.BI \-ar\  freq
+Set the output sample rate in Hz of the MP3 codec. The default is the same
+sample rate as set by the \fB-dsprate\fR option. Only a limited set of choices
+are available: 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100 and 48000.
+As with bitrate, higher numbers mean better quality and larger files.
+.TP
+.BI \-aq\  num
+Set the MP3 compression algorithm quality 0-9 (default 4). 0 means fast but
+reduced quality, 9 uses the slowest algorithms to try to increase quality.
+Does not affect storage space.
 .TP
 .BI \-snd\-buflen\  ms
 Set length of the hardware sound buffer in milliseconds.
@@ -1697,21 +1720,31 @@ size is specified by the \fB\-audio16\fR or \fB\-audio8\fR options. This is the
 recommended codec unless extremely long recording times are desired. See the
 tables in the \fBVIDEO RECORDING\fR section below.
 .PP
+The MP3 codec is the best choice of a lossy codec, as paramaters can be tuned
+to generate high quality audio for different situations. An audio bitrate of
+128kbps (the \fB-ab 128\fR option) results in high quality audio at about an
+8x reduction in storage space over PCM audio. The MP3 codec is a compile-time
+option and requires the libmp3lame library.
+.PP
+The remaining lossy codecs should not be considered unless the MP3 codec is
+not available. In most cases they produce reasonable quality, without many
+audible artifacts to the casual listener. But the algorithms were originally
+designed for compressing speech over telephone lines and they can produce
+audio distortion in some instances.
+.PP
 The mu-law codec uses a logarithmic scale to convert 16 bit samples into 8 bits
 of data, resulting in half the size of 16 bit PCM audio. This codec does not
 work with 8 bit audio. Waveform analysis shows the acoustic quality is similar
-to a 192kbps MP3 file, although not as efficient a codec in terms of storage as
-the MP3 would be half the size. Surprisingly, in many cases the acoustic quality
-of mu-law can be better than 8 bit PCM samples even though it takes the same
-storage space.
+to a 192kbps MP3 file, although the MP3 would be half the size. Surprisingly,
+in many cases the acoustic quality of mu-law can be better than 8 bit PCM samples
+even though it takes the same storage space.
 .PP
 Adaptive differential pulse-code modulation (ADPCM) also requires 16 bit audio.
 It encodes differences between successive samples into 4 bits, therefore the
 output is one quarter of the size of the PCM codec. The acoustic quality is
-similar to a 64kbps MP3 file, so audio artifacts may be audible under certain
-conditions. Normal game audio and sound effects do not normally produce a
-perceptible loss in quality, but for example the Microsoft ADPCM algorithm
-produces audio distortion with high volume square waves.
+similar to a 64kbps MP3 file, although the MP3 would be 3x smaller. Audio
+distortio may be audible under certain conditions, like high volume
+square waves.
 .PD 1
 .SH VIDEO RECORDING
 .B atari800
@@ -1753,11 +1786,11 @@ Application@Type@Platform@RLE@PNG@ZMBV
 _
 YouTube@Website@Browser@Yes@Yes@Yes
 Twitter@Website@Browser@No[1]@No[1]@No[1]
-FFmpeg@Transcoder@Win/Mac/Linux@Yes@Yes@Yes
-Handbrake@Transcoder@Win/Mac/Linux@Yes@Yes@Yes
-VLC@Player@Win/Mac/Linux@Yes@No[2]@Yes
+FFmpeg@Transcoder@Win/Mac/Lin@Yes@Yes@Yes
+Handbrake@Transcoder@Win/Mac/Lin@Yes@Yes@Yes
+VLC@Player@Win/Mac/Lin@Yes@No[2]@Yes
 Windows Media Player@Player@Windows@Yes@No@No
-Windows 10 Movies & TV@Player@Windows@No@No@No
+Win 10 Movies & TV@Player@Windows@No@No@No
 IINA@Player@Mac@Yes@Yes@Yes
 QuickTime@Player@Mac@No@No@No
 Totem (Gnome Videos)@Player@Linux@No@Yes@Yes
@@ -1765,13 +1798,14 @@ MPV (Celluloid)@Player@Linux@Yes@Yes@Yes
 MPlayer@Player@Linux@Yes@Yes@Yes
 .TE
 .PP
-        [1] Twitter only accepts \fBmp4\fR files using the \fBh264\fR video codec and the
-            \fBaac\fR audio codec. The \fBavi\fR files produced by \fBatari800\fR must be
-            transcoded with an application like FFmpeg or Handbrake. Videos are
-            limited to 2 minutes and 20 seconds.
+        [1] Twitter only accepts \fBmp4\fR files using the \fBh264\fR video
+            codec and the \fBaac\fR audio codec. The \fBavi\fR files produced
+            by \fBatari800\fR must be transcoded with an application like
+            FFmpeg or Handbrake. Videos are limited to 2 minutes and
+            20 seconds.
 .PP
-        [2] VLC recognizes and plays PNG-encoded video, but decodes the video
-            incorrectly resulting in garbled images.
+        [2] VLC recognizes and plays PNG-encoded video, but decodes the
+            video incorrectly resulting in garbled images.
 .PP
 Currently there is a limit of 4GB for video size. The maximum recording time for
 this size limit depends on many factors. Some examples can be seen in the tables
@@ -1780,83 +1814,70 @@ below:
 ZMBV codec (default compression level):
 .TS
 tab(@), center, box;
-l | c | c s s | c s s
-c | c | _ _ _ | _ _ _
-c | c | c c c | c c c
-l | c | c c c | c c c
-l | cB | cB cB cB | cB cB cB.
-@Average@NTSC recording time@PAL recording time
+l | c | c s s s s
+c | c | _ _ _ _ _
+c | c | c c c c c
+l | c | c c c c c
+l | cB | cB cB cB cB cB.
+@Average@Estimated recording time
 Game@video@
-@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
-@size@audio@audio@audio@audio@audio@audio
+@frame@mp3@mp3@ADPCM@8-bit@16-bit
+@size@128 kbps@320 kbps@audio@audio@audio
 _
 
-Jumpman@0.08k@41 hr@22 hr@12 hr@43 hr@23 hr@12 hr@
-Miner 2049er@0.13k@37 hr@21 hr@12 hr@39 hr@22 hr@12 hr@
-Alley Cat@0.37k@25 hr@17 hr@10 hr@28 hr@18 hr@10 hr@
-Dropzone@0.82k@16 hr@12 hr@8h 25m@18 hr@13 hr@8h 55m@
-AtariBlast!@1.2k@12 hr@9h 50m@7h 10m@14 hr@11 hr@7h 50m@
-Boulder Dash@0.17k@35 hr@20 hr@11 hr@37 hr@21 hr@12 hr@
+Jumpman@0.08k@49 hr@23 hr@38 hr@21 hr@11 hr@
+Miner 2049er@0.13k@43 hr@22 hr@35 hr@20 hr@11 hr@
+Alley Cat@0.37k@28 hr@17 hr@24 hr@16 hr@9h 40m@
+Dropzone@0.82k@17 hr@12 hr@15 hr@11 hr@7h 55m@
+AtariBlast!@1.2k@12 hr@9h 55m@11 hr@9h 30m@6h 50m@
+Boulder Dash@0.17k@40 hr@21 hr@33 hr@19 hr@10 hr@
 .TE
 
 .PP
 RLE codec:
 .TS
 tab(@), center, box;
-l | c | c s s | c s s
-c | c | _ _ _ | _ _ _
-c | c | c c c | c c c
-l | c | c c c | c c c
-l | cB | cB cB cB | cB cB cB.
-@Average@NTSC recording time@PAL recording time
+l | c | c s s s s
+c | c | _ _ _ _ _
+c | c | c c c c c
+l | c | c c c c c
+l | cB | cB cB cB cB cB.
+@Average@Estimated recording time
 Game@video@
-@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
-@size@audio@audio@audio@audio@audio@audio
+@frame@mp3@mp3@ADPCM@8-bit@16-bit
+@size@128 kbps@320 kbps@audio@audio@audio
 _
 
-Jumpman@0.36k@26 hr@17 hr@10 hr@28 hr@18 hr@10 hr@
-Miner 2049er@0.39k@25 hr@16 hr@10 hr@27 hr@17 hr@10 hr@
-Alley Cat@1.0k@14 hr@11 hr@7h 45m@16 hr@12 hr@8h 20m@
-Dropzone@2.3k@7h 10m@6h 20m@5h 05m@8h 25m@7h 15m@5h 40m@
-AtariBlast!@6.9k@2h 35m@2h 30m@2h 15m@3h 10m@2h 55m@2h 40m@
-Boulder Dash@9.1k@2h 00m@1h 55m@1h 50m@2h 25m@2h 15m@2h 05m@
+Jumpman@0.36k@28 hr@17 hr@24 hr@16 hr@9h 45m@
+Miner 2049er@0.39k@27 hr@17 hr@24 hr@15 hr@9h 35m@
+Alley Cat@1.0k@14 hr@11 hr@13 hr@10 hr@7h 20m@
+Dropzone@2.3k@7h 25m@6h 20m@7h 05m@6h 10m@4h 55m@
+AtariBlast!@6.9k@2h 40m@2h 30m@2h 35m@2h 30m@2h 15m@
+Boulder Dash@9.1k@2h 00m@1h 55m@2h 00m@1h 55m@1h 45m@
 .TE
 
 .PP
 PNG codec (default compression level):
 .TS
 tab(@), center, box;
-l | c | c s s | c s s
-c | c | _ _ _ | _ _ _
-c | c | c c c | c c c
-l | c | c c c | c c c
-l | cB | cB cB cB | cB cB cB.
-@Average@NTSC recording time@PAL recording time
+l | c | c s s s s
+c | c | _ _ _ _ _
+c | c | c c c c c
+l | c | c c c c c
+l | cB | cB cB cB cB cB.
+@Average@Estimated recording time
 Game@video@
-@frame@ADPCM@8-bit@16-bit@ADPCM@8-bit@16-bit
-@size@audio@audio@audio@audio@audio@audio
+@frame@mp3@mp3@ADPCM@8-bit@16-bit
+@size@128 kbps@320 kbps@audio@audio@audio
 _
 
-Jumpman@2.4k@6h 55m@6h 05m@5h 00m@8h 05m@7h 00m@5h 35m@
-Miner 2049er@2.2k@7h 30m@6h 30m@5h 15m@8h 45m@7h 25m@5h 50m@
-Alley Cat@4.1k@4h 15m@3h 55m@3h 25m@5h 05m@4h 35m@3h 55m@
-Dropzone@2.8k@6h 05m@5h 25m@4h 30m@7h 05m@6h 15m@5h 05m@
-AtariBlast!@4.4k@4h 00m@3h 45m@3h 15m@4h 45m@4h 20m@3h 45m@
-Boulder Dash@4.5k@3h 55m@3h 40m@3h 10m@4h 40m@4h 15m@3h 40m@
+Jumpman@2.4k@7h 05m@6h 10m@6h 50m@5h 55m@4h 45m@
+Miner 2049er@2.2k@7h 40m@6h 35m@7h 20m@6h 20m@5h 00m@
+Alley Cat@4.1k@4h 20m@4h 00m@4h 15m@3h 55m@3h 20m@
+Dropzone@2.8k@6h 10m@5h 25m@6h 00m@5h 20m@4h 20m@
+AtariBlast!@4.4k@4h 05m@3h 45m@4h 00m@3h 40m@3h 10m@
+Boulder Dash@4.5k@4h 00m@3h 40m@3h 55m@3h 35m@3h 10m@
 .TE
-
-.PP
-In most cases audio takes up more space than video; uncompressed 16 bit PCM
-samples consume about 1.4k per frame for NTSC (about 1.8k per frame for PAL).
-The choice of audio codec is important to maximize recording time. If the goal
-is to upload to YouTube, the PCM codec is the best choice for audio quality
-because YouTube reencodes all uploads. For other uses, a compressed audio codec
-like ADPCM can reduce audio sizes to fewer than 400 bytes per frame, providing
-longer recording times with imperceptible differences in audio quality.
-.PP
-Longer recording times are available when emulating at the PAL frame rate
-because there are 10 fewer video frames per second as compared to NTSC, while
-the audio sampling rate is the same as NTSC.
 
 .PD 1
 

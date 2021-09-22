@@ -31,7 +31,7 @@
 #include "codecs/audio.h"
 #include "util.h"
 #include "log.h"
-#include "audio_adpcm.h"
+#include "codecs/audio_adpcm.h"
 
 #define FFMIN(a,b) ((a) > (b) ? (b) : (a))
 
@@ -193,13 +193,6 @@ static inline UBYTE adpcm_yamaha_compress_sample(ADPCMChannelStatus *c, SWORD sa
 	return nibble;
 }
 
-#define PUT_LE_WORD(p, val) do {         \
-		UWORD d = (val);             \
-		((UBYTE*)(p))[0] = (d);      \
-		((UBYTE*)(p))[1] = (d)>>8;   \
-		p += 2;                      \
-	} while(0)
-
 static int reserve_buffers(void)
 {
 	int num_samples;
@@ -220,6 +213,7 @@ static int init_common(int sample_rate, float fps, int sample_size, int num_chan
 	out.sample_rate = sample_rate;
 	out.sample_size = 1;
 	out.bits_per_sample = 4;
+	out.bitrate = sample_rate * num_channels * out.bits_per_sample;
 	out.num_channels = num_channels;
 	out.block_align = 1024;
 	out.scale = 1000000;
@@ -467,6 +461,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_IMA, /* format type */
+	AUDIO_CODEC_FLAG_PCM,
 	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -480,6 +475,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_IMA = {
 	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_IMA, /* format type */
+	AUDIO_CODEC_FLAG_PCM,
 	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -493,6 +489,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
 	"Microsoft ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_MS, /* format type */
+	AUDIO_CODEC_FLAG_PCM,
 	&ADPCM_Init_MS,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -506,6 +503,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
 	"Yamaha ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_YAMAHA, /* format type */
+	AUDIO_CODEC_FLAG_PCM,
 	&ADPCM_Init_Yamaha,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,

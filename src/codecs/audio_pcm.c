@@ -35,6 +35,7 @@ static int PCM_Init(int sample_rate, float fps, int sample_size, int num_channel
 	out.sample_rate = sample_rate;
 	out.sample_size = sample_size;
 	out.bits_per_sample = sample_size * 8;
+	out.bitrate = sample_rate * num_channels * out.bits_per_sample;
 	out.num_channels = num_channels;
 	out.block_align = num_channels * sample_size;
 	out.scale = 1;
@@ -100,6 +101,7 @@ AUDIO_CODEC_t Audio_Codec_PCM = {
 	"PCM Samples",
 	{1, 0, 0, 0}, /* fourcc */
 	1, /* format type */
+	AUDIO_CODEC_FLAG_PCM,
 	&PCM_Init,
 	&PCM_AudioOut,
 	&PCM_CreateFrame,

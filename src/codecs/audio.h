@@ -3,10 +3,18 @@
 
 #include "atari.h"
 
+#define PUT_LE_WORD(p, val) do {         \
+		UWORD d = (val);             \
+		((UBYTE*)(p))[0] = (d);      \
+		((UBYTE*)(p))[1] = (d)>>8;   \
+		p += 2;                      \
+	} while(0)
+
 typedef struct {
     int sample_rate;
     int sample_size;
     int bits_per_sample;
+    int bitrate;
     int num_channels;
     int block_align;
     int scale;
@@ -14,6 +22,7 @@ typedef struct {
     int length;
     int extra_data_size;
     UBYTE extra_data[256];
+    int samples_processed;
 } AUDIO_OUT_t;
 
 /* Audio codec initialization function. No codec functions are valid before a
@@ -45,11 +54,15 @@ typedef int (*AUDIO_CODEC_Flush)(float duration);
    success, or zero on error. */
 typedef int (*AUDIO_CODEC_End)(void);
 
+#define AUDIO_CODEC_FLAG_PCM 0
+#define AUDIO_CODEC_FLAG_VBR_POSSIBLE 1
+
 typedef struct {
     char *codec_id;
     char *description;
     char fourcc[4];
     UWORD format_type;
+    UWORD codec_flags;
     AUDIO_CODEC_Init init;
     AUDIO_CODEC_AudioOut audio_out;
     AUDIO_CODEC_CreateFrame frame;
@@ -62,6 +75,12 @@ extern AUDIO_CODEC_t *audio_codec;
 extern AUDIO_OUT_t *audio_out;
 extern int audio_buffer_size;
 extern UBYTE *audio_buffer;
+
+#ifdef HAVE_LIBMP3LAME
+extern int audio_param_bitrate;
+extern int audio_param_samplerate;
+extern int audio_param_quality;
+#endif
 
 int CODECS_AUDIO_Initialise(int *argc, char *argv[]);
 int CODECS_AUDIO_ReadConfig(char *string, char *ptr);

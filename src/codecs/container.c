@@ -33,6 +33,9 @@
 #include "sound.h"
 #include "codecs/audio.h"
 #include "codecs/container_wav.h"
+#ifdef HAVE_LIBMP3LAME
+#include "codecs/container_mp3.h"
+#endif
 #endif
 #ifdef VIDEO_RECORDING
 #include "codecs/video.h"
@@ -66,6 +69,9 @@ char description[32];
 static CONTAINER_t *known_containers[] = {
 #ifdef SOUND
 	&Container_WAV,
+#ifdef HAVE_LIBMP3LAME
+	&Container_MP3,
+#endif
 #endif
 #ifdef VIDEO_RECORDING
 	&Container_AVI,
@@ -87,6 +93,17 @@ static CONTAINER_t *match_container(const char *id)
 		v++;
 	}
 	return found;
+}
+
+
+/* Convenience function to check if container type is supported. */
+int CODECS_CONTAINER_IsSupported(const char *filename)
+{
+	CONTAINER_t *c;
+
+	c = match_container(filename);
+
+	return (c != NULL);
 }
 
 
@@ -142,8 +159,12 @@ int CODECS_CONTAINER_Open(const char *filename)
 #endif
 #ifdef SOUND
 		if (audio_codec) {
-			strcat(description, " ");
-			strcat(description, audio_codec->codec_id);
+			/* If the audio codec has the same name as the container (e.g. mp3
+			   is both a codec and container type), don't duplicate the name */
+			if (strcmp(container->container_id, audio_codec->codec_id) != 0) {
+				strcat(description, " ");
+				strcat(description, audio_codec->codec_id);
+			}
 		}
 #endif
 

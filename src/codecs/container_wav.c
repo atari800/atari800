@@ -28,20 +28,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_export.h"
-#include "codecs/video_mrle.h"
-#include "screen.h"
-#include "colours.h"
-#include "cfg.h"
-#include "util.h"
 #include "log.h"
-#include "sound.h"
-#include "pokeysnd.h"
 #include "codecs/container.h"
 #include "codecs/container_wav.h"
 #include "codecs/audio.h"
 
 
 static FILE *fp = NULL;
+
+static int fact_chunk_size;
 
 /* WAV_OpenFile will start a new sound file and write out the header. Note that
    the file will not be valid until the it is closed with WAV_CloseFile because
@@ -93,17 +88,29 @@ static int WAV_OpenFile(const char *filename)
 	fputw(audio_codec->format_type, fp);
 	fputw(audio_out->num_channels, fp);
 	fputl(audio_out->sample_rate, fp);
-	fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size, fp);
+	fputl(audio_out->bitrate / 8, fp);
 	fputw(audio_out->block_align, fp);
 	fputw(audio_out->bits_per_sample, fp);
 	if (audio_out->extra_data_size > 0) {
 		fwrite(audio_out->extra_data, audio_out->extra_data_size, 1, fp);
 	}
 
+	if (audio_codec->codec_flags & AUDIO_CODEC_FLAG_VBR_POSSIBLE) {
+		/* compressed codecs need sample count, used with bytes/second field to
+		   determine duration */
+		fact_chunk_size = 12;
+		fputs("fact", fp);
+		fputl(4, fp);
+		fputl(0, fp); /* number of samples, to be filled in upon file close */
+	}
+	else {
+		fact_chunk_size = 0;
+	}
+
 	fputs("data", fp);
 	fputl(0, fp); /* length to be filled in upon file close */
 
-	if (ftell(fp) != 44 + audio_out->extra_data_size) {
+	if (ftell(fp) != 44 + audio_out->extra_data_size + fact_chunk_size) {
 		fclose(fp);
 		return 0;
 	}
@@ -182,35 +189,39 @@ static int WAV_CloseFile(void)
 		}
 
 		if (result) {
+			clearerr(fp);
+
 			/* A RIFF file's chunks must be word-aligned. So let's align. */
 			if (byteswritten & 1) {
-				if (putc(0, fp) == EOF)
-					result = FALSE;
-				else
-					aligned = 1;
+				fputc(0, fp);
+				aligned = 1;
 			}
 
-			if (result) {
-				CODECS_AUDIO_End();
+			CODECS_AUDIO_End();
 
-				/* Sound file is finished, so modify header and close it. */
-				if (fseek(fp, 4, SEEK_SET) != 0)	/* Seek past RIFF */
-					result = FALSE;
-				else {
-					/* RIFF header's size field must equal the size of all chunks
-					* with alignment, so the alignment byte is added.
-					*/
-					fputl(byteswritten + 36 + aligned, fp);
-					if (fseek(fp, 40 + audio_out->extra_data_size, SEEK_SET) != 0)
-						result = FALSE;
-					else {
-						/* But in the "data" chunk size field, the alignment byte
-						* should be ignored. */
-						fputl(byteswritten, fp);
-						seconds = (int)(video_frame_count / fps);
-						Log_print("WAV stats: %d:%02d:%02d, %dMB, %d frames", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count);
-					}
-				}
+			/* Sound file is finished, so modify header and close it. */
+
+			/* RIFF header's size field must equal the size of all chunks with
+			   alignment, so the alignment byte is added. */
+			fseek(fp, 4, SEEK_SET);	/* Seek past RIFF */
+			fputl(byteswritten + 36 + aligned, fp);
+
+			/* Alignment byte is ignored in the "data" chunk size field. */
+			fseek(fp, 40 + audio_out->extra_data_size + fact_chunk_size, SEEK_SET);
+			fputl(byteswritten, fp);
+
+			if (fact_chunk_size) {
+				/* number of samples is needed in non-PCM formats */
+				fseek(fp, 44 + audio_out->extra_data_size, SEEK_SET);
+				fputl(audio_out->samples_processed, fp);
+			}
+
+			seconds = (int)(video_frame_count / fps);
+			Log_print("WAV stats: %d:%02d:%02d, %d%sB, %d frames", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten < 1024*1024 ? byteswritten / 1024 : byteswritten / 1024 / 1024, byteswritten < 1024*1024 ? "k" : "M", video_frame_count);
+
+			if (ferror(fp)) {
+				Log_print("Error writing WAV header\n");
+				result = 0;
 			}
 		}
 		fclose(fp);

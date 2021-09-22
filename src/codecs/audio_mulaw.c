@@ -24,7 +24,7 @@
 
 #include <string.h>
 #include "codecs/audio.h"
-#include "audio_pcm.h"
+#include "codecs/audio_pcm.h"
 
 /* NOTE: mu-law is simple codec that taxes 16-bit PCM samples as input and
    outputs an encoding of 8 bits per sample. Its original design goal was to
@@ -92,6 +92,7 @@ static int MULAW_Init(int sample_rate, float fps, int sample_size, int num_chann
 	out.sample_rate = sample_rate;
 	out.sample_size = 1;
 	out.bits_per_sample = 8;
+	out.bitrate = sample_rate * num_channels * out.bits_per_sample;
 	out.num_channels = num_channels;
 	out.block_align = num_channels;
 	out.scale = 1;
@@ -180,6 +181,7 @@ AUDIO_CODEC_t Audio_Codec_MULAW = {
 	"mu-law 8-bit Telephony Codec",
 	{1, 0, 0, 0}, /* fourcc */
 	7, /* mu-law */
+	AUDIO_CODEC_FLAG_PCM,
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,
@@ -193,6 +195,7 @@ AUDIO_CODEC_t Audio_Codec_PCM_MULAW = {
 	"mu-law 8-bit Telephony Codec",
 	{1, 0, 0, 0}, /* fourcc */
 	7, /* mu-law */
+	AUDIO_CODEC_FLAG_PCM,
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,

@@ -29,12 +29,9 @@
 #include "file_export.h"
 #include "screen.h"
 #include "colours.h"
-#include "cfg.h"
 #include "util.h"
 #include "log.h"
 #ifdef SOUND
-#include "sound.h"
-#include "pokeysnd.h"
 #include "codecs/audio.h"
 #endif
 #include "codecs/image.h"
@@ -266,7 +263,7 @@ static int AVI_WriteHeader(void) {
 		fputw(audio_codec->format_type, fp); /* format_type */
 		fputw(audio_out->num_channels, fp); /* channels */
 		fputl(audio_out->sample_rate, fp); /* sample_rate */
-		fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size * audio_out->bits_per_sample / 8, fp); /* bytes_per_second */
+		fputl(audio_out->bitrate / 8, fp); /* bytes_per_second */
 		fputw(audio_out->block_align, fp); /* bytes per frame */
 		fputw(audio_out->bits_per_sample, fp); /* bits_per_sample */
 		fputw(audio_out->extra_data_size, fp); /* extra data size */

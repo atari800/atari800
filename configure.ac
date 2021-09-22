@@ -1056,6 +1056,14 @@ if [[ "$with_sound" != no ]]; then
               [Emulate the Alien Group Voice Box (default=ON)],
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
+
+    dnl Need SUPPORTS_LIBMP3LAME shell variable for mp3 audio codec test below
+	AC_CHECK_LIB(mp3lame,lame_init,[LIBS="-lmp3lame $LIBS"; SUPPORTS_LIBMP3LAME=yes],[SUPPORTS_LIBMP3LAME=no])
+    supported_audio_codecs="pcm adpcm mulaw"
+    if [[ "$SUPPORTS_LIBMP3LAME" = "yes" ]]; then
+        AC_DEFINE(HAVE_LIBMP3LAME,1,[Supports LAME mp3 audio compression library.])
+        supported_audio_codecs="$supported_audio_codecs mp3"
+    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"
@@ -1066,11 +1074,13 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
+    SUPPORTS_LIBMP3LAME="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$SUPPORTS_LIBMP3LAME" = "yes")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     have_bitmapped_screen=yes
@@ -1374,12 +1384,13 @@ if [[ "$with_sound" != no ]]; then
     fi
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
+    echo "    Supported audio codecs............: $supported_audio_codecs"
 else
     echo "    (Sound sub-options disabled)"
 fi
 echo "Using video recording?................: $WANT_VIDEO_RECORDING"
 if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
-    echo "Supported video codecs................: $supported_video_codecs"
+    echo "    Supported video codecs............: $supported_video_codecs"
 fi
 
 if [[ "$a8_host" = "falcon" ]]; then
