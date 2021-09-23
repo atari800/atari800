@@ -124,6 +124,8 @@ Command line options
 -xe                   Emulate Atari 130XE
 -320xe                Emulate Atari 320XE (Compy Shop)
 -rambo                Emulate Atari 320XE (Rambo)
+-576xe                Emulate Atari 576XE
+-1088xe               Emulate Atari 1088XE
 -xegs                 Emulate Atari XEGS
 -5200                 Emulate Atari 5200
 
