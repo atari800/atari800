@@ -705,6 +705,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-xe              Emulate Atari 130XE");
 					Log_print("\t-320xe           Emulate Atari 320XE (Compy-Shop)");
 					Log_print("\t-rambo           Emulate Atari 320XE (Rambo XL)");
+					Log_print("\t-576xe           Emulate Atari 576XE");
+					Log_print("\t-1088xe          Emulate Atari 1088XE");
 					Log_print("\t-xegs            Emulate Atari XEGS");
 					Log_print("\t-5200            Emulate Atari 5200 Games System");
 					Log_print("\t-nobasic         Turn off Atari BASIC ROM");
