@@ -232,14 +232,7 @@ int File_Export_IsRecording(void)
    */
 int File_Export_StopRecording(void)
 {
-	int result = TRUE;
-
-	if (container) {
-		result = container->close();
-		container = NULL;
-	}
-
-	return result;
+	return CONTAINER_Close(TRUE);
 }
 
 /* File_Export_StartRecording will open a new multimedia file, the type of which
@@ -252,9 +245,7 @@ int File_Export_StartRecording(const char *filename)
 {
 	File_Export_StopRecording();
 
-	CODECS_CONTAINER_Open(filename);
-
-	return container != NULL;
+	return CONTAINER_Open(filename);
 }
 
 #ifdef SOUND
@@ -277,10 +268,13 @@ int File_Export_GetNextSoundFile(char *buffer, int bufsize) {
    RETURNS: Non-zero if no error; zero if error */
 int File_Export_WriteAudio(const UBYTE *samples, int num_samples)
 {
-	int result = 0;
+	int result;
 
-	if (container && audio_codec && container->save_audio) {
-		result = container->save_audio(samples, num_samples);
+	if (!container) return 0;
+	if (!audio_codec || (audio_codec && !container->audio_frame)) return 1;
+	result = CONTAINER_AddAudioSamples(samples, num_samples);
+	if (!result) {
+		CONTAINER_Close(FALSE);
 	}
 
 	return result;
@@ -307,10 +301,13 @@ int File_Export_GetNextVideoFile(char *buffer, int bufsize) {
    creating the video frame or adding it to the file. */
 int File_Export_WriteVideo()
 {
-	int result = 0;
+	int result;
 
-	if (container && video_codec && container->save_video) {
-		result = container->save_video();
+	if (!container) return 0;
+	if (!video_codec || (video_codec && !container->video_frame)) return 1;
+	result = CONTAINER_AddVideoFrame();
+	if (!result) {
+		CONTAINER_Close(FALSE);
 	}
 
 	return result;

@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_export.h"
-#include "screen.h"
 #include "colours.h"
 #include "util.h"
 #include "log.h"
@@ -39,8 +38,6 @@
 #include "codecs/container.h"
 #include "codecs/container_avi.h"
 
-
-static FILE *fp = NULL;
 
 /* AVI requires the header at the beginning of the file contains sizes of each
    chunk, so the header will be rewritten upon the close of the file to update
@@ -73,9 +70,6 @@ static ULONG size_movi;
 
    The video will automatically be stopped should the recording length approach
    the file size limit. */
-static ULONG total_video_size;
-static ULONG smallest_video_frame;
-static ULONG largest_video_frame;
 
 #define FRAME_INDEX_ALLOC_SIZE 1000
 static int num_frames_allocated;
@@ -87,14 +81,6 @@ static ULONG *frame_indexes;
 #define KEYFRAME_FLAG    0x80000000
 
 
-/* Some codecs allow for keyframes (full frame compression) and inter-frames
-   (only the differences from the previous frame) */
-static int keyframe_count;
-
-#ifdef SOUND
-static ULONG samples_written;
-#endif
-
 static int num_streams;
 
 
@@ -105,7 +91,7 @@ static int num_streams;
 
    RETURNS: TRUE if header was written successfully, FALSE if not
    */
-static int AVI_WriteHeader(void) {
+static int AVI_WriteHeader(FILE *fp) {
 	int i;
 	int list_size;
 
@@ -249,7 +235,7 @@ static int AVI_WriteHeader(void) {
 		fputl(audio_out->rate, fp); /* rate, i.e. samples per second */
 		fputl(0, fp); /* start time; zero = no delay */
 		fputl(audio_out->length, fp); /* length (for audio is number of samples) */
-		fputl(audio_out->sample_rate * audio_out->num_channels * audio_out->sample_size, fp); /* suggested buffer size */
+		fputl(audio_out->bitrate / 8, fp); /* suggested buffer size */
 		fputl(0, fp); /* quality (-1 = default quality?) */
 		fputl(audio_out->block_align, fp); /* sample size */
 		fputl(0, fp); /* rcRect, ignored */
@@ -294,18 +280,15 @@ static int AVI_WriteHeader(void) {
 	return (ftell(fp) == 12 + 8 + list_size + 12);
 }
 
-/* AVI_OpenFile will start a new video file and write out an initial copy of the
+/* AVI_Prepare will start a new video file and write out an initial copy of the
    header. Note that the file will not be valid until the it is closed with
-   AVI_CloseFile because the length information contained in the header must be
+   AVI_Finalize because the length information contained in the header must be
    updated with the number of samples in the file.
 
    RETURNS: file pointer if successful, NULL if failure during open
    */
-static int AVI_OpenFile(const char *filename)
+static int AVI_Prepare(FILE *fp)
 {
-	if (!(fp = fopen(filename, "wb")))
-		return 0;
-
 #ifdef SOUND
 	if (audio_codec) {
 		num_streams = 2;
@@ -319,26 +302,15 @@ static int AVI_OpenFile(const char *filename)
 	/* some variables must exist before the call to WriteHeader */
 	size_riff = 0;
 	size_movi = 0;
-	if (!AVI_WriteHeader()) {
-		CODECS_VIDEO_End();
-#ifdef SOUND
-		if (num_streams == 2) {
-			CODECS_AUDIO_End();
-		}
-#endif
-		fclose(fp);
-		fp = NULL;
+	if (!AVI_WriteHeader(fp)) {
+		Log_print("Failed writing AVI header");
 		return 0;
 	}
 
 	/* set up video statistics */
 	frames_written = 0;
-	keyframe_count = 0; /* force first frame to be keyframe */
 
 	byteswritten = ftell(fp) + 8; /* current size + index header */
-	total_video_size = 0;
-	smallest_video_frame = 0xffffffff;
-	largest_video_frame = 0;
 
 	/* allocate space for index which is written at the end of the file */
 	num_frames_allocated = FRAME_INDEX_ALLOC_SIZE;
@@ -350,7 +322,7 @@ static int AVI_OpenFile(const char *filename)
 
 /* AVI_WriteFrame writes out a single frame of video or audio, and saves the
    index data for the end-of-file index chunk */
-static int AVI_WriteFrame(UBYTE *buf, int size, int frame_type, int is_keyframe) {
+static int AVI_WriteFrame(FILE *fp, const UBYTE *buf, int size, int frame_type, int is_keyframe) {
 	int padding;
 	int frame_size;
 	int expected_frame_size;
@@ -386,110 +358,26 @@ static int AVI_WriteFrame(UBYTE *buf, int size, int frame_type, int is_keyframe)
 	/* update size limit calculation including the 16 bytes needed for each index entry */
 	frame_size = ftell(fp) - frame_size;
 	byteswritten += frame_size + 16;
-	if (byteswritten > MAX_RECORDING_SIZE) {
-		/* force file close when at the limit */
-		Log_print("AVI max file size reached; closing file");
-		return 0;
-	}
 
 	/* check expected file data written equals the calculated size */
 	return frame_size == expected_frame_size;
 }
 
-/* AVI_AddVideoFrame adds a video frame to the stream and updates the video
+/* AVI_VideoFrame adds a video frame to the stream and updates the video
    statistics. */
-static int AVI_AddVideoFrame(void) {
-	int size;
-	int result;
-	int is_keyframe;
-
-	/* When a codec uses interframes (deltas from the previous frame), a
-	   keyframe is needed every keyframe interval. */
-	if (video_codec->uses_interframes) {
-		keyframe_count--;
-		if (keyframe_count <= 0) {
-			is_keyframe = TRUE;
-			keyframe_count = video_codec_keyframe_interval;
-		}
-		else {
-			is_keyframe = FALSE;
-		}
-	}
-	else {
-		is_keyframe = TRUE;
-	}
-
-	size = video_codec->frame((UBYTE *)Screen_atari, is_keyframe, video_buffer, video_buffer_size);
-	if (size < 0) {
-		/* failed creating video frame; force close of file */
-		Log_print("video codec %s failed encoding frame", video_codec->codec_id);
-		return 0;
-	}
-	result = AVI_WriteFrame(video_buffer, size, VIDEO_FRAME_FLAG, is_keyframe);
-	if (!result) {
-		/* failed during write; force close of file */
-		return 0;
-	}
-
-	/* update statistics */
-	video_frame_count++;
-	total_video_size += size;
-	if (size < smallest_video_frame) {
-		smallest_video_frame = size;
-	}
-	if (size > largest_video_frame) {
-		largest_video_frame = size;
-	}
-
-	return 1;
+static int AVI_VideoFrame(FILE *fp, const UBYTE *buf, int bufsize, int is_keyframe) {
+	return AVI_WriteFrame(fp, buf, bufsize, VIDEO_FRAME_FLAG, is_keyframe);
 }
 
 #ifdef SOUND
-/* AVI_AddAudioSamples adds audio data to the stream and update the audio
+/* AVI_AudioFrame adds audio data to the stream and update the audio
    statistics. */
-static int AVI_AddAudioSamples(const UBYTE *buf, int num_samples) {
-	int size;
-	int result;
-
-	if (!buf) {
-		/* This happens at file close time, checking if audio codec has samples
-		   remaining */
-		if (!audio_codec->another_frame()) {
-			/* If the codec doesn't support buffered frames or there's nothing
-			   remaining, there's no need to try to write another frame */
-			return 1;
-		}
-	}
-
-	do {
-		size = audio_codec->frame(buf, num_samples, audio_buffer, audio_buffer_size);
-		if (size < 0) {
-			/* failed creating video frame; force close of file */
-			Log_print("audio codec %s failed encoding frame", audio_codec->codec_id);
-			return 0;
-		}
-
-		/* If audio frame size is zero, that means the codec needs more samples
-		   before it can create a frame. See audio_codec_adpcm.c for an example.
-		   Only if there is some data do we write the frame to the file. */
-		if (size > 0) {
-			result = AVI_WriteFrame(audio_buffer, size, AUDIO_FRAME_FLAG, TRUE);
-			if (!result) {
-				/* failed during write; force close of file */
-				return 0;
-			}
-			samples_written += num_samples;
-
-			/* for next loop, only output samples remaining from previous frame */
-			num_samples = 0;
-		}
-	} while (audio_codec->another_frame());
-
-	return 1;
+static int AVI_AudioFrame(FILE *fp, const UBYTE *buf, int bufsize) {
+	return AVI_WriteFrame(fp, buf, bufsize, AUDIO_FRAME_FLAG, TRUE);
 }
 #endif
 
-static int AVI_WriteIndex(void) {
+static int AVI_WriteIndex(FILE *fp) {
 	int i;
 	int offset;
 	int size;
@@ -526,60 +414,37 @@ static int AVI_WriteIndex(void) {
 	}
 
 	chunk_size = ftell(fp) - chunk_size;
+	byteswritten += chunk_size;
 	return (chunk_size == 8 + index_size);
 }
 
-/* AVI_CloseFile must be called to create a valid AVI file, because the header
+static int AVI_SizeCheck(int size) {
+	return size < MAX_RIFF_FILE_SIZE;
+}
+
+/* AVI_Finalize must be called to create a valid AVI file, because the header
    at the beginning of the file must be modified to indicate the number of
    samples in the file.
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
-static int AVI_CloseFile(void)
+static int AVI_Finalize(FILE *fp)
 {
-	int seconds;
 	int result = 1;
 
-#ifdef SOUND
-	/* Force audio codec to write out the last frame. This only occurs in codecs
-	   with fixed block alignments */
-	if (num_streams == 2) {
-		if (audio_codec->flush((float)(video_frame_count / fps))) {
-			/* Force audio codec to write out any remaining frames. This only
-			   occurs in codecs that buffer frames or force fixed block sizes */
-			result = AVI_AddAudioSamples(NULL, 0);
+	size_movi = ftell(fp) - size_movi; /* movi payload ends here */
+	result = AVI_WriteIndex(fp);
+	if (result > 0) {
+		size_riff = ftell(fp) - 8;
+		result = AVI_WriteHeader(fp);
+
+		if (!result) {
+			Log_print("Failed writing AVI header; file will not be playable.");
 		}
 	}
-#endif
-
-	if (result) {
-		size_movi = ftell(fp) - size_movi; /* movi payload ends here */
-		result = AVI_WriteIndex();
-		if (result > 0) {
-			size_riff = ftell(fp) - 8;
-			result = AVI_WriteHeader();
-
-			if (result &&  video_frame_count > 0) {
-				seconds = (int)(video_frame_count / fps);
-				Log_print("AVI stats: %d:%02d:%02d, %dMB, %d frames; video codec avg frame size %.1fkB, min=%.1fkB, max=%.1fkB", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten / 1024 / 1024, video_frame_count, total_video_size / video_frame_count / 1024.0, smallest_video_frame / 1024.0, largest_video_frame / 1024.0);
-			}
-			else {
-				Log_print("Failed writing AVI header; file will not be playable.");
-			}
-		}
-		else {
-			Log_print("Failed writing AVI index; file will not be playable.");
-		}
+	else {
+		Log_print("Failed writing AVI index; file will not be playable.");
 	}
-	fclose(fp);
-	fp = NULL;
-
-#ifdef SOUND
-	if (num_streams == 2) {
-		CODECS_AUDIO_End();
-	}
-#endif
-	CODECS_VIDEO_End();
 
 	free(frame_indexes);
 	frame_indexes = NULL;
@@ -589,14 +454,15 @@ static int AVI_CloseFile(void)
 
 
 CONTAINER_t Container_AVI = {
-    "avi",
-    "AVI format multimedia",
-    &AVI_OpenFile,
+	"avi",
+	"AVI format multimedia",
+	&AVI_Prepare,
 #ifdef SOUND
-    &AVI_AddAudioSamples,
+	&AVI_AudioFrame,
 #else
-    NULL,
+	NULL,
 #endif
-	&AVI_AddVideoFrame,
-    &AVI_CloseFile,
+	&AVI_VideoFrame,
+	&AVI_SizeCheck,
+	&AVI_Finalize,
 };

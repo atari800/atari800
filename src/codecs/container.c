@@ -27,7 +27,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "screen.h"
 #include "util.h"
+#include "log.h"
 #include "codecs/container.h"
 #ifdef SOUND
 #include "sound.h"
@@ -79,6 +81,23 @@ static CONTAINER_t *known_containers[] = {
 	NULL,
 };
 
+static FILE *fp = NULL;
+
+/* Some codecs allow for keyframes (full frame compression) and inter-frames
+   (only the differences from the previous frame) */
+static int keyframe_count;
+
+/* audio statistics */
+static ULONG audio_frame_count;
+static ULONG total_audio_size;
+static ULONG smallest_audio_frame;
+static ULONG largest_audio_frame;
+
+/* video statistics */
+static ULONG total_video_size;
+static ULONG smallest_video_frame;
+static ULONG largest_video_frame;
+
 
 static CONTAINER_t *match_container(const char *id)
 {
@@ -97,7 +116,7 @@ static CONTAINER_t *match_container(const char *id)
 
 
 /* Convenience function to check if container type is supported. */
-int CODECS_CONTAINER_IsSupported(const char *filename)
+int CONTAINER_IsSupported(const char *filename)
 {
 	CONTAINER_t *c;
 
@@ -107,12 +126,31 @@ int CODECS_CONTAINER_IsSupported(const char *filename)
 }
 
 
+static int close_codecs(void)
+{
+#ifdef VIDEO_RECORDING
+	if (video_codec) {
+		CODECS_VIDEO_End();
+		video_codec = NULL;
+	}
+#endif
+#ifdef SOUND
+	if (audio_codec) {
+		CODECS_AUDIO_End();
+		audio_codec = NULL;
+	}
+#endif
+	container = NULL;
+
+	return 0;
+}
+
 /* Sets the global container variable if the filename has an extension that
    matches a known container. It will also set the audio_codec and video_codec
    if the container supports either. For each audio or video codec that is not
    used, they will be set to NULL so calling functions can check those variables
    to determine if audio or video is being used. */
-int CODECS_CONTAINER_Open(const char *filename)
+int CONTAINER_Open(const char *filename)
 {
 	container = match_container(filename);
 
@@ -120,14 +158,26 @@ int CODECS_CONTAINER_Open(const char *filename)
 
 		/* initialize variables common to all containers */
 		fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-		video_frame_count = 0;
 		byteswritten = 0;
+
+		keyframe_count = 0; /* force first frame to be keyframe */
+
+		/* video statistics */
+		video_frame_count = 0;
+		total_video_size = 0;
+		smallest_video_frame = 0xffffffff;
+		largest_video_frame = 0;
+
+		/* audio statistics */
+		audio_frame_count = 0;
+		total_audio_size = 0;
+		smallest_audio_frame = 0xffffffff;
+		largest_audio_frame = 0;
 
 #ifdef SOUND
 		if (Sound_enabled) {
 			if (!CODECS_AUDIO_Init()) {
-				container = NULL;
-				return 0;
+				return close_codecs();
 			}
 		}
 		else {
@@ -135,15 +185,9 @@ int CODECS_CONTAINER_Open(const char *filename)
 		}
 #endif
 #ifdef VIDEO_RECORDING
-		if (container->save_video) {
+		if (container->video_frame) {
 			if (!CODECS_VIDEO_Init()) {
-#ifdef SOUND
-				if (audio_codec) {
-					CODECS_AUDIO_End();
-				}
-#endif
-				container = NULL;
-				return 0;
+				return close_codecs();
 			}
 		}
 		else {
@@ -167,22 +211,182 @@ int CODECS_CONTAINER_Open(const char *filename)
 			}
 		}
 #endif
-
-		if (!container->open(filename)) {
-#ifdef VIDEO_RECORDING
-			if (video_codec) {
-				CODECS_VIDEO_End();
-				video_codec = NULL;
+		fp = fopen(filename, "wb");
+		if (fp) {
+			if (!container->prepare(fp)) {
+				fclose(fp);
+				fp = NULL;
 			}
-#endif
-#ifdef SOUND
-			if (audio_codec) {
-				CODECS_AUDIO_End();
-				audio_codec = NULL;
-			}
-#endif
-			container = NULL;
 		}
 	}
-	return (container != NULL);
+
+	if (!fp) {
+		close_codecs();
+	}
+
+	return (fp != NULL);
+}
+
+int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples)
+{
+	int result;
+	int size;
+
+	if (!fp || !audio_codec) return 0;
+
+	if (!buf) {
+		/* This happens at file close time, checking if audio codec has samples
+		   remaining */
+		if (!audio_codec->another_frame()) {
+			/* If the codec doesn't support buffered frames or there's nothing
+			   remaining, there's no need to try to write another frame */
+			return 1;
+		}
+	}
+	else if (!video_codec) {
+		/* Before file close time, there is one call to this function every
+		   video frame. If the video codec is not being used, we need to count
+		   frames here because frame count is used to determine the duration of
+		   the audio file. */
+		video_frame_count++;
+	}
+
+	do {
+		size = audio_codec->frame(buf, num_samples, audio_buffer, audio_buffer_size);
+		if (size < 0) {
+			/* failed creating video frame; force close of file */
+			Log_print("audio codec %s failed encoding frame", audio_codec->codec_id);
+			return 0;
+		}
+
+		/* If audio frame size is zero, that means the codec needs more samples
+		   before it can create a frame. See audio_codec_adpcm.c for an example.
+		   Only if there is some data do we write the frame to the file. */
+		if (size > 0) {
+			if (!container->audio_frame(fp, audio_buffer, size)) {
+				/* failed during write; force close of file */
+				return 0;
+			}
+
+			/* for next loop, only output samples remaining from previous frame */
+			num_samples = 0;
+
+			/* update statistics */
+			byteswritten += size;
+			audio_frame_count++;
+			total_audio_size += size;
+		}
+		if (size < smallest_audio_frame) {
+			smallest_audio_frame = size;
+		}
+		if (size > largest_audio_frame) {
+			largest_audio_frame = size;
+		}
+	} while (audio_codec->another_frame());
+
+	result = container->size_check(ftell(fp));
+	if (!result) {
+		Log_print("%s maximum file size reached, closing file", container->container_id);
+	}
+	return result;
+}
+
+int CONTAINER_AddVideoFrame(void)
+{
+	int size;
+	int result;
+	int is_keyframe;
+
+	if (!fp || !video_codec) return 0;
+
+	/* When a codec uses interframes (deltas from the previous frame), a
+	   keyframe is needed every keyframe interval. */
+	if (video_codec->uses_interframes) {
+		keyframe_count--;
+		if (keyframe_count <= 0) {
+			is_keyframe = TRUE;
+			keyframe_count = video_codec_keyframe_interval;
+		}
+		else {
+			is_keyframe = FALSE;
+		}
+	}
+	else {
+		is_keyframe = TRUE;
+	}
+
+	size = video_codec->frame((UBYTE *)Screen_atari, is_keyframe, video_buffer, video_buffer_size);
+	if (size < 0) {
+		/* failed creating video frame; force close of file */
+		Log_print("video codec %s failed encoding frame", video_codec->codec_id);
+		return 0;
+	}
+	result = container->video_frame(fp, video_buffer, size, is_keyframe);
+	if (result) {
+		/* update statistics */
+		byteswritten += size;
+		video_frame_count++;
+		total_video_size += size;
+		if (size < smallest_video_frame) {
+			smallest_video_frame = size;
+		}
+		if (size > largest_video_frame) {
+			largest_video_frame = size;
+		}
+
+		result = container->size_check(ftell(fp));
+		if (!result) {
+			Log_print("%s maximum file size reached, closing file", container->container_id);
+		}
+	}
+
+	return result;
+}
+
+/* Closes the current container, flushing any buffered audio data and updating
+   the container metadata with the final sizes of all video and audio frames
+   written. */
+int CONTAINER_Close(int file_ok)
+{
+	int result = 1;
+	int mega = FALSE;
+	int size;
+	int seconds;
+
+	if (!fp || !container) return 0;
+
+	/* Note that all video frames will be written, but the audio codec may
+		still have frames buffered. */
+
+	if (file_ok && audio_codec && audio_codec->flush((float)(video_frame_count / fps))) {
+		/* Force audio codec to write out any remaining frames. This only
+			occurs in codecs that buffer frames or force fixed block sizes */
+		result = CONTAINER_AddAudioSamples(NULL, 0);
+	}
+
+	if (result) {
+		clearerr(fp);
+		result = container->finalize(fp);
+		if (ferror(fp)) {
+			Log_print("Error finalizing %s file\n", container->container_id);
+			result = 0;
+		}
+		else {
+			/* success, print out stats */
+			seconds = (int)(video_frame_count / fps);
+			size = byteswritten / 1024;
+			if (size > 1024 * 1024) {
+				size /= 1024;
+				mega = TRUE;
+			}
+			if (smallest_audio_frame == 0xffffffff) smallest_audio_frame = 0;
+			if (smallest_video_frame == 0xffffffff) smallest_video_frame = 0;
+			Log_print("%s stats: %d:%02d:%02d, %d%sB, %d frames, video %d/%d/%d, audio %d/%d/%d", container->container_id, seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size, mega ? "M": "k", video_frame_count, smallest_video_frame, total_video_size / video_frame_count, largest_video_frame, smallest_audio_frame, total_audio_size / video_frame_count, largest_audio_frame);
+		}
+	}
+	fclose(fp);
+
+	close_codecs();
+
+	return result;
 }

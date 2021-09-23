@@ -34,21 +34,17 @@
 #include "codecs/audio.h"
 
 
-static FILE *fp = NULL;
-
 static int fact_chunk_size;
 
-/* WAV_OpenFile will start a new sound file and write out the header. Note that
-   the file will not be valid until the it is closed with WAV_CloseFile because
+/* WAV_Prepare will start a new sound file and write out the header. Note that
+   the file will not be valid until the it is closed with WAV_Finalize because
    the length information contained in the header must be updated with the
    number of samples in the file.
 
    RETURNS: TRUE if file opened with no problems, FALSE if failure during open
    */
-static int WAV_OpenFile(const char *filename)
+static int WAV_Prepare(FILE *fp)
 {
-	if (!(fp = fopen(filename, "wb")))
-		return 0;
 	/*
 	The RIFF header:
 
@@ -111,120 +107,65 @@ static int WAV_OpenFile(const char *filename)
 	fputl(0, fp); /* length to be filled in upon file close */
 
 	if (ftell(fp) != 44 + audio_out->extra_data_size + fact_chunk_size) {
-		fclose(fp);
 		return 0;
 	}
 	return 1;
 }
 
-/* WAV_WriteSamples will dump PCM data to the WAV file. The best way
+/* WAV_AudioFrame will dump PCM data to the WAV file. The best way
    to do this for Atari800 is probably to call it directly after
    POKEYSND_Process(buffer, size) with the same values (buffer, size)
 
-   RETURNS: the number of bytes written to the file (should be equivalent to the
-   input num_samples * sample size) */
-static int WAV_WriteSamples(const UBYTE *buf, int num_samples)
+   RETURNS: 1 if frame successfully written, 0 if not */
+static int WAV_AudioFrame(FILE *fp, const UBYTE *buf, int bufsize)
 {
 	int size;
 
-	if (!fp) return 0;
-
-	if (!buf) {
-		/* This happens at file close time, checking if audio codec has samples
-		   remaining */
-		if (!audio_codec->another_frame()) {
-			/* If the codec doesn't support buffered frames or there's nothing
-			   remaining, there's no need to try to write another frame */
-			return 1;
-		}
+	size = fwrite(buf, 1, bufsize, fp);
+	if (size < bufsize) {
+		Log_print("Failed writing audio: expected %d, wrote %d", bufsize, size);
+		size = 0;
 	}
 
-	do {
-		video_frame_count++;
-
-		size = audio_codec->frame(buf, num_samples, audio_buffer, audio_buffer_size);
-		if (size < 0) {
-			/* failed creating video frame; force close of file */
-			Log_print("audio codec %s failed encoding frame", audio_codec->codec_id);
-			return 0;
-		}
-
-		/* If audio frame size is zero, that means the codec needs more samples
-		   before it can create a frame. See audio_codec_adpcm.c for an example.
-		   Only if there is some data do we write the frame to the file. */
-		if (size > 0) {
-			size = fwrite(audio_buffer, 1, size, fp);
-			if (!size) {
-				/* failed during write; force close of file */
-				return 0;
-			}
-			byteswritten += size;
-
-			/* for next loop, only output samples remaining from previous frame */
-			num_samples = 0;
-		}
-	} while (audio_codec->another_frame());
-
-	return 1;
+	return (size > 0);
 }
 
+static int WAV_SizeCheck(int size) {
+	return size < MAX_RIFF_FILE_SIZE;
+}
 
-/* WAV_CloseFile must be called to create a valid WAV file, because the header
+/* WAV_Finalize must be called to create a valid WAV file, because the header
    at the beginning of the file must be modified to indicate the number of
    samples in the file.
 
    RETURNS: TRUE if file closed with no problems, FALSE if failure during close
    */
-static int WAV_CloseFile(void)
+static int WAV_Finalize(FILE *fp)
 {
 	int result = TRUE;
 	char aligned = 0;
-	int seconds;
 
-	if (fp != NULL) {
-		if (audio_codec->flush((float)(video_frame_count / fps))) {
-			/* Force audio codec to write out any remaining frames. This only
-			   occurs in codecs that buffer frames or force fixed block sizes */
-			result = WAV_WriteSamples(NULL, 0);
-		}
+	/* A RIFF file's chunks must be word-aligned. So let's align. */
+	if (byteswritten & 1) {
+		fputc(0, fp);
+		aligned = 1;
+	}
 
-		if (result) {
-			clearerr(fp);
+	/* Sound file is finished, so modify header and close it. */
 
-			/* A RIFF file's chunks must be word-aligned. So let's align. */
-			if (byteswritten & 1) {
-				fputc(0, fp);
-				aligned = 1;
-			}
+	/* RIFF header's size field must equal the size of all chunks with
+		alignment, so the alignment byte is added. */
+	fseek(fp, 4, SEEK_SET);	/* Seek past RIFF */
+	fputl(byteswritten + 36 + aligned, fp);
 
-			CODECS_AUDIO_End();
+	/* Alignment byte is ignored in the "data" chunk size field. */
+	fseek(fp, 40 + audio_out->extra_data_size + fact_chunk_size, SEEK_SET);
+	fputl(byteswritten, fp);
 
-			/* Sound file is finished, so modify header and close it. */
-
-			/* RIFF header's size field must equal the size of all chunks with
-			   alignment, so the alignment byte is added. */
-			fseek(fp, 4, SEEK_SET);	/* Seek past RIFF */
-			fputl(byteswritten + 36 + aligned, fp);
-
-			/* Alignment byte is ignored in the "data" chunk size field. */
-			fseek(fp, 40 + audio_out->extra_data_size + fact_chunk_size, SEEK_SET);
-			fputl(byteswritten, fp);
-
-			if (fact_chunk_size) {
-				/* number of samples is needed in non-PCM formats */
-				fseek(fp, 44 + audio_out->extra_data_size, SEEK_SET);
-				fputl(audio_out->samples_processed, fp);
-			}
-
-			seconds = (int)(video_frame_count / fps);
-			Log_print("WAV stats: %d:%02d:%02d, %d%sB, %d frames", seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, byteswritten < 1024*1024 ? byteswritten / 1024 : byteswritten / 1024 / 1024, byteswritten < 1024*1024 ? "k" : "M", video_frame_count);
-
-			if (ferror(fp)) {
-				Log_print("Error writing WAV header\n");
-				result = 0;
-			}
-		}
-		fclose(fp);
+	if (fact_chunk_size) {
+		/* number of samples is needed in non-PCM formats */
+		fseek(fp, 44 + audio_out->extra_data_size, SEEK_SET);
+		fputl(audio_out->samples_processed, fp);
 	}
 
 	return result;
@@ -232,10 +173,11 @@ static int WAV_CloseFile(void)
 
 
 CONTAINER_t Container_WAV = {
-    "wav",
-    "WAV format audio",
-    &WAV_OpenFile,
-    &WAV_WriteSamples,
-    NULL,
-    &WAV_CloseFile,
+	"wav",
+	"WAV format audio",
+	&WAV_Prepare,
+	&WAV_AudioFrame,
+	NULL,
+	&WAV_SizeCheck,
+	&WAV_Finalize,
 };
