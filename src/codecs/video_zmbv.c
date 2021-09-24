@@ -1,5 +1,5 @@
 /*
- * video_codec_zmbv.c - Video codec for Zip Motion Blocks Video
+ * video_zmbv.c - Video codec for Zip Motion Blocks Video
  *
  * This is a derivative work of code from the FFmpeg project. The FFmpeg code
  * used here is licensed under the LGPLv2.1; Provisions within that license
@@ -37,11 +37,12 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "video_codec_zmbv.h"
+#include "codecs/video_zmbv.h"
 #include "screen.h"
 #include "colours.h"
 #include "log.h"
 #include "util.h"
+#include "file_export.h"
 
 /* When zlib is available, ZMBV is the most efficient video codec in atari800
    and is the default. Without zlib, the RLE codec becomes the default because

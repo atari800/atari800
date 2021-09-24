@@ -38,9 +38,8 @@
 #include "screen.h"
 #include "sio.h"
 #include "util.h"
+#ifndef DREAMCAST
 #include "file_export.h"
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
-#include "multimedia.h"
 #endif
 
 ULONG *Screen_atari = NULL;
@@ -69,7 +68,6 @@ int Screen_show_atari_speed = FALSE;
 int Screen_show_disk_led = TRUE;
 int Screen_show_sector_counter = FALSE;
 int Screen_show_1200_leds = TRUE;
-int Screen_show_multimedia_stats = TRUE;
 
 #ifndef DREAMCAST
 #ifdef HAVE_LIBPNG
@@ -82,6 +80,9 @@ static char screenshot_filename_format[FILENAME_MAX];
 static int screenshot_no_last = -1;
 static int screenshot_no_max = 0;
 
+#if defined(SOUND) || defined(VIDEO_RECORDING)
+int Screen_show_multimedia_stats = TRUE;
+#endif
 #endif /* !DREAMCAST */
 
 int Screen_Initialise(int *argc, char *argv[])
@@ -100,7 +101,7 @@ int Screen_Initialise(int *argc, char *argv[])
 				screenshot_no_max = Util_filenamepattern(argv[++i], screenshot_filename_format, FILENAME_MAX, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 			else a_m = TRUE;
 		}
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 		else if (strcmp(argv[i], "-showstats") == 0) {
 			Screen_show_multimedia_stats = TRUE;
 		}
@@ -118,7 +119,7 @@ int Screen_Initialise(int *argc, char *argv[])
 				help_only = TRUE;
 #ifndef DREAMCAST
 				Log_print("\t-screenshots <p> Set filename pattern for screenshots");
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 				Log_print("\t-showstats       Show recording stats of video or audio");
 				Log_print("\t-no-showstats    Don't show recording stats of video or audio");
 #endif
@@ -168,8 +169,10 @@ int Screen_ReadConfig(char *string, char *ptr)
 		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(string, "SCREEN_SHOW_1200XL_LEDS") == 0)
 		return (Screen_show_1200_leds = Util_sscanbool(ptr)) != -1;
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
 	else if (strcmp(string, "SCREEN_SHOW_MULTIMEDIA_STATS") == 0)
 		return (Screen_show_multimedia_stats = Util_sscanbool(ptr)) != -1;
+#endif
 	else return FALSE;
 	return TRUE;
 }
@@ -180,7 +183,9 @@ void Screen_WriteConfig(FILE *fp)
 	fprintf(fp, "SCREEN_SHOW_IO_ACTIVITY=%d\n", Screen_show_disk_led);
 	fprintf(fp, "SCREEN_SHOW_IO_COUNTER=%d\n", Screen_show_sector_counter);
 	fprintf(fp, "SCREEN_SHOW_1200XL_LEDS=%d\n", Screen_show_1200_leds);
+#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
 	fprintf(fp, "SCREEN_SHOW_MULTIMEDIA_STATS=%d\n", Screen_show_multimedia_stats);
+#endif
 }
 
 #define SMALLFONT_WIDTH    5
@@ -216,7 +221,8 @@ void Screen_WriteConfig(FILE *fp)
 #define SMALLFONT_SLASH    38
 #define SMALLFONT_COLON    39
 #define SMALLFONT_DOT      40
-#define SMALLFONT_COUNT    41
+#define SMALLFONT_UNDER    41
+#define SMALLFONT_COUNT    42
 #define SMALLFONT_____ 0x00
 #define SMALLFONT____X 0x01
 #define SMALLFONT___X_ 0x02
@@ -601,6 +607,15 @@ static void SmallFont_DrawChar(UBYTE *screen, int ch, UBYTE color1, UBYTE color2
 			SMALLFONT_____,
 			SMALLFONT__X__,
 			SMALLFONT_____
+		},
+		{
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_____,
+			SMALLFONT_XXX_
 		}
 	};
 	int y;
@@ -702,7 +717,8 @@ void Screen_Draw1200LED(void)
 	}
 }
 
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(AVI_VIDEO_RECORDING)
+#ifndef DREAMCAST
+#if defined(SOUND) || defined(VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -740,13 +756,16 @@ static UBYTE *SmallFont_DrawString(UBYTE *screen, char *s, UBYTE color1, UBYTE c
 	while (*s) {
 		cin = *s++;
 		if ((cin >= '0') && (cin <= '9')) {
-			cout = cin = '0';
+			cout = cin - '0';
 		}
 		else if ((cin >= 'A') && (cin <= 'Z')) {
 			cout = cin - 'A' + SMALLFONT_A;
 		}
 		else if ((cin >= 'a') && (cin <= 'z')) {
 			cout = cin - 'a' + SMALLFONT_A;
+		}
+		else if (cin == '_') {
+			cout = SMALLFONT_UNDER;
 		}
 		else {
 			cout = SMALLFONT_SPACE;
@@ -769,7 +788,7 @@ void Screen_DrawMultimediaStats(void)
 		char *media_description;
 		UBYTE *screen;
 
-		if (Multimedia_GetStats(&elapsed_time, &size, &media_description)) {
+		if (File_Export_GetRecordingStats(&elapsed_time, &size, &media_description)) {
 			num = 10 + strlen(media_description) + 2 + 7 + 2 + 6;
 			screen = (UBYTE *) Screen_atari + Screen_visible_x1 + (Screen_visible_x2 - Screen_visible_x1) / 2 - (num * SMALLFONT_WIDTH) / 2 + (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
 
@@ -797,7 +816,6 @@ void Screen_DrawMultimediaStats(void)
 			SmallFont_DrawInt(screen, num, 0x0f, 0x34);
 			screen = SmallFont_DrawString(screen + SMALLFONT_WIDTH, "     ", 0x0f, 0x34);
 
-			size = size / 1024;
 			if (size < 1024) {
 				/* draw 9999KB */
 				SmallFont_DrawInt(screen, size, 0x0f, 0x34);
@@ -827,27 +845,19 @@ void Screen_DrawMultimediaStats(void)
 		}
 	}
 }
-#endif
+#endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
 
-#ifndef DREAMCAST
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
-	int is_png;
-	FILE *fp;
+	int result;
 	ULONG *main_screen_atari;
 	UBYTE *ptr1;
 	UBYTE *ptr2;
-	if (Util_striendswith(filename, ".pcx"))
-		is_png = 0;
-#ifdef HAVE_LIBPNG
-	else if (Util_striendswith(filename, ".png"))
-		is_png = 1;
-#endif
-	else
+
+	if (!File_Export_ImageTypeSupported(filename)) {
+		Log_print("Unsupported image type for file: %s", filename);
 		return FALSE;
-	fp = fopen(filename, "wb");
-	if (fp == NULL)
-		return FALSE;
+	}
 	main_screen_atari = Screen_atari;
 	ptr1 = (UBYTE *) Screen_atari;
 	if (interlaced) {
@@ -858,19 +868,15 @@ int Screen_SaveScreenshot(const char *filename, int interlaced)
 	else {
 		ptr2 = NULL;
 	}
-	if (is_png) {
-#ifdef HAVE_LIBPNG
-		PNG_SaveScreen(fp, ptr1, ptr2);
-#endif
+	result = File_Export_SaveScreen(filename, ptr1, ptr2);
+	if (!result) {
+		Log_print("Failed saving to file: %s", filename);
 	}
-	else
-		PCX_SaveScreen(fp, ptr1, ptr2);
-	fclose(fp);
 	if (interlaced) {
 		free(Screen_atari);
 		Screen_atari = main_screen_atari;
 	}
-	return TRUE;
+	return result;
 }
 
 void Screen_SaveNextScreenshot(int interlaced)

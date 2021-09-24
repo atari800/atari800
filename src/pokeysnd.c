@@ -31,7 +31,7 @@
 #else
 #include "atari.h"
 #ifndef __PLUS
-#include "multimedia.h"
+#include "file_export.h"
 #else
 #include "sound_win.h"
 #endif
@@ -295,7 +295,7 @@ static void init_vol_only(void)
 
 int POKEYSND_DoInit(void)
 {
-	Multimedia_CloseFile();
+	File_Export_StopRecording();
 
 #ifdef VOL_ONLY_SOUND
 	init_vol_only();
@@ -362,7 +362,7 @@ void POKEYSND_Process(void *sndbuffer, int sndn)
 	VOTRAXSND_Process(sndbuffer,sndn);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
-	Multimedia_WriteAudio((const unsigned char *)sndbuffer, sndn);
+	File_Export_WriteAudio((const unsigned char *)sndbuffer, sndn);
 #endif
 }
 
@@ -384,7 +384,7 @@ int POKEYSND_UpdateProcessBuffer(void)
 	VOTRAXSND_Process(POKEYSND_process_buffer, sndn);
 #endif
 #if !defined(__PLUS) && !defined(ASAP)
-	Multimedia_WriteAudio((const unsigned char *)POKEYSND_process_buffer, sndn);
+	File_Export_WriteAudio((const unsigned char *)POKEYSND_process_buffer, sndn);
 #endif
 	return sndn;
 }

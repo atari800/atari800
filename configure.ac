@@ -324,6 +324,7 @@ else
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 fi
+AM_CONDITIONAL([WITH_LIBPNG], test "$SUPPORTS_LIBPNG" = "yes")
 
 
 dnl Set OBJS and libraries depending on host and target...
@@ -1055,6 +1056,14 @@ if [[ "$with_sound" != no ]]; then
               [Emulate the Alien Group Voice Box (default=ON)],
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
+
+    dnl Need SUPPORTS_LIBMP3LAME shell variable for mp3 audio codec test below
+	AC_CHECK_LIB(mp3lame,lame_init,[LIBS="-lmp3lame $LIBS"; SUPPORTS_LIBMP3LAME=yes],[SUPPORTS_LIBMP3LAME=no])
+    supported_audio_codecs="pcm adpcm mulaw"
+    if [[ "$SUPPORTS_LIBMP3LAME" = "yes" ]]; then
+        AC_DEFINE(HAVE_LIBMP3LAME,1,[Supports LAME mp3 audio compression library.])
+        supported_audio_codecs="$supported_audio_codecs mp3"
+    fi
 else
     WANT_NONLINEAR_MIXING="no"
     WANT_SYNCHRONIZED_SOUND="no"
@@ -1065,24 +1074,33 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
+    SUPPORTS_LIBMP3LAME="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$SUPPORTS_LIBMP3LAME" = "yes")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     have_bitmapped_screen=yes
     A8_OPTION(videorecording,"yes",
             [Support video recording to AVI files (default=ON)],
-            AVI_VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
+            VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
+    supported_image_formats="pcx"
+    if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+        supported_image_formats="$supported_image_formats png"
+    fi
 else
     have_bitmapped_screen="no"
-    WANT_AVI_VIDEO_RECORDING="no"
+    WANT_VIDEO_RECORDING="no"
 fi
 
-AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_AVI_VIDEO_RECORDING" = "yes")
+if [[ "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = yes ]]; then
+    AC_DEFINE(MULTIMEDIA, 1, [Define to provide multimedia recording capability.])
+fi
+AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
@@ -1090,7 +1108,7 @@ AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_
 
 dnl Set video recording configuration options
 
-if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
+if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
     supported_video_codecs="rle"
     if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
         A8_OPTION(pngcodec,"yes",
@@ -1112,9 +1130,9 @@ if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
     fi
 fi
 
-AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_AVI_VIDEO_RECORDING" = "yes")
-AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
-AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_AVI_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
 
 A8_OPTION(ide,$WANT_IDE,
           [Provide IDE emulation (default=ON)],
@@ -1327,6 +1345,7 @@ if [[ "$a8_target" = default ]]; then
 fi
 if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
+        echo "Supported screenshot formats..........: $supported_image_formats"
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
     fi
@@ -1365,12 +1384,13 @@ if [[ "$with_sound" != no ]]; then
     fi
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
+    echo "    Supported audio codecs............: $supported_audio_codecs"
 else
     echo "    (Sound sub-options disabled)"
 fi
-echo "Using video recording?................: $WANT_AVI_VIDEO_RECORDING"
-if [[ "$WANT_AVI_VIDEO_RECORDING" = "yes" ]]; then
-    echo "Supported video codecs................: $supported_video_codecs"
+echo "Using video recording?................: $WANT_VIDEO_RECORDING"
+if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
+    echo "    Supported video codecs............: $supported_video_codecs"
 fi
 
 if [[ "$a8_host" = "falcon" ]]; then

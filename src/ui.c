@@ -82,9 +82,9 @@
 #include "pokeysnd.h"
 #include "sound.h"
 #endif /* SOUND */
-#if defined(SOUND) || defined(AVI_VIDEO_RECORDING)
-#include "multimedia.h"
-#endif /* defined(SOUND) || defined(AVI_VIDEO_RECORDING) */
+#if defined(SOUND) || defined(VIDEO_RECORDING)
+#include "file_export.h"
+#endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
 #ifdef DIRECTX
 #include "win32\main.h"
 #include "win32\joystick.h"
@@ -1278,11 +1278,11 @@ static void SoundRecording(void)
 		UI_driver->fMessage("Can't record. Sound not enabled.", 1);
 		return;
 	}
-	if (!Multimedia_IsFileOpen()) {
+	if (!File_Export_IsRecording()) {
 		char buffer[FILENAME_MAX];
-		if (Multimedia_GetNextSoundFile(buffer, sizeof(buffer))) {
+		if (File_Export_GetNextSoundFile(buffer, sizeof(buffer))) {
 			/* file does not exist - we can create it */
-			FilenameMessage(Multimedia_OpenSoundFile(buffer)
+			FilenameMessage(File_Export_StartRecording(buffer)
 				? "Recording sound to file \"%s\""
 				: "Can't write to file \"%s\"", buffer);
 			return;
@@ -1290,20 +1290,20 @@ static void SoundRecording(void)
 		UI_driver->fMessage("All sound files exist!", 1);
 	}
 	else {
-		Multimedia_CloseFile();
+		File_Export_StopRecording();
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
 #endif /* defined(SOUND) && !defined(DREAMCAST) */
 
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 static void VideoRecording(void)
 {
-	if (!Multimedia_IsFileOpen()) {
+	if (!File_Export_IsRecording()) {
 		char buffer[FILENAME_MAX];
-		if (Multimedia_GetNextVideoFile(buffer, sizeof(buffer))) {
+		if (File_Export_GetNextVideoFile(buffer, sizeof(buffer))) {
 			/* file does not exist - we can create it */
-			FilenameMessage(Multimedia_OpenVideoFile(buffer)
+			FilenameMessage(File_Export_StartRecording(buffer)
 				? "Recording video to file \"%s\""
 				: "Can't write to file \"%s\"", buffer);
 			return;
@@ -1311,11 +1311,11 @@ static void VideoRecording(void)
 		UI_driver->fMessage("All video files exist!", 1);
 	}
 	else {
-		Multimedia_CloseFile();
+		File_Export_StopRecording();
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
-#endif /* AVI_VIDEO_RECORDING */
+#endif /* VIDEO_RECORDING */
 
 static int AutostartFile(void)
 {
@@ -4250,7 +4250,7 @@ void UI_Run(void)
 		UI_MENU_ACTION_ACCEL(UI_MENU_SOUND_RECORDING, "Sound Recording Start/Stop", "Alt+W"),
 #endif
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		UI_MENU_ACTION_ACCEL(UI_MENU_VIDEO_RECORDING, "Video Recording Start/Stop", "Alt+V"),
 #endif
 #ifndef CURSES_BASIC
@@ -4376,7 +4376,7 @@ void UI_Run(void)
 			break;
 #endif
 #endif
-#ifdef AVI_VIDEO_RECORDING
+#ifdef VIDEO_RECORDING
 		case UI_MENU_VIDEO_RECORDING:
 			VideoRecording();
 			break;

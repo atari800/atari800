@@ -1,5 +1,5 @@
 /*
- * video_codec_mrle.c - Video codec for Microsoft Run-Length Encoding format
+ * video_mrle.c - Video codec for Microsoft Run-Length Encoding format
  *
  * Copyright (C) 2021 Rob McMullen
  * Copyright (C) 1998-2021 Atari800 development team (see DOC/CREDITS)
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "file_export.h"
-#include "video_codec_mrle.h"
+#include "codecs/video.h"
+#include "codecs/video_mrle.h"
 #include "screen.h"
 #include "util.h"
 
@@ -361,6 +361,17 @@ static int MRLE_End(void)
 
 VIDEO_CODEC_t Video_Codec_MRLE = {
 	"rle",
+	"Microsoft Run-Length Encoding",
+	{'m', 'r', 'l', 'e'},
+	{1, 0, 0, 0},
+	TRUE,
+	&MRLE_Init,
+	&MRLE_CreateFrame,
+	&MRLE_End,
+};
+
+VIDEO_CODEC_t Video_Codec_MSRLE = {
+	"msrle",
 	"Microsoft Run-Length Encoding",
 	{'m', 'r', 'l', 'e'},
 	{1, 0, 0, 0},
