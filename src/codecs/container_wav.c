@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include "file_export.h"
 #include "log.h"
+#include "file_export.h"
 #include "codecs/container.h"
 #include "codecs/container_wav.h"
 #include "codecs/audio.h"
@@ -107,6 +108,7 @@ static int WAV_Prepare(FILE *fp)
 	fputl(0, fp); /* length to be filled in upon file close */
 
 	if (ftell(fp) != 44 + audio_out->extra_data_size + fact_chunk_size) {
+		File_Export_SetErrorMessage("Error writing WAV header");
 		return 0;
 	}
 	return 1;
@@ -123,6 +125,7 @@ static int WAV_AudioFrame(FILE *fp, const UBYTE *buf, int bufsize)
 
 	size = fwrite(buf, 1, bufsize, fp);
 	if (size < bufsize) {
+		File_Export_SetErrorMessage("Failed writing to WAV file");
 		Log_print("Failed writing audio: expected %d, wrote %d", bufsize, size);
 		size = 0;
 	}

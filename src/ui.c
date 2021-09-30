@@ -1282,9 +1282,12 @@ static void SoundRecording(void)
 		char buffer[FILENAME_MAX];
 		if (File_Export_GetNextSoundFile(buffer, sizeof(buffer))) {
 			/* file does not exist - we can create it */
-			FilenameMessage(File_Export_StartRecording(buffer)
-				? "Recording sound to file \"%s\""
-				: "Can't write to file \"%s\"", buffer);
+			if (File_Export_StartRecording(buffer)) {
+				FilenameMessage("Recording sound to file \"%s\"", buffer);
+			}
+			else {
+				UI_driver->fMessage(FILE_EXPORT_error_message, 1);
+			}
 			return;
 		}
 		UI_driver->fMessage("All sound files exist!", 1);
@@ -1303,9 +1306,12 @@ static void VideoRecording(void)
 		char buffer[FILENAME_MAX];
 		if (File_Export_GetNextVideoFile(buffer, sizeof(buffer))) {
 			/* file does not exist - we can create it */
-			FilenameMessage(File_Export_StartRecording(buffer)
-				? "Recording video to file \"%s\""
-				: "Can't write to file \"%s\"", buffer);
+			if (File_Export_StartRecording(buffer)) {
+				FilenameMessage("Recording video to file \"%s\"", buffer);
+			}
+			else {
+				UI_driver->fMessage(FILE_EXPORT_error_message, 1);
+			}
 			return;
 		}
 		UI_driver->fMessage("All video files exist!", 1);

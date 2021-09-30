@@ -30,12 +30,13 @@
 #include "screen.h"
 #include "util.h"
 #include "log.h"
+#include "file_export.h"
 #include "codecs/container.h"
 #ifdef SOUND
 #include "sound.h"
 #include "codecs/audio.h"
 #include "codecs/container_wav.h"
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 #include "codecs/container_mp3.h"
 #endif
 #endif
@@ -71,7 +72,7 @@ char description[32];
 static CONTAINER_t *known_containers[] = {
 #ifdef SOUND
 	&Container_WAV,
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 	&Container_MP3,
 #endif
 #endif
@@ -177,6 +178,8 @@ int CONTAINER_Open(const char *filename)
 #ifdef SOUND
 		if (Sound_enabled) {
 			if (!CODECS_AUDIO_Init()) {
+				/* error message set in codec */
+				Log_print(FILE_EXPORT_error_message);
 				return close_codecs();
 			}
 		}
@@ -187,6 +190,8 @@ int CONTAINER_Open(const char *filename)
 #ifdef VIDEO_RECORDING
 		if (container->video_frame) {
 			if (!CODECS_VIDEO_Init()) {
+				/* error message set in codec */
+				Log_print(FILE_EXPORT_error_message);
 				return close_codecs();
 			}
 		}
@@ -214,10 +219,19 @@ int CONTAINER_Open(const char *filename)
 		fp = fopen(filename, "wb");
 		if (fp) {
 			if (!container->prepare(fp)) {
+				/* error message set in container */
+				Log_print(FILE_EXPORT_error_message);
 				fclose(fp);
 				fp = NULL;
 			}
 		}
+		else {
+			File_Export_SetErrorMessageArg("Can't write to file \"%s\"", filename);
+		}
+	}
+	else {
+		File_Export_SetErrorMessageArg("Unsupported file type \"%s\"", filename);
+		Log_print(FILE_EXPORT_error_message);
 	}
 
 	if (!fp) {
@@ -352,6 +366,8 @@ int CONTAINER_Close(int file_ok)
 	int mega = FALSE;
 	int size;
 	int seconds;
+	int video_average;
+	int audio_average;
 
 	if (!fp || !container) return 0;
 
@@ -381,7 +397,15 @@ int CONTAINER_Close(int file_ok)
 			}
 			if (smallest_audio_frame == 0xffffffff) smallest_audio_frame = 0;
 			if (smallest_video_frame == 0xffffffff) smallest_video_frame = 0;
-			Log_print("%s stats: %d:%02d:%02d, %d%sB, %d frames, video %d/%d/%d, audio %d/%d/%d", container->container_id, seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size, mega ? "M": "k", video_frame_count, smallest_video_frame, total_video_size / video_frame_count, largest_video_frame, smallest_audio_frame, total_audio_size / video_frame_count, largest_audio_frame);
+			if (video_frame_count > 0) {
+				video_average = total_video_size / video_frame_count;
+				audio_average = total_audio_size / video_frame_count;
+			}
+			else {
+				video_average = 0;
+				audio_average = 0;
+			}
+			Log_print("%s stats: %d:%02d:%02d, %d%sB, %d frames, video %d/%d/%d, audio %d/%d/%d", container->container_id, seconds / 60 / 60, (seconds / 60) % 60, seconds % 60, size, mega ? "M": "k", video_frame_count, smallest_video_frame, video_average, largest_video_frame, smallest_audio_frame, audio_average, largest_audio_frame);
 		}
 	}
 	fclose(fp);

@@ -48,6 +48,9 @@
 
 #endif /* MULTIMEDIA */
 
+#define ERROR_MSG_MAX 40
+static char error_msg[ERROR_MSG_MAX];
+char *FILE_EXPORT_error_message = error_msg;
 
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
 int FILE_EXPORT_compression_level = 6;
@@ -57,6 +60,9 @@ int FILE_EXPORT_compression_level = 6;
 
 #ifdef SOUND
 #define DEFAULT_SOUND_FILENAME_FORMAT "atari###.wav"
+#ifdef AUDIO_CODEC_MP3
+#define DEFAULT_SOUND_FILENAME_FORMAT_MP3 "atari###.mp3"
+#endif
 static char sound_filename_format[FILENAME_MAX];
 static int sound_no_last = -1;
 static int sound_no_max = 0;
@@ -203,6 +209,17 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 24) & 0xff, fp);
 }
 
+void File_Export_SetErrorMessage(const char *string)
+{
+	Util_strlcpy(error_msg, string, ERROR_MSG_MAX);
+}
+
+void File_Export_SetErrorMessageArg(const char *format, const char *arg)
+{
+	char msg[FILENAME_MAX + 30];
+	snprintf(msg, sizeof(msg), format, arg);
+	File_Export_SetErrorMessage(msg);
+}
 
 #ifdef MULTIMEDIA
 
@@ -253,6 +270,12 @@ int File_Export_StartRecording(const char *filename)
    RETURNS: True if filename is available, false if no filenames left in the pattern. */
 int File_Export_GetNextSoundFile(char *buffer, int bufsize) {
 	if (!sound_no_max) {
+#ifdef AUDIO_CODEC_MP3
+		if (CODECS_AUDIO_CheckType("mp3")) {
+			sound_no_max = Util_filenamepattern(DEFAULT_SOUND_FILENAME_FORMAT_MP3, sound_filename_format, FILENAME_MAX, NULL);
+		}
+		else
+#endif
 		sound_no_max = Util_filenamepattern(DEFAULT_SOUND_FILENAME_FORMAT, sound_filename_format, FILENAME_MAX, NULL);
 	}
 	return Util_findnextfilename(sound_filename_format, &sound_no_last, sound_no_max, buffer, bufsize, FALSE);

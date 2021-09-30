@@ -206,10 +206,8 @@ static int reserve_buffers(void)
 	return out.block_align;
 }
 
-static int init_common(int sample_rate, float fps, int sample_size, int num_channels)
+static void init_common(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	if (sample_size < 2)
-		return 0;
 	out.sample_rate = sample_rate;
 	out.sample_size = 1;
 	out.bits_per_sample = 4;
@@ -222,13 +220,11 @@ static int init_common(int sample_rate, float fps, int sample_size, int num_chan
 	out.extra_data_size = 0;
 
 	final_duration = 0.0;
-	return 1;
 }
 
 static int ADPCM_Init_IMA(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	if (!init_common(sample_rate, fps, sample_size, num_channels))
-		return -1;
+	init_common(sample_rate, fps, sample_size, num_channels);
 
 	format_type = FORMAT_IMA;
 	samples_per_block = (out.block_align - 4 * num_channels) * 8 / (4 * num_channels) + 1;
@@ -245,8 +241,7 @@ static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_ch
 	int i;
 	UBYTE *extra;
 
-	if (!init_common(sample_rate, fps, sample_size, num_channels))
-		return -1;
+	init_common(sample_rate, fps, sample_size, num_channels);
 
 	out.extra_data_size = 32;
 	extra = out.extra_data;
@@ -268,8 +263,7 @@ static int ADPCM_Init_MS(int sample_rate, float fps, int sample_size, int num_ch
 
 static int ADPCM_Init_Yamaha(int sample_rate, float fps, int sample_size, int num_channels)
 {
-	if (!init_common(sample_rate, fps, sample_size, num_channels))
-		return -1;
+	init_common(sample_rate, fps, sample_size, num_channels);
 
 	format_type = FORMAT_YAMAHA;
 	samples_per_block = (out.block_align * 2) / num_channels;
@@ -461,7 +455,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM = {
 	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_IMA, /* format type */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -475,7 +469,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_IMA = {
 	"DVI IMA ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_IMA, /* format type */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&ADPCM_Init_IMA,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -489,7 +483,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_MS = {
 	"Microsoft ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_MS, /* format type */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&ADPCM_Init_MS,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,
@@ -503,7 +497,7 @@ AUDIO_CODEC_t Audio_Codec_ADPCM_YAMAHA = {
 	"Yamaha ADPCM",
 	{1, 0, 0, 0}, /* fourcc */
 	FORMAT_YAMAHA, /* format type */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&ADPCM_Init_Yamaha,
 	&ADPCM_AudioOut,
 	&ADPCM_CreateFrame,

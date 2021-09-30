@@ -14,6 +14,10 @@ void File_Export_WriteConfig(FILE *fp);
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
 
+extern char *FILE_EXPORT_error_message;
+void File_Export_SetErrorMessage(const char *string);
+void File_Export_SetErrorMessageArg(const char *format, const char *arg);
+
 #ifdef MULTIMEDIA
 int File_Export_IsRecording(void);
 int File_Export_StopRecording(void);

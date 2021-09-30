@@ -30,20 +30,21 @@
 #include <stdlib.h>
 #include "util.h"
 #include "log.h"
+#include "file_export.h"
 
-#ifdef HAVE_LIBMP3LAME
-#include <lame/lame.h>
-#endif
+#include <lame.h>
 #include "codecs/audio.h"
 #include "codecs/audio_mp3.h"
+
+#define DEFAULT_BITRATE 128
 
 static AUDIO_OUT_t out;
 
 static float final_duration;
-static int last_frame_size;
-static int leftover_bytes;
 static int flushing;
 static int flushed;
+static int last_frame_size;
+static int leftover_bytes;
 static lame_global_flags *lame;
 
 #define AV_RB32(x)                                 \
@@ -131,15 +132,15 @@ static int mpegaudio_frame_size(ULONG header)
 static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channels)
 {
 	UBYTE *extra;
-	int result;
 	int bitrate;
 	int requested_out_samplerate;
+	int encoder_delay;
+	int result;
 	int abr = FALSE; /* Currently CBR only */
 
-	if (sample_size < 2)
-		return 0;
-
-	bitrate = 128;
+	requested_out_samplerate = audio_param_samplerate;
+	if (requested_out_samplerate < 0)
+		requested_out_samplerate = sample_rate;
 
 	lame = lame_init();
 	if (!lame) {
@@ -147,9 +148,6 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 		return -1;
 	}
 	lame_set_in_samplerate(lame, sample_rate);
-	requested_out_samplerate = audio_param_samplerate;
-	if (requested_out_samplerate < 0)
-		requested_out_samplerate = sample_rate;
 	lame_set_out_samplerate(lame, requested_out_samplerate);
 	lame_set_num_channels(lame, num_channels);
 	lame_set_mode(lame, num_channels > 1 ? 0 : 3); /* 0 = stereo, 1 = joint stereo, 3 = mono */
@@ -177,11 +175,16 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 		Log_print("audio_mp3: requested bitrate %d not available; using %d", audio_param_bitrate, lame_get_brate(lame));
 
 	out.sample_rate = lame_get_out_samplerate(lame);
+	out.block_align = lame_get_framesize(lame);
+	encoder_delay = lame_get_encoder_delay(lame);
+	bitrate = lame_get_brate(lame);
+
+	last_frame_size = 0;
+	leftover_bytes = 0;
 	out.sample_size = 1;
 	out.bits_per_sample = 0;
 	out.bitrate = bitrate * 1000;
 	out.num_channels = num_channels;
-	out.block_align = lame_get_framesize(lame);
 	out.scale = 1000000;
 	out.rate = (int)(fps * 1000000);
 	out.length = 0;
@@ -193,12 +196,10 @@ static int MP3_Init(int sample_rate, float fps, int sample_size, int num_channel
 	PUT_LE_WORD(extra, 0); /* high word wFlags, 0 */
 	PUT_LE_WORD(extra, out.block_align); /* nBlockSize */
 	PUT_LE_WORD(extra, 1); /* nFramesPerBlock */
-	PUT_LE_WORD(extra, lame_get_encoder_delay(lame) + 528 + 1); /* nCodecDelay, straight from ffmpeg, no idea why */
+	PUT_LE_WORD(extra, encoder_delay + 528 + 1); /* nCodecDelay, straight from ffmpeg, no idea why */
 	out.samples_processed = 0;
 
 	final_duration = 0.0;
-	last_frame_size = 0;
-	leftover_bytes = 0;
 	flushing = 0;
 	flushed = 0;
 
