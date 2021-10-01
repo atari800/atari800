@@ -32,10 +32,11 @@
 #include "log.h"
 #include "sound.h"
 #include "pokeysnd.h"
+#include "file_export.h"
 
 #include "codecs/audio.h"
 #include "codecs/audio_pcm.h"
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 #include "codecs/audio_mp3.h"
 #endif
 #include "codecs/audio_adpcm.h"
@@ -60,7 +61,7 @@ static AUDIO_CODEC_t *requested_audio_codec = NULL;
 
 static AUDIO_CODEC_t *known_audio_codecs[] = {
 	&Audio_Codec_PCM,
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 	&Audio_Codec_MP3,
 #endif
 	&Audio_Codec_MULAW,
@@ -72,7 +73,7 @@ static AUDIO_CODEC_t *known_audio_codecs[] = {
 	NULL,
 };
 
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 int audio_param_bitrate = 128;
 int audio_param_samplerate = -1;
 int audio_param_quality = 4;
@@ -138,7 +139,7 @@ int CODECS_AUDIO_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 		else if (strcmp(argv[i], "-ab") == 0) {
 			if (i_a) {
 				audio_param_bitrate = Util_sscandec(argv[++i]);
@@ -169,13 +170,13 @@ int CODECS_AUDIO_Initialise(int *argc, char *argv[])
 			}
 			else a_m = TRUE;
 		}
-#endif
+#endif /* AUDIO_CODEC_MP3 */
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				char buf[256];
 				Log_print(audio_codec_args(buf));
 				Log_print("\t                 Select audio codec (default: auto)");
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 				Log_print("\t-ab <num>        Set audio recording bitrate in kbps (8..320, default: 128)");
 				Log_print("\t-ar <num>        Set audio recording sample rate in Hz (8000..48000, default: same as -dsprate)");
 				Log_print("\t-aq <num>        Set audio recording quality (0..9, default 5)");
@@ -224,8 +225,22 @@ void CODECS_AUDIO_WriteConfig(FILE *fp)
 	}
 }
 
+int CODECS_AUDIO_CheckType(char *codec_id)
+{
+	AUDIO_CODEC_t *a;
+
+	if (!requested_audio_codec) {
+		a = get_best_audio_codec();
+	}
+	else {
+		a = requested_audio_codec;
+	}
+	return strcmp(codec_id, a->codec_id) == 0;
+}
+
 int CODECS_AUDIO_Init(void)
 {
+	int sample_size;
 	float fps;
 
 	if (!audio_codec) {
@@ -237,10 +252,16 @@ int CODECS_AUDIO_Init(void)
 		}
 	}
 
+	sample_size = POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1;
+	if (sample_size == 1 && !(audio_codec->codec_flags & AUDIO_CODEC_FLAG_SUPPORTS_8_BIT_SAMPLES)) {
+		File_Export_SetErrorMessageArg("16 bit audio needed for %s", audio_codec->codec_id);
+		return 0;
+	}
+
 	fps = Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC;
-	audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, POKEYSND_snd_flags & POKEYSND_BIT16? 2 : 1, POKEYSND_num_pokeys);
+	audio_buffer_size = audio_codec->init(POKEYSND_playback_freq, fps, sample_size, POKEYSND_num_pokeys);
 	if (audio_buffer_size < 0) {
-		Log_print("Failed to initialize %s audio codec", audio_codec->codec_id);
+		File_Export_SetErrorMessageArg("Failed init of %s codec", audio_codec->codec_id);
 		return 0;
 	}
 	audio_buffer = (UBYTE *)Util_malloc(audio_buffer_size);

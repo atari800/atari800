@@ -23,7 +23,7 @@
 */
 
 
-/* This file is only compiled when SOUND and HAVE_LIBMP3LAME are defined. */
+/* This file is only compiled when SOUND and AUDIO_CODEC_MP3 are defined. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +40,10 @@
    */
 static int MP3_Prepare(FILE *fp)
 {
+	if (strcmp(audio_codec->codec_id, "mp3") != 0) {
+		File_Export_SetErrorMessageArg("Can't store %s in mp3 file", audio_codec->codec_id);
+		return 0;
+	}
 	return 1;
 }
 
@@ -50,6 +54,7 @@ static int MP3_AudioFrame(FILE *fp, const UBYTE *buf, int bufsize)
 
 	size = fwrite(buf, 1, bufsize, fp);
 	if (size < bufsize) {
+		File_Export_SetErrorMessage("Failed writing to MP3 file");
 		size = 0;
 	}
 
@@ -69,7 +74,6 @@ static int MP3_Finalize(FILE *fp)
 {
 	return 1;
 }
-
 
 CONTAINER_t Container_MP3 = {
 	"mp3",

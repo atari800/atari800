@@ -796,6 +796,13 @@ Set filename pattern for audio recordings.
 Use to override the default pattern of \fIatari###.wav\fR which produces
 \fIatari000.wav\fR, \fIatari001.wav\fR etc. filenames.
 Hashes are replaced with raising numbers.
+
+Note that WAV format files can support all audio codecs, including MP3,
+but many programs assume WAV files contain only PCM audio.
+
+If MP3 support was enabled when compiling the emulator, and MP3 audio is
+selected using the \fB\-acodec mp3\fR option below, the default pattern
+will be \fIatari###.mp3\fR to save in MP3 format files.
 .TP
 \fB\-acodec auto\fR|\fBpcm\fR|\fBmp3\fR|\fBmulaw\fR|\fBpcm_mulaw\fR|\fBadpcm\fR|\fBadpcm_ima_wav\fR|\fBadpcm_yahama\fR|\fBadpcm_ms\fR
 Select the audio codec used when saving to AVI or WAV files. Some codecs are
@@ -817,8 +824,7 @@ large audio files.
 .B mp3
 Use MP3 encoding. Lossy; only available with 16-bit audio, and provides the best
 possible quality of all the lossy codecs while also using the least storage space.
-This codec is only available if the libmp3lame library is available when
-compiling the emulator.
+This codec is only available if MP3 support is enabled when compiling the emulator.
 .TP
 .B mulaw
 Use mu-law encoding. Lossy; only available with 16-bit audio, and provides 2x
@@ -856,8 +862,8 @@ are available: 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100 and 48000.
 As with bitrate, higher numbers mean better quality and larger files.
 .TP
 .BI \-aq\  num
-Set the MP3 compression algorithm quality 0-9 (default 4). 0 means fast but
-reduced quality, 9 uses the slowest algorithms to try to increase quality.
+Set the MP3 audio compression algorithm quality 0-9 (default 4). 0 means reduced
+quality but fast, 9 uses the slowest algorithms to try to increase quality.
 Does not affect storage space.
 .TP
 .BI \-snd\-buflen\  ms
@@ -1724,7 +1730,8 @@ The MP3 codec is the best choice of a lossy codec, as paramaters can be tuned
 to generate high quality audio for different situations. An audio bitrate of
 128kbps (the \fB-ab 128\fR option) results in high quality audio at about an
 8x reduction in storage space over PCM audio. The MP3 codec is a compile-time
-option and requires the libmp3lame library.
+option, and will be included automatically if the libmp3lame library is found
+during compilation.
 .PP
 The remaining lossy codecs should not be considered unless the MP3 codec is
 not available. In most cases they produce reasonable quality, without many
@@ -1735,14 +1742,14 @@ audio distortion in some instances.
 The mu-law codec uses a logarithmic scale to convert 16 bit samples into 8 bits
 of data, resulting in half the size of 16 bit PCM audio. This codec does not
 work with 8 bit audio. Waveform analysis shows the acoustic quality is similar
-to a 192kbps MP3 file, although the MP3 would be half the size. Surprisingly,
+to a 192kbps MP3 file, although the MP3 is half the size. Surprisingly,
 in many cases the acoustic quality of mu-law can be better than 8 bit PCM samples
 even though it takes the same storage space.
 .PP
-Adaptive differential pulse-code modulation (ADPCM) also requires 16 bit audio.
-It encodes differences between successive samples into 4 bits, therefore the
+Adaptive differential pulse-code modulation (ADPCM) encodes differences between
+successive 16 bit audio samples into 4 bits, therefore the
 output is one quarter of the size of the PCM codec. The acoustic quality is
-similar to a 64kbps MP3 file, although the MP3 would be 3x smaller. Audio
+similar to a 64kbps MP3 file, although the MP3 is 3x smaller. Audio
 distortio may be audible under certain conditions, like high volume
 square waves.
 .PD 1

@@ -56,8 +56,13 @@ many others with a little work):-
 11. Static library version: libatari800
 
 Installed zlib (compression library) enables building the emulator with
-compressed statesave images support. Additionally installed libpng
-makes the emulator capable of generating screenshots in the PNG format.
+compressed statesave images support.
+
+Installed libpng makes the emulator capable of generating screenshots in
+the PNG format.
+
+Installed libmp3lame enables MP3 audio to be saved in video and audio
+files.
 
 Building the Emulator on most platforms
 ---------------------------------------

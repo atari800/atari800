@@ -87,8 +87,6 @@ static int MULAW_Init(int sample_rate, float fps, int sample_size, int num_chann
 {
 	int comp_size;
 
-	if (sample_size < 2)
-		return -1;
 	out.sample_rate = sample_rate;
 	out.sample_size = 1;
 	out.bits_per_sample = 8;
@@ -181,7 +179,7 @@ AUDIO_CODEC_t Audio_Codec_MULAW = {
 	"mu-law 8-bit Telephony Codec",
 	{1, 0, 0, 0}, /* fourcc */
 	7, /* mu-law */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,
@@ -195,7 +193,7 @@ AUDIO_CODEC_t Audio_Codec_PCM_MULAW = {
 	"mu-law 8-bit Telephony Codec",
 	{1, 0, 0, 0}, /* fourcc */
 	7, /* mu-law */
-	AUDIO_CODEC_FLAG_PCM,
+	0, /* flags */
 	&MULAW_Init,
 	&MULAW_AudioOut,
 	&MULAW_CreateFrame,

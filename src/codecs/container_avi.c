@@ -303,7 +303,7 @@ static int AVI_Prepare(FILE *fp)
 	size_riff = 0;
 	size_movi = 0;
 	if (!AVI_WriteHeader(fp)) {
-		Log_print("Failed writing AVI header");
+		File_Export_SetErrorMessage("Failed writing AVI header");
 		return 0;
 	}
 

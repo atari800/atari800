@@ -139,7 +139,9 @@ o Atari palette read from a file or calculated basing on user-defined
 
 o Screen snapshots (normal and interlaced) to PCX and PNG files.
 
-o Sound output may be written to WAV files.
+o Sound output may be written to WAV or MP3 files.
+
+o MP3 sound support if libmp3lame is available.
 
 o Emulator video and audio may be recorded to AVI files for playback in
   video players or uploading to YouTube or other online platforms.

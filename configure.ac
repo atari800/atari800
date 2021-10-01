@@ -202,6 +202,52 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_TOOLS(WINDRES, [windres], :)
 
+
+dnl The A8_ADD_INCLUDE_PATH macro searches for include files in subdirectories of
+dnl a list of paths plus standard include paths. E.g. /usr/include/PACKAGE/package.h
+dnl is not found automatically because only /usr/include is searched, not
+dnl /usr/include/PACKAGE. This function takes standard include paths plus any
+dnl additional include paths in argument $3 and for each path there, looks in
+dnl any existing subdirs specified in argument $4. If found, the subdir is added
+dnl to the $CPPFLAGS variable. If not found in any path combination, the code in
+dnl $5 is executed.
+dnl         $1    = the name of the feature for informational messages
+dnl         $2    = header file to use as test for presense
+dnl         $3    = the list of possible include directory paths to use as prefixes
+dnl                 to the combined path
+dnl         $4    = the list of possible include subdirectories
+dnl         $5    = code to execute if include not found
+AC_DEFUN([A8_ADD_INCLUDE_PATH], [
+    AC_CHECK_HEADER([$2],[],[
+        _a8_saved_cppflags=$CPPFLAGS
+        _a8_found=no
+        for _a8_dir in ${prefix}/include $3; do
+            for _a8_subdir in $4; do
+                _a8_fulldir="$_a8_dir/$_a8_subdir"
+                test ! -d "$_a8_fulldir" && continue
+                AC_MSG_CHECKING([for $1 headers in])
+                AC_MSG_RESULT([$_a8_fulldir])
+                AS_UNSET([AS_TR_SH([ac_cv_header_$2])])
+                CPPFLAGS="$_a8_saved_cppflags -I$_a8_fulldir"
+                AC_CHECK_HEADER([$2],[_a8_found="yes"; break],[])
+            done
+            if [[ "$_a8_found" = "yes" ]]; then
+                break
+            fi
+        done
+        if [[ "$_a8_found" != "yes" ]]; then
+            CPPFLAGS=$_a8_saved_cppflags
+            $5
+        fi
+        AS_UNSET(_a8_found)
+        AS_UNSET(_a8_dir)
+        AS_UNSET(_a8_subdir)
+        AS_UNSET(_a8_fulldir)
+        AS_UNSET(_a8_saved_cppflags)
+    ])
+])
+
+
 AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
 CCAS=vasm
 CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
@@ -1057,12 +1103,41 @@ if [[ "$with_sound" != no ]]; then
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
 
-    dnl Need SUPPORTS_LIBMP3LAME shell variable for mp3 audio codec test below
-	AC_CHECK_LIB(mp3lame,lame_init,[LIBS="-lmp3lame $LIBS"; SUPPORTS_LIBMP3LAME=yes],[SUPPORTS_LIBMP3LAME=no])
     supported_audio_codecs="pcm adpcm mulaw"
-    if [[ "$SUPPORTS_LIBMP3LAME" = "yes" ]]; then
-        AC_DEFINE(HAVE_LIBMP3LAME,1,[Supports LAME mp3 audio compression library.])
-        supported_audio_codecs="$supported_audio_codecs mp3"
+    AC_ARG_WITH(mp3,
+        [AC_HELP_STRING(--with-mp3@<:@=no|yes|lame@:>@,[Select mp3 audio @<:@default=check@:>@])],
+        [
+            case "$withval" in
+                no | yes | check | lame)
+                    ;;
+                *)
+                    AC_MSG_ERROR([unrecognized value for --with-mp3: "$withval"])
+                    ;;
+            esac
+        ],
+        [with_mp3=check])
+    if [[ "$with_mp3" != "no" ]]; then
+        if [[ "$with_mp3" = check -o "$with_mp3" = yes -o "$with_mp3" = lame ]]; then
+            AC_CHECK_LIB(mp3lame, lame_init, [
+                A8_ADD_INCLUDE_PATH([lame],[lame.h],[/usr/include /usr/local/include],[lame],[
+                    if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
+                        AC_MSG_ERROR([lame.h not found, modify CPPFLAGS or use --with-mp3=check])
+                    fi
+                    with_mp3=no
+                ])
+                if [[ $with_mp3 != no ]]; then
+                    LIBS="-lmp3lame $LIBS"
+                    AC_DEFINE(AUDIO_CODEC_MP3,1,[Supports mp3 audio])
+                    supported_audio_codecs="$supported_audio_codecs mp3"
+                    with_mp3="libmp3lame"
+                fi
+            ], [
+                if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
+                    AC_MSG_ERROR([unable to find libmp3lame, modify LDFLAGS or use --with-mp3=check])
+                fi
+                with_mp3="no"
+            ])
+        fi
     fi
 else
     WANT_NONLINEAR_MIXING="no"
@@ -1074,13 +1149,13 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
-    SUPPORTS_LIBMP3LAME="no"
+    WANT_AUDIO_CODEC_MP3="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
-AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$SUPPORTS_LIBMP3LAME" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$with_mp3" != "no")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
     have_bitmapped_screen=yes
@@ -1385,6 +1460,9 @@ if [[ "$with_sound" != no ]]; then
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
     echo "    Supported audio codecs............: $supported_audio_codecs"
+    if [[ "$with_mp3" != "no" ]]; then
+        echo "        Library for mp3 audio.........: $with_mp3"
+    fi
 else
     echo "    (Sound sub-options disabled)"
 fi

@@ -101,7 +101,7 @@ AUDIO_CODEC_t Audio_Codec_PCM = {
 	"PCM Samples",
 	{1, 0, 0, 0}, /* fourcc */
 	1, /* format type */
-	AUDIO_CODEC_FLAG_PCM,
+	AUDIO_CODEC_FLAG_SUPPORTS_8_BIT_SAMPLES,
 	&PCM_Init,
 	&PCM_AudioOut,
 	&PCM_CreateFrame,

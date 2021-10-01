@@ -54,8 +54,8 @@ typedef int (*AUDIO_CODEC_Flush)(float duration);
    success, or zero on error. */
 typedef int (*AUDIO_CODEC_End)(void);
 
-#define AUDIO_CODEC_FLAG_PCM 0
 #define AUDIO_CODEC_FLAG_VBR_POSSIBLE 1
+#define AUDIO_CODEC_FLAG_SUPPORTS_8_BIT_SAMPLES 2
 
 typedef struct {
     char *codec_id;
@@ -76,7 +76,7 @@ extern AUDIO_OUT_t *audio_out;
 extern int audio_buffer_size;
 extern UBYTE *audio_buffer;
 
-#ifdef HAVE_LIBMP3LAME
+#ifdef AUDIO_CODEC_MP3
 extern int audio_param_bitrate;
 extern int audio_param_samplerate;
 extern int audio_param_quality;
@@ -85,6 +85,7 @@ extern int audio_param_quality;
 int CODECS_AUDIO_Initialise(int *argc, char *argv[]);
 int CODECS_AUDIO_ReadConfig(char *string, char *ptr);
 void CODECS_AUDIO_WriteConfig(FILE *fp);
+int CODECS_AUDIO_CheckType(char *codec_id);
 int CODECS_AUDIO_Init(void);
 void CODECS_AUDIO_End(void);
 
