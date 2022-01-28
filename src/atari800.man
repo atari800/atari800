@@ -276,6 +276,7 @@ and must be provided with this option.
 Setting to \fB0\fR means disabling the cartridge, and any other number
 indicates a specific cartridge type:
 .RS
+.PP
 .PD 0
 .TP
 .B 1
@@ -503,9 +504,10 @@ Super Cart 512 KB 5200 cartridge (32K banks)
 .B 75
 Atarimax 1 MB Flash cartridge (new)
 .PD
-.RE
+.PP
 If this option is not given, the user will be asked to choose the cartridge
 type when the emulator starts.
+.RE
 .TP
 .BI \-cart2\  filename
 Insert piggyback cartridge (CART or raw format).
@@ -1079,12 +1081,12 @@ Shows full overscan area, which can be up to 300 pixels in case of the XEP80.
 An exact number of visible scanlines can be set by providing a \fInumber\fR
 between 100 and 300.
 .PD
-.RE
 .PP
 Note that when displaying output of an XEP80 or Austin Franklin 80 column
 card, the \fBtv\fR setting will crop the top and bottom parts of text area,
 just like a real TV does - in such case setting the option to \fBfull\fR would
 be more appriopriate.
+.RE
 .TP
 .BI \-horiz\-shift\  number
 When the visible horizontal area is not set to \fBfull\fR, this option
