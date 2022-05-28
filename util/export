@@ -16,6 +16,8 @@ echo "download from GitHub? (y/N)"
 read key
 if [ "x"$key = "xy" ]; then
 	git clone https://github.com/atari800/atari800.git
+	rm -rf atari800/.git atari800/.gitignore
+	rm -rf atari800/.travis atari800/.travis.yml
 fi
 #
 grep "[Vv]ersion "$VERSION atari800/README.TXT >/dev/null
