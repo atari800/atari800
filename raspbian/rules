@@ -1,0 +1,166 @@
+#!/usr/bin/make -f
+#
+# This make file supports the targets:
+# build, clean, binary-indep, binary-arch, and binary
+#
+# Package name variables
+#
+P=atari800
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+CFLAGS+=$(CPPFLAGS)
+CXXFLAGS+=$(CPPFLAGS)
+
+# Build the binary components and assemble the libraries
+# =====================================================================
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
+build-stamp:
+	$(checkdir)
+	debian/rules bld-sdl
+	touch build-stamp
+
+bld-sdl:
+	cp /usr/share/misc/config.guess /usr/share/misc/config.sub src
+	if [ -e Makefile ]; then $(MAKE) clean; fi
+
+# Configure and make atari800rpi binary
+	./configure --target=rpi
+	$(MAKE)
+	mv src/$(P) src/$(P)rpi_bin
+
+# Configure and make atari800stk binary
+	./configure --enable-opengl-by-default
+	$(MAKE)
+	mv src/$(P) src/$(P)stk_bin
+
+# Clean up after a build and before building a source package
+#======================================================================
+clean:
+	$(checkdir)
+	-rm -f build-stamp
+	if [ -e Makefile ]; then $(MAKE) clean; fi; \
+	 rm -f config.log config.status config.h Makefile
+	rm -f src/config.guess src/config.sub
+	mv ./atari800.spec ./tmp ; rm -f atari800 ; rm -f atari800.* ; mv ./tmp ./atari800.spec
+	-rm -rf	debian/tmp debian/*~ *~ *.orig *.log \
+		debian/files* debian/substvars*
+
+binary: binary-arch
+
+# No binary independent components to this package
+#======================================================================
+binary-indep:
+#
+# No independent components
+#
+	echo "No independent binary components."
+
+# Install package components into debian/tmp to be built into packages
+#======================================================================
+binary-arch:		checkroot build
+
+# Clean out old tmp directory
+#
+	-rm -rf debian/tmp
+	install -d debian/tmp
+
+# Install installation scripts
+#
+	install -d debian/tmp/DEBIAN
+	install -m 755 debian/postinst debian/tmp/DEBIAN/.
+	install -m 755 debian/postrm debian/tmp/DEBIAN/.
+	install -m 755 debian/prerm debian/tmp/DEBIAN/.
+
+# Install docs in proper directory and gzip them
+#
+	install -d debian/tmp/usr/share/doc/$(P)
+	cp debian/changelog debian/tmp/usr/share/doc/$(P)/changelog.Debian
+	cp DOC/ChangeLog debian/tmp/usr/share/doc/$(P)/changelog
+	cp DOC/NEWS debian/tmp/usr/share/doc/$(P)/NEWS
+	cp DOC/CREDITS debian/tmp/usr/share/doc/$(P)/CREDITS
+	cp DOC/README debian/tmp/usr/share/doc/$(P)/README
+	cp DOC/USAGE debian/tmp/usr/share/doc/$(P)/USAGE
+	gzip -9nv debian/tmp/usr/share/doc/$(P)/*
+
+# These are too small to gzip
+#
+	cp DOC/FAQ debian/tmp/usr/share/doc/$(P)/FAQ
+	cp DOC/BUGS debian/tmp/usr/share/doc/$(P)/BUGS
+	cp DOC/TODO debian/tmp/usr/share/doc/$(P)/TODO
+	cp debian/README.Raspbian debian/tmp/usr/share/doc/$(P)/README.Raspbian
+	cp DOC/README.RPI debian/tmp/usr/share/doc/$(P)/README.RPI
+
+# and don't gzip the copyright statement
+#
+	cp debian/copyright debian/tmp/usr/share/doc/$(P)/copyright
+
+# install and gzip man page for atari800stk and atari800rpi
+#
+	install -d debian/tmp/usr/share/man/man1
+	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P)stk.1
+	gzip -9nv debian/tmp/usr/share/man/man1/$(P)stk.1
+	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P)rpi.1
+	gzip -9nv debian/tmp/usr/share/man/man1/$(P)rpi.1
+
+# install menu items, desktop and icon files
+#
+	install -d debian/tmp/usr/share/applications
+	install -m 644 debian/menu/$(P)rpi.desktop debian/tmp/usr/share/applications/$(P)rpi.desktop
+	install -m 644 debian/menu/$(P)stk.desktop debian/tmp/usr/share/applications/$(P)stk.desktop
+	install -d debian/tmp/usr/share/pixmaps
+	install -m 644 debian/menu/$(P)rpi.png debian/tmp/usr/share/pixmaps/$(P)rpi.png
+	install -m 644 debian/menu/$(P)stk.png debian/tmp/usr/share/pixmaps/$(P)stk.png
+
+# install bash scripts
+#
+	install -d debian/tmp/usr/bin
+	install debian/$(P) debian/tmp/usr/bin/$(P)
+	install debian/$(P)rpi debian/tmp/usr/bin/$(P)rpi
+	install debian/$(P)stk debian/tmp/usr/bin/$(P)stk
+
+# install binaries
+#
+	install -s src/$(P)rpi_bin debian/tmp/usr/bin/$(P)rpi_bin
+	install -s src/$(P)stk_bin debian/tmp/usr/bin/$(P)stk_bin
+	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P)rpi_bin
+	strip -R .comment -R .note -R .note.ABI-tag debian/tmp/usr/bin/$(P)stk_bin
+
+	# Install lintian overrides
+	install -d debian/tmp/usr/share/lintian/overrides
+	install -m 644 debian/atari800.lintian-overrides debian/tmp/usr/share/lintian/overrides/atari800
+
+# Create dependency information
+#
+	dpkg-shlibdeps debian/tmp/usr/bin/$(P)stk_bin
+	dpkg-shlibdeps debian/tmp/usr/bin/$(P)rpi_bin
+
+# Generate control file for the package
+#
+	dpkg-gencontrol -p$(P)
+
+# Clean up file ownership
+#
+	chown -R root.root debian/tmp
+
+# and permissions
+#
+	chmod -R g-ws debian/tmp
+
+# and build the package
+#
+	dpkg --build debian/tmp ..
+
+define checkdir
+	test -f ./atari800.spec
+endef
+
+# Below here is fairly generic really
+checkroot:
+	$(checkdir)
+	test root = "`whoami`"
+
+.PHONY: binary binary-arch binary-indep clean checkroot

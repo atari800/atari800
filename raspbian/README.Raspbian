@@ -1,0 +1,15 @@
+THE RASPBIAN DIRECTORY
+======================
+
+atari800/raspbian is a modification of atari800/debian.
+
+It may be used to build Raspberry Pi packages containing two binaries:
+    atari800rpi_bin - a special version for low powered Pis, Zero, 2 and 3.
+    atari800stk_bin - the stock Linux version of atari800 for Pis 4 & 400.
+
+and three bash scripts:
+    atari800    - Provides information about commands atari800rpi & atari800stk
+    atari800rpi - Executes atari800rpi_bin with default config file .atari800rpi.cfg
+    atari800stk - Executes atari800stk_bin with default config file .atari800stk.cfg
+
+Instructions for use are in DOC/BUILD.linux_rpi_package.

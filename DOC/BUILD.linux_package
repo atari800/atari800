@@ -136,9 +136,11 @@ any errors.
 The above command creates three files and places them in the parent of the
 atari800 directory.  They will have names like these:
 
-    atari800_4.2.0-1_amd64.buildinfo - .deb file checksums and a list of dependencies.
-    atari800_4.2.0-1_amd64.changes   - changelog update and checksums for .deb and .buildinfo.
-    atari800_4.2.0-1_amd64.deb       - the .deb file for release.
+    atari800_4.2.0-1_amd64.buildinfo - Checksums and a list of dependencies
+                                       in the .deb file.
+    atari800_4.2.0-1_amd64.changes   - Changelog update and checksums for
+                                       the .deb and .buildinfo files.
+    atari800_4.2.0-1_amd64.deb       - The .deb package file for release.
 
 'amd64' indicates the architecture of the machine that the build was done on.
 
