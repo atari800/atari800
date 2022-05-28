@@ -1,8 +1,20 @@
-Version ?.?.? (????/??/??)
+Version 5.0.0 (2022/05/28) - released at Atariada.cz (yay!)
 ==========================
+
+Big thanks to all contributors (see git log for each commit author)
 
  New features:
  -------------
+  * AVI video recording (Alt+V hotkey) by Rob McMullen
+    -vcodec command line arg can select video codec
+    -aname and -vname command line args set patterns for sound and video recording
+    -horiz-area & -vert-area command line args for controlling the image area
+    -showstats (and -no-showstats) command line args and related config file param
+    -compression-level for configuring PNG and ZMBV compression
+
+  * MP3 audio and other audio codecs for audio recording (Alt+W hotkey)
+    -acodec can select audio codec
+
   * New cartridge types supported:
     - 71: Super Cart 64 KB 5200 cartridge (32K banks)
     - 72: Super Cart 128 KB 5200 cartridge (32K banks)
@@ -10,6 +22,34 @@ Version ?.?.? (????/??/??)
     - 74: Super Cart 512 KB 5200 cartridge (32K banks)
     - 75: Atarimax 1 MB Flash cartridge (new)
     See DOC/cart.txt for details.
+
+  * support for remapping of all function keys (START, SELECT, OPTION, RESET etc)
+  * support for comments in config file
+  * tool for creating cart files from ROM files
+  * support for 64-512K Atari 5200 bank-switchable carts with Bryan's design (#106)
+  * support for the alternate variant of MaxFlash 1 MB.
+
+ Changes:
+ --------
+  * video triple buffering changed to double buffering
+  * fixed #74 by using proper getcwd()
+  * gamma values in NTSC filter presets updated
+  * MacOS build enables R: by default
+  * fixed saving of config file
+  * using zlib-provided crc32 if HAVE_LIBZ is defined (#72)
+  * Altirra OS updated to v3.28
+  * renamed "Switchable 5200" cartridges to "Super Cart"
+  * fixed segfault when a 5200 Super Cart cartridge is removed
+  * avoided unnecessary memory copying of 5200 Super Carts
+  * fixed #88 issue in opening a cartridge
+  * BUILD instructions and new README for Android
+  * fixed segfault when exiting monitor
+  * fixed BBSB's lift not working
+  * avoided unnecessary memory copying in Bounty Bob cartridges
+  * allow configuring --with-audio=win in non-DirectX targets
+  * allow configuring --with-audio=sdl and --with-video <> sdl
+  * atari_x11.c: don't auto-repeat the 'screenshot' key
+  * build compatible with dash
 
 
 Version 4.2.0 (2019/12/28) - released at SILK

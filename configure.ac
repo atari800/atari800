@@ -21,7 +21,7 @@ dnl   along with Atari800; if not, write to the Free Software
 dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 AC_PREREQ(2.57)
-AC_INIT(Atari800, 4.2.0, pstehlik@sophics.cz)
+AC_INIT(Atari800, 5.0.0, pstehlik@sophics.cz)
 AC_CONFIG_SRCDIR(src/atari.c)
 AC_CONFIG_HEADER(src/config.h)
 AC_CONFIG_MACRO_DIR([m4])
