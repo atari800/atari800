@@ -79,8 +79,14 @@ waitForChar2:
 	stx		ch
 	
 	;do keyboard click (we do this even for ignored ctrl+shift+keys)
+	.if _KERNEL_XLXE
+	bit		noclik
+	bmi		no_click
+	.endif
+
 	ldy		#12
 	jsr		Bell
+no_click:
 
 	;ignore char if both ctrl and shift are pressed
 	cmp		#$c0

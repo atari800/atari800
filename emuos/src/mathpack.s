@@ -288,7 +288,7 @@ expterm:
 .endp
 
 ;==========================================================================
-.proc fp_fmul_carryup
+.proc fp_fmul_carryup			;$0A bytes
 round_loop:
 	adc		fr0,x
 	sta		fr0,x
@@ -300,7 +300,7 @@ dec_entry:
 .endp
 
 ;==========================================================================
-.proc fp_tab_lo_100
+.proc fp_tab_lo_100				;$0A bytes
 	:10 dta <[100*#]
 .endp
 
@@ -806,7 +806,7 @@ sub_loop_entry:
 ;	A = binary value
 ;	Y = modified
 ;
-.proc fp_dectobin
+.proc fp_dectobin			;$09 bytes
 	pha
 	lsr
 	lsr
@@ -908,10 +908,10 @@ fmul_entry:
 	.pages 1	;optimized by fp_fld1r_const_fmul
 	
 fpconst_ten:
-	.fl		10
+	dta		$40,$10,$00,$00,$00,$00		;10
 
 fpconst_ln10:
-	.fl		2.3025850929940456840179914546844
+	dta		$40,$02,$30,$25,$85,$09		;2.30258509[29940456840179914546844]
 
 	.endpg
 ;==========================================================================
@@ -1070,16 +1070,16 @@ uploop:
 .endp
 
 ;==========================================================================
-.proc fp_fdiv_complete
-	ldx		#fr2
-	ldy		_fr3
-	lda		fr2+1
-	bne		no_normstep
-	inx
-	dey
-no_normstep:
-	sty		0,x
-	jmp		fld0r_zp
+.proc fp_swap			;$0E bytes
+	ldx		#5
+swaploop:
+	lda		fr0,x
+	ldy		fr1,x
+	sta		fr1,x
+	sty		fr0,x
+	dex
+	bpl		swaploop
+	rts
 .endp
 
 ;==========================================================================
@@ -1415,15 +1415,24 @@ xit:
 .endp
 
 ;==========================================================================
-.proc fp_swap
-	ldx		#5
-swaploop:
+fpconst_log10_e:				;$06 bytes
+	dta		$3F,$43,$42,$94,$48,$19	;0.4342944819[0325182765112891891661]
+
+.proc fp_carry_expup			;$0F bytes
+	;adjust exponent
+	inc		fr0
+
+	;shift down FR0
+	ldx		#4
+sum_shiftloop:
 	lda		fr0,x
-	ldy		fr1,x
-	sta		fr1,x
-	sty		fr0,x
+	sta		fr0+1,x
 	dex
-	bpl		swaploop
+	bne		sum_shiftloop
+	
+	;add a $01 at the top
+	inx
+	stx		fr0+1
 	rts
 .endp
 
@@ -1431,10 +1440,7 @@ swaploop:
 ; FLD0R [DD89]	Load FR0 from (X:Y)
 ; FLD0P [DD8D]	Load FR0 from (FLPTR)
 ;
-	fixadr	$dd87
-fld0r_zp:
-	ldy		#0
-	ckaddr	$dd89
+	fixadr	$dd89
 fld0r:
 	stx		flptr
 	sty		flptr+1
@@ -1587,42 +1593,35 @@ xit2:
 	rts
 	
 coeff:		;Minimax polynomial for 10^x over 0 <= x < 1
-	.fl		 0.0146908308
-	.fl		-0.002005331171
-	.fl		 0.0919452045
-	.fl		 0.1921383884
-	.fl		 0.5447325197
-	.fl		 1.17018250
-	.fl		 2.03478581
-	.fl		 2.65094494
-	.fl		 2.30258512
-	.fl		 1
+	dta		$3F,$01,$46,$90,$83,$08	; 0.0146908308
+	dta		$BE,$20,$05,$33,$11,$71	;-0.002005331171
+	dta		$3F,$09,$19,$45,$20,$45	; 0.0919452045
+	dta		$3F,$19,$21,$38,$38,$84	; 0.1921383884
+	dta		$3F,$54,$47,$32,$51,$97	; 0.5447325197
+	dta		$40,$01,$17,$01,$82,$50	; 1.17018250
+	dta		$40,$02,$03,$47,$85,$81	; 2.03478581
+	dta		$40,$02,$65,$09,$44,$94	; 2.65094494
+	dta		$40,$02,$30,$25,$85,$12	; 2.30258512
+	dta		$40,$01,$00,$00,$00,$00	; 1
 .endp	
 
 ;==========================================================================
-fpconst_log10_e:
-	.fl		0.43429448190325182765112891891661
-
-.proc fp_carry_expup
-	;adjust exponent
-	inc		fr0
-
-	;shift down FR0
-	ldx		#4
-sum_shiftloop:
-	lda		fr0,x
-	sta		fr0+1,x
-	dex
-	bne		sum_shiftloop
-	
-	;add a $01 at the top
+.proc fp_fdiv_complete		;$11 bytes (needs to be $18)
+	ldx		#fr2
+	ldy		_fr3
+	lda		fr2+1
+	bne		no_normstep
 	inx
-	stx		fr0+1
+	dey
+no_normstep:
+	sty		fr0
+	ldy		#5
+	mva:rne	5,x- fr0,y- 
 	rts
 .endp
 
 ;==========================================================================
-.proc fp_fmul_fr0_to_binfr2		;$15 bytes
+.proc fp_fmul_fr0_to_binfr2		;$17 bytes
 	ldx		#4
 loop:
 	lda		fr0+1,x
@@ -1820,7 +1819,7 @@ err2:
 ;
 	fixadr	$df6c
 fpconst_half:
-	.fl		0.5
+	dta		$3F,$50,$00,$00,$00,$00	;0.5
 	
 ;==========================================================================
 ; log10(x) coefficients
@@ -1835,16 +1834,16 @@ fpconst_half:
 ;	f(x) = log10((1+y)/(1-y))/y
 ;
 fpconst_log10coeff:		;Maclaurin series expansion for log10((z-1)/(z+1))
-	.fl		 0.2026227154
-	.fl		-0.0732044921
-	.fl		 0.1060983564
-	.fl		 0.0560417329
-	.fl		 0.0804188407
-	.fl		 0.0963916015
-	.fl		 0.1240896135
-	.fl		 0.1737176646
-	.fl		 0.2895296558
-	.fl		 0.8685889638
+	dta		$3F,$20,$26,$22,$71,$54	; 0.2026227154
+	dta		$BF,$07,$32,$04,$49,$21	;-0.0732044921
+	dta		$3F,$10,$60,$98,$35,$64	; 0.1060983564
+	dta		$3F,$05,$60,$41,$73,$29	; 0.0560417329
+	dta		$3F,$08,$04,$18,$84,$07	; 0.0804188407
+	dta		$3F,$09,$63,$91,$60,$15	; 0.0963916015
+	dta		$3F,$12,$40,$89,$61,$35	; 0.1240896135
+	dta		$3F,$17,$37,$17,$66,$46	; 0.1737176646
+	dta		$3F,$28,$95,$29,$65,$58	; 0.2895296558
+	dta		$3F,$86,$85,$88,$96,$38	; 0.8685889638
 
 ;==========================================================================
 ; Arctangent coefficients
@@ -1859,25 +1858,23 @@ fpconst_log10coeff:		;Maclaurin series expansion for log10((z-1)/(z+1))
 ; use a custom minimax polynomial for f(y)=atn(sqrt(y))/sqrt(y) where y=x^2.
 ;
 	fixadr	$dfae
-atncoef:	;coefficients for atn(x)/x ~= f(x^2)
-			;see Abramowitz & Stegun 4.4.49
-		
-	.fl		 0.001112075881		;x**10*1.11207588057982e-3
-	.fl		-0.007304087520		;x**9*-7.30408751951452e-3
-	.fl		 0.0224965573		;x**8*2.24965572957342e-2
-	.fl		-0.0446185172		;x**7*-4.46185172165888e-2
-	.fl		 0.0673463245		;x**6*6.73463245104305e-2
-	.fl		-0.0880690664		;x**5*-8.80690663570546e-2
-	.fl		 0.1105667499		;x**4*1.10566749879313e-1
-	.fl		-0.1427949312		;x**3*-1.42794931245212e-1
-	.fl		 0.1999963060		;x**2*1.99996306023439e-1
-	.fl		-0.3333332472		;x**1*-3.33333247188074e-1
-									;x**0*9.99999999667198e-1
+atncoef:
+	dta		$3E,$11,$12,$07,$58,$81		;x^10* 1.11207588057982e-3
+	dta		$BE,$73,$04,$08,$75,$20		;x^ 9*-7.30408751951452e-3
+	dta		$3F,$02,$24,$96,$55,$73		;x^ 8* 2.24965572957342e-2
+	dta		$BF,$04,$46,$18,$51,$72		;x^ 7*-4.46185172165888e-2
+	dta		$3F,$06,$73,$46,$32,$45		;x^ 6* 6.73463245104305e-2
+	dta		$BF,$08,$80,$69,$06,$64		;x^ 5*-8.80690663570546e-2
+	dta		$3F,$11,$05,$66,$74,$99		;x^ 4* 1.10566749879313e-1
+	dta		$BF,$14,$27,$94,$93,$12		;x^ 3*-1.42794931245212e-1
+	dta		$3F,$19,$99,$96,$30,$60		;x^ 2* 1.99996306023439e-1
+	dta		$BF,$33,$33,$33,$24,$72		;x^ 1*-3.33333247188074e-1
+										;x^ 0* 9.99999999667198e-1
 fp_one:
-	.fl		1.0				;also an arctan coeff
+	dta		$40,$01,$00,$00,$00,$00		;1.0 (also an arctan coeff)
 	fixadr	$dff0
 fp_pi4:	;pi/4 - needed by Atari Basic ATN()
-	.fl		0.78539816339744830961566084581988
+	dta		$3F,$78,$53,$98,$16,$34		;0.7853981633[9744830961566084581988]
 	
 fp_dectobin_tab:
 	:10 dta	<[-6*#]

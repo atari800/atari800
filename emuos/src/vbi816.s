@@ -143,14 +143,15 @@ timer_n_not_running:
 
 	mva		keyrep srtimr		;reset repeat timer
 
-	bne		no_keydel			;skip debounce counter decrement
+	bra		no_keydel			;skip debounce counter decrement
 
 no_repeat_key:
-	stz		srtimr
-no_repeat:
 	;decrement keyboard debounce counter
 	lda		keydel
 	seq:dec	keydel
+
+	stz		srtimr
+no_repeat:
 no_keydel:
 
 	;Update controller shadows.

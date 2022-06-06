@@ -160,10 +160,16 @@ no_send_frame:
 	;Check if we received a C ($43) or E ($45) -- we must NOT abort immediately
 	;on a device error, as the device still sends back data we need to read, and
 	;Music Studio relies on the data coming back from a CRC error.
+	;
+	;We also need to accept ACK ($41) here, due to a bug in the stock OS that
+	;we need to replicate. The Zero Adjust step in the Indus GT diagnostics
+	;fails if we don't replicate this bug.
+	;
 	lda		temp
-	cmp		#$43
-	beq		completeOK
 	cmp		#$45
+	beq		completeOK
+	ora		#$02
+	cmp		#$43
 	beq		completeOK
 	
 	;we received crap... fail it now
@@ -224,10 +230,11 @@ no_receive_frame:
 	jsr		SIOReceiveStop
 
 	;Now check whether we got a device error earlier. If we did, return
-	;that instead of success.
+	;that instead of success. Check for Error, because we need to accept
+	;either ACK or Complete as stated above.
 	lda		temp
-	cmp		#'C'
-	bne		device_error
+	cmp		#'E'
+	beq		device_error
 	
 	;nope, we're good... exit OK.
 	ldy		#SIOSuccess

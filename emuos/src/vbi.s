@@ -143,21 +143,23 @@ timer_n_not_running:
 	mva		kbcode ch			;repeat last key
 
 .if _KERNEL_XLXE
-	mva		keyrep srtimr		;reset repeat timer
+	lda		keyrep				;reset repeat timer
+	jmp		no_keydel			;skip debounce counter decrement
 .else
-	mva		#$06 srtimr			;reset repeat timer
+	lda		#$06				;reset repeat timer
+	bne		no_keydel			;skip debounce counter decrement
 .endif
 
-	bne		no_keydel			;skip debounce counter decrement
-
 no_repeat_key:
-	lda		#0
-	sta		srtimr
-no_repeat:
-	;decrement keyboard debounce counter
+	;decrement keyboard debounce counter (must only be done if key is not held down)
 	lda		keydel
 	seq:dec	keydel
+
+	;reset repeat timer
+	lda		#0
 no_keydel:
+	sta		srtimr
+no_repeat:
 
 	;Update controller shadows.
 	;

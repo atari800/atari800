@@ -498,16 +498,16 @@ tab_adjust_done:
 
 ;--------------------------------------------------------------------------
 special_left:
-	ldx		colcrs
-	beq		slft_to_right
-	dex
-	cpx		lmargn
-	bcs		hmove_to_x
-	
+	ldx		lmargn
+	cpx		colcrs						;lmargn-colcrs >= 0
+	bcs		hmove_to_rmargn				;branch if colcrs <= lmargn
+	dec		colcrs
+	rts
+
+hmove_to_rmargn:
 	;move to right margin
-slft_to_right:
 	ldx		rmargn
-	bcc		hmove_to_x
+	bcs		hmove_to_x
 
 ;--------------------------------------------------------------------------
 special_right:
@@ -723,12 +723,15 @@ delete_stop_shifting:
 	
 	;check if the last line is blank
 delete_blank_test_loop:
-	lda		(frmadr),y
-	bne		delete_not_blank
-	dey
 	cpy		lmargn
-	bcs		delete_blank_test_loop
-	
+	beq		delete_blank_exit_loop
+	dey
+	lda		(frmadr),y
+	beq		delete_blank_test_loop
+	;re-show cursor and exit
+	rts
+
+delete_blank_exit_loop:	
 	;the last line is blank... check if it is a logical line start
 	dec		hold1
 	lda		hold1

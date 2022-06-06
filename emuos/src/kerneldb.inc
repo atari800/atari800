@@ -299,6 +299,7 @@ zloada	= $02d3			;Relocating loader: Zero-page load address (XL/XE)
 dsctln	= $02d5			;Disk sector size (XL/XE)
 krpdel	= $02d9			;Keyboard repeat delay (XL/XE)
 keyrep	= $02da			;Keyboard repeat rate (XL/XE)
+noclik	= $02db			;Keyboard no-click (XL/XE)
 helpfg	= $02dc			;Help flag (XL/XE)
 
 .if _KERNEL_XLXE
