@@ -1,0 +1,18 @@
+/*
+ * altirra_basic.c - BASIC ROM replacement
+ *
+ * Compiled from the sources in the emuos folder.
+ *
+ * Altirra BASIC, version 1.58
+ * Copyright (C) 2008-2022 Avery Lee
+ *
+ * Copying and distribution of this file, with or without modification,
+ * are permitted in any medium without royalty provided the copyright
+ * notice and this notice are preserved.  This file is offered as-is,
+ * without any warranty.
+ */
+
+#include "atari.h"
+
+UBYTE const ROM_altirra_basic[] =
+{

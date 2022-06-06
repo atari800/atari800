@@ -1,8 +1,16 @@
-This folder contains the sources for the Altirra Kernel ROM replacement, used
-to build the internal emulator OS.
+This folder contains the sources for the Altirra ROM replacements, used
+to build the internal emulator OS and BASIC.
 
 To rebuild the files, you need the MAD assembler in your path, download from
 here: https://github.com/tebe6502/Mad-Assembler/releases
 
 Just type make in this directory and the C files will be built.
 
+To update Altirra ROMs, copy the following files into the following
+locations:
+
+src/Kernel/source/main.xasm -> main.xasm
+src/Kernel/source/Shared/* -> src/
+src/ATBasic/source/* -> src_basic/
+
+If new files were added, you may need to edit the Makefile.

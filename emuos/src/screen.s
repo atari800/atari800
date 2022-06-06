@@ -1550,11 +1550,15 @@ no_cursor:
 	;check against the full height!
 	lda		botscr
 	ldx		dindex
-	beq		rowcheck_gr0
+	bne		rowcheck_not_gr0
+	bit		swpflg
+	bmi		rowcheck_gr0
+rowcheck_not_gr0:
 	ldy		ScreenHeightShifts,x
 	lda		ScreenHeights,y
 rowcheck_gr0:
-	;while we know it's GR.0, clamp RMARGN to 39 (required for ARTILLERY.BAS)
+	;Clamp RMARGN to 39 (required for ARTILLERY.BAS). Yes, this still happens
+	;even if the screen is not GR.0 and we're plotting above the screen split.
 	ldy		#39
 	cpy		rmargn
 	bcs		rmargn_ok
@@ -1726,7 +1730,6 @@ with_x:
 	rol		adress+1		;row*2
 	asl
 	rol		adress+1		;row*4
-	clc
 	adc		adress			;row*5
 	scc:inc	adress+1
 shift_loop:
