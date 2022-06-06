@@ -12,7 +12,7 @@ OUT=build
 
 CDIR=../src/roms/
 
-SRC_SHARED=\
+SRC_BIOS_SHARED=\
  src/atarifont.inc \
  src/boot.s \
  src/cassette.s \
@@ -37,10 +37,10 @@ SRC_SHARED=\
  src/vbi.s \
  src/version.inc \
 
-SRC_800=\
+SRC_BIOS_800=\
  src/blackboard.s \
 
-SRC_XL=\
+SRC_BIOS_XL=\
  src/atariifont.inc \
  src/bootscreen.s \
  src/driveimage.inc \
@@ -48,17 +48,38 @@ SRC_XL=\
  src/phandler.s \
  src/selftestentry.s \
 
+SRC_BASIC=\
+ src_basic/data.s \
+ src_basic/error.s \
+ src_basic/evaluator.s \
+ src_basic/exec.s \
+ src_basic/functions.s \
+ src_basic/io.s \
+ src_basic/list.s \
+ src_basic/math.s \
+ src_basic/memory.s \
+ src_basic/parser.s \
+ src_basic/parserbytecode.s \
+ src_basic/statements.s \
+ src_basic/system.inc \
+ src_basic/tokens.inc \
+ src_basic/util.s \
+ src_basic/variables.s
+
 all:\
  $(CDIR)/altirraos_xl.c \
  $(CDIR)/altirraos_800.c \
+ $(CDIR)/altirra_basic.c
 
-# Rules to assemble XL and 800 kernel ROM
-$(OUT)/altirraos_xl.rom: main.xasm $(SRC_XL) $(SRC_SHARED) | $(OUT)
+# Rules to assemble ROMs
+$(OUT)/altirraos_xl.rom: main.xasm $(SRC_BIOS_XL) $(SRC_BIOS_SHARED) | $(OUT)
 	$(MADS) -d:_KERNEL_XLXE=1 -s -p -i:src -i:fnt -b:49152 -l:$(@:.rom=.lst) -t:$(@:.rom=.lab) -o:$@ $<
 
-
-$(OUT)/altirraos_800.rom: main.xasm $(SRC_800) $(SRC_SHARED) | $(OUT)
+$(OUT)/altirraos_800.rom: main.xasm $(SRC_BIOS_800) $(SRC_BIOS_SHARED) | $(OUT)
 	$(MADS) -d:_KERNEL_XLXE=0 -s -p -i:src -i:fnt -b:55296 -l:$(@:.rom=.lst) -t:$(@:.rom=.lab) -o:$@ $<
+
+$(OUT)/altirra_basic.rom: src_basic/atbasic.s $(SRC_BASIC) | $(OUT)
+	$(MADS) -d:CART=1 -s -p -i:src_basic -b:40960 -l:$(@:.rom=.lst) -t:$(@:.rom=.lab) -o:$@ $<
 
 # Rules to convert ROM into HEX file
 $(OUT)/%.hex: $(OUT)/%.rom
@@ -72,6 +93,9 @@ $(OUT):
 	mkdir -p $(OUT)
 
 clean:
+	-rm -f $(OUT)/altirra_basic.lab
+	-rm -f $(OUT)/altirra_basic.lst
+	-rm -f $(OUT)/altirra_basic.rom
 	-rm -f $(OUT)/altirraos_800.lab
 	-rm -f $(OUT)/altirraos_800.lst
 	-rm -f $(OUT)/altirraos_800.rom
