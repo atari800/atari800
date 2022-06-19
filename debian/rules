@@ -100,10 +100,12 @@ binary-arch:		checkroot build
 	install -m 644 src/$(P).man debian/tmp/usr/share/man/man1/$(P).1
 	gzip -9nv debian/tmp/usr/share/man/man1/$(P).1
 
-# install menu file
+# install menu items, desktop and icon files
 #
-	install -d debian/tmp/usr/share/menu
-	install -m 644 debian/menu debian/tmp/usr/share/menu/$(P)
+	install -d debian/tmp/usr/share/applications
+	install -m 644 debian/$(P).desktop debian/tmp/usr/share/applications/$(P).desktop
+	install -d debian/tmp/usr/share/pixmaps
+	install -m 644 data/atari2.png debian/tmp/usr/share/pixmaps/$(P).png
 
 # install binaries
 #
