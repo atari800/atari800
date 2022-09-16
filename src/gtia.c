@@ -264,7 +264,7 @@ static void generate_partial_pmpl_colls(int l, int r)
 	if (r < 0 || l >= (int) sizeof(GTIA_pm_scanline) / (int) sizeof(GTIA_pm_scanline[0]))
 		return;
 	if (r >= (int) sizeof(GTIA_pm_scanline) / (int) sizeof(GTIA_pm_scanline[0])) {
-		r = (int) sizeof(GTIA_pm_scanline) / (int) sizeof(GTIA_pm_scanline[0]);
+		r = (int) sizeof(GTIA_pm_scanline) / (int) sizeof(GTIA_pm_scanline[0]) - 1;
 	}
 	if (l < 0)
 		l = 0;
