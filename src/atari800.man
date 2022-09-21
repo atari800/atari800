@@ -665,6 +665,9 @@ Record all input events to \fIfilename\fR. Can be used for gaming contests
 .TP
 .BI \-playback\  filename
 Playback input events from \fIfilename\fR. Watch an expert play the game.
+.TP
+.B \-playbacknoexit
+Don't exit the emulator after playback finishes.
 
 .TP
 .B \-refresh
