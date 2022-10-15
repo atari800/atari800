@@ -182,10 +182,8 @@ UPDATE_LOCAL_REGS macro
   add.l   d7,PC6502
   endm
 
-_Local_GetByte:
+GetByte:
   move.l d7,d1
-  moveq  #0,d0
-  move.b d1,d0
   lsr.w  #8,d1
   move.b (HIxTable,d1.l),d1
 ; jmp    ([GetTable,PC,d1.l*4])
@@ -203,7 +201,7 @@ GetNone:
   rts
 GetGTIA:
   clr.l -(a7)      ; FALSE (no side effects)
-  move.l d0,-(a7)
+  move.l d7,-(a7)
   ifne   NEW_CYCLE_EXACT
   move.l CD,_ANTIC_xpos
   endif
@@ -212,27 +210,27 @@ GetGTIA:
   rts
 GetPOKEY:
   clr.l -(a7)      ; FALSE (no side effects)
-  move.l d0,-(a7)
+  move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _POKEY_GetByte
   addq.l #8,a7
   rts
 GetPIA:
   clr.l -(a7)      ; FALSE (no side effects)
-  move.l d0,-(a7)
+  move.l d7,-(a7)
   jsr    _PIA_GetByte
   addq.l #8,a7
   rts
 GetANTIC:
   clr.l -(a7)      ; FALSE (no side effects)
-  move.l d0,-(a7)
+  move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _ANTIC_GetByte
   addq.l #8,a7
   rts
 GetCART:
   clr.l -(a7)      ; FALSE (no side effects)
-  move.l d0,-(a7)
+  move.l d7,-(a7)
   jsr    _CARTRIDGE_GetByte
   addq.l #8,a7
   rts
@@ -251,9 +249,8 @@ ItsBob1:
   moveq  #0,d0
   rts
 
-_Local_PutByte:
-  moveq  #0,d1
-  move.w d7,d1
+PutByte:
+  move.l d7,d1
   lsr.w  #8,d1
   move.b (HIxTable,d1.l),d1
   jmp    ([PutTable,PC,d1.l*4])
@@ -266,45 +263,35 @@ PutNone:
   moveq  #0,d0
   rts
 PutGTIA:
-  move.b d0,d1
-  move.l d1,-(a7)
-  move.b d7,d1
-  move.l d1,-(a7)
+  move.l d0,-(a7)
+  move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _GTIA_PutByte
   addq.l #8,a7
   rts
 PutPOKEY:
-  move.b d0,d1
-  move.l d1,-(a7)
-  move.b d7,d1
-  move.l d1,-(a7)
+  move.l d0,-(a7)
+  move.l d7,-(a7)
   jsr    _POKEY_PutByte
   addq.l #8,a7
   rts
 PutPIA:
-  move.b d0,d1
-  move.l d1,-(a7)
-  move.b d7,d1
-  move.l d1,-(a7)
+  move.l d0,-(a7)
+  move.l d7,-(a7)
   jsr    _PIA_PutByte
   addq.l #8,a7
   rts
 PutANTIC:
-  move.b d0,d1
-  move.l d1,-(a7)
-  move.b d7,d1
-  move.l d1,-(a7)
+  move.l d0,-(a7)
+  move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _ANTIC_PutByte
   move.l _ANTIC_xpos,CD
   addq.l #8,a7
   rts
 PutCART:
-  move.b d0,d1
-  move.l d1,-(a7)
-  move.b d7,d1
-  move.l d1,-(a7)
+  move.l d0,-(a7)
+  move.l d7,-(a7)
   jsr    _CARTRIDGE_PutByte
   addq.l #8,a7
   rts
@@ -387,16 +374,11 @@ HIxTable:
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; fc..f
 
 EXE_GETBYTE macro
-; move.l d7,-(a7)
-  jsr    _Local_GetByte
-; addq.l #4,a7 ;put stack onto right place
+  bsr    GetByte
   endm
 
 EXE_PUTBYTE macro
-; clr.l  -(a7)
-; move.b \1,3(a7) ;byte
-  jsr    _Local_PutByte
-; addq.l #8,a7
+  bsr    PutByte
   endm
 
 ; XXX: we do this only for GTIA, because NEW_CYCLE_EXACT does not correctly
@@ -564,9 +546,7 @@ ConvertRegP_STATUS macro
   endm
 
 Call_Atari800_RunEsc macro
-; move.l d7,-(a7)   !!!TEST!!!
-  clr.l  -(a7)     ;!!!TEST!!!
-  move.b d7,(3,a7) ;!!!TEST!!!
+  move.l d7,-(a7)
   ConvertSTATUS_RegP_destroy d0
   UPDATE_GLOBAL_REGS
   jsr _ESC_Run
