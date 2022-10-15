@@ -44,17 +44,21 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
 
   opt    P=68040,L1,O+,W-
 
-  xref _CARTRIDGE_BountyBob2
-  xref _CARTRIDGE_BountyBob1
   xref _GTIA_GetByte
   xref _POKEY_GetByte
   xref _PIA_GetByte
   xref _ANTIC_GetByte
+  xref _CARTRIDGE_5200SuperCartGetByte
+  xref _CARTRIDGE_BountyBob1GetByte
+  xref _CARTRIDGE_BountyBob2GetByte
   xref _CARTRIDGE_GetByte
   xref _GTIA_PutByte
   xref _POKEY_PutByte
   xref _PIA_PutByte
   xref _ANTIC_PutByte
+  xref _CARTRIDGE_5200SuperCartPutByte
+  xref _CARTRIDGE_BountyBob1PutByte
+  xref _CARTRIDGE_BountyBob2PutByte
   xref _CARTRIDGE_PutByte
   xref _ESC_Run
   xref _Atari800_Exit
@@ -194,13 +198,14 @@ GetTable:
   dc.w GetNone-GetTable,GetGTIA-GetTable
   dc.w GetPOKEY-GetTable,GetPIA-GetTable
   dc.w GetANTIC-GetTable,GetCART-GetTable
-  dc.w ItsBob1-GetTable,ItsBob2-GetTable
+  dc.w GetBob1-GetTable,GetBob2-GetTable
+  dc.w Get5200-GetTable
 
 GetNone:
   st     d0        ; higher bytes are 0 from before
   rts
 GetGTIA:
-  clr.l -(a7)      ; FALSE (no side effects)
+  clr.l  -(a7)      ; FALSE (no side effects)
   move.l d7,-(a7)
   ifne   NEW_CYCLE_EXACT
   move.l CD,_ANTIC_xpos
@@ -209,44 +214,48 @@ GetGTIA:
   addq.l #8,a7
   rts
 GetPOKEY:
-  clr.l -(a7)      ; FALSE (no side effects)
+  clr.l  -(a7)      ; FALSE (no side effects)
   move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _POKEY_GetByte
   addq.l #8,a7
   rts
 GetPIA:
-  clr.l -(a7)      ; FALSE (no side effects)
+  clr.l  -(a7)      ; FALSE (no side effects)
   move.l d7,-(a7)
   jsr    _PIA_GetByte
   addq.l #8,a7
   rts
 GetANTIC:
-  clr.l -(a7)      ; FALSE (no side effects)
+  clr.l  -(a7)      ; FALSE (no side effects)
   move.l d7,-(a7)
   move.l CD,_ANTIC_xpos
   jsr    _ANTIC_GetByte
   addq.l #8,a7
   rts
 GetCART:
-  clr.l -(a7)      ; FALSE (no side effects)
+  clr.l  -(a7)      ; FALSE (no side effects)
   move.l d7,-(a7)
   jsr    _CARTRIDGE_GetByte
   addq.l #8,a7
   rts
-ItsBob2:
-  move.w d7,-(a7)
-  clr.w  -(a7)
-  jsr    _CARTRIDGE_BountyBob2
-  addq.l #4,a7
-  moveq  #0,d0
+GetBob1:
+  clr.l  -(a7)      ; FALSE (no side effects)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_BountyBob1GetByte
+  addq.l #8,a7
   rts
-ItsBob1:
-  move.w d7,-(a7)
-  clr.w  -(a7)
-  jsr    _CARTRIDGE_BountyBob1
-  addq.l #4,a7
-  moveq  #0,d0
+GetBob2:
+  clr.l  -(a7)      ; FALSE (no side effects)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_BountyBob2GetByte
+  addq.l #8,a7
+  rts
+Get5200:
+  clr.l  -(a7)      ; FALSE (no side effects)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_5200SuperCartGetByte
+  addq.l #8,a7
   rts
 
 PutByte:
@@ -257,7 +266,8 @@ PutByte:
 
 PutTable:
   dc.l PutNone,PutGTIA,PutPOKEY,PutPIA
-  dc.l PutANTIC,PutCART,ItsBob1,ItsBob2
+  dc.l PutANTIC,PutCART,PutBob1,PutBob2
+  dc.l Put5200
 
 PutNone:
   moveq  #0,d0
@@ -295,6 +305,24 @@ PutCART:
   jsr    _CARTRIDGE_PutByte
   addq.l #8,a7
   rts
+PutBob1:
+  move.l d0,-(a7)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_BountyBob1PutByte
+  addq.l #8,a7
+  rts
+PutBob2:
+  move.l d0,-(a7)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_BountyBob2PutByte
+  addq.l #8,a7
+  rts
+Put5200:
+  move.l d0,-(a7)
+  move.l d7,-(a7)
+  jsr    _CARTRIDGE_5200SuperCartPutByte
+  addq.l #8,a7
+  rts
 
 HIxNone   equ 0
 HIxGTIA8  equ 1
@@ -306,6 +334,7 @@ HIxANTIC8 equ 4
 HIxCART   equ 5
 HIxBob1   equ 6
 HIxBob2   equ 7
+HIx5200   equ 8
 
 HIxTable:
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 00..7
@@ -355,7 +384,7 @@ HIxTable:
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b0..7
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b4..7
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; bc..f
+  dc.b HIxNone,HIxNone,HIxNone,HIx5200     ; bc..f
   dc.b HIxGTIA5,HIxNone,HIxNone,HIxNone    ; c0..3
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; c4..7
   dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; c8..b
