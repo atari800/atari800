@@ -7,6 +7,8 @@ DIR_ATARI800_FAST="atari800-fast"
 DIR_ATARI800_SDL="atari800-sdl"
 DIR_ATARI800_CF="atari800-cf"
 
+DIR_SYSROOT="$(m68k-atari-mint-gcc -print-sysroot)"
+
 rm -rf ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 
@@ -28,13 +30,13 @@ ${DIR_ATARI800_SRC}/configure --host=m68k-atari-mint --enable-veryslow --disable
 cd -
 
 cd ${DIR_ATARI800_SDL}
-PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin/m68020-60:$PATH ${DIR_ATARI800_SRC}/configure --host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no \
+PATH=${DIR_SYSROOT}/usr/bin/m68020-60:$PATH ${DIR_ATARI800_SRC}/configure --host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no \
 	--target=default --enable-falconcpuasm \
 	&& make V=1
 cd -
 
 cd ${DIR_ATARI800_CF}
-PATH=$HOME/gnu-tools/m68000/m68k-atari-mint/bin/m5475:$PATH ${DIR_ATARI800_SRC}/configure --host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no \
+PATH=${DIR_SYSROOT}/usr/bin/m5475:$PATH ${DIR_ATARI800_SRC}/configure --host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no \
 	--target=firebee --enable-pagedattrib --enable-cyclesperopcode \
 	&& make V=1
 cd -
