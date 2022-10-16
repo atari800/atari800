@@ -1,0 +1,7 @@
+- check real joysticks:
+	- on Falcon build, fire seems to gets stuck
+	- on SDL build it doesn't work at all
+- broken load/save state
+- super-slow bank switching (The Asskicker's main menu)
+
+- eventually merge Falcon and SDL port
