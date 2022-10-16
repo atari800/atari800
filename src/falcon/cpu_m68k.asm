@@ -189,17 +189,74 @@ UPDATE_LOCAL_REGS macro
 GetByte:
   move.l d7,d1
   lsr.w  #8,d1
-  move.b (HIxTable,d1.l),d1
-; jmp    ([GetTable,PC,d1.l*4])
-  move.w (GetTable,PC,d1.l*2),d1
-  jmp    (GetTable,d1.w)
+  move.l (GetTable,pc,d1.l*4),a0
+  jmp    (a0)
 
 GetTable:
-  dc.w GetNone-GetTable,GetGTIA-GetTable
-  dc.w GetPOKEY-GetTable,GetPIA-GetTable
-  dc.w GetANTIC-GetTable,GetCART-GetTable
-  dc.w GetBob1-GetTable,GetBob2-GetTable
-  dc.w Get5200-GetTable
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 00..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 04..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 08..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 0c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 10..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 14..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 18..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 1c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 20..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 24..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 28..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 2c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 30..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 34..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 38..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 3c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 40..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 44..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 48..b
+  dc.l GetNone,GetNone,GetNone,GetBob1     ; 4c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 50..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 54..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 58..b
+  dc.l GetNone,GetNone,GetNone,GetBob2     ; 5c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 60..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 64..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 68..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 6c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 70..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 74..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 78..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 7c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 80..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 84..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 88..b
+  dc.l GetNone,GetNone,GetNone,GetBob1     ; 8c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 90..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 94..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; 98..b
+  dc.l GetNone,GetNone,GetNone,GetBob2     ; 9c..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; a0..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; a4..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; a8..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; ac..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; b0..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; b4..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; b8..b
+  dc.l GetNone,GetNone,GetNone,Get5200     ; bc..f
+  dc.l GetGTIA,GetNone,GetNone,GetNone     ; c0..3
+  dc.l GetNone,GetNone,GetNone,GetNone     ; c4..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; c8..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; cc..f
+  dc.l GetGTIA,GetNone,GetPOKEY,GetPIA     ; d0..3
+  dc.l GetANTIC,GetCART,GetNone,GetNone    ; d4..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; d8..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; dc..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; e0..3
+  dc.l GetNone,GetNone,GetNone,GetNone     ; e4..7
+  dc.l GetPOKEY,GetNone,GetNone,GetPOKEY   ; e8..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; ec..f
+  dc.l GetNone,GetNone,GetNone,GetNone     ; f0..3
+  dc.l GetNone,GetNone,GetNone,GetNone     ; f4..7
+  dc.l GetNone,GetNone,GetNone,GetNone     ; f8..b
+  dc.l GetNone,GetNone,GetNone,GetNone     ; fc..f
 
 GetNone:
   st     d0        ; higher bytes are 0 from before
@@ -261,13 +318,74 @@ Get5200:
 PutByte:
   move.l d7,d1
   lsr.w  #8,d1
-  move.b (HIxTable,d1.l),d1
-  jmp    ([PutTable,PC,d1.l*4])
+  move.l (PutTable,pc,d1.l*4),a0
+  jmp    (a0)
 
 PutTable:
-  dc.l PutNone,PutGTIA,PutPOKEY,PutPIA
-  dc.l PutANTIC,PutCART,PutBob1,PutBob2
-  dc.l Put5200
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 00..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 04..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 08..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 0c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 10..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 14..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 18..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 1c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 20..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 24..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 28..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 2c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 30..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 34..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 38..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 3c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 40..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 44..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 48..b
+  dc.l PutNone,PutNone,PutNone,PutBob1     ; 4c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 50..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 54..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 58..b
+  dc.l PutNone,PutNone,PutNone,PutBob2     ; 5c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 60..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 64..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 68..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 6c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 70..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 74..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 78..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 7c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 80..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 84..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 88..b
+  dc.l PutNone,PutNone,PutNone,PutBob1     ; 8c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 90..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 94..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; 98..b
+  dc.l PutNone,PutNone,PutNone,PutBob2     ; 9c..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; a0..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; a4..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; a8..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; ac..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; b0..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; b4..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; b8..b
+  dc.l PutNone,PutNone,PutNone,Put5200     ; bc..f
+  dc.l PutGTIA,PutNone,PutNone,PutNone     ; c0..3
+  dc.l PutNone,PutNone,PutNone,PutNone     ; c4..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; c8..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; cc..f
+  dc.l PutGTIA,PutNone,PutPOKEY,PutPIA     ; d0..3
+  dc.l PutANTIC,PutCART,PutNone,PutNone    ; d4..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; d8..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; dc..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; e0..3
+  dc.l PutNone,PutNone,PutNone,PutNone     ; e4..7
+  dc.l PutPOKEY,PutNone,PutNone,PutPOKEY   ; e8..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; ec..f
+  dc.l PutNone,PutNone,PutNone,PutNone     ; f0..3
+  dc.l PutNone,PutNone,PutNone,PutNone     ; f4..7
+  dc.l PutNone,PutNone,PutNone,PutNone     ; f8..b
+  dc.l PutNone,PutNone,PutNone,PutNone     ; fc..f
 
 PutNone:
   moveq  #0,d0
@@ -323,84 +441,6 @@ Put5200:
   jsr    _CARTRIDGE_5200SuperCartPutByte
   addq.l #8,a7
   rts
-
-HIxNone   equ 0
-HIxGTIA8  equ 1
-HIxGTIA5  equ 1
-HIxPOKEY8 equ 2
-HIxPOKEY5 equ 2
-HIxPIA8   equ 3
-HIxANTIC8 equ 4
-HIxCART   equ 5
-HIxBob1   equ 6
-HIxBob2   equ 7
-HIx5200   equ 8
-
-HIxTable:
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 00..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 04..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 08..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 0c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 10..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 14..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 18..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 1c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 20..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 24..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 28..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 2c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 30..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 34..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 38..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 3c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 40..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 44..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 48..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxBob1     ; 4c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 50..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 54..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 58..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxBob2     ; 5c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 60..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 64..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 68..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 6c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 70..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 74..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 78..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 7c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 80..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 84..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 88..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxBob1     ; 8c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 90..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 94..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; 98..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxBob2     ; 9c..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; a0..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; a4..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; a8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; ac..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b0..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b4..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; b8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIx5200     ; bc..f
-  dc.b HIxGTIA5,HIxNone,HIxNone,HIxNone    ; c0..3
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; c4..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; c8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; cc..f
-  dc.b HIxGTIA8,HIxNone,HIxPOKEY8,HIxPIA8  ; d0..3
-  dc.b HIxANTIC8,HIxCART,HIxNone,HIxNone   ; d4..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; d8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; dc..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; e0..3
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; e4..7
-  dc.b HIxPOKEY5,HIxNone,HIxNone,HIxPOKEY5 ; e8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; ec..f
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; f0..3
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; f4..7
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; f8..b
-  dc.b HIxNone,HIxNone,HIxNone,HIxNone     ; fc..f
 
 EXE_GETBYTE macro
   bsr    GetByte
