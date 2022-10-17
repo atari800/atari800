@@ -40,8 +40,9 @@ All m68k versions are built with following switches:
 
 --host=m68k-atari-mint --enable-veryslow --disable-monitorbreak \
 --disable-monitorhints --disable-crashmenu --disable-monitorasm \
---disable-eventrecording --disable-monitorutf8 --disable-monitoransi \
---disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no
+--disable-eventrecording --disable-pokeyrec --disable-videorecording \
+--disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio \
+--disable-riodevice --with-readline=no'
 
 Then specifically:
 
