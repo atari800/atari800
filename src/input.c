@@ -130,6 +130,7 @@ static gzFile recordfp = NULL; /*output file for input recording*/
 static gzFile playbackfp = NULL; /*input file for playback*/
 static int recording = FALSE;
 static int playingback = FALSE;
+static int playingback_exit_after = TRUE;
 static void update_adler32_of_screen(void);
 static unsigned int compute_adler32_of_screen(void);
 static int recording_version;
@@ -236,6 +237,8 @@ int INPUT_Initialise(int *argc, char *argv[])
 				}
 			}
 			else a_m = TRUE;
+		} else if (strcmp(argv[i], "-playbacknoexit") == 0) {
+			playingback_exit_after = FALSE;
 		}
 #endif /* EVENT_RECORDING */
  		else if (strcmp(argv[i], "-directmouse") == 0) {
@@ -269,8 +272,12 @@ int INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-directmouse     Use absolute X/Y mouse coords");
 				Log_print("\t-cx85 <n>        Emulate CX85 numeric keypad on port <n>");
 				Log_print("\t-multijoy        Emulate MultiJoy4 interface");
-				Log_print("\t-record <file>   Record input to <file>");
-				Log_print("\t-playback <file> Playback input from <file>");
+				#ifdef EVENT_RECORDING
+					Log_print("\t-record <file>   Record input to <file>");
+					Log_print("\t-playback <file> Playback input from <file>");
+					Log_print("\t-playbacknoexit  Don't exit the emulator after playback finishes");
+				#endif /* EVENT_RECORDING */
+				
 			}
 			argv[j++] = argv[i];
 		}
@@ -900,8 +907,10 @@ static void update_adler32_of_screen(void)
 	if (playingback && gzeof(playbackfp)) {
 		playingback = FALSE;
 		gzclose(playbackfp);
-		Atari800_ErrExit();
-		exit(adler32_errors > 0 ? 1 : 0); /* return code indicates errors*/
+		if (playingback_exit_after) { // exit emulation when not set otherwise
+			Atari800_ErrExit();
+			exit(adler32_errors > 0 ? 1 : 0); /* return code indicates errors*/
+		}
 	}
 }
 /* Compute the adler32 value of the visible screen */

@@ -206,6 +206,7 @@ Command line options
 
 -record <filename>    Record input to <filename>
 -playback <filename>  Playback input from <filename>
+-playbacknoexit       Don't exit the emulator after playback finishes
 
 -refresh <rate>       Set screen refresh rate
 -ntsc-artif none|ntsc-old|ntsc-new|ntsc-full
