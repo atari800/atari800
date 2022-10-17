@@ -45,8 +45,12 @@ extern CONTAINER_t *container;
 
 int CONTAINER_IsSupported(const char *filename);
 int CONTAINER_Open(const char *filename);
+#ifdef SOUND
 int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples);
+#endif
+#ifdef VIDEO_RECORDING
 int CONTAINER_AddVideoFrame(void);
+#endif
 int CONTAINER_Close(int file_ok);
 
 #endif /* CODECS_CONTAINER_H_ */

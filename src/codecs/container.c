@@ -241,6 +241,7 @@ int CONTAINER_Open(const char *filename)
 	return (fp != NULL);
 }
 
+#ifdef SOUND
 int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples)
 {
 	int result;
@@ -257,7 +258,11 @@ int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples)
 			return 1;
 		}
 	}
-	else if (!video_codec) {
+	else
+#ifdef VIDEO_RECORDING
+		if (!video_codec)
+#endif
+	{
 		/* Before file close time, there is one call to this function every
 		   video frame. If the video codec is not being used, we need to count
 		   frames here because frame count is used to determine the duration of
@@ -304,7 +309,9 @@ int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples)
 	}
 	return result;
 }
+#endif
 
+#ifdef VIDEO_RECORDING
 int CONTAINER_AddVideoFrame(void)
 {
 	int size;
@@ -356,6 +363,7 @@ int CONTAINER_AddVideoFrame(void)
 
 	return result;
 }
+#endif
 
 /* Closes the current container, flushing any buffered audio data and updating
    the container metadata with the final sizes of all video and audio frames
@@ -374,11 +382,13 @@ int CONTAINER_Close(int file_ok)
 	/* Note that all video frames will be written, but the audio codec may
 		still have frames buffered. */
 
+#ifdef SOUND
 	if (file_ok && audio_codec && audio_codec->flush((float)(video_frame_count / fps))) {
 		/* Force audio codec to write out any remaining frames. This only
 			occurs in codecs that buffer frames or force fixed block sizes */
 		result = CONTAINER_AddAudioSamples(NULL, 0);
 	}
+#endif
 
 	if (result) {
 		clearerr(fp);
