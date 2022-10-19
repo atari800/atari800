@@ -30,7 +30,7 @@
 #include "colours.h"
 #include "util.h"
 #include "log.h"
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 #include "codecs/audio.h"
 #endif
 #include "codecs/image.h"
@@ -109,7 +109,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	   header which is (strl header LIST + (strh + strf + strn)) */
 	list_size = 4 + 8 + 56 + (12 + (8 + 56 + 8 + 40 + 256*4 + 8 + 16));
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	/* if audio is included, add size of audio stream strl header LIST + (strh + strf + strn) */
 	if (num_streams == 2) list_size += 12 + (8 + 56 + 8 + 18 + audio_out->extra_data_size + 8 + 12);
 #endif
@@ -208,7 +208,7 @@ static int AVI_WriteHeader(FILE *fp) {
 	fputc(0, fp); /* null terminator */
 	fputc(0, fp); /* padding to get to 16 bytes */
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	if (num_streams == 2) {
 		/* audio stream format */
 
@@ -265,7 +265,7 @@ static int AVI_WriteHeader(FILE *fp) {
 		fputs("POKEY audio", fp);
 		fputc(0, fp); /* null terminator */
 	}
-#endif /* SOUND */
+#endif /* AUDIO_RECORDING */
 
 	/* audia/video data */
 
@@ -289,7 +289,7 @@ static int AVI_WriteHeader(FILE *fp) {
    */
 static int AVI_Prepare(FILE *fp)
 {
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	if (audio_codec) {
 		num_streams = 2;
 	}
@@ -369,7 +369,7 @@ static int AVI_VideoFrame(FILE *fp, const UBYTE *buf, int bufsize, int is_keyfra
 	return AVI_WriteFrame(fp, buf, bufsize, VIDEO_FRAME_FLAG, is_keyframe);
 }
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 /* AVI_AudioFrame adds audio data to the stream and update the audio
    statistics. */
 static int AVI_AudioFrame(FILE *fp, const UBYTE *buf, int bufsize) {
@@ -457,7 +457,7 @@ CONTAINER_t Container_AVI = {
 	"avi",
 	"AVI format multimedia",
 	&AVI_Prepare,
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	&AVI_AudioFrame,
 #else
 	NULL,

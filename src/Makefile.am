@@ -128,7 +128,7 @@ if WITH_FILE_EXPORT
 atari800_SOURCES += file_export.c file_export.h
 if WITH_MULTIMEDIA
 atari800_SOURCES += codecs/container.c codecs/container.h
-if WITH_SOUND
+if WITH_AUDIO_RECORDING
 atari800_SOURCES += codecs/container_wav.c codecs/container_wav.h \
 	codecs/audio.c codecs/audio.h \
 	codecs/audio_pcm.c codecs/audio_pcm.h \

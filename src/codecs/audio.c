@@ -22,8 +22,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/* This file is only included in compilation when sound enabled, so no need to
-   do any #ifdef SOUND directives. */
+/* This file is only included in compilation when audio recording enabled,
+   so no need to do any #ifdef AUDIO_RECORDING directives. */
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -35,10 +35,10 @@
 #include "codecs/image.h"
 #endif
 
-#ifdef MULTIMEDIA
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 #include "codecs/container.h"
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 #include "codecs/audio.h"
 #endif
 
@@ -46,7 +46,7 @@
 #include "codecs/video.h"
 #endif
 
-#endif /* MULTIMEDIA */
+#endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 #define ERROR_MSG_MAX 40
 static char error_msg[ERROR_MSG_MAX];
@@ -56,9 +56,9 @@ char *FILE_EXPORT_error_message = error_msg;
 int FILE_EXPORT_compression_level = 6;
 #endif
 
-#ifdef MULTIMEDIA
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 #define DEFAULT_SOUND_FILENAME_FORMAT "atari###.wav"
 #ifdef AUDIO_CODEC_MP3
 #define DEFAULT_SOUND_FILENAME_FORMAT_MP3 "atari###.mp3"
@@ -66,7 +66,7 @@ int FILE_EXPORT_compression_level = 6;
 static char sound_filename_format[FILENAME_MAX];
 static int sound_no_last = -1;
 static int sound_no_max = 0;
-#endif /* SOUND */
+#endif /* AUDIO_RECORDING */
 
 #ifdef VIDEO_RECORDING
 #define DEFAULT_VIDEO_FILENAME_FORMAT "atari###.avi"
@@ -75,12 +75,12 @@ static int video_no_last = -1;
 static int video_no_max = 0;
 #endif /* VIDEO_RECORDING */
 
-#endif /* MULTIMEDIA */
+#endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 
 int File_Export_Initialise(int *argc, char *argv[])
 {
-#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(MULTIMEDIA)
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	int i;
 	int j;
 
@@ -102,7 +102,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 		else if (strcmp(argv[i], "-aname") == 0) {
 			if (i_a)
 				sound_no_max = Util_filenamepattern(argv[++i], sound_filename_format, FILENAME_MAX, DEFAULT_SOUND_FILENAME_FORMAT);
@@ -122,7 +122,7 @@ int File_Export_Initialise(int *argc, char *argv[])
 				Log_print("\t-compression-level <n>");
 				Log_print("\t                 Set zlib/PNG compression level 0-9 (default 6)");
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 				Log_print("\t-aname <p>       Set filename pattern for audio recording");
 #endif
 #ifdef VIDEO_RECORDING
@@ -141,10 +141,10 @@ int File_Export_Initialise(int *argc, char *argv[])
 		}
 	}
 	*argc = j;
-#endif /* defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(MULTIMEDIA) */
+#endif /* defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 	return TRUE
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 		&& CODECS_AUDIO_Initialise(argc, argv)
 #endif
 #ifdef VIDEO_RECORDING
@@ -168,7 +168,7 @@ int File_Export_ReadConfig(char *string, char *ptr)
 	else if (CODECS_VIDEO_ReadConfig(string, ptr)) {
 	}
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	else if (CODECS_AUDIO_ReadConfig(string, ptr)) {
 	}
 #endif
@@ -184,7 +184,7 @@ void File_Export_WriteConfig(FILE *fp)
 #ifdef VIDEO_RECORDING
 	CODECS_VIDEO_WriteConfig(fp);
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	CODECS_AUDIO_WriteConfig(fp);
 #endif
 }
@@ -221,7 +221,7 @@ void File_Export_SetErrorMessageArg(const char *format, const char *arg)
 	File_Export_SetErrorMessage(msg);
 }
 
-#ifdef MULTIMEDIA
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 
 /* File_Export_IsRecording simply returns true if any multimedia file is
    currently open and able to receive writes.
@@ -265,7 +265,7 @@ int File_Export_StartRecording(const char *filename)
 	return CONTAINER_Open(filename);
 }
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 /* Get the next filename in the sound_file_format pattern.
    RETURNS: True if filename is available, false if no filenames left in the pattern. */
 int File_Export_GetNextSoundFile(char *buffer, int bufsize) {
@@ -302,7 +302,7 @@ int File_Export_WriteAudio(const UBYTE *samples, int num_samples)
 
 	return result;
 }
-#endif /* SOUND */
+#endif /* AUDIO_RECORDING */
 
 #ifdef VIDEO_RECORDING
 /* Get the next filename in the video_file_format pattern.
@@ -354,7 +354,7 @@ int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type)
 	return 0;
 }
 
-#endif /* MULTIMEDIA */
+#endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 #if !defined(BASIC) && !defined(CURSES_BASIC)
 

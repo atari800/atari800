@@ -62,7 +62,7 @@
 #ifdef SOUND
 #include "sound.h"
 #endif
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(VIDEO_RECORDING)
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 #include "file_export.h"
 #endif
 
@@ -338,7 +338,7 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 			else if (Sound_ReadConfig(string, ptr)) {
 			}
 #endif /* defined(SOUND) && defined(SOUND_THIN_API) */
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(VIDEO_RECORDING)
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 			else if (File_Export_ReadConfig(string, ptr)) {
 			}
 #endif

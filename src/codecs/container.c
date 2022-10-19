@@ -23,7 +23,7 @@
 */
 
 
-/* This file is only compiled when either SOUND or VIDEO_RECORDING is defined. */
+/* This file is compiled when AUDIO_RECORDING or VIDEO_RECORDING is defined. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@
 #include "log.h"
 #include "file_export.h"
 #include "codecs/container.h"
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 #include "sound.h"
 #include "codecs/audio.h"
 #include "codecs/container_wav.h"
@@ -70,7 +70,7 @@ float fps;
 char description[32];
 
 static CONTAINER_t *known_containers[] = {
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	&Container_WAV,
 #ifdef AUDIO_CODEC_MP3
 	&Container_MP3,
@@ -135,7 +135,7 @@ static int close_codecs(void)
 		video_codec = NULL;
 	}
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	if (audio_codec) {
 		CODECS_AUDIO_End();
 		audio_codec = NULL;
@@ -175,7 +175,7 @@ int CONTAINER_Open(const char *filename)
 		smallest_audio_frame = 0xffffffff;
 		largest_audio_frame = 0;
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 		if (Sound_enabled) {
 			if (!CODECS_AUDIO_Init()) {
 				/* error message set in codec */
@@ -206,7 +206,7 @@ int CONTAINER_Open(const char *filename)
 			strcat(description, video_codec->codec_id);
 		}
 #endif
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 		if (audio_codec) {
 			/* If the audio codec has the same name as the container (e.g. mp3
 			   is both a codec and container type), don't duplicate the name */
@@ -241,7 +241,7 @@ int CONTAINER_Open(const char *filename)
 	return (fp != NULL);
 }
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 int CONTAINER_AddAudioSamples(const UBYTE *buf, int num_samples)
 {
 	int result;
@@ -382,7 +382,7 @@ int CONTAINER_Close(int file_ok)
 	/* Note that all video frames will be written, but the audio codec may
 		still have frames buffered. */
 
-#ifdef SOUND
+#ifdef AUDIO_RECORDING
 	if (file_ok && audio_codec && audio_codec->flush((float)(video_frame_count / fps))) {
 		/* Force audio codec to write out any remaining frames. This only
 			occurs in codecs that buffer frames or force fixed block sizes */

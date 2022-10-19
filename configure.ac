@@ -1102,42 +1102,50 @@ if [[ "$with_sound" != no ]]; then
               [Emulate the Alien Group Voice Box (default=ON)],
               VOICEBOX,[Define to emulate the Alien Group Voice Box.]
              )
+    A8_OPTION(audiorecording,"yes",
+            [Support audio recording to sound or AVI files (default=ON)],
+            AUDIO_RECORDING,[Define to enable support for audio recording to files.]
+            )
 
-    supported_audio_codecs="pcm adpcm mulaw"
-    AC_ARG_WITH(mp3,
-        [AC_HELP_STRING(--with-mp3@<:@=no|yes|lame@:>@,[Select mp3 audio @<:@default=check@:>@])],
-        [
-            case "$withval" in
-                no | yes | check | lame)
-                    ;;
-                *)
-                    AC_MSG_ERROR([unrecognized value for --with-mp3: "$withval"])
-                    ;;
-            esac
-        ],
-        [with_mp3=check])
-    if [[ "$with_mp3" != "no" ]]; then
-        if [[ "$with_mp3" = check -o "$with_mp3" = yes -o "$with_mp3" = lame ]]; then
-            AC_CHECK_LIB(mp3lame, lame_init, [
-                A8_ADD_INCLUDE_PATH([lame],[lame.h],[/usr/include /usr/local/include],[lame],[
-                    if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
-                        AC_MSG_ERROR([lame.h not found, modify CPPFLAGS or use --with-mp3=check])
+    if [[ "$WANT_AUDIO_RECORDING" = "yes" ]]; then
+        supported_audio_codecs="pcm adpcm mulaw"
+        AC_ARG_WITH(mp3,
+            [AC_HELP_STRING(--with-mp3@<:@=no|yes|lame@:>@,[Select mp3 audio @<:@default=check@:>@])],
+            [
+                case "$withval" in
+                    no | yes | check | lame)
+                        ;;
+                    *)
+                        AC_MSG_ERROR([unrecognized value for --with-mp3: "$withval"])
+                        ;;
+                esac
+            ],
+            [with_mp3=check])
+        if [[ "$with_mp3" != "no" ]]; then
+            if [[ "$with_mp3" = check -o "$with_mp3" = yes -o "$with_mp3" = lame ]]; then
+                AC_CHECK_LIB(mp3lame, lame_init, [
+                    A8_ADD_INCLUDE_PATH([lame],[lame.h],[/usr/include /usr/local/include],[lame],[
+                        if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
+                            AC_MSG_ERROR([lame.h not found, modify CPPFLAGS or use --with-mp3=check])
+                        fi
+                        with_mp3="no"
+                    ])
+                    if [[ $with_mp3 != no ]]; then
+                        LIBS="-lmp3lame $LIBS"
+                        AC_DEFINE(AUDIO_CODEC_MP3,1,[Supports mp3 audio])
+                        supported_audio_codecs="$supported_audio_codecs mp3"
+                        with_mp3="libmp3lame"
                     fi
-                    with_mp3=no
+                ], [
+                    if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
+                        AC_MSG_ERROR([unable to find libmp3lame, modify LDFLAGS or use --with-mp3=check])
+                    fi
+                    with_mp3="no"
                 ])
-                if [[ $with_mp3 != no ]]; then
-                    LIBS="-lmp3lame $LIBS"
-                    AC_DEFINE(AUDIO_CODEC_MP3,1,[Supports mp3 audio])
-                    supported_audio_codecs="$supported_audio_codecs mp3"
-                    with_mp3="libmp3lame"
-                fi
-            ], [
-                if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
-                    AC_MSG_ERROR([unable to find libmp3lame, modify LDFLAGS or use --with-mp3=check])
-                fi
-                with_mp3="no"
-            ])
+            fi
         fi
+    else
+        with_mp3="no"
     fi
 else
     WANT_NONLINEAR_MIXING="no"
@@ -1149,12 +1157,14 @@ else
     WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
+    WANT_AUDIO_RECORDING="no"
     WANT_AUDIO_CODEC_MP3="no"
 fi
 AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_RECORDING], test "$WANT_AUDIO_RECORDING" = "yes")
 AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$with_mp3" != "no")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
@@ -1172,10 +1182,7 @@ else
     WANT_VIDEO_RECORDING="no"
 fi
 
-if [[ "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = yes ]]; then
-    AC_DEFINE(MULTIMEDIA, 1, [Define to provide multimedia recording capability.])
-fi
-AM_CONDITIONAL([WITH_MULTIMEDIA], test "$with_sound" != no -o "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_MULTIMEDIA], test "$WANT_AUDIO_RECORDING" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
@@ -1459,9 +1466,12 @@ if [[ "$with_sound" != no ]]; then
     fi
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
-    echo "    Supported audio codecs............: $supported_audio_codecs"
-    if [[ "$with_mp3" != "no" ]]; then
-        echo "        Library for mp3 audio.........: $with_mp3"
+    echo "    Using audio recording?............: $WANT_AUDIO_RECORDING"
+    if [[ "$WANT_AUDIO_RECORDING" = "yes" ]]; then
+        echo "        Supported audio codecs........: $supported_audio_codecs"
+        if [[ "$with_mp3" != "no" ]]; then
+            echo "        Library for mp3 audio.........: $with_mp3"
+        fi
     fi
 else
     echo "    (Sound sub-options disabled)"

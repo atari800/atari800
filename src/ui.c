@@ -82,7 +82,7 @@
 #include "pokeysnd.h"
 #include "sound.h"
 #endif /* SOUND */
-#if defined(SOUND) || defined(VIDEO_RECORDING)
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 #include "file_export.h"
 #endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
 #ifdef DIRECTX
@@ -1271,7 +1271,7 @@ static void CartManagement(void)
 	}
 }
 
-#if defined(SOUND) && !defined(DREAMCAST)
+#ifdef AUDIO_RECORDING
 static void SoundRecording(void)
 {
 	if (!Sound_enabled) {
@@ -1297,7 +1297,7 @@ static void SoundRecording(void)
 		UI_driver->fMessage("Recording stopped", 1);
 	}
 }
-#endif /* defined(SOUND) && !defined(DREAMCAST) */
+#endif /* AUDIO_RECORDING */
 
 #ifdef VIDEO_RECORDING
 static void VideoRecording(void)
@@ -4376,7 +4376,7 @@ void UI_Run(void)
 				done = TRUE;	/* reboot immediately */
 			}
 			break;
-#ifndef DREAMCAST
+#ifdef AUDIO_RECORDING
 		case UI_MENU_SOUND_RECORDING:
 			SoundRecording();
 			break;
