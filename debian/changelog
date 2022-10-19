@@ -1,3 +1,11 @@
+atari800 (5.0.0) unstable; urgency=medium
+
+  * New upstream version 5.0.0
+  * Package released via GitHub, Cliff Hatch, May 2022:
+  * AMD and Intel 64 bit    - atari800_5.0.0_amd64.deb
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sun, 19 Jun 2022 16:08:37 +0100
+
 atari800 (4.2.0-1) unstable; urgency=low
 
   * New upstream version 4.2.0

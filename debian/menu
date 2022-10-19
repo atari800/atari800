@@ -1,2 +1,0 @@
-?package(atari800):needs="x11" section="Applications/Emulators" \
-	title="Atari Emulator" command="atari800"

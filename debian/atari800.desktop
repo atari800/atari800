@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Atari800
+Comment=Atari Emulator
+Exec=atari800
+Icon=atari800
+Terminal=false
+Type=Application
+Categories=Game
+Keywords=atari800;Atari;Emulator;
