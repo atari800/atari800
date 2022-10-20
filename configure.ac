@@ -370,7 +370,6 @@ else
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 fi
-AM_CONDITIONAL([WITH_LIBPNG], test "$SUPPORTS_LIBPNG" = "yes")
 
 
 dnl Set OBJS and libraries depending on host and target...
@@ -1164,29 +1163,36 @@ AM_CONDITIONAL([WANT_PBI_XLD], test "$WANT_PBI_XLD" = "yes")
 AM_CONDITIONAL([WANT_VOICEBOX], test "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_XLD_OR_VOICEBOX], test "$WANT_PBI_XLD" = "yes" -o "$WANT_VOICEBOX" = "yes")
 AM_CONDITIONAL([WANT_PBI_MIO_OR_BB], test "$WANT_PBI_MIO" = "yes" -o "$WANT_PBI_BB" = "yes")
-AM_CONDITIONAL([WITH_AUDIO_RECORDING], test "$WANT_AUDIO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_AUDIO_CODECS], test "$WANT_AUDIO_RECORDING" = "yes")
 AM_CONDITIONAL([WITH_AUDIO_CODEC_MP3], test "$with_mp3" != "no")
 
 if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
-    have_bitmapped_screen=yes
     A8_OPTION(videorecording,"yes",
             [Support video recording to AVI files (default=ON)],
             VIDEO_RECORDING,[Define to enable support for AVI video/audio recording.]
             )
-    supported_image_formats="pcx"
-    if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
-        supported_image_formats="$supported_image_formats png"
+    A8_OPTION(screenshots,"yes",
+            [Support saving screenshots to files (default=ON)],
+            SCREENSHOTS,[Define to enable support for screenshot file saving.]
+            )
+    if [[ "$WANT_SCREENSHOTS" = "yes" ]]; then
+        supported_image_formats="pcx"
+        if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+            supported_image_formats="$supported_image_formats png"
+        fi
     fi
 else
-    have_bitmapped_screen="no"
     WANT_VIDEO_RECORDING="no"
+    WANT_SCREENSHOTS="no"
 fi
 
 AM_CONDITIONAL([WITH_MULTIMEDIA], test "$WANT_AUDIO_RECORDING" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_IMAGE_CODECS], test "$WANT_SCREENSHOTS" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_IMAGE_CODEC_PNG], test "$SUPPORTS_LIBPNG" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
-AM_CONDITIONAL([WITH_FILE_EXPORT], test "$with_sound" != no -o "$have_bitmapped_screen" = "yes")
+AM_CONDITIONAL([WITH_FILE_EXPORT], test "$WANT_AUDIO_RECORDING" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes" -o "$WANT_SCREENSHOTS" = "yes")
 
 dnl Set video recording configuration options
 
@@ -1212,7 +1218,7 @@ if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
     fi
 fi
 
-AM_CONDITIONAL([WITH_VIDEO_RECORDING], test "$WANT_VIDEO_RECORDING" = "yes")
+AM_CONDITIONAL([WITH_VIDEO_CODECS], test "$WANT_VIDEO_RECORDING" = "yes")
 AM_CONDITIONAL([WITH_VIDEO_CODEC_PNG], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_PNG" = "yes")
 AM_CONDITIONAL([WITH_VIDEO_CODEC_ZMBV], test "$WANT_VIDEO_RECORDING" = "yes" -a "$WANT_VIDEO_CODEC_ZMBV" = "yes")
 
@@ -1426,8 +1432,11 @@ if [[ "$a8_target" = default ]]; then
     esac
 fi
 if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
+    echo "Using screenshots?....................: $WANT_SCREENSHOTS"
+    if [[ "$WANT_SCREENSHOTS" = "yes" ]]; then
+        echo "    Supported screenshot formats......: $supported_image_formats"
+    fi
     if [[ "$WANT_CURSES_BASIC" != "yes" ]]; then
-        echo "Supported screenshot formats..........: $supported_image_formats"
         echo "Using cycle exact?....................: $WANT_NEW_CYCLE_EXACT"
         echo "Using the very slow computer support?.: $WANT_VERY_SLOW"
     fi

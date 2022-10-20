@@ -31,7 +31,7 @@
 #include "util.h"
 #include "log.h"
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#ifdef SCREENSHOTS
 #include "codecs/image.h"
 #endif
 
@@ -356,7 +356,7 @@ int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type)
 
 #endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#ifdef SCREENSHOTS
 
 /* Convenience function to check whether the specifed image type is supported.
 
@@ -387,4 +387,4 @@ int File_Export_SaveScreen(const char *filename, UBYTE *ptr1, UBYTE *ptr2) {
 	return result;
 }
 
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+#endif /*def SCREENSHOTS */

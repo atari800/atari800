@@ -36,7 +36,7 @@ int File_Export_WriteVideo(void);
 int File_Export_GetRecordingStats(int *seconds, int *size, char **media_type);
 #endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#ifdef SCREENSHOTS
 int File_Export_ImageTypeSupported(const char *id);
 int File_Export_SaveScreen(const char *filename, UBYTE *ptr1, UBYTE *ptr2);
 #endif
