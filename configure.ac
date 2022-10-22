@@ -362,7 +362,7 @@ else
 	AC_CHECK_LIB(z,gzopen)
 
     dnl Need SUPPORTS_LIBPNG shell variable for PNG video codec test below
-	AC_CHECK_LIB(png,png_get_libpng_ver,[LIBS="-lpng $LIBS"; SUPPORTS_LIBPNG=yes],[SUPPORTS_LIBPNG=no])
+	AC_CHECK_LIB(png,png_get_libpng_ver,[SUPPORTS_LIBPNG=yes],[SUPPORTS_LIBPNG=no])
     if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
         AC_DEFINE(HAVE_LIBPNG,1,[Supports PNG image compression library.])
     fi
@@ -1179,6 +1179,11 @@ if [[ "$with_video" != no -a "$WANT_CURSES_BASIC" != yes ]]; then
         supported_image_formats="pcx"
         if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
             supported_image_formats="$supported_image_formats png"
+        fi
+    fi
+    if [[ "$WANT_SCREENSHOTS" = "yes" -o "WANT_VIDEO_RECORDING" = "yes" ]]; then
+        if [[ "$SUPPORTS_LIBPNG" = "yes" ]]; then
+            LIBS="$LIBS -lpng"
         fi
     fi
 else
