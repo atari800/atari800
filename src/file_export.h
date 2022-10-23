@@ -11,14 +11,16 @@ int File_Export_Initialise(int *argc, char *argv[]);
 int File_Export_ReadConfig(char *string, char *ptr);
 void File_Export_WriteConfig(FILE *fp);
 
+#if defined(SCREENSHOTS) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 void fputw(UWORD, FILE *fp);
 void fputl(ULONG, FILE *fp);
+#endif
 
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 extern char *FILE_EXPORT_error_message;
 void File_Export_SetErrorMessage(const char *string);
 void File_Export_SetErrorMessageArg(const char *format, const char *arg);
 
-#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 int File_Export_IsRecording(void);
 int File_Export_StopRecording(void);
 int File_Export_StartRecording(const char *fileName);

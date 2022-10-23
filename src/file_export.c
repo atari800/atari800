@@ -189,7 +189,7 @@ void File_Export_WriteConfig(FILE *fp)
 #endif
 }
 
-
+#if defined(SCREENSHOTS) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 /* fputw and fputl are utility functions to write values as little-endian format
    regardless of the endianness of the platform. */
 
@@ -208,6 +208,9 @@ void fputl(ULONG x, FILE *fp)
 	fputc((x >> 16) & 0xff, fp);
 	fputc((x >> 24) & 0xff, fp);
 }
+#endif
+
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 
 void File_Export_SetErrorMessage(const char *string)
 {
@@ -220,8 +223,6 @@ void File_Export_SetErrorMessageArg(const char *format, const char *arg)
 	snprintf(msg, sizeof(msg), format, arg);
 	File_Export_SetErrorMessage(msg);
 }
-
-#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 
 /* File_Export_IsRecording simply returns true if any multimedia file is
    currently open and able to receive writes.
