@@ -483,7 +483,7 @@ int CFG_WriteConfig(void)
 #if defined(SOUND) && defined(SOUND_THIN_API)
 	Sound_WriteConfig(fp);
 #endif /* defined(SOUND) && defined(SOUND_THIN_API) */
-#if (defined(SOUND) && !defined(DREAMCAST)) || defined(VIDEO_RECORDING)
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	File_Export_WriteConfig(fp);
 #endif
 #ifdef SUPPORTS_PLATFORM_CONFIGSAVE
