@@ -354,12 +354,19 @@ if [[ "$a8_target" = "android" ]]; then
     echo "hardcoding libz"
     LIBS="-lz $LIBS"
     AC_DEFINE(HAVE_LIBZ)
+    SUPPORTS_LIBZ="yes"
     dnl libm is automatically appended by the build system
 elif [[ "$a8_target" = "libatari800" ]]; then
     AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
     AC_CHECK_FUNCS(setjmp)
+    SUPPORTS_LIBZ="no"
 else
-	AC_CHECK_LIB(z,gzopen)
+    dnl needs SUPPORTS_LIBZ shell variable for file_export test below
+	AC_CHECK_LIB(z,gzopen,[SUPPORTS_LIBZ=yes],[SUPPORTS_LIBZ=no])
+    if [[ "$SUPPORTS_LIBZ" = "yes" ]]; then
+        AC_DEFINE(HAVE_LIBZ,1,[Supports zlib compression library.])
+        LIBS="-lz $LIBS"
+    fi
 
     dnl Need SUPPORTS_LIBPNG shell variable for PNG video codec test below
 	AC_CHECK_LIB(png,png_get_libpng_ver,[SUPPORTS_LIBPNG=yes],[SUPPORTS_LIBPNG=no])
@@ -1197,7 +1204,7 @@ AM_CONDITIONAL([WITH_IMAGE_CODEC_PNG], test "$SUPPORTS_LIBPNG" = "yes")
 
 dnl file_export.c is needed when sound is enabled (for WAV recording) or when AVI recording
 dnl is enabled, or for screenshots when screen.c is compiled into the code.
-AM_CONDITIONAL([WITH_FILE_EXPORT], test "$WANT_AUDIO_RECORDING" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes" -o "$WANT_SCREENSHOTS" = "yes")
+AM_CONDITIONAL([WITH_FILE_EXPORT], test "$WANT_AUDIO_RECORDING" = "yes" -o "$WANT_VIDEO_RECORDING" = "yes" -o "$WANT_SCREENSHOTS" = "yes" -o "$SUPPORTS_LIBZ" = "yes")
 
 dnl Set video recording configuration options
 

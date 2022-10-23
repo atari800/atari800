@@ -62,7 +62,7 @@
 #ifdef SOUND
 #include "sound.h"
 #endif
-#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
+#if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 #include "file_export.h"
 #endif
 
