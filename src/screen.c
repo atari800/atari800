@@ -38,7 +38,7 @@
 #include "screen.h"
 #include "sio.h"
 #include "util.h"
-#ifndef DREAMCAST
+#if defined(SCREENSHOTS) || defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 #include "file_export.h"
 #endif
 
@@ -69,7 +69,7 @@ int Screen_show_disk_led = TRUE;
 int Screen_show_sector_counter = FALSE;
 int Screen_show_1200_leds = TRUE;
 
-#ifndef DREAMCAST
+#ifdef SCREENSHOTS
 #ifdef HAVE_LIBPNG
 #define DEFAULT_SCREENSHOT_FILENAME_FORMAT "atari###.png"
 #else
@@ -79,11 +79,11 @@ int Screen_show_1200_leds = TRUE;
 static char screenshot_filename_format[FILENAME_MAX];
 static int screenshot_no_last = -1;
 static int screenshot_no_max = 0;
+#endif /* !SCREENSHOTS */
 
-#if defined(SOUND) || defined(VIDEO_RECORDING)
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 int Screen_show_multimedia_stats = TRUE;
 #endif
-#endif /* !DREAMCAST */
 
 int Screen_Initialise(int *argc, char *argv[])
 {
@@ -92,16 +92,20 @@ int Screen_Initialise(int *argc, char *argv[])
 	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
+#ifdef SCREENSHOTS
 		int i_a = (i + 1 < *argc);		/* is argument available? */
 		int a_m = FALSE;			/* error, argument missing! */
+#endif
 
-#ifndef DREAMCAST
-		if (strcmp(argv[i], "-screenshots") == 0) {
+		if (0) {}
+#ifdef SCREENSHOTS
+		else if (strcmp(argv[i], "-screenshots") == 0) {
 			if (i_a)
 				screenshot_no_max = Util_filenamepattern(argv[++i], screenshot_filename_format, FILENAME_MAX, DEFAULT_SCREENSHOT_FILENAME_FORMAT);
 			else a_m = TRUE;
 		}
-#if defined(SOUND) || defined(VIDEO_RECORDING)
+#endif
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 		else if (strcmp(argv[i], "-showstats") == 0) {
 			Screen_show_multimedia_stats = TRUE;
 		}
@@ -109,30 +113,30 @@ int Screen_Initialise(int *argc, char *argv[])
 			Screen_show_multimedia_stats = FALSE;
 		}
 #endif
-		else
-#endif /* !DREAMCAST */
-		if (strcmp(argv[i], "-showspeed") == 0) {
+		else if (strcmp(argv[i], "-showspeed") == 0) {
 			Screen_show_atari_speed = TRUE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
-#ifndef DREAMCAST
+#ifdef SCREENSHOTS
 				Log_print("\t-screenshots <p> Set filename pattern for screenshots");
-#if defined(SOUND) || defined(VIDEO_RECORDING)
+#endif
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 				Log_print("\t-showstats       Show recording stats of video or audio");
 				Log_print("\t-no-showstats    Don't show recording stats of video or audio");
 #endif
-#endif /* !DREAMCAST */
 				Log_print("\t-showspeed       Show percentage of actual speed");
 			}
 			argv[j++] = argv[i];
 		}
 
+#ifdef SCREENSHOTS
 		if (a_m) {
 			Log_print("Missing argument for '%s'", argv[i]);
 			return FALSE;
 		}
+#endif
 	}
 	*argc = j;
 
@@ -169,7 +173,7 @@ int Screen_ReadConfig(char *string, char *ptr)
 		return (Screen_show_sector_counter = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(string, "SCREEN_SHOW_1200XL_LEDS") == 0)
 		return (Screen_show_1200_leds = Util_sscanbool(ptr)) != -1;
-#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	else if (strcmp(string, "SCREEN_SHOW_MULTIMEDIA_STATS") == 0)
 		return (Screen_show_multimedia_stats = Util_sscanbool(ptr)) != -1;
 #endif
@@ -183,7 +187,7 @@ void Screen_WriteConfig(FILE *fp)
 	fprintf(fp, "SCREEN_SHOW_IO_ACTIVITY=%d\n", Screen_show_disk_led);
 	fprintf(fp, "SCREEN_SHOW_IO_COUNTER=%d\n", Screen_show_sector_counter);
 	fprintf(fp, "SCREEN_SHOW_1200XL_LEDS=%d\n", Screen_show_1200_leds);
-#if !defined(DREAMCAST) && (defined(SOUND) || defined(VIDEO_RECORDING))
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	fprintf(fp, "SCREEN_SHOW_MULTIMEDIA_STATS=%d\n", Screen_show_multimedia_stats);
 #endif
 }
@@ -717,8 +721,7 @@ void Screen_Draw1200LED(void)
 	}
 }
 
-#ifndef DREAMCAST
-#if defined(SOUND) || defined(VIDEO_RECORDING)
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -845,8 +848,9 @@ void Screen_DrawMultimediaStats(void)
 		}
 	}
 }
-#endif /* defined(SOUND) || defined(VIDEO_RECORDING) */
+#endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
+#ifdef SCREENSHOTS
 int Screen_SaveScreenshot(const char *filename, int interlaced)
 {
 	int result;
@@ -888,7 +892,7 @@ void Screen_SaveNextScreenshot(int interlaced)
 	Util_findnextfilename(screenshot_filename_format, &screenshot_no_last, screenshot_no_max, filename, sizeof(filename), TRUE);
 	Screen_SaveScreenshot(filename, interlaced);
 }
-#endif /* !DREAMCAST */
+#endif /* !SCREENSHOTS */
 
 void Screen_EntireDirty(void)
 {

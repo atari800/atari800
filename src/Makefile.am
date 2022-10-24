@@ -124,11 +124,18 @@ endif
 if WANT_POKEYREC
 atari800_SOURCES += pokeyrec.c pokeyrec.h
 endif
+if WITH_IMAGE_CODECS
+atari800_SOURCES += codecs/image.c codecs/image.h \
+	codecs/image_pcx.c codecs/image_pcx.h
+if WITH_IMAGE_CODEC_PNG
+atari800_SOURCES += codecs/image_png.c codecs/image_png.h
+endif
+endif
 if WITH_FILE_EXPORT
 atari800_SOURCES += file_export.c file_export.h
 if WITH_MULTIMEDIA
 atari800_SOURCES += codecs/container.c codecs/container.h
-if WITH_SOUND
+if WITH_AUDIO_CODECS
 atari800_SOURCES += codecs/container_wav.c codecs/container_wav.h \
 	codecs/audio.c codecs/audio.h \
 	codecs/audio_pcm.c codecs/audio_pcm.h \
@@ -139,7 +146,7 @@ atari800_SOURCES += codecs/audio_mp3.c codecs/audio_mp3.h \
 	codecs/container_mp3.c codecs/container_mp3.h
 endif
 endif
-if WITH_VIDEO_RECORDING
+if WITH_VIDEO_CODECS
 atari800_SOURCES += codecs/container_avi.c codecs/container_avi.h \
 	codecs/video.c codecs/video.h \
 	codecs/video_mrle.c codecs/video_mrle.h
@@ -229,12 +236,7 @@ atari800_SOURCES += \
 	colours_ntsc.c colours_ntsc.h \
 	colours_pal.c colours_pal.h \
 	colours_external.c colours_external.h \
-	screen.c screen.h \
-	codecs/image.c codecs/image.h \
-	codecs/image_pcx.c codecs/image_pcx.h
-if WITH_LIBPNG
-atari800_SOURCES += codecs/image_png.c codecs/image_png.h
-endif
+	screen.c screen.h
 if WANT_NEW_CYCLE_EXACT
 atari800_SOURCES += cycle_map.c cycle_map.h
 endif

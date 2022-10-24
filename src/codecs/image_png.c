@@ -150,7 +150,7 @@ static int PNG_SaveScreen(FILE *fp, UBYTE *ptr1, UBYTE *ptr2)
 #ifdef VIDEO_CODEC_PNG
 	return current_png_size;
 #else
-	return 0;
+	return -1;
 #endif
 }
 

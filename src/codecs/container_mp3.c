@@ -23,7 +23,7 @@
 */
 
 
-/* This file is only compiled when SOUND and AUDIO_CODEC_MP3 are defined. */
+/* This file is only compiled when AUDIO_RECORDING and AUDIO_CODEC_MP3 are defined. */
 
 #include <stdio.h>
 #include <stdlib.h>
