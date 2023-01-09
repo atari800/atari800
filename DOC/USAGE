@@ -441,12 +441,12 @@ Alt+V                Video recording start/stop
 Alt+S                Save state file
 Alt+L                Load state file
 Alt+A                About the emulator
-Insert               Insert line (Atari Shift+'>')
-Ctrl+Insert          Insert character (Atari Ctrl+'>')
+Shift+Insert         Insert line (Atari Shift+'>')
+Insert               Insert character (Atari Ctrl+'>')
 Shift+Ctrl+Insert    Shift+Ctrl+'>'
-Delete               Delete line (Atari Shift+Backspace)
+Shift+Delete         Delete line (Atari Shift+Backspace)
 Shift+Backspace      Delete line (Atari Shift+Backspace)
-Ctrl+Delete          Delete character (Atari Ctrl+Backspace)
+Delete               Delete character (Atari Ctrl+Backspace)
 Ctrl+Backspace       Delete character (Atari Ctrl+Backspace)
 Shift+Ctrl+Delete    Shift+Ctrl+Backspace
 Shift+Ctrl+Backspace Shift+Ctrl+Backspace

@@ -1418,22 +1418,22 @@ Load state file
 .BR Alt + A
 About the emulator
 .TP
-.B Insert
+.B Shift + Insert
 Insert line (Atari Shift+'>')
 .TP
-.BR Ctrl + Insert
+.BR Insert
 Insert character (Atari Ctrl+'>')
 .TP
 .BR Shift + Ctrl + Insert
 Shift+Ctrl+'>'
 .TP
-.B Delete
+.B Shift + Delete
 Delete line (Atari Shift+Backspace)
 .TP
 .BR Shift + Backspace
 Delete line (Atari Shift+Backspace)
 .TP
-.BR Ctrl + Delete
+.BR Delete
 Delete character (Atari Ctrl+Backspace)
 .TP
 .BR Ctrl + Backspace
