@@ -1016,13 +1016,11 @@ int UI_SelectCartType(int k)
 
 	UI_driver->fInit();
 
-	for (cart_entry = 1; cart_entry < CARTRIDGE_TYPE_COUNT;
-	     cart_entry++) {
+	for (cart_entry = 1; cart_entry < CARTRIDGE_TYPE_COUNT; cart_entry++) {
 		if (CARTRIDGES[cart_entry].kb == k) {
 			menu_array[menu_entry].flags = UI_ITEM_ACTION;
 			menu_array[menu_entry].retval = cart_entry;
-			menu_array[menu_entry].item =
-				CARTRIDGES[cart_entry].description;
+			menu_array[menu_entry].item = CARTRIDGES[cart_entry].description;
 			menu_entry++;
 	    	}
 	}
@@ -1033,8 +1031,38 @@ int UI_SelectCartType(int k)
 	/* Terminate menu_array, but do it by hand */
 	menu_array[menu_entry].flags = UI_ITEM_END;
 
-	option = UI_driver->fSelect("Select Cartridge Type", 0, option,
-		menu_array, NULL);
+	option = UI_driver->fSelect("Select Cartridge Type", 0, option, menu_array, NULL);
+	if (option > 0)
+		return option;
+
+	return CARTRIDGE_NONE;
+}
+
+int UI_SelectCartTypeBetween(int *types)
+{
+	UI_tMenuItem menu_array[CARTRIDGE_TYPE_COUNT] = { 0 };
+	int cart_entry;
+	int menu_entry = 0;
+	int option = 0;
+
+	UI_driver->fInit();
+
+	for (cart_entry = 1; cart_entry < CARTRIDGE_TYPE_COUNT; cart_entry++) {
+		if (cart_entry == types[menu_entry]) {
+			menu_array[menu_entry].flags = UI_ITEM_ACTION;
+			menu_array[menu_entry].retval = cart_entry;
+			menu_array[menu_entry].item = CARTRIDGES[cart_entry].description;
+			menu_entry++;
+	    	}
+	}
+	
+	if (menu_entry == 0)
+		return CARTRIDGE_NONE;
+
+	/* Terminate menu_array, but do it by hand */
+	menu_array[menu_entry].flags = UI_ITEM_END;
+
+	option = UI_driver->fSelect("Select Cartridge Type", 0, option, menu_array, NULL);
 	if (option > 0)
 		return option;
 
@@ -1048,19 +1076,43 @@ static void CartManagement(void)
 		UI_MENU_FILESEL(1, "Extract ROM image from Cartridge"),
 		UI_MENU_FILESEL_PREFIX_TIP(2, "Cartridge:", NULL, NULL),
 		UI_MENU_FILESEL_PREFIX_TIP(3, "Piggyback:", NULL, NULL),
-		UI_MENU_CHECK(4, "Reboot after cartridge change:"),
+		UI_MENU_CHECK(4, "Ram-Cart R/W switch:"),
+		UI_MENU_ACTION(5, "Ram-Cart P1 switch:"),
+		UI_MENU_ACTION(6, "Ram-Cart P2 switch:"),
+		UI_MENU_ACTION(7, "Ram-Cart ABC jumpers:"),
+		UI_MENU_CHECK(8, "Ram-Cart A switch:"),
+		UI_MENU_CHECK(9, "Ram-Cart B switch:"),
+		UI_MENU_CHECK(10, "Ram-Cart C switch:"),
+		UI_MENU_CHECK(11, "Ram-Cart 1/2M switch:"), /* or "Ram-Cart D switch" */
+		UI_MENU_CHECK(12, "Ram-Cart 2/4M switch:"),
+		UI_MENU_ACTION(13, "Ram-Cart address decoder:"),
+		UI_MENU_ACTION(14, "Ram-Cart control register:"),
+		UI_MENU_ACTION(15, "Ram-Cart Reset"),
+		UI_MENU_CHECK(16, "Reboot after cartridge change:"),
+		UI_MENU_FILESEL(17, "Make blank Cartridge"),
 		UI_MENU_END
 	};
-	
-	typedef struct {
-		UBYTE id[4];
-		UBYTE type[4];
-		UBYTE checksum[4];
-		UBYTE gash[4];
-	} Header;
-	
+
+	/* Cartridge types should be placed here in ascending order and ended by CARTRIDGE_NONE */
+	static int writable_carts_array[] = {
+		CARTRIDGE_RAMCART_64,
+		CARTRIDGE_RAMCART_128,
+		CARTRIDGE_DOUBLE_RAMCART_256,
+		CARTRIDGE_RAMCART_1M,
+		CARTRIDGE_RAMCART_2M,
+		CARTRIDGE_RAMCART_4M,
+		CARTRIDGE_RAMCART_8M,
+		CARTRIDGE_RAMCART_16M,
+		CARTRIDGE_RAMCART_32M,
+		CARTRIDGE_SIDICAR_32,
+
+		CARTRIDGE_NONE /* obligatory */
+	};
+
 	int option = 2;
 	int seltype;
+	CARTRIDGE_image_t *ramcart;
+	int old_state;
 
 	for (;;) {
 		static char cart_filename[FILENAME_MAX];
@@ -1084,132 +1136,210 @@ static void CartManagement(void)
 				menu_array[3].item = CARTRIDGE_piggyback.filename;
 				menu_array[3].suffix = "Return:insert Backspace:remove";
 			}
-		} else {
+		} else
 			menu_array[3].flags = UI_ITEM_HIDDEN;
+
+		ramcart = NULL;
+		switch (CARTRIDGE_main.type) {
+		case CARTRIDGE_RAMCART_64:
+		case CARTRIDGE_RAMCART_128:
+		case CARTRIDGE_DOUBLE_RAMCART_256:
+		case CARTRIDGE_RAMCART_1M:
+		case CARTRIDGE_RAMCART_2M:
+		case CARTRIDGE_RAMCART_4M:
+		case CARTRIDGE_RAMCART_8M:
+		case CARTRIDGE_RAMCART_16M:
+		case CARTRIDGE_RAMCART_32M:
+			ramcart = &CARTRIDGE_main;
+			break;
+		}
+		switch (CARTRIDGE_piggyback.type) {
+		case CARTRIDGE_RAMCART_64:
+		case CARTRIDGE_RAMCART_128:
+		case CARTRIDGE_DOUBLE_RAMCART_256:
+		case CARTRIDGE_RAMCART_1M:
+		case CARTRIDGE_RAMCART_2M:
+		case CARTRIDGE_RAMCART_4M:
+		case CARTRIDGE_RAMCART_8M:
+		case CARTRIDGE_RAMCART_16M:
+		case CARTRIDGE_RAMCART_32M:
+			ramcart = &CARTRIDGE_piggyback;
+		}
+		menu_array[4].flags = 
+		menu_array[5].flags = 
+		menu_array[6].flags = 
+		menu_array[7].flags = 
+		menu_array[8].flags = 
+		menu_array[9].flags = 
+		menu_array[10].flags = 
+		menu_array[11].flags = 
+		menu_array[12].flags = 
+		menu_array[13].flags = 
+		menu_array[14].flags = 
+		menu_array[15].flags = UI_ITEM_HIDDEN;
+		old_state = -1;
+		if (ramcart != NULL) {
+			old_state = ramcart->state;
+
+			if (ramcart->type == CARTRIDGE_RAMCART_2M)
+				menu_array[11].item = "Ram-Cart 1/2M switch";
+			else if (ramcart->type == CARTRIDGE_RAMCART_4M)
+				menu_array[11].item = "Ram-Cart D switch";
+
+			switch (ramcart->type) {
+			case CARTRIDGE_DOUBLE_RAMCART_256:
+				menu_array[14].flags = UI_ITEM_ACTION;
+				menu_array[14].suffix = ramcart->state & 0x20000 ? "Read/Write" : "Write Only";
+
+				menu_array[5].flags = 
+				menu_array[6].flags = UI_ITEM_ACTION;
+				if (ramcart->state & 0x2000) {
+					menu_array[5].suffix = "256K";
+					menu_array[6].suffix = ramcart->state & 0x4000 ? "Swapped Order" : "Normal Order";
+				}
+				else {
+					menu_array[5].suffix = "2x128K";
+					menu_array[6].suffix = ramcart->state & 0x4000 ? "Second Module" : "First Module";
+				}
+				SetItemChecked(menu_array, 4, ramcart->state & 0x1000); /* R/W */
+				break;
+			case CARTRIDGE_RAMCART_4M:
+				SetItemChecked(menu_array, 12, ramcart->state & 0x0200); /* 2/4M */
+			case CARTRIDGE_RAMCART_2M:
+				SetItemChecked(menu_array, 11, ramcart->state & 0x0100); /* 1/2M or D */
+			case CARTRIDGE_RAMCART_1M:
+				if (ramcart->type == CARTRIDGE_RAMCART_1M) {
+					menu_array[6].flags = 
+					menu_array[13].flags = 
+					menu_array[14].flags = UI_ITEM_ACTION;
+					menu_array[6].suffix = ramcart->state & 0x4000 ? "Swapped Order" : "Normal Order";
+					menu_array[13].suffix = ramcart->state & 0x10000 ? "Full" : "Simplified";
+					menu_array[14].suffix = ramcart->state & 0x20000 ? "Read/Write" : "Write Only";
+				}
+				else
+					menu_array[13].suffix = "N/A";
+
+				menu_array[7].flags = UI_ITEM_ACTION;
+				if (ramcart->state & 0x8000) {
+					menu_array[10].flags = 
+					menu_array[9].flags = 
+					menu_array[8].flags = UI_ITEM_ACTION;
+					menu_array[10].suffix = 
+					menu_array[9].suffix = 
+					menu_array[8].suffix = "N/A";
+					menu_array[7].suffix = "Installed";
+				}
+				else {
+					SetItemChecked(menu_array, 10, ramcart->state & 0x0080); /* C */
+					SetItemChecked(menu_array, 9, ramcart->state & 0x0040); /* B */
+					SetItemChecked(menu_array, 8, ramcart->state & 0x0004); /* A */
+					menu_array[7].suffix = "None";
+				}
+			case CARTRIDGE_RAMCART_32M:
+			case CARTRIDGE_RAMCART_16M:
+			case CARTRIDGE_RAMCART_8M:
+			case CARTRIDGE_RAMCART_128:
+			case CARTRIDGE_RAMCART_64:
+				SetItemChecked(menu_array, 4, ramcart->state & 0x1000); /* R/W */
+			}
+			menu_array[15].flags = UI_ITEM_ACTION;
 		}
 
-		SetItemChecked(menu_array, 4, CARTRIDGE_autoreboot);
+		SetItemChecked(menu_array, 16, CARTRIDGE_autoreboot);
 
 		option = UI_driver->fSelect("Cartridge Management", 0, option, menu_array, &seltype);
 
 		switch (option) {
 		case 0:
 			if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-				FILE *f;
-				int nbytes;
-				int type;
-				UBYTE *image;
-				int checksum;
-				Header header;
+				int error;
+				CARTRIDGE_image_t cart;
 
-				f = fopen(cart_filename, "rb");
-				if (f == NULL) {
+				int kb = CARTRIDGE_ReadImage(cart_filename, &cart);
+				if (kb == CARTRIDGE_CANT_OPEN) {
 					CantLoad(cart_filename);
 					break;
 				}
-				nbytes = Util_flen(f);
-				if ((nbytes & 0x3ff) != 0) {
-					fclose(f);
+				else if (kb == CARTRIDGE_TOO_FEW_DATA) {
+					UI_driver->fMessage("Error reading CART file", 1);
+					break;
+				}
+				else if (kb == CARTRIDGE_BAD_FORMAT) {
 					UI_driver->fMessage("ROM image must be full kilobytes long", 1);
 					break;
 				}
-				type = UI_SelectCartType(nbytes >> 10);
-				if (type == CARTRIDGE_NONE) {
-					fclose(f);
+
+				if (!cart.raw) {
+					free(cart.image);
+					UI_driver->fMessage("Not an image file", 1);
 					break;
 				}
 
-				image = (UBYTE *) Util_malloc(nbytes);
-				Util_rewind(f);
-				if ((int) fread(image, 1, nbytes, f) != nbytes) {
-					fclose(f);
-					CantLoad(cart_filename);
+				cart.type = UI_SelectCartType(kb);
+				if (cart.type == CARTRIDGE_NONE) {
+					free(cart.image);
 					break;
 				}
-				fclose(f);
 
-				if (!UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir))
+				if (!UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					free(cart.image);
 					break;
+				}
 
-				checksum = CARTRIDGE_Checksum(image, nbytes);
-				header.id[0] = 'C';
-				header.id[1] = 'A';
-				header.id[2] = 'R';
-				header.id[3] = 'T';
-				header.type[0] = '\0';
-				header.type[1] = '\0';
-				header.type[2] = '\0';
-				header.type[3] = (UBYTE) type;
-				header.checksum[0] = (UBYTE) (checksum >> 24);
-				header.checksum[1] = (UBYTE) (checksum >> 16);
-				header.checksum[2] = (UBYTE) (checksum >> 8);
-				header.checksum[3] = (UBYTE) checksum;
-				header.gash[0] = '\0';
-				header.gash[1] = '\0';
-				header.gash[2] = '\0';
-				header.gash[3] = '\0';
-
-				f = fopen(cart_filename, "wb");
-				if (f == NULL) {
+				error = CARTRIDGE_WriteImage(cart_filename, cart.type, cart.image, kb << 10, FALSE, -1);
+				free(cart.image);
+				if (error)
 					CantSave(cart_filename);
-					break;
-				}
-				fwrite(&header, 1, sizeof(header), f);
-				fwrite(image, 1, nbytes, f);
-				fclose(f);
-				free(image);
-				Created(cart_filename);
+				else
+					Created(cart_filename);
 			}
 			break;
 		case 1:
 			if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-				FILE *f;
-				int nbytes;
-				Header header;
-				UBYTE *image;
+				int error;
+				CARTRIDGE_image_t cart;
 
-				f = fopen(cart_filename, "rb");
-				if (f == NULL) {
+				int kb = CARTRIDGE_ReadImage(cart_filename, &cart);
+				if (kb == CARTRIDGE_CANT_OPEN) {
 					CantLoad(cart_filename);
 					break;
 				}
-				nbytes = Util_flen(f) - sizeof(header);
-				Util_rewind(f);
-				if (nbytes <= 0 || fread(&header, 1, sizeof(header), f) != sizeof(header)
-				 || header.id[0] != 'C' || header.id[1] != 'A' || header.id[2] != 'R' || header.id[3] != 'T') {
-					fclose(f);
-					UI_driver->fMessage("Not a CART file", 1);
-					break;
-				}
-				image = (UBYTE *) Util_malloc(nbytes);
-				if (fread(image, 1, nbytes, f) < nbytes) {
+				else if (kb == CARTRIDGE_TOO_FEW_DATA) {
 					UI_driver->fMessage("Error reading CART file", 1);
 					break;
 				}
-				fclose(f);
-
-				if (!UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir))
-					break;
-
-				f = fopen(cart_filename, "wb");
-				if (f == NULL) {
-					CantSave(cart_filename);
+				else if (kb == CARTRIDGE_BAD_FORMAT) {
+					UI_driver->fMessage("Not a CART file", 1);
 					break;
 				}
-				fwrite(image, 1, nbytes, f);
-				fclose(f);
-				free(image);
-				Created(cart_filename);
+
+				if (cart.raw) {
+					free(cart.image);
+					UI_driver->fMessage("Not a CART file", 1);
+					break;
+				}
+
+				if (!UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					free(cart.image);
+					break;
+				}
+
+				error = CARTRIDGE_WriteImage(cart_filename, CARTRIDGE_UNKNOWN, cart.image, cart.size << 10, TRUE, -1);
+				free(cart.image);
+				if (error)
+					CantSave(cart_filename);
+				else
+					Created(cart_filename);
 			}
 			break;
 		case 2:
 			switch (seltype) {
 			case UI_USER_SELECT: /* Enter */
-				if (UI_driver->fGetLoadFilename(CARTRIDGE_main.filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-					int r = CARTRIDGE_InsertAutoReboot(CARTRIDGE_main.filename);
+				if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_InsertAutoReboot(cart_filename);
 					switch (r) {
 					case CARTRIDGE_CANT_OPEN:
-						CantLoad(CARTRIDGE_main.filename);
+						CantLoad(cart_filename);
 						break;
 					case CARTRIDGE_BAD_FORMAT:
 						UI_driver->fMessage("Unknown cartridge format", 1);
@@ -1235,11 +1365,11 @@ static void CartManagement(void)
 		case 3:
 			switch (seltype) {
 			case UI_USER_SELECT: /* Enter */
-				if (UI_driver->fGetLoadFilename(CARTRIDGE_piggyback.filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
-					int r = CARTRIDGE_Insert_Second(CARTRIDGE_piggyback.filename);
+				if (UI_driver->fGetLoadFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+					int r = CARTRIDGE_Insert_Second(cart_filename);
 					switch (r) {
 					case CARTRIDGE_CANT_OPEN:
-						CantLoad(CARTRIDGE_piggyback.filename);
+						CantLoad(cart_filename);
 						break;
 					case CARTRIDGE_BAD_FORMAT:
 						UI_driver->fMessage("Unknown cartridge format", 1);
@@ -1262,8 +1392,76 @@ static void CartManagement(void)
 				break;
 			}
 			break;
-		case 4:
+		case 4: /* Ram-Cart R/W */
+			ramcart->state ^= 0x1000;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 5: /* Ram-Cart P1 (2x128/256K) */
+			ramcart->state ^= 0x2000;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 6: /* Ram-Cart P2 (Exchange 128K modules) */
+			ramcart->state ^= 0x4000;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 7: /* Ram-Cart jumpers ABC installation flag */
+			ramcart->state ^= 0x8000;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 8: /* Ram-Cart A */
+			if (!(ramcart->state & 0x8000)) {
+				ramcart->state ^= 0x0004;
+				CARTRIDGE_UpdateState(ramcart, old_state);
+			}
+			break;
+		case 9: /* Ram-Cart B */
+			if (!(ramcart->state & 0x8000)) {
+				ramcart->state ^= 0x0040;
+				CARTRIDGE_UpdateState(ramcart, old_state);
+			}
+			break;
+		case 10: /* Ram-Cart C */
+			if (!(ramcart->state & 0x8000)) {
+				ramcart->state ^= 0x0080;
+				CARTRIDGE_UpdateState(ramcart, old_state);
+			}
+			break;
+		case 11: /* Ram-Cart 1/2M or D */
+			ramcart->state ^= 0x0100;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 12: /* Ram-Cart 2/4M */
+			ramcart->state ^= 0x0200;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			break;
+		case 13: /* Ram-Cart address decoder */
+			if (ramcart->type == CARTRIDGE_RAMCART_1M)
+				ramcart->state ^= 0x10000;
+			break;
+		case 14: /* Ram-Cart control register */
+			if (ramcart->type == CARTRIDGE_DOUBLE_RAMCART_256 || ramcart->type == CARTRIDGE_RAMCART_1M)
+				ramcart->state ^= 0x20000;
+			break;
+		case 15: /* Ram-Cart Reset */
+			ramcart->state &= 0xfff00;
+			CARTRIDGE_UpdateState(ramcart, old_state);
+			UI_driver->fMessage("Ram-Cart reinitialized", 1);
+			break;
+		case 16:
 			CARTRIDGE_autoreboot = !CARTRIDGE_autoreboot;
+			break;
+		case 17:
+			if (UI_driver->fGetSaveFilename(cart_filename, UI_atari_files_dir, UI_n_atari_files_dir)) {
+				int cart_type = UI_SelectCartTypeBetween(writable_carts_array);
+				if (cart_type != CARTRIDGE_NONE) {
+					if ( CARTRIDGE_WriteImage(
+							cart_filename, 
+							cart_type, NULL, CARTRIDGES[cart_type].kb << 10, FALSE, 0x00 ) )
+						CantSave(cart_filename);
+					else
+						Created(cart_filename);
+				}
+			}
 			break;
 		default:
 			return;
@@ -4134,7 +4332,7 @@ static void AboutEmulator(void)
 		Atari800_TITLE "\0"
 		"Copyright (c) 1995-1998 David Firth\0"
 		"and\0"
-		"(c)1998-2015 Atari800 Development Team\0"
+		"(c)1998-2023 Atari800 Development Team\0"
 		"See CREDITS file for details.\0"
 		"http://atari800.atari.org/\0"
 		"\0"
