@@ -107,16 +107,35 @@ Currently supported cartridge types:
 | 73 |   5200    |  256 | Super Cart 256 KB 5200 cartridge (32K banks)  |   |
 | 74 |   5200    |  512 | Super Cart 512 KB 5200 cartridge (32K banks)  |   |
 | 75 | 800/XL/XE | 1024 | Atarimax 1 MB Flash cartridge (new)           | p |
-| 76 | 800/XL/XE |   64 | Ram-Cart 64 KB cartridge                      |   |
-| 77 | 800/XL/XE |  128 | Ram-Cart 128 KB cartridge                     |   |
-| 78 | 800/XL/XE |  256 | Double Ram-Cart 2x128/256 KB cartridge        |   |
-| 79 | 800/XL/XE |   1M | Ram-Cart 1 MB cartridge                       |   |
-| 80 | 800/XL/XE |   2M | Ram-Cart 2 MB cartridge                       |   |
-| 81 | 800/XL/XE |   4M | Ram-Cart 4 MB cartridge                       |   |
-| 82 | 800/XL/XE |   8M | Ram-Cart 8 MB cartridge                       |   |
-| 83 | 800/XL/XE |  16M | Ram-Cart 16 MB cartridge                      |   |
-| 84 | 800/XL/XE |  32M | Ram-Cart 32 MB cartridge                      |   |
-| 85 | 800/XL/XE |   32 | SiDiCar 32 KB cartridge                       |   |
+| 76 | 800/XL/XE |   16 | 16 KB Williams cartridge                      | x |
+| 77 | 800/XL/XE |    8 | MIO diagnostics 8KB cartridge                 | x |
+| 78 | 800/XL/XE |    8 | Telelink II cartridge                         | x |
+| 79 | 800/XL/XE |   16 | Pronto cartridge                              | x |
+| 80 | 800/XL/XE |   64 | JRC64 cartridge (linear)                      | x |
+| 81 | 800/XL/XE |   64 | MDDOS cartridge                               | x |
+| 82 | 800/XL/XE |   32 | COS32 cartridge                               | x |
+| 83 | 800/XL/XE | 1024 | SIC+ 1024 KB cartridge                        | x |
+| 84 | 800/XL/XE | 1024 | Corina 1M+8K EEPROM                           | x |
+| 85 | 800/XL/XE |  512 | Corina 512K + 512K SRAM + 8K EEPROM           | x |
+| 86 | 800/XL/XE |    8 | XE Multicart (8KB)                            | x |
+| 87 | 800/XL/XE |   16 | XE Multicart (16KB)                           | x |
+| 88 | 800/XL/XE |   32 | XE Multicart (32KB)                           | x |
+| 89 | 800/XL/XE |   64 | XE Multicart (64KB)                           | x |
+| 90 | 800/XL/XE |  128 | XE Multicart (128KB)                          | x |
+| 91 | 800/XL/XE |  256 | XE Multicart (256KB)                          | x |
+| 92 | 800/XL/XE |  512 | XE Multicart (512KB)                          | x |
+| 93 | 800/XL/XE | 1024 | XE Multicart (1024KB)                         | x |
+| 94 | 800/XL/XE |   64 | Ram-Cart 64 KB cartridge                      |   |
+| 95 | 800/XL/XE |  128 | Ram-Cart 128 KB cartridge                     |   |
+| 96 | 800/XL/XE |  256 | Double Ram-Cart 2x128/256 KB cartridge        |   |
+| 97 | 800/XL/XE |   1M | Ram-Cart 1 MB cartridge                       |   |
+| 98 | 800/XL/XE |   2M | Ram-Cart 2 MB cartridge                       |   |
+| 99 | 800/XL/XE |   4M | Ram-Cart 4 MB cartridge                       |   |
+|100 | 800/XL/XE |   8M | Ram-Cart 8 MB cartridge                       |   |
+|101 | 800/XL/XE |  16M | Ram-Cart 16 MB cartridge                      |   |
+|102 | 800/XL/XE |  32M | Ram-Cart 32 MB cartridge                      |   |
+|103 | 800/XL/XE |   32 | SiDiCar 32 KB cartridge                       |   |
+|160 | 800/XL/XE |   64 |JRC64 cartridge (interleaved)                  | x |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1216,8 +1235,132 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  Reference:
  https://atariage.com/forums/topic/184410-space-harrier-released/?do=findComment&comment=2331655
 
++---------------------------------------------------------------------------+
+| Type 76: 16 KB Williams cartridge                                         |
++---------------------------------------------------------------------------+
+
+ The cartridge has 2 banks mapped to $A000-$BFFF. An access to $D500 selects
+ bank 0, $D501 - bank 1. An access to $D508-$D50F disables
+ the cartridge.
+
++---------------------------------------------------------------------------+
+| Type 77: MIO diagnostics 8KB cartridge                                    |
++---------------------------------------------------------------------------+
+
+ The cartridge uses the same board as type 11 - Sparta Dos X, but uses only
+ one 8KB bank, turned on by access to $D5E0. This is not actually a 
+ bankswitching  cartridge, just re-uses existing SDX cart design, basically
+ working as standard 8KB left slot cartridge.
+
++---------------------------------------------------------------------------+
+| Type 78: Telelink II cartridge                                            |
++---------------------------------------------------------------------------+
+
+ Cartridge uses only 8KB ROM, but occupies whole 16KB of address space. There
+ is 256x4bit nvram mapped to $9000-$90FF (mirrored to whole $9000). Read mode
+ is switched on by access to $D501, write mode by access to $D502. It's 
+ possible that only R/W line is used for the mode switching.
+
++---------------------------------------------------------------------------+
+| Type 79: Pronto cartridge                                                 |
++---------------------------------------------------------------------------+
+
+ Similar to type 78, just the memory is mapped to $8F00-$8FFF. Also read from
+ to $D501 turns on read mode, write to $D502 turns on write mode. It's quite
+ possible that only R/W line is used for the mode switching.
+
++---------------------------------------------------------------------------+
+| Type 80: JRC64 cartridge (linear)                                         |
++---------------------------------------------------------------------------+
+
+ Cartridge takes 8KB of address space, contains 8 banks. By writing to
+ $D500-$D57F, bank is selected by data bits D6-D4. Bit D7 turns cartridge off.
+ On bootup, bank 0 is mapped in.
+
+ Type 80 uses linear bank order in dump (0,1,2,3,4,5,6,7)
+ Type 160 uses interleaved bank order in dump (7,3,5,1,6,2,4,0)
+
+ Some cartridges contain 256KB of RAMdisk. Page is selected by writing to
+ $D500-$D57F (7bits) with value with 4 upper bits set to 1 (4bits). That makes
+ 1<<11 = 2048 pages. Reads/writes are to region $D580-$D5FF (7bits). That
+ totals to 18bits = 256KB of RAM usable by TT-Dos or BeWe DOS.
+
++---------------------------------------------------------------------------+
+| Type 81: MDDOS cartridge                                                  |
++---------------------------------------------------------------------------+
+
+ Same as M091 OSS scheme, adding bits 5 and 6 for selecting subpart. Totally
+ 4 x 16KB = 64KB.
+ The only existing dump has this bank order: 
+ 00,01,09,0m,10,11,19,1m,20,21,29,2m,30,31,39,3m
+ but the problem is that it's yet unverified if this is the true physical
+ EPROM image order or not
+
++---------------------------------------------------------------------------+
+| Type 82: COS32 cartridge                                                  |
++---------------------------------------------------------------------------+
+
+ Cartridge contains 2 16KB banks, and takes whole 16KB of address space.
+ Initially, 'the main' bank is mapped in, on any access to $D5xx,
+ 'the temporary' bank is mapped in, for cca 23 cycles.  Cart is turned on/off
+ by hardware button on RD4/RD5.
+ File order of banks is first 'the temporary', second 'the main' one.
+
++---------------------------------------------------------------------------+
+| Type 83: SIC+ 1024 KB cartridge                                            |
++---------------------------------------------------------------------------+
+
+ Same as Type 54, but with cartridge memory being divided into 64 banks.
+ Bits 7, 4..0 - 16KB bank number (0..63). In SIC+ the control register is 
+ mapped up to $D53F.
+
++---------------------------------------------------------------------------+
+| Type 84: Corina 1M+8K EEPROM                                              |
++---------------------------------------------------------------------------+
+
+ Takes whole 16KB of address space, bank 0 is mapped in on the bootup. The
+ banking register is at $D500, and bank number is interpreted from written
+ byte databits. Bit7 always turns cart off.
+
+ This configuration interprets D0-D5 as bank, D6 turns on EEPROM, which
+ mirrors across whole 16KB address space
+
++---------------------------------------------------------------------------+
+| Type 85: Corina 512K + 512K SRAM + 8K EEPROM                              |
++---------------------------------------------------------------------------+
+
+ Same as type 84.
+
+ This configuration interprets D0-D4 as bank
+ D5 = 0, D6 = 0 -> mapped from EPROM
+ D5 = 1, D6 = 0 -> mapped from SRAM
+ D5 = 0, D6 = 1 -> mapped from EEPROM
+
++---------------------------------------------------------------------------+
+| Type 86: XE Multicart (8KB)                                               |
+| Type 87: XE Multicart (16KB)                                              |
+| Type 88: XE Multicart (32KB)                                              |
+| Type 89: XE Multicart (64KB)                                              |
+| Type 90: XE Multicart (128KB)                                             |
+| Type 91: XE Multicart (256KB)                                             |
+| Type 92: XE Multicart (512KB)                                             |
+| Type 93: XE Multicart (1024KB)                                            |
++---------------------------------------------------------------------------+
+
+ This cartridge is used only for running original 8KB/16KB. Allows to use
+ any EPROM from 27xxx line to be used.
+ On the bootup, last 8KBs are mapped to $A000-$BFFF. 
+ Banks are switched by data written to $D5xx, by bits D6-D0. To select
+ 16KB cart, bit D7 must be on.
+
+ Reference:
+ https://blog.idorobots.org/entries/atari-xe-multicart.html
+
+
+
+
  +---------------------------------------------------------------------------+
- | Type 76: Ram-Cart 64 KB cartridge                                         |
+ | Type 94: Ram-Cart 64 KB cartridge                                         |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by Unerring Masters company.
@@ -1257,11 +1400,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#64%20KB
 
  +---------------------------------------------------------------------------+
- | Type 77: Ram-Cart 128 KB cartridge                                        |
+ | Type 95: Ram-Cart 128 KB cartridge                                        |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by Unerring Masters company.
- It's identical to cartridge type 76 but uses four 32Kx8 RAM chips.
+ It's identical to cartridge type 94 but uses four 32Kx8 RAM chips.
 
  Location of control register and it's bits meaning is the same, but additional
  bit 5 is used to select bank as well as bits 3 and 4.
@@ -1290,11 +1433,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#128%20KB
 
  +---------------------------------------------------------------------------+
- | Type 78: Double Ram-Cart 2x128/256 KB cartridge                           |
+ | Type 96: Double Ram-Cart 2x128/256 KB cartridge                           |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by Unerring Masters company.
- It's similar to cartridge type 77 but uses two 128Kx8 RAM chips (CXK581000P).
+ It's similar to cartridge type 95 but uses two 128Kx8 RAM chips (CXK581000P).
 
  Location of control register and it's bits meaning is almost the same,
  but bit 2 has different meaning depending on state of P1 and P2 switches.
@@ -1303,7 +1446,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  * 2x128K - selected when P1 is in state 0
  * 256K - selected when P1 is in state 1
 
- Bit 2 of control register has the same meaning as in 76 cartridge type
+ Bit 2 of control register has the same meaning as in 94 cartridge type
  once 2x128K mode is chosen. Button P2 is used to choose active 128K module.
 
  If 256K mode is chosen then bit 2 is used to select 128K module and address
@@ -1336,12 +1479,12 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#2x128%20KB%20/%20256%20KB
 
  +---------------------------------------------------------------------------+
- | Type 79: Ram-Cart 1 MB cartridge                                          |
+ | Type 97: Ram-Cart 1 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by Unerring Masters company then refectored
  and republished in new form by GALTRON company.
- It's similar to cartridge type 77 but bits 2, 6 and 7 have changed function.
+ It's similar to cartridge type 95 but bits 2, 6 and 7 have changed function.
 
  Three switches A, B and C on the top of case are used to select one of eight
  128K modules. They state can be read by control register.
@@ -1371,11 +1514,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#1%20MB
 
  +---------------------------------------------------------------------------+
- | Type 80: Ram-Cart 2 MB cartridge                                          |
+ | Type 98: Ram-Cart 2 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by GALTRON company.
- It's identical to cartridge type 79.
+ It's identical to cartridge type 97.
 
  Three switches A, B and C on the top of case are used to select one of eight
  128K modules. They state can be read by control register.
@@ -1406,11 +1549,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#2%20MB
 
  +---------------------------------------------------------------------------+
- | Type 81: Ram-Cart 4 MB cartridge                                          |
+ | Type 99: Ram-Cart 4 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by GALTRON company.
- It's identical to cartridge type 79.
+ It's identical to cartridge type 97.
 
  Three switches A, B and C on the top of case are used to select one of eight
  128K modules. They state can be read by control register.
@@ -1442,11 +1585,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#4%20MB
 
  +---------------------------------------------------------------------------+
- | Type 82: Ram-Cart 8 MB cartridge                                          |
+ | Type 100: Ram-Cart 8 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by GALTRON company.
- It's identical to cartridge type 79 but extended with additional control register.
+ It's identical to cartridge type 97 but extended with additional control register.
 
  There are no switches beside R/W and RESET on the top of case, so bank is selected
  only by software.
@@ -1488,11 +1631,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
 
  +---------------------------------------------------------------------------+
- | Type 83: Ram-Cart 16 MB cartridge                                          |
+ | Type 101: Ram-Cart 16 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by GALTRON company.
- It's identical to cartridge type 79 but extended with additional control register.
+ It's identical to cartridge type 97 but extended with additional control register.
 
  There are no switches beside R/W and RESET on the top of case, so bank is selected
  only by software.
@@ -1534,11 +1677,11 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
 
  +---------------------------------------------------------------------------+
- | Type 84: Ram-Cart 32 MB cartridge                                          |
+ | Type 102: Ram-Cart 32 MB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge released by GALTRON company.
- It's identical to cartridge type 79 but extended with additional control register.
+ It's identical to cartridge type 97 but extended with additional control register.
 
  There are no switches beside R/W and RESET on the top of case, so bank is selected
  only by software.
@@ -1580,7 +1723,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
 
  +---------------------------------------------------------------------------+
- | Type 85: SiDiCar 32 KB cartridge                                          |
+ | Type 103: SiDiCar 32 KB cartridge                                          |
  +---------------------------------------------------------------------------+
 
  A bank switched cartridge described by "Tajemnice Atari" magazine closely
@@ -1615,4 +1758,20 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://atariki.krap.pl/index.php/SiDiCar
+
++---------------------------------------------------------------------------+
+| Type 160: JRC64 cartridge (interleaved)                                   |
++---------------------------------------------------------------------------+
+
+ Cartridge takes 8KB of address space, contains 8 banks. By writing to
+ $D500-$D57F, bank is selected by data bits D6-D4. Bit D7 turns cartridge off.
+ On bootup, bank 0 is mapped in.
+
+ Type 80 uses linear bank order in dump (0,1,2,3,4,5,6,7)
+ Type 160 uses interleaved bank order in dump (7,3,5,1,6,2,4,0)
+
+ Some cartridges contain 256KB of RAMdisk. Page is selected by writing to
+ $D500-$D57F (7bits) with value with 4 upper bits set to 1 (4bits). That makes
+ 1<<11 = 2048 pages. Reads/writes are to region $D580-$D5FF (7bits). That
+ totals to 18bits = 256KB of RAM usable by TT-Dos or BeWe DOS.
 
