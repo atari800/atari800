@@ -30,6 +30,7 @@
 
 /* Three legitimate entries to UI module. */
 int UI_SelectCartType(int k);
+int UI_SelectCartTypeBetween(int *types);
 int UI_Initialise(int *argc, char *argv[]);
 void UI_Run(void);
 

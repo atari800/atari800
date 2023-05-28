@@ -21,6 +21,16 @@ Big thanks to all contributors (see git log for each commit author)
     - 73: Super Cart 256 KB 5200 cartridge (32K banks)
     - 74: Super Cart 512 KB 5200 cartridge (32K banks)
     - 75: Atarimax 1 MB Flash cartridge (new)
+    - 94: Ram-Cart 64 KB cartridge
+    - 95: Ram-Cart 128 KB cartridge
+    - 96: Double Ram-Cart 2x128/256 KB cartridge
+    - 97: Ram-Cart 1 MB cartridge
+    - 98: Ram-Cart 2 MB cartridge
+    - 99: Ram-Cart 4 MB cartridge
+    - 100: Ram-Cart 8 MB cartridge
+    - 101: Ram-Cart 16 MB cartridge
+    - 102: Ram-Cart 32 MB cartridge
+    - 103: SiDiCar 32 KB cartridge
     See DOC/cart.txt for details.
 
   * support for remapping of all function keys (START, SELECT, OPTION etc)

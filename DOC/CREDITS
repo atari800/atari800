@@ -254,8 +254,11 @@ Jindrich Kubec <kubecj@asw.cz>
     - hours of testing on real Atari800XL
     - research on real cartridges
 
-Jerzy Kut <mono@atari.pl>
+Jerzy Kut <jerzykut@poczta.onet.pl>
     - MapRAM memory expansion for the XL/XE
+    - Ram-Cart 64K/128K/1M/2M/4M/8M/16M/32M
+      and Double Ram-Cart 2x128K/256K cartridges support
+    - SiDiCar 32K cartridge support
 
 Chris Lam <lamcw@sun.aston.ac.uk>
     - RGB values for each Atari colour

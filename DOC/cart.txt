@@ -125,6 +125,16 @@ Currently supported cartridge types:
 | 91 | 800/XL/XE |  256 | XE Multicart (256KB)                          | x |
 | 92 | 800/XL/XE |  512 | XE Multicart (512KB)                          | x |
 | 93 | 800/XL/XE | 1024 | XE Multicart (1024KB)                         | x |
+| 94 | 800/XL/XE |   64 | Ram-Cart 64 KB cartridge                      |   |
+| 95 | 800/XL/XE |  128 | Ram-Cart 128 KB cartridge                     |   |
+| 96 | 800/XL/XE |  256 | Double Ram-Cart 2x128/256 KB cartridge        |   |
+| 97 | 800/XL/XE |   1M | Ram-Cart 1 MB cartridge                       |   |
+| 98 | 800/XL/XE |   2M | Ram-Cart 2 MB cartridge                       |   |
+| 99 | 800/XL/XE |   4M | Ram-Cart 4 MB cartridge                       |   |
+|100 | 800/XL/XE |   8M | Ram-Cart 8 MB cartridge                       |   |
+|101 | 800/XL/XE |  16M | Ram-Cart 16 MB cartridge                      |   |
+|102 | 800/XL/XE |  32M | Ram-Cart 32 MB cartridge                      |   |
+|103 | 800/XL/XE |   32 | SiDiCar 32 KB cartridge                       |   |
 |160 | 800/XL/XE |   64 |JRC64 cartridge (interleaved)                  | x |
 +----+-----------+------+-----------------------------------------------+---+
 
@@ -851,6 +861,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  Bits 2..0 - 16KB bank number (0..7)
  Default value = 0 which means 0 bank upper subbank in address $A000-$BFFF
  To switch cart off - poke $40 info $D500-$D51F
+
  The cartridge also supports programming of the Flash ROM - this feature is
  currently not emulated.
 
@@ -1344,6 +1355,406 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  https://blog.idorobots.org/entries/atari-xe-multicart.html
+
+ +---------------------------------------------------------------------------+
+ | Type 94: Ram-Cart 64 KB cartridge                                         |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by Unerring Masters company.
+ It uses SRAM with 3V battery power supplied and operates in two different modes
+ ("Read Only" and "Read/Write") turned by the user using switch on top of the case.
+ Two static RAM 32Kx8 chips (D43257GU) and small logic providing control register
+ to select memory bank and making it's visibility in Atari memory area is inside.
+
+ RAM is divided into four 16K banks with their's lower half visible in $8000..$9FFF
+ and upper half in $A000..$BFFF areas.
+ Read/Write control register is located in $D500, but is available on the whole
+ $D5 page for the sake of simplified address decoder is used.
+
+ Control register bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - control register lock: 0-unlocked, 1-locked until power off
+ 3 - bank select
+ 4 - bank select
+ 5 - not connected
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %00000000 43xxxxxx xxxxxxxx
+           :::::::: ::::::::
+           ::++++++-++++++++-- address bus A0..A13
+           ++----------------- control register bits
+
+ Control register contains $00 on power-on.
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#64%20KB
+
+ +---------------------------------------------------------------------------+
+ | Type 95: Ram-Cart 128 KB cartridge                                        |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by Unerring Masters company.
+ It's identical to cartridge type 94 but uses four 32Kx8 RAM chips.
+
+ Location of control register and it's bits meaning is the same, but additional
+ bit 5 is used to select bank as well as bits 3 and 4.
+
+ Control register bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - control register lock: 0-unlocked, 1-locked until power off
+ 3 - bank select
+ 4 - bank select
+ 5 - bank select
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %00000005 43xxxxxx xxxxxxxx
+         : :::::::: ::::::::
+         : ::++++++-++++++++-- address bus A0..A13
+         +-++----------------- control register bits
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#128%20KB
+
+ +---------------------------------------------------------------------------+
+ | Type 96: Double Ram-Cart 2x128/256 KB cartridge                           |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by Unerring Masters company.
+ It's similar to cartridge type 95 but uses two 128Kx8 RAM chips (CXK581000P).
+
+ Location of control register and it's bits meaning is almost the same,
+ but bit 2 has different meaning depending on state of P1 and P2 switches.
+
+ Additional P1 button on the top of case is used to choose mode of operation:
+ * 2x128K - selected when P1 is in state 0
+ * 256K - selected when P1 is in state 1
+
+ Bit 2 of control register has the same meaning as in 94 cartridge type
+ once 2x128K mode is chosen. Button P2 is used to choose active 128K module.
+
+ If 256K mode is chosen then bit 2 is used to select 128K module and address
+ full 256K memory area. P2 swaps 128K areas once it's 1 - if it's 0 then 128K
+ modules are addressed in normal order.
+
+ Control register bits meaning in this mode:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - select 128K module:
+     * 0=$0xxxx-$1xxxx, 1=$2xxxx-$3xxxx if P2=0
+     * 0-$2xxxx-$3xxxx, 1=$0xxxx-$1xxxx if P2=1
+ 3 - bank select
+ 4 - bank select
+ 5 - bank select
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %00000025 43xxxxxx xxxxxxxx
+        :: :::::::: ::::::::
+        :: ::++++++-++++++++-- address bus A0..A13
+        ++-++----------------- control register bits
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#2x128%20KB%20/%20256%20KB
+
+ +---------------------------------------------------------------------------+
+ | Type 97: Ram-Cart 1 MB cartridge                                          |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by Unerring Masters company then refectored
+ and republished in new form by GALTRON company.
+ It's similar to cartridge type 95 but bits 2, 6 and 7 have changed function.
+
+ Three switches A, B and C on the top of case are used to select one of eight
+ 128K modules. They state can be read by control register.
+
+ Control register bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - state of A switch
+ 3 - bank select
+ 4 - bank select
+ 5 - bank select
+ 6 - state of B switch
+ 7 - state of C switch
+
+ Cartridge memory address bits mapping:
+
+ %0000CBA5 43xxxxxx xxxxxxxx
+      :::: :::::::: ::::::::
+      :::: ::++++++-++++++++-- address bus A0..A13
+      :::+-++----------------- control register bits
+      +++--------------------- switches
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#1%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 98: Ram-Cart 2 MB cartridge                                          |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by GALTRON company.
+ It's identical to cartridge type 97.
+
+ Three switches A, B and C on the top of case are used to select one of eight
+ 128K modules. They state can be read by control register.
+ Additional switch 1/2M is used to choose one of two 1MB module.
+
+ Control register bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - state of A switch
+ 3 - bank select
+ 4 - bank select
+ 5 - bank select
+ 6 - state of B switch
+ 7 - state of C switch
+
+ Cartridge memory address bits mapping:
+
+ %0001CBA5 43xxxxxx xxxxxxxx
+     ::::: :::::::: ::::::::
+     ::::: ::++++++-++++++++-- address bus A0..A13
+     ::::+-++----------------- control register bits
+     ++++--------------------- switches
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#2%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 99: Ram-Cart 4 MB cartridge                                          |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by GALTRON company.
+ It's identical to cartridge type 97.
+
+ Three switches A, B and C on the top of case are used to select one of eight
+ 128K modules. They state can be read by control register.
+ Additional switch 1/2M is used to choose one of two 1MB module.
+ Additional switch 2/4M is used to choose one of two 2MB module.
+
+ Control register bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - state of A switch
+ 3 - bank select
+ 4 - bank select
+ 5 - bank select
+ 6 - state of B switch
+ 7 - state of C switch
+
+ Cartridge memory address bits mapping:
+
+ %0021CBA5 43xxxxxx xxxxxxxx
+    :::::: :::::::: ::::::::
+    :::::: ::++++++-++++++++-- address bus A0..A13
+    :::::+-++----------------- control register bits
+    +++++--------------------- switches
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#4%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 100: Ram-Cart 8 MB cartridge                                         |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by GALTRON company.
+ It's identical to cartridge type 97 but extended with additional control register.
+
+ There are no switches beside R/W and RESET on the top of case, so bank is selected
+ only by software.
+
+ Control register CARTCTL ($D500) bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - bank select bit 3
+ 3 - bank select bit 0
+ 4 - bank select bit 1
+ 5 - bank select bit 2
+ 6 - bank select bit 4
+ 7 - bank select bit 5
+
+ Additional register MODSEL ($D501) is using to select 1MB memory module.
+ Bits meaning:
+
+ 0 - module select bit 0
+ 1 - module select bit 1
+ 2 - module select bit 2
+ 3 - not connected
+ 4 - not connected
+ 5 - not connected
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %02107625 43xxxxxx xxxxxxxx
+   ::::::: :::::::: ::::::::
+   ::::::: ::++++++-++++++++-- address bus A0..A13
+   :::++++-++----------------- CARCTL register bits
+   +++------------------------ MODSEL register bits
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 101: Ram-Cart 16 MB cartridge                                        |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by GALTRON company.
+ It's identical to cartridge type 97 but extended with additional control register.
+
+ There are no switches beside R/W and RESET on the top of case, so bank is selected
+ only by software.
+
+ Control register CARTCTL ($D500) bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - bank select bit 3
+ 3 - bank select bit 0
+ 4 - bank select bit 1
+ 5 - bank select bit 2
+ 6 - bank select bit 4
+ 7 - bank select bit 5
+
+ Additional register MODSEL ($D501) is using to select 1MB memory module.
+ Bits meaning:
+
+ 0 - module select bit 0
+ 1 - module select bit 1
+ 2 - module select bit 2
+ 3 - module select bit 3
+ 4 - not connected
+ 5 - not connected
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %32107625 43xxxxxx xxxxxxxx
+  ::::::: :::::::: ::::::::
+  :::::::: ::++++++-++++++++-- address bus A0..A13
+  ::::++++-++----------------- CARCTL register bits
+  ++++------------------------ MODSEL register bits
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 102: Ram-Cart 32 MB cartridge                                        |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge released by GALTRON company.
+ It's identical to cartridge type 97 but extended with additional control register.
+
+ There are no switches beside R/W and RESET on the top of case, so bank is selected
+ only by software.
+
+ Control register CARTCTL ($D500) bits meaning:
+
+ 0 - $A000..$BFFF window enable:
+     * "Read Only" mode: 0-enabled, 1-disabled
+     * "Read/Write" mode: 0-disabled, 1-enabled
+ 1 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 2 - bank select bit 3
+ 3 - bank select bit 0
+ 4 - bank select bit 1
+ 5 - bank select bit 2
+ 6 - bank select bit 4
+ 7 - bank select bit 5
+
+ Additional register MODSEL ($D501) is using to select 1MB memory module.
+ Bits meaning:
+
+ 0 - module select bit 0
+ 1 - module select bit 1
+ 2 - module select bit 2
+ 3 - module select bit 3
+ 4 - module select bit 4
+ 5 - not connected
+ 6 - not connected
+ 7 - not connected
+
+ Cartridge memory address bits mapping:
+
+ %00000004 32107625 43xxxxxx xxxxxxxx
+         : :::::::: :::::::: ::::::::
+         : :::::::: ::++++++-++++++++-- address bus A0..A13
+         : ::::++++-++----------------- CARCTL register bits
+         +-++++------------------------ MODSEL register bits
+
+ Reference:
+ http://atariki.krap.pl/index.php/Ram-Cart#8%2C%2016%20i%2032%20MB
+
+ +---------------------------------------------------------------------------+
+ | Type 103: SiDiCar 32 KB cartridge                                         |
+ +---------------------------------------------------------------------------+
+
+ A bank switched cartridge described by "Tajemnice Atari" magazine closely
+ related to polish software publisher L.K.Avalon.
+ It uses CMOS static RAM 62256 chip with battery power supplied and small logic
+ providing control register to select memory bank and making its visibility
+ in Atari memory area.
+
+ RAM is divided into four 8K banks visible in $8000..$9FFF area.
+ Write only control register CARSET is located in $D5FF, however it's available
+ on whole $D5 page because only /CCTL line is used to build simplified decoder.
+
+ Control register bits meaning:
+
+ 0 - bank select
+ 1 - bank select
+ 2 - not connected
+ 3 - not connected
+ 4 - $8000..$9FFF window enable: 0-disabled, 1-enabled
+ 5 - not connected
+ 6 - not connected
+ 7 - write to control register 0-enabled, 1-disabled
+
+ Cartridge memory address bits mapping:
+
+ %010xxxxx xxxxxxxx
+   ::::::: ::::::::
+   ::+++++-++++++++-- address bus A0..A12
+   ++---------------- control register bits
+
+ Control register contains $00 on power-on.
+
+ Reference:
+ http://atariki.krap.pl/index.php/SiDiCar
 
 +---------------------------------------------------------------------------+
 | Type 160: JRC64 cartridge (interleaved)                                   |
