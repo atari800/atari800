@@ -11,6 +11,7 @@ locations:
 
 src/Kernel/source/main.xasm -> main.xasm
 src/Kernel/source/Shared/* -> src/
+src/Kernel/source/SuperKernel/* -> src_5200/
 src/ATBasic/source/* -> src_basic/
 
 If new files were added, you may need to edit the Makefile.

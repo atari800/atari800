@@ -51,6 +51,7 @@ OBJS = \
 	pokeysnd.obj \
 	remez.obj \
 	roms/altirra_5200_os.obj \
+	roms/altirra_5200_charset.obj \
 	rtime.obj \
 	screen.obj \
 	sio.obj \

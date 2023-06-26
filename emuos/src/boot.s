@@ -170,16 +170,18 @@ load_failure:
 
 ;============================================================================
 .proc BootRunLoader
-	;loader is at load address + 6
+	;Some tape versions of River Raid is sensitive to both the A
+	;register value on boot and RAMLO, for some reason. For compatibility,
+	;we need to return the high byte in A and RAMLO needs to contain the
+	;run address.
+
 	lda		bootad
-	add		#$05
-	tax
+	add		#$06			;loader is at load address + 6
+	sta		ramlo
 	lda		bootad+1
 	adc		#0
-	pha
-	txa
-	pha
-	rts
+	sta		ramlo+1
+	jmp		(ramlo)
 .endp
 
 ;============================================================================

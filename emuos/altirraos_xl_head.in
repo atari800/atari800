@@ -15,5 +15,6 @@
 
 #include "atari.h"
 
+#if 1
 UBYTE const ROM_altirraos_xl[0x4000] =
 {

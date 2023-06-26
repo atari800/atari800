@@ -80,6 +80,7 @@ atari800_SOURCES = \
 	pia.c pia.h \
 	pokey.c pokey.h \
 	roms/altirra_5200_os.c roms/altirra_5200_os.h \
+	roms/altirra_5200_charset.c \
 	rtime.c rtime.h \
 	sio.c sio.h \
 	sysrom.c sysrom.h \

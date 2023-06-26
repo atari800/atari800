@@ -129,7 +129,6 @@ no_send_frame:
 	
 	;setup for receiving complete
 	ldx		#$ff
-	stx		timflg
 	stx		nocksm
 
 	;setup frame delay for complete
@@ -145,6 +144,7 @@ no_send_frame:
 	tax
 
 	lda		#1
+	sta		timflg
 	jsr		setvbv
 
 	ldx		#<temp
@@ -251,11 +251,11 @@ no_receive_frame:
 .proc SIOWaitForACK
 	;setup 2 frame delay for ack
 	ldx		#$ff
-	stx		timflg
 	stx		nocksm
-	inx					;X=0
-	lda		#1
-	ldy		#2
+	inx					;X=0 (MSB of timeout duration)
+	lda		#1			;set timer 1
+	sta		timflg
+	ldy		#2			;LSB of timeout duration
 	sty		bufrhi		;>temp = 2
 	sty		bfenhi		;>temp+1 = 2
 	jsr		setvbv
@@ -777,8 +777,8 @@ isread:
 	sta		sskctl
 
 	;set timeout (approx; no NTSC/PAL switching yet)
-	mva		#$ff timflg
 	lda		#1
+	sta		timflg
 	ldx		#>3600
 	ldy		#<3600
 	jsr		VBISetVector
@@ -786,8 +786,8 @@ isread:
 	;wait for beginning of frame
 	lda		#$10		;test bit 4 of SKSTAT
 waitzerostart:
-	bit		timflg
-	bpl		timeout
+	ldy		timflg
+	beq		timeout
 	bit		skstat
 	bne		waitzerostart
 	
@@ -800,15 +800,15 @@ waitzerostart:
 	lda		#$10		;test bit 4 of SKSTAT
 	ldx		#10			;test 10 pairs of bits
 waitone:
-	bit		timflg
-	bpl		timeout
+	ldy		timflg
+	beq		timeout
 	bit		skstat
 	beq		waitone
 	dex
 	beq		waitdone
 waitzero:
-	bit		timflg
-	bpl		timeout
+	ldy		timflg
+	beq		timeout
 	bit		skstat
 	bne		waitzero
 	beq		waitone
