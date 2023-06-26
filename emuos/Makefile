@@ -66,10 +66,15 @@ SRC_BASIC=\
  src_basic/util.s \
  src_basic/variables.s
 
+SRC_BIOS_5200=\
+ src_5200/main.xasm
+
 all:\
  $(CDIR)/altirraos_xl.c \
  $(CDIR)/altirraos_800.c \
- $(CDIR)/altirra_basic.c
+ $(CDIR)/altirra_basic.c \
+ $(CDIR)/altirra_5200_os.c \
+ $(CDIR)/altirra_5200_charset.c
 
 # Rules to assemble ROMs
 $(OUT)/altirraos_xl.rom: main.xasm $(SRC_BIOS_XL) $(SRC_BIOS_SHARED) | $(OUT)
@@ -80,6 +85,12 @@ $(OUT)/altirraos_800.rom: main.xasm $(SRC_BIOS_800) $(SRC_BIOS_SHARED) | $(OUT)
 
 $(OUT)/altirra_basic.rom: src_basic/atbasic.s $(SRC_BASIC) | $(OUT)
 	$(MADS) -d:CART=1 -s -p -i:src_basic -b:40960 -l:$(@:.rom=.lst) -t:$(@:.rom=.lab) -o:$@ $<
+
+$(OUT)/altirra_5200_os.rom: $(SRC_BIOS_5200) | $(OUT)
+	$(MADS) -s -p -i:src -b:63488 -l:$(@:.rom=.lst) -o:$@ $<
+
+$(OUT)/altirra_5200_charset.rom: src/atarifont.bin | $(OUT)
+	cp $< $@
 
 # Rules to convert ROM into HEX file
 $(OUT)/%.hex: $(OUT)/%.rom
@@ -102,5 +113,9 @@ clean:
 	-rm -f $(OUT)/altirraos_xl.lab
 	-rm -f $(OUT)/altirraos_xl.lst
 	-rm -f $(OUT)/altirraos_xl.rom
+	-rm -f $(OUT)/altirra_5200_os.lab
+	-rm -f $(OUT)/altirra_5200_os.lst
+	-rm -f $(OUT)/altirra_5200_os.rom
+	-rm -f $(OUT)/altirra_5200_charset.rom
 	-rmdir $(OUT)
 

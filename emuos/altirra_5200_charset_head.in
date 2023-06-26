@@ -1,0 +1,10 @@
+/*
+ * altirra_5200_charset.c - 5200 character set ROM
+ */
+
+#include "config.h"
+#include "atari.h"
+
+#ifndef EMUOS_ALTIRRA
+UBYTE const ROM_altirra_5200_os[0x400] =
+{

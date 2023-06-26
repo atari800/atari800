@@ -15,5 +15,6 @@
 
 #include "atari.h"
 
+#if 1
 UBYTE const ROM_altirraos_800[0x2800] =
 {

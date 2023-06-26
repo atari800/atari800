@@ -42,6 +42,7 @@ A800_CORE_OBJS  := \
 	pokeysnd.o \
 	remez.o \
 	roms/altirra_5200_os.o \
+	roms/altirra_5200_charset.o \
 	roms/altirra_basic.o \
 	roms/altirraos_800.o \
 	roms/altirraos_xl.o \

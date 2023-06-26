@@ -1,10 +1,11 @@
 /*
- * altirra_basic.c - BASIC ROM replacement
+ * altirra_5200_os.c - 5200 OS ROM replacement
  *
  * Compiled from the sources in the emuos folder.
  *
- * Altirra BASIC, version 1.58
- * Copyright (C) 2008-2022 Avery Lee
+ * Altirra - Atari 800/800XL emulator
+ * 5200 OS ROM replacement
+ * Copyright (C) 2008-2018 Avery Lee
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -15,6 +16,6 @@
 #include "config.h"
 #include "atari.h"
 
-#if 1
-UBYTE const ROM_altirra_basic[] =
+#ifdef EMUOS_ALTIRRA
+UBYTE const ROM_altirra_5200_os[0x800] =
 {

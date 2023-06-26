@@ -61,6 +61,7 @@ OBJ =	artifact.o \
 	cartridge.o \
 	crc32.o \
 	roms/altirra_5200_os.o \
+	roms/altirra_5200_charset.o \
 	rtime.o \
 	ui.o \
 	ui_basic.o \
