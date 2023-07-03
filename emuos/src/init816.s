@@ -312,6 +312,9 @@ notRAM:
 		dta		$00
 .endp
 
+krpdel_table:
+	dta		48,40
+
 ;==============================================================================
 .proc InitEnvironment
 		mva		tramsz ramsiz
@@ -348,9 +351,15 @@ init_done:
 		;set PAL/NTSC flag (XL/XE only)
 		ldx		#0
 		lda		pal
+		ldy		#6
 		and		#$0e
-		sne:inx
-		stx		palnts
+		bne		is_ntsc
+		inx
+		dey
+is_ntsc:
+		stx		palnts		;$00 for NTSC, $01 for PAL
+		sty		keyrep		;6 for NTSC, 5 for PAL
+		mva		krpdel_table,x krpdel
 
 		; 11. set misc database values
 		mva		tramsz memtop+1

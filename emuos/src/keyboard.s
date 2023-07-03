@@ -44,7 +44,7 @@ KeyboardClose = CIOExitSuccess
 ;	  lock if no lock is enabled and disable it otherwise.
 ;	- Shift/Control lock is applied by K:, but only on alpha keys.
 ;	- Inverse mode is also applied by K:. Control characters are excluded:
-;	  1B-1F/7C-7F/9B-9F/FD-FF.
+;	  1B-1F/7D-7F/9B-9F/FD-FF.
 ;	- Any Ctrl+Shift key code (>=$C0) produces a key click but is otherwise
 ;	  ignored.
 ;
@@ -80,8 +80,8 @@ waitForChar2:
 	
 	;do keyboard click (we do this even for ignored ctrl+shift+keys)
 	.if _KERNEL_XLXE
-	bit		noclik
-	bmi		no_click
+	ldy		noclik
+	bne		no_click
 	.endif
 
 	ldy		#12
@@ -91,11 +91,7 @@ no_click:
 	;ignore char if both ctrl and shift are pressed
 	cmp		#$c0
 	bcs		waitForChar
-	
-	;trap Ctrl-3 and return EOF
-	cmp		#$9a
-	beq		isCtrl3
-			
+				
 	;translate char
 	tay
 
@@ -114,6 +110,7 @@ no_click:
 	bcc		toggle_shift	;$82 - caps lock
 	cmp		#$85
 	bcc		shift_ctrl_on	;$83 - shift caps lock / $84 - ctrl caps lock
+	beq		isCtrl3			;$85 - EOF
 	
 valid_key:
 	;check for alpha key
@@ -188,15 +185,22 @@ KeyboardSpecial = CIOExitNotSupported
 	lda		kbcode
 
 .if _KERNEL_XLXE
+	;save key
+	pha
+
 	;check for HELP
 	and		#$3f
 	cmp		#$11
 	bne		not_help
+
+	;restore HELP key with original modifiers
+	pla
 	sta		helpfg
-	beq		xit2
+	bne		xit2
 
 not_help:
-	lda		kbcode
+	;restore key
+	pla
 .endif
 	
 	;check if it is the same as the prev key

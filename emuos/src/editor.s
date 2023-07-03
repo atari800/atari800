@@ -321,8 +321,7 @@ special_code_tab:
 	dta		$fe
 	dta		$ff
 special_code_tab_end:
-	dta		$9b				;these are only for the K: check
-	dta		$7c
+	dta		$9b				;this is only for the K: check
 special_code_tab_end_2:
 
 ;----------------
@@ -425,7 +424,9 @@ sbks_wrap:
 
 ;----------------
 special_bell:
-	jmp		EditorBell
+.def :EditorBell
+	ldy		#0
+	jmp		Bell
 
 ;----------------
 special_set_tab:
@@ -983,12 +984,6 @@ test_loop:
 found:
 	lda		adress
 	rts
-.endp
-
-;==========================================================================
-.proc	EditorBell
-	ldy		#0
-	jmp		Bell
 .endp
 
 ;==========================================================================

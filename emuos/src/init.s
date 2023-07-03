@@ -354,7 +354,7 @@ krpdel_table:
 	ldy		#6
 	and		#$0e
 	bne		is_ntsc
-	sne:inx
+	inx
 	dey
 is_ntsc:
 	stx		palnts

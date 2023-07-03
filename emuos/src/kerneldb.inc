@@ -190,6 +190,12 @@ pdmsk	= $0249			;PBI device interrupt mask (XL/XE)
 reladr	= $024a			;Relocating loader: temp address (XL/XE)
 		; $024b
 
+		; $024e			;Reserved by 1450XLD Parallel Disk Drive handler
+		; $024f			;Reserved by 1450XLD Parallel Disk Drive handler
+		; $0250			;Reserved by 1400XL T: handler and 1450XLD PDD
+		; $0251			;Reserved by 1400XL T: handler
+		; $0263-026a	;Reserved by 1400XL V: handler
+
 .if _KERNEL_816
 vabte	= $024f			;(816) Emulation ABORT vector
 		; $0250

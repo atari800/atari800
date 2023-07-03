@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL/5200 emulator
 ;	Modular Kernel ROM - 65C816 Vertical Blank Interrupt Services
-;	Copyright (C) 2008-2018 Avery Lee
+;	Copyright (C) 2008-2023 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -277,72 +277,36 @@ still_running:
 ; X = MSB
 ; Y = LSB
 ;
+;NOTE:
+;The Atari OS Manual says that DLIs will be disabled after SETVBV is called.
+;This only applies to OS-A, which writes NMIEN from SETVBV. OS-B and the
+;XL/XE OS avoid this, and the Bewesoft 8-players demo depends on DLIs being
+;left enabled.
+;
+;IRQ mask state must be saved across this proc. DOSDISKA.ATR breaks if IRQs
+;are unmasked.
+;
 .proc VBISetVector
-	;A = item to update
-	;	1-5	timer 1-5 counter value
-	;	6	VVBLKI
-	;	7	VVBLKD
-	;X = MSB
-	;Y = LSB
-	;
-	;NOTE:
-	;The Atari OS Manual says that DLIs will be disabled after SETVBV is called.
-	;This is a lie -- neither the OS-B nor XL kernels do this, and the Bewesoft
-	;8-players demo depends on it being left enabled.
-	;
-	;IRQ mask state must be saved across this proc. DOSDISKA.ATR breaks if IRQs
-	;are unmasked.
-	
-	asl
-	sta		intemp
-	php
-	sei
-	tya
-	ldy		intemp
-	
-	;We're relying on a rather tight window here. We can't touch NMIEN, so we have
-	;to wing it with DLIs enabled. Problem is, in certain conditions we can be under
-	;very tight timing constraints. In order to do this safely we have to finish
-	;before a DLI can execute. The worst case is a wide mode 2 line at the end of
-	;a vertically scrolled region with P/M graphics enabled and an LMS on the next
-	;mode line. In that case we only have 7 cycles before we hit the P/M graphics
-	;and another two cycles after that until the DLI fires. The exact cycle timing
-	;looks like this:
-	;
-	;*		inc wsync
-	;ANTIC halts CPU until cycle 105
-	;105	playfield DMA
-	;106	refresh DMA
-	;107	sta abs,y (1/5)
-	;108	sta abs,y (2/5)
-	;109	sta abs,y (3/5)
-	;110	sta abs,y (4/5)
-	;111	sta abs,y (5/5)
-	;112	txa (1/2)
-	;113	txa (2/2)
-	;0		missiles
-	;1		display list
-	;2		player 0
-	;3		player 1
-	;4		player 2
-	;5		player 3
-	;6		display list address low
-	;7		display list address high
-	;8		sta abs,y (1/5)
-	;9		sta abs,y (2/5)
-	;10		sta abs,y (3/5)
-	;11		sta abs,y (4/5)
-	;12		sta abs,y (5/5)
-	;
-	;We rely on the 6502 not being able to service interrupts until the end of an
-	;instruction for this to work. The INC WSYNC is necessary to combat the case
-	;where the NMI is triggered across the WSYNC wait; without it, the VBI could
-	;fire immediately after the first STA.
-	
-	inc		wsync
-	sta		cdtmv1-2,y
-	txa
-	sta		cdtmv1-1,y
-	plp
-	rts
+		;convert vector to offset
+		asl
+
+		;swap around X:Y to B:A and A to Y
+		pha
+		txa
+		xba
+		tya
+		ply
+
+		;The '816 makes this much simpler as we can just use a 16-bit write,
+		;but let's still do the WSYNC for stabler timing compatibility-wise.
+		stz		wsync
+		clc
+		xce
+		php
+		rep		#$20
+		sta		cdtmv1-2,y
+		plp
+		xce
+
+		rts
 .endp
