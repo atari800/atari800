@@ -322,15 +322,15 @@ clear_parms:
 	eor		gprior
 	sta		gprior
 	
-	;if a GTIA mode is active or we're in mode 0, force off split mode
-	cmp		#$40
+	;if a GTIA mode is active, force off split mode
+	;if we're in mode 0, force off the no-clear flag (per OS Manual p.57)
+	cmp		#$40		;test for GTIA mode and store in carry
+	txa					;test for GR.0
+	beq		is_gr0		;disable split screen and no-clear for GR.0
+
 	lda		icax1z
-	bcs		kill_split
-	cpx		#0
-	bne		not_gtia_mode_or_gr0
-kill_split:
-	and		#$ef
-not_gtia_mode_or_gr0:
+	scc:and	#$ef		;disable split screen for GTIA mode
+is_gr0:
 
 	;save off the split screen and clear flags in a more convenient form
 	asl

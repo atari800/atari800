@@ -377,9 +377,9 @@ split:
 		dta		$9b
 
 		.ifdef _KERNEL_816
-		dta		d"Copyright (C) 2018-2022 Avery Lee",$9b
+		dta		d"Copyright (C) 2018-2023 Avery Lee",$9b
 		.else
-		dta		d"Copyright (C) 2012-2022 Avery Lee",$9b
+		dta		d"Copyright (C) 2012-2023 Avery Lee",$9b
 		.endif
 
 		dta		d"All Rights Reserved",$9b

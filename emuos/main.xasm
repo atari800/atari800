@@ -286,7 +286,9 @@ gpdvv	PBI_VECTOR_TABLE			;$E48F	XL/XE: Generic device vector
 	icl		'keytable.s'
 	_KERNEL_REPORT_MODULE_SIZE 'Keyboard routines', 0
 
-	.if _KERNEL_XLXE
+	.ifdef _KERNEL_816
+	.echo	'Free space: ', $FFE4-*, ' bytes'
+	.elif _KERNEL_XLXE
 	.echo	'Free space: ', $FFEE-*, ' bytes'
 	.else
 	.echo	'Free space: ', $FFFA-*, ' bytes'

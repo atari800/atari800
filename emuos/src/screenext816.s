@@ -118,7 +118,8 @@ post_wrap:
 	eor		#$80
 	sta		(oldadr)
 cursor_inhibited:
-	iny
+xit_ok:
+	ldy		#1
 	rts
 .endp
 
@@ -130,17 +131,10 @@ cursor_inhibited:
 ; This happens even if S: doesn't correspond to the text window. Only
 ; the high bit of FINE is checked.
 ;
-.if !_KERNEL_XLXE
-ScreenClose = CIOExitSuccess
-.else
 .proc ScreenClose
 	bit		fine
-	bmi		disable_fine_scrolling
-	
-	ldy		#1
-	rts
+	bpl		ScreenShowCursorAndXitOK.xit_ok
 
-disable_fine_scrolling:	
 	;turn off DLI
 	mva		#$40 nmien
 	
@@ -151,7 +145,6 @@ disable_fine_scrolling:
 	
 	jmp		ScreenOpenGr0
 .endp
-.endif
 
 ;==========================================================================
 .if !_KERNEL_XLXE

@@ -31,6 +31,7 @@ iocb_loop:
 ;		A = depends on operation
 ;		X = IOCB offset (# x 16)
 ;		Y = status (reflected in P)
+;		P = set based on status (guaranteed by OS Manual)
 ;
 ;	Notes:
 ;		BUFADR must not be touched from CIO. DOS XE relies on this for
@@ -55,14 +56,16 @@ xit:
 	ldx		icidno
 	tya
 	sta		icsta,x
-	php
 	
 .if _KERNEL_XLXE
 	mva		#0 hndlod
 .endif
 
 	lda		ciochr
-	plp
+
+	;set NZ condition codes based on status
+	;C=1 needed by GUNDISK.XEX
+	cpy		#0
 	rts
 	
 process:
@@ -671,6 +674,7 @@ cmd_tab:
 	mwa		dvstat+2 loadad
 	ldx		icidno
 	mva		icax4,x ddevic
+	clc
 	jsr		PHLoadHandler
 	bcs		fail
 	

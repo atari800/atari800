@@ -1,6 +1,6 @@
 ;	Altirra - Atari 800/800XL/5200 emulator
 ;	Modular Kernel ROM - Vertical Blank Interrupt Services
-;	Copyright (C) 2008-2016 Avery Lee
+;	Copyright (C) 2008-2023 Avery Lee
 ;
 ;	Copying and distribution of this file, with or without modification,
 ;	are permitted in any medium without royalty provided the copyright
@@ -338,72 +338,163 @@ still_running:
 ; X = MSB
 ; Y = LSB
 ;
-.proc VBISetVector
-	;A = item to update
-	;	1-5	timer 1-5 counter value
-	;	6	VVBLKI
-	;	7	VVBLKD
-	;X = MSB
-	;Y = LSB
-	;
-	;NOTE:
-	;The Atari OS Manual says that DLIs will be disabled after SETVBV is called.
-	;This is a lie -- neither the OS-B nor XL kernels do this, and the Bewesoft
-	;8-players demo depends on it being left enabled.
-	;
-	;IRQ mask state must be saved across this proc. DOSDISKA.ATR breaks if IRQs
-	;are unmasked.
-	
-	asl
-	sta		intemp
-	php
-	sei
-	tya
-	ldy		intemp
-	
+;NOTE:
+;The Atari OS Manual says that DLIs will be disabled after SETVBV is called.
+;This only applies to OS-A, which writes NMIEN from SETVBV. OS-B and the
+;XL/XE OS avoid this, and the Bewesoft 8-players demo depends on DLIs being
+;left enabled.
+;
+;IRQ mask state must be saved across this proc. DOSDISKA.ATR breaks if IRQs
+;are unmasked.
+;
+;We also cannot touch NMIRES in this routine. This can result in dropped DLIs
+;since there is a one cycle window where the 6502 can manage to both write
+;NMIRES and still execute the NMI. This results in the NMI dispatcher seeing no
+;bits set in NMIST and failing to run the correct handler.
+;
+.proc VBISetVector	
 	;We're relying on a rather tight window here. We can't touch NMIEN, so we have
 	;to wing it with DLIs enabled. Problem is, in certain conditions we can be under
 	;very tight timing constraints. In order to do this safely we have to finish
 	;before a DLI can execute. The worst case is a wide mode 2 line at the end of
 	;a vertically scrolled region with P/M graphics enabled and an LMS on the next
 	;mode line. In that case we only have 7 cycles before we hit the P/M graphics
-	;and another two cycles after that until the DLI fires. The exact cycle timing
-	;looks like this:
+	;and another two cycles after that until the DLI fires.
 	;
-	;*		inc wsync
+	;The worst case cycle timing looks like this:
+	;
+	;*			inc wsync
 	;ANTIC halts CPU until cycle 105
-	;105	playfield DMA
-	;106	refresh DMA
-	;107	sta abs,y (1/5)
-	;108	sta abs,y (2/5)
-	;109	sta abs,y (3/5)
-	;110	sta abs,y (4/5)
-	;111	sta abs,y (5/5)
-	;112	txa (1/2)
-	;113	txa (2/2)
-	;0		missiles
-	;1		display list
-	;2		player 0
-	;3		player 1
-	;4		player 2
-	;5		player 3
-	;6		display list address low
-	;7		display list address high
-	;8		sta abs,y (1/5)
-	;9		sta abs,y (2/5)
-	;10		sta abs,y (3/5)
-	;11		sta abs,y (4/5)
-	;12		sta abs,y (5/5)
+	;105		playfield DMA
+	;106		refresh DMA
+	;107-113	free cycles (7)
+	;0			missiles
+	;1			display list
+	;2			player 0
+	;3			player 1
+	;4			player 2
+	;5			player 3
+	;6			display list address low
+	;7			display list address high
+	;8-9		free cycles (2)
+	;10			earliest NMI timing
 	;
-	;We rely on the 6502 not being able to service interrupts until the end of an
-	;instruction for this to work. The INC WSYNC is necessary to combat the case
-	;where the NMI is triggered across the WSYNC wait; without it, the VBI could
-	;fire immediately after the first STA.
+	;There are several annoying cases:
+	;
+	; 1) The VBI fires on the next scanline.
+	;
+	;    In this case, neither display list nor P/M DMA can occur, so we have at
+	;    least 17 cycles guaranteed before the VBI fires. This is the easiest case
+	;    to handle. We should be 100% safe with only the VBI enabled and no DLIs.
+	;
+	; 2) A DLI fires on the next scanline.
+	;
+	;    SETVBV can't be used to set VDSLST, so it doesn't directly interact with
+	;    DLIs and a DLI splitting the writes isn't an issue. However, the DLI can
+	;    end shortly before the VBI and land us in trouble there. The stock OS has
+	;    an ~8 cycle vulnerability here.
+	;
+	;    Using SETVBV with DLIs is already questionable due to WSYNC delaying DLIs,
+	;    but to mitigate this, we check VCOUNT and delay the writes if we're too
+	;    close to the VBI. There is just enough time to do this safely as long as
+	;    the DLI executes before the VCOUNT check.
+	;
+	;    This can be violated if the multiple DLIs are close together or DMA is
+	;    very heavy, but that's beyond the point where using SETVBV is reasonably
+	;    safe at all. The case that fails is that the VCOUNT check passes prior to
+	;    scan 247, then post-check code is split by a DLI that ends in the danger
+	;    zone.
+	;
+	; 3) An NMI fires during the INC WSYNC.
+	;
+	;    We're fine if this is a VBI, less fine if it's the DLI. The DLI can execute
+	;    at two points: either immediately after the INC WSYNC or one instruction
+	;    after it. This depends on whether INC WSYNC ends by cycle 10 so the 6502
+	;    can acknowledge and swap to the NMI sequence before RDY halts it. Otherwise,
+	;    the 6502 will stop on the opcode fetch for the next insn, guaranteeing that
+	;    the next insn completes before NMI handling starts.
+	;
+	;    This issue means that the first instruction cannot either be the VCOUNT
+	;    check or the first write. It also means it's impossible to guarantee that
+	;    the write can occur before the next NMI -- there aren't enough cycles in
+	;    max DMA conditions to get off the two writes with needing a dummy insn in
+	;    front, so we're stuck either potentially having the writes split by DLIs
+	;    or after the DLI.
+	;
+	; 4) A DLI fires on the next scanline, and runs long across the VBI.
+	;
+	;    This appears impossible to handle in all cases, as there aren't enough
+	;    cycles to guarantee atomic writes before the DLI could fire in max DMA
+	;    conditions.
+	;
+	;    We mitigate this by instead delaying enough cycles to ensure that the
+	;    writes always occur _after_ the DLI. Combined with the VBI check, this
+	;    handles the case of a single DLI in reasonable conditions. In max DMA
+	;    conditions it is still possible for the post-delay code to get pushed
+	;    into the next horizontal blank for the DLI to split the writes... we can
+	;    only do so much.
 	
-	inc		wsync
-	sta		cdtmv1-2,y
-	txa
-	sta		cdtmv1-1,y
-	plp
-	rts
+		;double the index to a vector offset, and save to rotate A -> Y
+		asl
+		sty		intemp
+		tay
+		txa
+
+		;disable IRQs
+		php
+		sei
+
+		;===== sync to horizontal blank =====
+		inc		wsync
+
+		;--- NMI may occur here ---
+
+		ldx		#124				;105-106
+	 
+		;--- NMI may occur here ---
+
+		;Delay enough cycles to ensure that any upcoming NMI executes prior to
+		;the vector writes, _if_ no NMI occurred during the WSYNC. If one did, then
+		;the horizontal timing is unknown here and we rely on the VCOUNT check
+		;to save us.
+		php:plp						;107-113
+		php:plp						;0-6
+	
+		;Check if we are in the danger zone -- if we're on 248 then we can't guarantee
+		;enough cycles to do the write in time and should delay again. If we're not
+		;on 248, then we can just barely guarantee enough cycles to finish both writes
+		;in time as long as there isn't a DLI in between that extends all the way to
+		;248. The last cycle of the CPX instruction reads VCOUNT and that shows the
+		;incremented value starting on cycle 111.
+		;
+		;The 'normal' timing is what is encountered away from scan 248 with no DLIs.
+		;Early/late timings are when a DLI has interfered and represent the edge cases
+		;for just barely passing or failing the VCOUNT check. For the early case, we
+		;need to squeeze in the writes immediate; in the late case we must clear the
+		;VBI before proceeding.
+		;
+		cpx		vcount				;normal:  7-10 | late: 108-111 | early: 107-110
+		beq		in_danger			;normal: 11-12 | late: 112-0   | early: 111-112
+
+resume:
+		;Update the vector. In the worst case timing where we have just caught the
+		;very last cycle before VCOUNT ticks over to $7C, there are just barely enough
+		;cycles to guarantee an atomic update before the VBI. Note that the last write
+		;extends past the NMI point; this relies on the 6502 having to the finish the
+		;insn once it's started before it can handle the NMI.
+		sta		cdtmv1-1,y			;normal: 12-16 | late: 11-15 | early: 113-4
+		lda		intemp				;normal: 17-18 | late: 16-17 | early: 5-8
+		sta		cdtmv1-2,y			;normal: 19-23 | late: 18-22 | early: 9+
+
+		;restore IRQs
+		plp
+
+		;all done
+		rts
+
+in_danger:
+		;Delay past the NMI point to ensure that any NMI there kicks off before we
+		;do the writes.
+		php:plp						;1-7
+		beq		resume				;8-10
 .endp
