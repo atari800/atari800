@@ -305,12 +305,32 @@ dec_entry:
 .endp
 
 ;==========================================================================
+; FASC [D8E6]		Floating Point to ASCII conversion
+;
+; Converts an FP number in FR0 to an ASCII representation in LBUFF, setting
+; INBUFF to the start of the string and with bit 7 set on the last
+; character.
+;
+; Negative values are preceded by '-', followed by at least one decimal
+; digit -- so values smaller than 1.0 in magnitude start with "0.".
+; Exponential notation is used for values <0.01 or >=10^10, with the
+; form m.mmmmmmmmE+nn; trailing zeroes on the mantissa are trimmed, along
+; with the . if there are no non-zero digits after it.
+;
+; Quirks:
+;	- INBUFF can actually point a couple of characters below LBUFF in some
+;	  cases. We do similar for negative numbers, but we don't precisely
+;	  emulate the exact INBUFF values.
+;	- One decimal digit is always printed for odd exponents, but not for
+;	  even exponents, e.g. 1E+10 and 1.0E+11.
+;
 		fixadr	$d8e6
-_fasc = fasc
-.proc fasc
-dotcntr = ztemp4
-expval = ztemp4+1
+
+.proc	fasc
+dotcntr	= ztemp4
+expval	= ztemp4+1
 trimbase = ztemp4+2
+
 	jsr		ldbufa
 	ldy		#0
 
@@ -323,20 +343,19 @@ trimbase = ztemp4+2
 	rts
 	
 notzero:
+	;start with no exponent to display
 	sty		expval
-	sty		trimbase
-
-	;insert sixth mantissa byte
-	sty		fr0
 
 	;check if number is negative
 	bpl		ispos
+
+	;prepend minus sign
 	ldx		#'-'
 	dec		inbuff
 	stx		lbuff-1
-	inc		trimbase
 	iny
 ispos:
+	sty		trimbase
 
 	;set up for 5 mantissa bytes
 	ldx		#-5
@@ -370,16 +389,21 @@ ispos:
 	inc		trimbase
 
 noexp:		
-	;check if number is less than 1.0 and init dot counter
+	sta		dotcntr			;$02 <= dotcntr < $0C
+
+	;check if number is less than 1.0
 	cmp		#2
 	bcs		not_tiny
 	
-	;use sixth mantissa byte
-	adc		#2
+	;At this point A = 1 and expval = 0, so the value is
+	;at least 0.01 and less than 1.0 and we are guaranteed to
+	;need 0. inserted in front.
 	dex
+	dec		trimbase
+	lsr						;A=0
+	beq		writelowz		;!! - unconditional
+
 not_tiny:
-	sta		dotcntr			;$02 <= dotcntr < $0C
-	
 	;check if number begins with a leading zero
 	lda		fr0+6,x
 	cmp		#$10
@@ -392,7 +416,7 @@ not_tiny:
 	asl		expval
 	bne		writelow
 	dec		dotcntr
-	bcc		writelow
+	bcc		writelow		;!! - unconditional
 
 	;write out mantissa digits
 digitloop:
@@ -424,6 +448,7 @@ no_lodot:
 	
 	lda		fr0+6,x
 	and		#$0f
+writelowz:
 	ora		#$30
 	sta		(inbuff),y
 	iny
