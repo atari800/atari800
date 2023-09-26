@@ -87,7 +87,6 @@ binary-arch:		checkroot build
 	cp DOC/BUGS debian/tmp/usr/share/doc/$(P)/BUGS
 	cp DOC/TODO debian/tmp/usr/share/doc/$(P)/TODO
 	cp debian/README.Debian debian/tmp/usr/share/doc/$(P)/README.Debian
-	cp debian/atari800.cfg debian/tmp/usr/share/doc/$(P)/atari800.cfg
 
 
 # and don't gzip the copyright statement
@@ -105,7 +104,7 @@ binary-arch:		checkroot build
 	install -d debian/tmp/usr/share/applications
 	install -m 644 debian/$(P).desktop debian/tmp/usr/share/applications/$(P).desktop
 	install -d debian/tmp/usr/share/pixmaps
-	install -m 644 data/atari2.png debian/tmp/usr/share/pixmaps/$(P).png
+	install -m 644 data/atari1.png debian/tmp/usr/share/pixmaps/$(P).png
 
 # install binaries
 #

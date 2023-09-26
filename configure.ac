@@ -51,7 +51,6 @@ case "$target" in
         echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
         echo "    firebee          (FireBee: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
-        echo "    rpi              (Raspberry Pi: set --host=arm-linux)"
         echo "    windx            (Windows with DirectX only)"
         echo "    libatari800      (Atari800 as a library (developers only))"
         echo "    x11              (Standard X11)"
@@ -59,7 +58,13 @@ case "$target" in
         echo "    (x11-)shm        (Standard X11 with shared memory extensions)"
         echo "    (x11-)xview      (XView on X11)"
         echo "    (x11-)xview-shm  (XView on X11, with shared memory extensions)"
-        echo
+ 	echo "Legacy Target:"
+        echo "    rpi              (Raspberry Pi. Still available, but works only"
+	echo "                     with Stretch and Buster versions of Pi OS."
+	echo "                     Depends upon Broadcom libraries, brcmGLESv and"
+	echo "                     brcmEGL, which were dropped in Bullseye."
+        echo "                     Pis running Bullseye and later may be treated"
+        echo "                     as default targets.)"
         exit 1;
         ;;
 esac
@@ -1329,11 +1334,16 @@ if [[ "$with_opengl" != no ]]; then
     with_opengl=$have_opengl
 fi
 
+dnl The opengl-by-default option was created in PR #118 to allow packages to be built
+dnl for the Raspberry Pi 4 which would install and run properly without the user having
+dnl to turn on acceleration by hand.  The need for this disappeared in Pi OS Bullseye
+dnl with the introduction of an efficient KMS video driver, but the option remains, and
+dnl may used for any target that requires acceleration to run properly.
 if [[ "$with_opengl" = "yes" ]]; then
     AC_DEFINE(HAVE_OPENGL, 1, [Support for OpenGL graphics acceleration.])
     A8_OPTION(opengl-by-default,no,
               [Set VIDEO_ACCEL=1 in the config file created on first run after installation to enable OpenGL hardware acceleration (OpenGL-aware targets) (default set VIDEO_ACCEL=0)],
-              VIDEO_ACCEL_ON_BY_DEFAULT,[Define for targets too slow to run without OpenGL video acceleration, supported only with --with-opengl]
+              VIDEO_ACCEL_ON_BY_DEFAULT,[Define for targets that require acceleration to run properly, supported only with --with-opengl.]
              )
 fi
 AM_CONDITIONAL([WITH_OPENGL], test "$with_opengl" = "yes")

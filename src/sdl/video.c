@@ -67,7 +67,7 @@ SDL_Surface *SDL_VIDEO_screen = NULL;
 static VIDEOMODE_resolution_t desktop_resolution;
 
 #if VIDEO_ACCEL_ON_BY_DEFAULT
-int SDL_VIDEO_opengl = TRUE; /* Default for targets that are too slow to run without video acceleration */
+int SDL_VIDEO_opengl = TRUE; /* Default for targets that require acceleration to run properly*/
 #elif HAVE_OPENGL
 int SDL_VIDEO_opengl = FALSE;
 #endif

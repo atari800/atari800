@@ -13,7 +13,7 @@ OBTAIN SOURCE CODE
 ==================
 Download the latest release of the source code from the Github Releases Area
 (https://github.com/atari800/atari800/releases).  Look for a file with a name
-like 'atari800-4.2.0-src.tgz'.
+like 'atari800-4.2.0-src.tgz', where 4.2.0 denotes the version.
 
 Unzip the source code.  The contents will go into a directory called
 'atari800-4.2.0' or similar, which will be referred to in these notes as the
@@ -25,24 +25,13 @@ partially developed and untested code.
 
 COMPILE WITHOUT ERROR
 =====================
-Unzip the code and native compile it on the target machine.  Follow the
-instructions in the appropriate atari800/DOC file:
+Unzip the code and compile it on the target machine.  Follow the instructions
+in the following file:
 
-    INSTALL      - see Building the Emulator on most platforms
-    BUILD.RPI    - specific instructions for the Raspberry Pi
+    DOC/BUILD.linux
 
-Confirm that the compilation completes without error.
-
-UPDATE CONFIGURATION FILE FOR PACKAGING
-=======================================
-Temporarily rename or move the existing configuration file (.atari800.cfg in
-the home directory), then run atari800 to generate a new default file, and
-copy it to /debian/atari800.cfg (note there is no '.' preceeding
-'atari800.cfg').
-
-This copy will placed in the package for reference.
-
-Reinstate the original copy of .atari800.cfg
+Confirm that the compilation completes without error.  Warnings can usually be
+ignored.
 
 UPDATE DEBIAN CHANGELOG
 =======================
@@ -87,12 +76,8 @@ You should replace your default user information with the name and email
 address of the current package maintainer, as identified in
 debian/README.debian.
 
-
-ADJUST BUILD OPTIONS IN THE DEBIAN RULES FILE
-=============================================
-
-CONFIGURATION OPTIONS
----------------------
+ADJUST CONFIGURATION OPTIONS IN THE DEBIAN RULES FILE
+=====================================================
 The debian rules file 'atari800/debian/rules' contains the following command
 (split over two lines):
 
@@ -100,29 +85,8 @@ The debian rules file 'atari800/debian/rules' contains the following command
 		 --with-video=sdl --with-sound=sdl
 
 You don't need to change this if your are building the stock SDL version.
-Otherwise edit the second line to specify configuration options for the target
-machine.  For example, the command required for the older Raspberry
-Pis (Zero, 2 and 3) is:
+Otherwise edit the second line to choose your options
 
-	./configure \
-		 --target=rpi
-
-DOCUMENTATION FILE OPTIONS
---------------------------
-If you wish to package any special documentation relating to the target
-machine, add commands under this existing comment:
-
-    # Install docs in proper directory and gzip them
-
-or if the files are small and don't need gzipping, put them under this comment:
-
-    # These are too small to gzip
-
-For example, you might add the following command to copy README.RPI into
-Raspberry Pi packages: 
-
-    cp DOC/README.RPI debian/tmp/usr/share/doc/$(P)/README.RPI
-   
 BUILD THE PACKAGE
 =================
 
@@ -177,19 +141,6 @@ You can unistall the package if desired with:
 
 This removes the command and documentation, but leaves the configuration file
 .atari.cfg in place.
-
-RENAME THE PACKAGE
-==================
-The default names of packages are sometimes not very informative, but you may
-change them to anything you like.
-
-For example, the name of the 4.2.0 Raspberry Pi 4 package was changed from
-
-    atari800_4.2.0-2_armhf.deb
-
-to
-
-    atari800_4.2.0_rpi4_buster.deb
 
 ISSUE A PULL REQUEST TO UPDATE THE DEBIAN CHANGELOG
 ===================================================
