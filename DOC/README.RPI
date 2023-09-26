@@ -1,61 +1,16 @@
 SYSTEM SPECIFICATION
 ====================
-Atari800 version 4 runs on the following systems:
+Atari800 v5 and later runs on the following systems:
 
-    Pi Zero, 2 or 3,    running Raspbian or Pi OS Full or Lite, 
-                        Stretch or Buster.
+    Pi Zero 2 W, 2, 3, 4 and 400, running Pi OS Full Bullseye or later.
 
-    Pi 4 or 400         running Pi OS Full or Lite, Buster.
+At the time of writing (September 2023) it does not run properly on Pi OS Lite.
+It is not known whether this is a temporary situaton that will be corrected by
+further development, or if new software such as the KMS video driver that atari800
+depends upon to run at full speed have been deliberately omitted from the Lite version.
 
-Note that the Pi Zero has only one USB port, so it is necessary to use a hub
-to provide ports for the keyboard and joystick (and mouse if you are running
-Pi OS Full).  Also, it has no separate audio output, so a monitor capable of
-playing sound via the HDMI port is required.
-
-VIDEO MODE ON PI ZERO, 2 or 3
-=============================
-You may obtain proper video/audio sync and vsync for PAL/NTSC machines by
-setting particular video modes.
-
-To do this, edit /boot/config.txt
-
-For PAL version (50 Hz) you can supply these values:
-720p mode:
-hdmi_group=1
-hdmi_mode=19
-1080p mode:
-hdmi_group=1
-hdmi_mode=31
-
-For NTSC version (60 Hz):
-720p mode:
-hdmi_group=1
-hdmi_mode=4
-1080p mode:
-hdmi_group=1
-hdmi_mode=16
-
-See http://elinux.org/RPiconfig for more info.
-
-These modes always improve synchronisation but the effect may not be
-immediately obvious, depending on what you are using the emulator for.
-The benefit is most clearly seen on scrolling games like Boulderdash
-where the whole background moves with no hint of flicker.
-
-Best results are obtained with widescreen monitors.  A narrow monitor
-such as 1280x1024 will distort the aspect ratio and there are no emulator
-settings that can be adjusted to bring it back.
-
-VIDEO GROUP
-===========
-If you are not logged on as the default user (pi), atari800 may crash
-on startup and report: * failed to open vchiq instance.
-
-To fix this, add yourself to the video group:
-
-    sudo usermod -a -G video $(whoami)
-
-and reboot.
-
+The Pi 1 and and the single core Zero are not supported.  They can run atari800 in
+tiny windows, but nothing approaching full screen.  Larger images overload their
+processors, resulting in choppy sound and video.
 
 

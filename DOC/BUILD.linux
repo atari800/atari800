@@ -1,0 +1,81 @@
+TO COMPILE, BUILD AND INSTALL ATARI800 FROM SOURCE CODE
+=======================================================
+
+OBTAIN THE SOURCE CODE
+======================
+If you  wish to compile the current development version, clone the
+atari800/atari800 repository using Github.
+
+Or
+
+If you wish to compile a specific released version of atari800, obtain the
+source code from the atari800 Github releases area.  Source is available
+in zipped files with names like atari800-5.0.0-src.tgz (where 5.0.0 denotes
+the version).
+
+Open a terminal on the directory containing your atari800 source files.
+
+You need to remain in this directory for all the procedures below to work.
+
+CREATE THE CONFIGURE FILE
+=========================
+If your directory already contains a file called 'configure' you can skip
+this.  This will be the case if you are compiling a released version
+of atari800.
+
+If you don't have a configure file, generate it as follows.
+
+Make sure you have autoconf installed:
+
+    sudo apt-get install autoconf
+
+Create the configure file:
+
+    ./autogen.sh
+
+See DOC/INSTALL for further details.
+
+INSTALL SDL DEVELOPMENT FILES
+=============================
+Ensure the SDL development files are installed:
+
+    sudo apt-get install libsdl1.2-dev
+
+COMPILE
+=======
+Configure and make:
+
+    ./configure
+    make
+
+Make generates the executable file src/atari800.  You can run atari800 by
+<double clicking> on it, or by changing to the src directory and
+using the command:
+
+    ./atari800
+
+If you are happy to run the emulator this way, you don't need to need
+to install as described below.
+
+INSTALL
+=======
+To install atari800:
+
+    sudo make install
+
+You can then run the emulator with the following command, regardless of which
+directory you are in:
+
+    atari800
+
+UNINSTALL
+=========
+The package manager knows nothing about this installation, so it can't be
+uninstalled in the usual manner.  Use the following command instead:
+
+    sudo make uninstall
+
+
+
+
+
