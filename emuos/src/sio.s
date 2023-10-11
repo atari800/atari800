@@ -438,6 +438,7 @@ wait:
 break_detected:
 	ldy		#$80
 	sty		status
+	dec		brkkey			;reset brkkey to $FF (init value)
 	
 send_completed:
 	;shut off transmission IRQs
