@@ -95,15 +95,6 @@
 
 #include "Atari800_rev.h"
 
-
-/* joystick emulation
-   keys are loaded from config file
-   Here the defaults if there is no keymap in the config file... */
-
-/* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
-int PLATFORM_kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
-int PLATFORM_kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
-
 /* real joysticks */
 
 static int fd_joystick0 = -1;

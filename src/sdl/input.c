@@ -59,24 +59,30 @@
 static int grab_mouse = FALSE;
 static int swap_joysticks = FALSE;
 
-/* joystick emulation
-   keys are loaded from config file
-   Here the defaults if there is no keymap in the config file... */
-
 /* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
-int PLATFORM_kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
-int PLATFORM_kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
+static int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
+static int kbd_joy_1_enabled = FALSE;	/* disabled, would steal normal keys */
 
-static int KBD_TRIG_0 = SDLK_RCTRL;
-static int KBD_STICK_0_LEFT = SDLK_KP4;
-static int KBD_STICK_0_RIGHT = SDLK_KP6;
-static int KBD_STICK_0_DOWN = SDLK_KP5;
-static int KBD_STICK_0_UP = SDLK_KP8;
-static int KBD_TRIG_1 = SDLK_LCTRL;
-static int KBD_STICK_1_LEFT = SDLK_a;
-static int KBD_STICK_1_RIGHT = SDLK_d;
-static int KBD_STICK_1_DOWN = SDLK_s;
-static int KBD_STICK_1_UP = SDLK_w;
+/* joystick emulation (via stick_dev.kbd)
+   keys are loaded from config file
+   Here the defaults if there is no keymap in the config file,
+   in the order up, down, left, right, trigger */
+static int kbd_stick0[5] = {
+	SDLK_KP8, SDLK_KP5, SDLK_KP4, SDLK_KP6, SDLK_RCTRL
+};
+static int kbd_stick1[5] = {
+	SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_LCTRL
+};
+#define KBD_STICK_0_UP kbd_stick0[0]
+#define KBD_STICK_0_DOWN kbd_stick0[1]
+#define KBD_STICK_0_LEFT kbd_stick0[2]
+#define KBD_STICK_0_RIGHT kbd_stick0[3]
+#define KBD_TRIG_0 kbd_stick0[4]
+#define KBD_STICK_1_UP kbd_stick1[0]
+#define KBD_STICK_1_DOWN kbd_stick1[1]
+#define KBD_STICK_1_LEFT kbd_stick1[2]
+#define KBD_STICK_1_RIGHT kbd_stick1[3]
+#define KBD_TRIG_1 kbd_stick1[4]
 
 /* Maping for the START, RESET, OPTION, SELECT and EXIT keys */
 static int KBD_UI = SDLK_F1;
@@ -91,20 +97,16 @@ static int KBD_EXIT = SDLK_F9;
 static int KBD_SSHOT = SDLK_F10;
 static int KBD_TURBO = SDLK_F12;
 
-/* real joysticks */
-
-static int fd_joystick0 = -1;
-static int fd_joystick1 = -1;
-
+/* Each emulated joystick can take its input from host keyboard, an
+   LPT joystick, an actual SDL joystick, or a combination thereof. */
 #define MAX_JOYSTICKS	4
-static SDL_Joystick *joystick[MAX_JOYSTICKS] = { NULL, NULL, NULL, NULL };
-static int joystick_nbuttons[MAX_JOYSTICKS];
-static SDL_INPUT_RealJSConfig_t real_js_configs[MAX_JOYSTICKS];
-static int joysticks_found = 0;
-static struct js_state {
-	unsigned int port;
-	unsigned int trig;
-} sdl_js_state[MAX_JOYSTICKS];
+static struct stick_dev {
+	int *kbd;
+	int fd_lpt;
+	SDL_Joystick *sdl_joy;
+	int nbuttons;
+	SDL_INPUT_RealJSConfig_t real_config;
+} stick_devs[MAX_JOYSTICKS];
 
 #define minjoy 10000			/* real joystick tolerancy */
 
@@ -112,6 +114,7 @@ static struct js_state {
 static Uint8 *kbhits;
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+static struct stick_dev *osk_stick = NULL;
 static int SDL_controller_kb(void);
 static int SDL_consol_keys(void);
 int OSK_enabled = 1;
@@ -157,10 +160,36 @@ static int SDLKeyBind(int *retval, char *sdlKeySymIntStr)
 	}
 }
 
+static void update_kbd_sticks(void) {
+	stick_devs[swap_joysticks].kbd = kbd_joy_0_enabled ? kbd_stick0 : NULL;
+	stick_devs[1 - swap_joysticks].kbd = kbd_joy_1_enabled ? kbd_stick1 : NULL;
+}
+
+int PLATFORM_IsKbdJoystickEnabled(int num) {
+	switch (num) {
+	case 0:
+		return kbd_joy_0_enabled;
+	case 1:
+		return kbd_joy_1_enabled;
+	default:
+		return FALSE;
+	}
+}
+
+void PLATFORM_ToggleKbdJoystickEnabled(int num) {
+	switch (num) {
+	case 0:
+		kbd_joy_0_enabled = !kbd_joy_0_enabled;
+	case 1:
+		kbd_joy_1_enabled = !kbd_joy_1_enabled;
+	}
+	update_kbd_sticks();
+}
+
 /*Set real joystick to use hat instead of axis*/
 static int set_real_js_use_hat(int joyIndex, const char* parm)
 {
-    real_js_configs[joyIndex].use_hat = Util_sscandec(parm) != 0 ? TRUE : FALSE;
+    stick_devs[joyIndex].real_config.use_hat = Util_sscandec(parm) != 0 ? TRUE : FALSE;
     return TRUE;
 }
 
@@ -169,7 +198,7 @@ static void reset_real_js_configs(void)
 {
     int i;
     for (i = 0; i < MAX_JOYSTICKS; i++) {
-        real_js_configs[i].use_hat = FALSE;
+        stick_devs[i].real_config.use_hat = FALSE;
     }
 }
 
@@ -178,14 +207,14 @@ static void write_real_js_configs(FILE* fp)
 {
     int i;
     for (i = 0; i < MAX_JOYSTICKS; i++) {
-        fprintf(fp, "SDL_JOY_%d_USE_HAT=%d\n", i, real_js_configs[i].use_hat);
+        fprintf(fp, "SDL_JOY_%d_USE_HAT=%d\n", i, stick_devs[i].real_config.use_hat);
     }
 }
 
 /*Get pointer to a real joystick configuration*/
 SDL_INPUT_RealJSConfig_t* SDL_INPUT_GetRealJSConfig(int joyIndex)
 {
-    return &real_js_configs[joyIndex];
+    return &stick_devs[joyIndex].real_config;
 }
 
 /* For getting sdl key map out of the config...
@@ -201,11 +230,13 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 	}
     
 	if (strcmp(option, "SDL_JOY_0_ENABLED") == 0) {
-		PLATFORM_kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
+		kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
+		update_kbd_sticks();
 		return TRUE;
 	}
 	else if (strcmp(option, "SDL_JOY_1_ENABLED") == 0) {
-		PLATFORM_kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
+		kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
+		update_kbd_sticks();
 		return TRUE;
 	}
 	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
@@ -267,14 +298,14 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
    cleaned up by joy */
 void SDL_INPUT_WriteConfig(FILE *fp)
 {
-	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", PLATFORM_kbd_joy_0_enabled);
+	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", kbd_joy_0_enabled);
 	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
 	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
 	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
 	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
 	fprintf(fp, "SDL_JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
 
-	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", PLATFORM_kbd_joy_1_enabled);
+	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", kbd_joy_1_enabled);
 	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
 	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
 	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
@@ -339,6 +370,7 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 static void SwapJoysticks(void)
 {
 	swap_joysticks = 1 - swap_joysticks;
+	update_kbd_sticks();
 }
 
 int PLATFORM_GetRawKey(void)
@@ -775,7 +807,7 @@ int PLATFORM_Keyboard(void)
 	/* keyboard joysticks: don't pass the keypresses to emulation
 	 * as some games pause on a keypress (River Raid, Bruce Lee)
 	 */
-	if (!UI_is_active && PLATFORM_kbd_joy_0_enabled) {
+	if (!UI_is_active && kbd_joy_0_enabled) {
 		if (lastkey == KBD_STICK_0_LEFT || lastkey == KBD_STICK_0_RIGHT ||
 			lastkey == KBD_STICK_0_UP || lastkey == KBD_STICK_0_DOWN || lastkey == KBD_TRIG_0) {
 			key_pressed = 0;
@@ -783,7 +815,7 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	if (!UI_is_active && PLATFORM_kbd_joy_1_enabled) {
+	if (!UI_is_active && kbd_joy_1_enabled) {
 		if (lastkey == KBD_STICK_1_LEFT || lastkey == KBD_STICK_1_RIGHT ||
 			lastkey == KBD_STICK_1_UP || lastkey == KBD_STICK_1_DOWN || lastkey == KBD_TRIG_1) {
 			key_pressed = 0;
@@ -1264,24 +1296,38 @@ void SDL_INPUT_Mouse(void)
 		((buttons & SDL_BUTTON(2)) ? 4 : 0); /* Middle button */
 }
 
-static void Init_SDL_Joysticks(int first, int second)
+static void Init_SDL_Joysticks(void)
 {
-	int i;
-	joysticks_found = 0;
-	for(i = 0; i < SDL_NumJoysticks() && i < MAX_JOYSTICKS; i++) {
-		joystick[joysticks_found] = SDL_JoystickOpen(i);
-		if (joystick[joysticks_found] == NULL)
-			Log_print("Joystick %i not found", i);
+	int sdl_idx, emu_idx;
+	emu_idx = 0;
+	for(sdl_idx = 0; sdl_idx < SDL_NumJoysticks() && emu_idx < MAX_JOYSTICKS; sdl_idx++) {
+		struct stick_dev *s;
+		s = &stick_devs[emu_idx];
+		s->sdl_joy = SDL_JoystickOpen(sdl_idx);
+		if (s->sdl_joy == NULL)
+			Log_print("Joystick %i not found", sdl_idx);
 		else {
-			Log_print("Joystick %i found", i);
-			joystick_nbuttons[joysticks_found] = SDL_JoystickNumButtons(joystick[i]);
+			Log_print("Joystick %i found", sdl_idx);
+			s->nbuttons = SDL_JoystickNumButtons(s->sdl_joy);
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-			if (joystick_nbuttons[joysticks_found] > OSK_MAX_BUTTONS)
-				joystick_nbuttons[joysticks_found] = OSK_MAX_BUTTONS;
+			if (osk_stick == NULL) {
+				osk_stick = s;
+				if (s->nbuttons > OSK_MAX_BUTTONS)
+					s->nbuttons = OSK_MAX_BUTTONS;
+			}
 #endif
-			joysticks_found++;
+			emu_idx++;
 		}
 	}
+#ifdef LPTJOY
+	/* Strict backwards compatibility: LPT sticks fully override SDL sticks.
+	   A later commit will change this to place DL sticks after LPT sticks. */
+	for (emu_idx = 0; emu_idx < MAX_JOYSTICKS; emu_idx++) {
+		if (stick_devs[emu_idx].fd_lpt != -1) {
+			stick_devs[emu_idx].sdl_joy = NULL;
+		}
+	}
+#endif
 }
 
 int SDL_INPUT_Initialise(int *argc, char *argv[])
@@ -1297,8 +1343,11 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	int help_only = FALSE;
 
 	for(i = 0; i < MAX_JOYSTICKS; i++) {
-		sdl_js_state[i].port = INPUT_STICK_CENTRE;
-		sdl_js_state[i].trig = 0;
+		stick_devs[i].kbd = NULL;
+		stick_devs[i].fd_lpt = -1;
+		stick_devs[i].sdl_joy = NULL;
+		stick_devs[i].nbuttons = 0;
+		/* real_config handled by reset_real_js_configs */
 	}
 
 	for (i = j = 1; i < *argc; i++) {
@@ -1313,19 +1362,18 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-grabmouse") == 0) {
 			grab_mouse = TRUE;
 		}
-
-                else if (strcmp(argv[i], "-joy0hat") == 0) {
-                        real_js_configs[0].use_hat = TRUE;
-                }
-                else if (strcmp(argv[i], "-joy1hat") == 0) {
-                        real_js_configs[1].use_hat = TRUE;
-                }
-                else if (strcmp(argv[i], "-joy2hat") == 0) {
-                        real_js_configs[2].use_hat = TRUE;
-                }
-                else if (strcmp(argv[i], "-joy3hat") == 0) {
-                        real_js_configs[3].use_hat = TRUE;
-                }
+		else if (strcmp(argv[i], "-joy0hat") == 0) {
+			stick_devs[0].real_config.use_hat = TRUE;
+		}
+		else if (strcmp(argv[i], "-joy1hat") == 0) {
+			stick_devs[1].real_config.use_hat = TRUE;
+		}
+		else if (strcmp(argv[i], "-joy2hat") == 0) {
+			stick_devs[2].real_config.use_hat = TRUE;
+		}
+		else if (strcmp(argv[i], "-joy3hat") == 0) {
+			stick_devs[3].real_config.use_hat = TRUE;
+		}
 #ifdef LPTJOY
 		else if (strcmp(argv[i], "-joy0") == 0) {
 			if (i_a) {
@@ -1341,16 +1389,16 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 		}
 #endif /* LPTJOY */
 		else if (strcmp(argv[i], "-kbdjoy0") == 0) {
-			PLATFORM_kbd_joy_0_enabled = TRUE;
+			kbd_joy_0_enabled = TRUE;
 		}
 		else if (!strcmp(argv[i], "-kbdjoy1")) {
-			PLATFORM_kbd_joy_1_enabled = TRUE;
+			kbd_joy_1_enabled = TRUE;
 		}
 		else if (strcmp(argv[i], "-no-kbdjoy0") == 0) {
-			PLATFORM_kbd_joy_0_enabled = FALSE;
+			kbd_joy_0_enabled = FALSE;
 		}
 		else if (!strcmp(argv[i], "-no-kbdjoy1")) {
-			PLATFORM_kbd_joy_1_enabled = FALSE;
+			kbd_joy_1_enabled = FALSE;
 		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
@@ -1387,22 +1435,23 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	if (!no_joystick) {
 #ifdef LPTJOY
 		if (lpt_joy0 != NULL) {				/* LPT1 joystick */
-			fd_joystick0 = open(lpt_joy0, O_RDONLY);
-			if (fd_joystick0 == -1)
+			stick_devs[0].fd_lpt = open(lpt_joy0, O_RDONLY);
+			if (stick_devs[0].fd_lpt == -1)
 				perror(lpt_joy0);
 		}
 		if (lpt_joy1 != NULL) {				/* LPT2 joystick */
-			fd_joystick1 = open(lpt_joy1, O_RDONLY);
-			if (fd_joystick1 == -1)
+			stick_devs[1].fd_lpt = open(lpt_joy1, O_RDONLY);
+			if (stick_devs[1].fd_lpt == -1)
 				perror(lpt_joy1);
 		}
 #endif /* LPTJOY */
-		Init_SDL_Joysticks(fd_joystick0 == -1, fd_joystick1 == -1);
+		Init_SDL_Joysticks();
 	}
 
 	if (INPUT_cx85) { /* disable keyboard joystick if using CX85 numpad */
-		PLATFORM_kbd_joy_0_enabled = 0;
+		kbd_joy_0_enabled = 0;
 	}
+	update_kbd_sticks();
 	if(grab_mouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 
@@ -1533,179 +1582,87 @@ static int get_LPT_joystick_state(int fd)
 #endif /* LPTJOY */
 }
 
-static void update_SDL_joysticks(void)
-{
-	int joy;
+static int single_stick_port(int num) {
+	int port;
+	struct stick_dev *s;
 
-	if (! joysticks_found)
-		return;
-
-	SDL_JoystickUpdate();
-
-	for(joy = 0; joy < joysticks_found; joy++) {
+	port = INPUT_STICK_CENTRE;
+	if (num >= MAX_JOYSTICKS) {
+		return port;
+	}
+	s = &stick_devs[num];
+	if (s->kbd != NULL) {
 		int i;
-
-		if (real_js_configs[joy].use_hat == FALSE) {
-			sdl_js_state[joy].port = get_SDL_joystick_state(joystick[joy]);
-		}
-		else {
-			sdl_js_state[joy].port = get_SDL_joystick_hat_state(joystick[joy]);
-		}
-
-		sdl_js_state[joy].trig = 0;
-		for (i = 0; i < joystick_nbuttons[joy]; i++) {
-			if (SDL_JoystickGetButton(joystick[joy], i)) {
-				sdl_js_state[joy].trig |= 1 << i;
+		for (i = 0; i < 4; i++) {
+			if (kbhits[s->kbd[i]]) {
+				port &= ~(1 << i);
 			}
 		}
 	}
-}
-
-static void get_platform_PORT(Uint8 *s0, Uint8 *s1, Uint8 *s2, Uint8 *s3)
-{
-	int stick0, stick1;
-	stick0 = stick1 = INPUT_STICK_CENTRE;
-
-	if (PLATFORM_kbd_joy_0_enabled) {
-		if (kbhits[KBD_STICK_0_LEFT])
-			stick0 &= INPUT_STICK_LEFT;
-		if (kbhits[KBD_STICK_0_RIGHT])
-			stick0 &= INPUT_STICK_RIGHT;
-		if (kbhits[KBD_STICK_0_UP])
-			stick0 &= INPUT_STICK_FORWARD;
-		if (kbhits[KBD_STICK_0_DOWN])
-			stick0 &= INPUT_STICK_BACK;
-	}
-	if (PLATFORM_kbd_joy_1_enabled) {
-		if (kbhits[KBD_STICK_1_LEFT])
-			stick1 &= INPUT_STICK_LEFT;
-		if (kbhits[KBD_STICK_1_RIGHT])
-			stick1 &= INPUT_STICK_RIGHT;
-		if (kbhits[KBD_STICK_1_UP])
-			stick1 &= INPUT_STICK_FORWARD;
-		if (kbhits[KBD_STICK_1_DOWN])
-			stick1 &= INPUT_STICK_BACK;
-	}
-
-	if (swap_joysticks) {
-		*s1 = stick0;
-		*s0 = stick1;
-	}
-	else {
-		*s0 = stick0;
-		*s1 = stick1;
-	}
-
-	if (fd_joystick0 != -1)
-		*s0 &= get_LPT_joystick_state(fd_joystick0);
-	else if (joystick[0] != NULL)
-		*s0 &= sdl_js_state[0].port;
-
-	if (fd_joystick1 != -1)
-		*s1 &= get_LPT_joystick_state(fd_joystick1);
-	else if (joystick[1] != NULL)
-		*s1 &= sdl_js_state[1].port;
-
-	*s2 = sdl_js_state[2].port;
-	*s3 = sdl_js_state[3].port;
-}
-
-static void get_platform_TRIG(Uint8 *t0, Uint8 *t1, Uint8 *t2, Uint8 *t3)
-{
-	int trig0, trig1;
-	trig0 = trig1 = 1;
-
-	if (PLATFORM_kbd_joy_0_enabled) {
-		trig0 = !kbhits[KBD_TRIG_0];
-	}
-
-	if (PLATFORM_kbd_joy_1_enabled) {
-		trig1 = !kbhits[KBD_TRIG_1];
-	}
-
-	if (swap_joysticks) {
-		*t1 = trig0;
-		*t0 = trig1;
-	}
-	else {
-		*t0 = trig0;
-		*t1 = trig1;
-	}
-
-	if (fd_joystick0 != -1) {
 #ifdef LPTJOY
-		int status;
-		ioctl(fd_joystick0, LPGETSTATUS, &status);
-		*t0 &= ((status & 8) > 0);
-#endif /* LPTJOY */
+	if (s->fd_lpt != -1) {
+		port &= get_LPT_joystick_state(s->fd_lpt);
 	}
-	else if (joystick[0] != NULL) {
-		trig0 = 1;
-#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-		if (OSK_enabled) {
-			if (sdl_js_state[0].trig & (1 << OSK_BUTTON_TRIGGER))
-				trig0 = 0;
-		}
-		else
 #endif
-			if (sdl_js_state[0].trig)
-				trig0 = 0;
-		*t0 &= trig0;
+	if (s->sdl_joy != NULL) {
+		SDL_JoystickUpdate();
+		if (s->real_config.use_hat)
+			port &= get_SDL_joystick_hat_state(s->sdl_joy);
+		else
+			port &= get_SDL_joystick_state(s->sdl_joy);
 	}
-
-	if (fd_joystick1 != -1) {
-#ifdef LPTJOY
-		int status;
-		ioctl(fd_joystick1, LPGETSTATUS, &status);
-		*t1 &= ((status & 8) > 0);
-#endif /* LPTJOY */
-	}
-	else if (joystick[1] != NULL) {
-		trig1 = 1;
-		if (sdl_js_state[1].trig)
-			trig1 = 0;
-		*t1 &= trig1;
-	}
-
-	*t2 = sdl_js_state[2].trig ? 0 : 1;
-	*t3 = sdl_js_state[3].trig ? 0 : 1;
+	return port;
 }
 
 int PLATFORM_PORT(int num)
 {
-#ifndef DONT_DISPLAY
-	UBYTE a, b, c, d;
-	update_SDL_joysticks();
-	get_platform_PORT(&a, &b, &c, &d);
-	if (num == 0) {
-		return (b << 4) | (a & 0x0f);
-	}
-	else if (num == 1) {
-		return (d << 4) | (c & 0x0f);
-	}
-#endif
+#ifdef DONT_DISPLAY
 	return 0xff;
+#else
+	return (single_stick_port(2 * num + 1) << 4) |
+		(single_stick_port(2 * num) & 0x0f);
+#endif
 }
 
 int PLATFORM_TRIG(int num)
 {
-#ifndef DONT_DISPLAY
-	UBYTE a, b, c, d;
-	get_platform_TRIG(&a, &b, &c, &d);
-	switch (num) {
-	case 0:
-		return a;
-	case 1:
-		return b;
-	case 2:
-		return c;
-	case 3:
-		return d;
-	default:
-		break;
+#ifdef DONT_DISPLAY
+	return 1;
+#else
+	int trig;
+	struct stick_dev *s;
+
+	trig = 1;
+	if (num >= MAX_JOYSTICKS) {
+		return trig;
+	}
+	s = &stick_devs[num];
+	if (s->kbd != NULL) {
+		trig &= !kbhits[s->kbd[4]];
+	}
+#ifdef LPTJOY
+	if (s->fd_lpt != -1) {
+		int status;
+		ioctl(s->fd_lpt, LPGETSTATUS, &status);
+		if ((status & 8) > 0)
+			trig = 0;
 	}
 #endif
-	return 1;
+	if (s->sdl_joy != NULL) {
+		int i;
+		for (i = 0; i < s->nbuttons; i++) {
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+			if (s == osk_stick && i != OSK_BUTTON_TRIGGER) {
+				continue;
+			}
+#endif
+			if (SDL_JoystickGetButton(s->sdl_joy, i)) {
+				trig = 0;
+			}
+		}
+	}
+	return trig;
+#endif
 }
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
@@ -1717,6 +1674,14 @@ int UI_BASIC_in_kbui;
 
 static int ui_leave_in_progress;   /* was 'b_ui_leave' */
 
+static Uint8 osk_joystick_button(int button) {
+	if (osk_stick == NULL || osk_stick->sdl_joy == NULL ||
+	    button >= osk_stick->nbuttons) {
+		return 0;
+	}
+	return SDL_JoystickGetButton(osk_stick->sdl_joy, button);
+}
+
 /*
  * do some basic keyboard emulation using the joystick controller
  */
@@ -1726,22 +1691,21 @@ static int SDL_controller_kb1(void)
 		prev_keyb = FALSE, prev_left = FALSE, prev_right = FALSE,
 		prev_leave = FALSE, prev_ui = FALSE;
 	static int repdelay_timeout = REPEAT_DELAY;
-	struct js_state *state = &sdl_js_state[0];
 
-	if (! joysticks_found) return(AKEY_NONE);  /* no controller present */
+	if (osk_stick == NULL) return(AKEY_NONE);  /* no controller present */
 
-	update_SDL_joysticks();
+	SDL_JoystickUpdate();
 
-	if (!UI_is_active && (state->trig & (1 << OSK_BUTTON_UI))) {
+	if (!UI_is_active && osk_joystick_button(OSK_BUTTON_UI)) {
 		return(AKEY_UI);
 	}
-	if (!UI_is_active && (state->trig & (1 << OSK_BUTTON_KEYB))) {
+	if (!UI_is_active && osk_joystick_button(OSK_BUTTON_KEYB)) {
 		return(AKEY_KEYB);
 	}
 	/* provide keyboard emulation to enter file name */
-	if (UI_is_active && !UI_BASIC_in_kbui && (state->trig & (1 << OSK_BUTTON_KEYB))) {
+	if (UI_is_active && !UI_BASIC_in_kbui && osk_joystick_button(OSK_BUTTON_KEYB)) {
 		int keycode;
-		update_SDL_joysticks();
+		SDL_JoystickUpdate();
 		UI_BASIC_in_kbui = TRUE;
 		memcpy(atari_screen_backup, Screen_atari, Screen_HEIGHT * Screen_WIDTH);
 		keycode = UI_BASIC_OnScreenKeyboard(NULL, -1);
@@ -1763,7 +1727,12 @@ static int SDL_controller_kb1(void)
 	}
 
 	if (UI_is_active || UI_BASIC_in_kbui) {
-		if (!(state->port & 1)) {
+		int port;
+		if (osk_stick->real_config.use_hat)
+			port = get_SDL_joystick_hat_state(osk_stick->sdl_joy);
+		else
+			port = get_SDL_joystick_state(osk_stick->sdl_joy);
+		if (!(port & 1)) {
 			prev_down = FALSE;
 			if (! prev_up) {
 				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
@@ -1781,7 +1750,7 @@ static int SDL_controller_kb1(void)
 			prev_up = FALSE;
 		}
 
-		if (!(state->port & 2)) {
+		if (!(port & 2)) {
 			prev_up = FALSE;
 			if (! prev_down) {
 				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
@@ -1799,7 +1768,7 @@ static int SDL_controller_kb1(void)
 			prev_down = FALSE;
 		}
 
-		if (!(state->port & 4)) {
+		if (!(port & 4)) {
 			prev_right = FALSE;
 			if (! prev_left) {
 				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
@@ -1817,7 +1786,7 @@ static int SDL_controller_kb1(void)
 			prev_left = FALSE;
 		}
 
-		if (!(state->port & 8)) {
+		if (!(port & 8)) {
 			prev_left = FALSE;
 			if (! prev_right) {
 				repdelay_timeout = SDL_GetTicks() + REPEAT_INI_DELAY;
@@ -1836,7 +1805,7 @@ static int SDL_controller_kb1(void)
 		}
 
 
-		if ((state->trig & (1 << OSK_BUTTON_TRIGGER))) {
+		if (osk_joystick_button(OSK_BUTTON_TRIGGER)) {
 			if (! prev_trigger) {
 				prev_trigger = TRUE;
 				return(AKEY_RETURN);
@@ -1846,7 +1815,7 @@ static int SDL_controller_kb1(void)
 			prev_trigger = FALSE;
 		}
 
-		if ((state->trig & (1 << OSK_BUTTON_LEAVE))) {
+		if (osk_joystick_button(OSK_BUTTON_LEAVE)) {
 			if (! prev_leave) {
 				prev_leave = TRUE;
 				ui_leave_in_progress = TRUE;   /* OSK_BUTTON_LEAVE must be released again */
@@ -1857,7 +1826,7 @@ static int SDL_controller_kb1(void)
 			prev_leave = FALSE;
 		}
 
-		if ((state->trig & (1 << OSK_BUTTON_UI))) {
+		if (osk_joystick_button(OSK_BUTTON_UI)) {
 			if (! prev_ui && UI_BASIC_in_kbui) {
 				prev_ui = TRUE;
 				return(AKEY_ESCAPE);
@@ -1867,7 +1836,7 @@ static int SDL_controller_kb1(void)
 			prev_ui = FALSE;
 		}
 
-		if ((state->trig & (1 << OSK_BUTTON_KEYB))) {
+		if (osk_joystick_button(OSK_BUTTON_KEYB)) {
 			if (! prev_keyb) {
 				prev_keyb = TRUE;
 				return(AKEY_ESCAPE);
@@ -1891,8 +1860,6 @@ static int SDL_controller_kb(void)
 
 static int SDL_consol_keys(void)
 {
-	struct js_state *state = &sdl_js_state[0];
-
 	INPUT_key_consol = INPUT_CONSOL_NONE;
 
 #if OSK_BUTTON_START != OSK_BUTTON_LEAVE
@@ -1900,7 +1867,7 @@ static int SDL_consol_keys(void)
 #endif
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
 		if (! (UI_is_active || UI_BASIC_in_kbui)) {
-			if ((state->trig & (1 << OSK_BUTTON_START))) {
+			if (osk_joystick_button(OSK_BUTTON_START)) {
 				if (! ui_leave_in_progress)
 					INPUT_key_consol &= ~INPUT_CONSOL_START;
 				else
@@ -1911,12 +1878,12 @@ static int SDL_consol_keys(void)
 				INPUT_key_consol |= INPUT_CONSOL_START;
 			}
 
-			if ((state->trig & (1 << OSK_BUTTON_SELECT)))
+			if (osk_joystick_button(OSK_BUTTON_SELECT))
 				INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
 			else
 				INPUT_key_consol |= INPUT_CONSOL_SELECT;
 
-			if ((state->trig & (1 << OSK_BUTTON_OPTION)))
+			if (osk_joystick_button(OSK_BUTTON_OPTION))
 				INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 			else
 				INPUT_key_consol |= INPUT_CONSOL_OPTION;
