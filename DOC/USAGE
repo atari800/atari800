@@ -202,7 +202,6 @@ Command line options
 -multijoy             Emulate MultiJoy4 interface
 -directmouse          Use mouse's absolute position
 -cx85 <num>           Emulate CX85 numeric keypad on port <num>
--grabmouse            SDL only, prevent mouse pointer from leaving the window
 
 -record <filename>    Record input to <filename>
 -playback <filename>  Playback input from <filename>
@@ -363,6 +362,16 @@ SDL version options
 -nojoystick           Do not initialize joysticks
 -joy0 </dev/lp0>      Define the device for LPTjoy
 -joy1 </dev/lp1>      --""-- only when LPTjoy support compiled in
+-joy0hat              Use hat of joystick 0
+-joy1hat              Use hat of joystick 1
+-joy2hat              Use hat of joystick 2
+-joy3hat              Use hat of joystick 3
+-kbdjoy0              Enable joystick 0 keyboard emulation
+-kbdjoy1              Enable joystick 1 keyboard emulation
+-no-kbdjoy0           Disable joystick 0 keyboard emulation
+-no-kbdjoy1           Disable joystick 1 keyboard emulation
+-joy-distinct         Use one input device per emulated stick
+-grabmouse            Prevent mouse pointer from leaving window
 
 The following 7 items are only for -ntsc-artif set to ntsc-full:
 -ntsc-filter-preset composite|svideo|rgb|monochrome
@@ -594,6 +603,15 @@ freely defined in the config UI (Controller Config -> Define layout).
 Keyboard joystick emulation can be enabled/disabled in the Controller Config.
 By default, joy 0 is enabled and joy 1 is disabled (to not steal normal
 AWDS keys in the emulator).
+
+Usually the joysticks emulated by keyboard will overlap with any physical
+joysticks detected, so that you can freely switch between keyboard and joystick
+to control the emulation. However, if you want to emulate more than two
+joysticks, you can use -joy-distinct to place physical joysticks after the
+keyboard-emulated ones. This allows you to combine 1 or 2 keyboard-emulated
+joysticks with up to 3 SDL joysticks, but only up to a total of 4. The
+assignment is fixed at start-up and won't get updated if you enable or disable
+keyboard-emulated joysticks using the UI.
 
 
 X11 keyboard, joystick and other controllers

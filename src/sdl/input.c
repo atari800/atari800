@@ -58,6 +58,7 @@
 
 static int grab_mouse = FALSE;
 static int swap_joysticks = FALSE;
+static int joy_distinct = FALSE;
 
 /* a runtime switch for the kbd_joy_X_enabled vars is in the UI */
 static int kbd_joy_0_enabled = TRUE;	/* enabled by default, doesn't hurt */
@@ -1298,44 +1299,39 @@ void SDL_INPUT_Mouse(void)
 
 static void Init_SDL_Joysticks(void)
 {
-	int sdl_idx, emu_idx;
-	emu_idx = 0;
-	for(sdl_idx = 0; sdl_idx < SDL_NumJoysticks() && emu_idx < MAX_JOYSTICKS; sdl_idx++) {
-		struct stick_dev *s;
-		s = &stick_devs[emu_idx];
-		s->sdl_joy = SDL_JoystickOpen(sdl_idx);
-		if (s->sdl_joy == NULL)
-			Log_print("Joystick %i not found", sdl_idx);
-		else {
-			Log_print("Joystick %i found", sdl_idx);
-			s->nbuttons = SDL_JoystickNumButtons(s->sdl_joy);
-#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
-			if (osk_stick == NULL) {
-				osk_stick = s;
-				if (s->nbuttons > OSK_MAX_BUTTONS)
-					s->nbuttons = OSK_MAX_BUTTONS;
-			}
-#endif
+	int sdl_idx = 0;
+	int emu_idx = 0;
+	while (sdl_idx < SDL_NumJoysticks() && emu_idx < MAX_JOYSTICKS) {
+		struct stick_dev *s = &stick_devs[emu_idx];
+		if (s->fd_lpt != -1 || (joy_distinct && s->kbd != NULL)) {
 			emu_idx++;
+			continue;
 		}
-	}
-#ifdef LPTJOY
-	/* Strict backwards compatibility: LPT sticks fully override SDL sticks.
-	   A later commit will change this to place DL sticks after LPT sticks. */
-	for (emu_idx = 0; emu_idx < MAX_JOYSTICKS; emu_idx++) {
-		if (stick_devs[emu_idx].fd_lpt != -1) {
-			stick_devs[emu_idx].sdl_joy = NULL;
+		s->sdl_joy = SDL_JoystickOpen(sdl_idx);
+		if (s->sdl_joy == NULL) {
+			Log_print("Joystick %i not found", sdl_idx);
+			sdl_idx++;
+			continue;
 		}
-	}
+		Log_print("Joystick %i mapped to emulated joystick %i", sdl_idx, emu_idx);
+		s->nbuttons = SDL_JoystickNumButtons(s->sdl_joy);
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+		if (osk_stick == NULL) {
+			osk_stick = s;
+			if (s->nbuttons > OSK_MAX_BUTTONS)
+				s->nbuttons = OSK_MAX_BUTTONS;
+		}
 #endif
+		emu_idx++;
+		sdl_idx++;
+	}
 }
 
 int SDL_INPUT_Initialise(int *argc, char *argv[])
 {
 	/* TODO check for errors! */
 #ifdef LPTJOY
-	char *lpt_joy0 = NULL;
-	char *lpt_joy1 = NULL;
+	char *lpt_joy[2] = {NULL, NULL};
 #endif /* LPTJOY */
 	int i;
 	int j;
@@ -1377,13 +1373,13 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 #ifdef LPTJOY
 		else if (strcmp(argv[i], "-joy0") == 0) {
 			if (i_a) {
-				lpt_joy0 = argv[++i];
+				lpt_joy[0] = argv[++i];
 			}
 			else a_m = TRUE;
 		}
 		else if (!strcmp(argv[i], "-joy1")) {
 			if (i_a) {
-				lpt_joy1 = argv[++i];
+				lpt_joy[1] = argv[++i];
 			}
 			else a_m = TRUE;
 		}
@@ -1400,6 +1396,9 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 		else if (!strcmp(argv[i], "-no-kbdjoy1")) {
 			kbd_joy_1_enabled = FALSE;
 		}
+		else if (!strcmp(argv[i], "-joy-distinct")) {
+			joy_distinct = TRUE;
+		}
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 				help_only = TRUE;
@@ -1412,10 +1411,11 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 				Log_print("\t-joy0 <pathname> Select LPTjoy0 device");
 				Log_print("\t-joy1 <pathname> Select LPTjoy1 device");
 #endif /* LPTJOY */
-				Log_print("\t-kbdjoy0         enable joystick 0 keyboard emulation");
-				Log_print("\t-kbdjoy1         enable joystick 1 keyboard emulation");
-				Log_print("\t-no-kbdjoy0      disable joystick 0 keyboard emulation");
-				Log_print("\t-no-kbdjoy1      disable joystick 1 keyboard emulation");
+				Log_print("\t-kbdjoy0         Enable joystick 0 keyboard emulation");
+				Log_print("\t-kbdjoy1         Enable joystick 1 keyboard emulation");
+				Log_print("\t-no-kbdjoy0      Disable joystick 0 keyboard emulation");
+				Log_print("\t-no-kbdjoy1      Disable joystick 1 keyboard emulation");
+				Log_print("\t-joy-distinct    Use one input device per emulated stick");
 
 				Log_print("\t-grabmouse       Prevent mouse pointer from leaving window");
 			}
@@ -1432,26 +1432,45 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return TRUE;
 
-	if (!no_joystick) {
-#ifdef LPTJOY
-		if (lpt_joy0 != NULL) {				/* LPT1 joystick */
-			stick_devs[0].fd_lpt = open(lpt_joy0, O_RDONLY);
-			if (stick_devs[0].fd_lpt == -1)
-				perror(lpt_joy0);
-		}
-		if (lpt_joy1 != NULL) {				/* LPT2 joystick */
-			stick_devs[1].fd_lpt = open(lpt_joy1, O_RDONLY);
-			if (stick_devs[1].fd_lpt == -1)
-				perror(lpt_joy1);
-		}
-#endif /* LPTJOY */
-		Init_SDL_Joysticks();
-	}
-
 	if (INPUT_cx85) { /* disable keyboard joystick if using CX85 numpad */
 		kbd_joy_0_enabled = 0;
 	}
 	update_kbd_sticks();
+
+	if (!no_joystick) {
+		/* SDL_INPUT_Initialise gets called after SDL_INPUT_ReadConfig
+		   so here we know the results from both. */
+		int emu_idx = 0;
+#ifdef LPTJOY
+		int lpt_idx = 0;
+		while (lpt_idx < 2 && emu_idx < MAX_JOYSTICKS) {
+			struct stick_dev *s = &stick_devs[emu_idx];
+			if (joy_distinct && s->kbd != NULL) {
+				emu_idx++;
+				continue;
+			}
+			if (lpt_joy[lpt_idx] == NULL) {
+				lpt_idx++;
+				emu_idx++;
+				continue;
+			}
+			s->fd_lpt = open(lpt_joy[lpt_idx], O_RDONLY);
+			if (s->fd_lpt == -1) {
+				perror(lpt_joy[lpt_idx]);
+			} else {
+				Log_print("%s mapped to emulated joystick %i", lpt_joy[lpt_idx], emu_idx);
+				emu_idx++;
+			}
+			lpt_idx++;
+		}
+#endif /* LPTJOY */
+		for (emu_idx = 0; emu_idx < MAX_JOYSTICKS; emu_idx++) {
+			if (stick_devs[emu_idx].kbd != NULL)
+				Log_print("Keyboard mapped to emulated joystick %i", emu_idx);
+		}
+		Init_SDL_Joysticks();
+	}
+
 	if(grab_mouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 
