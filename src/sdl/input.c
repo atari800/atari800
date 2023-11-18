@@ -1480,103 +1480,52 @@ void SDL_INPUT_Restart(void)
 
 static int get_SDL_joystick_state(SDL_Joystick *joystick)
 {
-	int x;
-	int y;
-
-	x = SDL_JoystickGetAxis(joystick, 0);
-	y = SDL_JoystickGetAxis(joystick, 1);
-
-	if (x > minjoy) {
-		if (y < -minjoy)
-			return INPUT_STICK_UR;
-		else if (y > minjoy)
-			return INPUT_STICK_LR;
-		else
-			return INPUT_STICK_RIGHT;
-	}
-	else if (x < -minjoy) {
-		if (y < -minjoy)
-			return INPUT_STICK_UL;
-		else if (y > minjoy)
-			return INPUT_STICK_LL;
-		else
-			return INPUT_STICK_LEFT;
-	}
-	else {
-		if (y < -minjoy)
-			return INPUT_STICK_FORWARD;
-		else if (y > minjoy)
-			return INPUT_STICK_BACK;
-		else
-			return INPUT_STICK_CENTRE;
-	}
+	int x = SDL_JoystickGetAxis(joystick, 0);
+	int y = SDL_JoystickGetAxis(joystick, 1);
+	int stick = INPUT_STICK_CENTRE;
+	if (x > minjoy)
+		stick &= INPUT_STICK_RIGHT;
+	else if (x < -minjoy)
+		stick &= INPUT_STICK_LEFT;
+	if (y > minjoy)
+		stick &= INPUT_STICK_BACK;
+	else if (y < -minjoy)
+		stick &= INPUT_STICK_FORWARD;
+	return stick;
 }
 
 static int get_SDL_joystick_hat_state(SDL_Joystick* joystick)
 {
 	Uint8 hat = SDL_JoystickGetHat(joystick, 0);
-
-	if ((hat & SDL_HAT_LEFT)==SDL_HAT_LEFT) {
-		if ((hat & SDL_HAT_LEFTDOWN)==SDL_HAT_LEFTDOWN) return INPUT_STICK_LL;
-		if ((hat & SDL_HAT_LEFTUP)==SDL_HAT_LEFTUP) return INPUT_STICK_UL;
-		return INPUT_STICK_LEFT;
-	}
-	else if ((hat & SDL_HAT_RIGHT)==SDL_HAT_RIGHT) {
-		if ((hat & SDL_HAT_RIGHTDOWN)==SDL_HAT_RIGHTDOWN) return INPUT_STICK_LR;
-		else if ((hat & SDL_HAT_RIGHTUP)==SDL_HAT_RIGHTUP) return INPUT_STICK_UR;
-		return INPUT_STICK_RIGHT;
-	}
-	else if ((hat & SDL_HAT_UP)==SDL_HAT_UP) {
-		return INPUT_STICK_FORWARD;
-	}
-	else if ((hat & SDL_HAT_DOWN)==SDL_HAT_DOWN) {
-		return INPUT_STICK_BACK;
-	}
-
-	return INPUT_STICK_CENTRE;
+	int stick = INPUT_STICK_CENTRE;
+	if (hat & SDL_HAT_LEFT)
+		stick &= INPUT_STICK_LEFT;
+	if (hat & SDL_HAT_RIGHT)
+		stick &= INPUT_STICK_RIGHT;
+	if (hat & SDL_HAT_UP)
+		stick &= INPUT_STICK_FORWARD;
+	if (hat & SDL_HAT_DOWN)
+		stick &= INPUT_STICK_BACK;
+	return stick;
 }
 
 static int get_LPT_joystick_state(int fd)
 {
 #ifdef LPTJOY
-	int status;
+	int status, stick;
 
 	ioctl(fd, LPGETSTATUS, &status);
 	status ^= 0x78;
-
-	if (status & 0x40) {			/* right */
-		if (status & 0x10) {		/* up */
-			return INPUT_STICK_UR;
-		}
-		else if (status & 0x20) {	/* down */
-			return INPUT_STICK_LR;
-		}
-		else {
-			return INPUT_STICK_RIGHT;
-		}
-	}
-	else if (status & 0x80) {		/* left */
-		if (status & 0x10) {		/* up */
-			return INPUT_STICK_UL;
-		}
-		else if (status & 0x20) {	/* down */
-			return INPUT_STICK_LL;
-		}
-		else {
-			return INPUT_STICK_LEFT;
-		}
-	}
-	else {
-		if (status & 0x10) {		/* up */
-			return INPUT_STICK_FORWARD;
-		}
-		else if (status & 0x20) {	/* down */
-			return INPUT_STICK_BACK;
-		}
-		else {
-			return INPUT_STICK_CENTRE;
-		}
-	}
+	stick = INPUT_STICK_CENTRE;
+	if (status & 0x80)
+		stick &= INPUT_STICK_LEFT;
+	if (status & 0x40)
+		stick &= INPUT_STICK_RIGHT;
+	if (status & 0x20)
+		stick &= INPUT_STICK_BACK;
+	if (status & 0x10)
+		stick &= INPUT_STICK_FORWARD;
+	return stick;
 #else
 	return 0;
 #endif /* LPTJOY */
