@@ -3967,8 +3967,8 @@ static void ControllerConfiguration(void)
 		mouse_speed_status[0] = (char) ('0' + INPUT_mouse_speed);
 #endif
 #ifdef GUI_SDL
-		SetItemChecked(menu_array, 5, PLATFORM_kbd_joy_0_enabled);
-		SetItemChecked(menu_array, 7, PLATFORM_kbd_joy_1_enabled);
+		SetItemChecked(menu_array, 5, PLATFORM_IsKbdJoystickEnabled(0));
+		SetItemChecked(menu_array, 7, PLATFORM_IsKbdJoystickEnabled(1));
 #endif
 #ifdef DIRECTX
 		menu_array[5].suffix = keyboard_joystick_mode_array[keyboardJoystickMode].item;
@@ -4023,13 +4023,13 @@ static void ControllerConfiguration(void)
 #endif
 #ifdef GUI_SDL
 		case 5:
-			PLATFORM_kbd_joy_0_enabled = !PLATFORM_kbd_joy_0_enabled;
+			PLATFORM_ToggleKbdJoystickEnabled(0);
 			break;
 		case 6:
 			KeyboardJoystickConfiguration(0);
 			break;
 		case 7:
-			PLATFORM_kbd_joy_1_enabled = !PLATFORM_kbd_joy_1_enabled;
+			PLATFORM_ToggleKbdJoystickEnabled(1);
 			break;
 		case 8:
 			KeyboardJoystickConfiguration(1);
