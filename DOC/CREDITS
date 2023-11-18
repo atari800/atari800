@@ -443,3 +443,6 @@ Marcin Zukowski <eru@ibb.waw.pl>
     - fix in ANTIC, GTIA
     - slight monitor improvement
     - fix in Atrax cartridge bank switching
+
+Martin von Gagern <martin@von-gagern.net>
+    - allow SDL joysticks to come after keyboard-emulated joysticks
