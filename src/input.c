@@ -463,7 +463,7 @@ void INPUT_Frame(void)
 		sscanf(gzbuf, "%d %d %d ", &INPUT_key_code, &INPUT_key_shift, &INPUT_key_consol);
 	}
 	if (recording) {
-		gzprintf(recordfp, "%d %d %d \n", INPUT_key_code, INPUT_key_shift, INPUT_key_consol);
+		gzprintf(recordfp, "%d %d %d ", INPUT_key_code, INPUT_key_shift, INPUT_key_consol);
 	}
 #endif
 	i = Atari800_machine_type == Atari800_MACHINE_5200 ? INPUT_key_shift : (INPUT_key_code == AKEY_BREAK);
@@ -551,7 +551,7 @@ void INPUT_Frame(void)
 #ifdef EVENT_RECORDING
 	}
 	if (recording) {
-		gzprintf(recordfp,"%d \n",i);
+		gzprintf(recordfp,"%d ",i);
 	}
 #endif
 
@@ -567,7 +567,7 @@ void INPUT_Frame(void)
 #ifdef EVENT_RECORDING
 	}
 	if (recording) {
-		gzprintf(recordfp,"%d \n",i);
+		gzprintf(recordfp,"%d ",i);
 	}
 #endif
 	STICK[2] = i & 0x0f;
@@ -612,12 +612,17 @@ void INPUT_Frame(void)
 #ifdef EVENT_RECORDING
 		}
 		if(recording){
-			gzprintf(recordfp,"%d \n",TRIG_input[i]);
+			gzprintf(recordfp,"%d ",TRIG_input[i]);
 		}
 #endif
 		if ((INPUT_joy_autofire[i] == INPUT_AUTOFIRE_FIRE && !TRIG_input[i]) || (INPUT_joy_autofire[i] == INPUT_AUTOFIRE_CONT))
 			TRIG_input[i] = (Atari800_nframes & 2) ? 1 : 0;
 	}
+#ifdef EVENT_RECORDING
+	if(recording){
+		gzprintf(recordfp,"\n");
+	}
+#endif
 
 	/* handle analog joysticks in Atari 5200 */
 	if (Atari800_machine_type != Atari800_MACHINE_5200) {
