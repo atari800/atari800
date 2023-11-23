@@ -370,8 +370,12 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 
 static void SwapJoysticks(void)
 {
+	/* Struct assignment is like memcpy, will swap all fields. */
+	struct stick_dev tmp = stick_devs[0];
+	stick_devs[0] = stick_devs[1];
+	stick_devs[1] = tmp;
 	swap_joysticks = 1 - swap_joysticks;
-	update_kbd_sticks();
+	/* No need to call update_kbd_sticks, we did everything we needed. */
 }
 
 int PLATFORM_GetRawKey(void)
