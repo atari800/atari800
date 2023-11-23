@@ -21,6 +21,7 @@
 /src/android/proguard-project.txt
 src/guess_settings
 src/libatari800_test
+/tools/cart
 /config.log
 /config.status
 /configure
