@@ -2167,17 +2167,74 @@ static void monitor_set_hardware(void)
 static void monitor_read_from_file(UWORD *addr)
 {
 	const char *filename;
+	int xex = FALSE;
+	/* Peek at the next token without retrieving it... */
+	if(Util_strnicmp(token_ptr, "XEX ", 4) == 0) {
+		xex = TRUE;
+		/* we got the magic keyword, toss the token */
+		(void)get_token();
+	}
+
 	filename = get_token();
+
 	if (filename != NULL) {
 		UWORD nbytes;
-		if (get_hex2(addr, &nbytes) && *addr + nbytes <= 0x10000) {
+		if (xex) /* load xex file; no init nor run performed */
+		{
 			FILE *f = fopen(filename, "rb");
 			if (f == NULL)
 				perror(filename);
 			else {
-				if (fread(&MEMORY_mem[*addr], 1, nbytes, f) == 0)
-					perror(filename);
+				while (42) {
+					UWORD fromaddr;
+					UWORD toaddr;
+					int byte;
+
+					do {
+						byte=fgetc(f);
+						if (byte==EOF) { break; }
+						fromaddr=byte&0xff;
+
+						byte=fgetc(f);
+						if (byte==EOF) { printf("Bad xex file\n"); break; }
+						fromaddr|=((byte&0xff)<<8);
+
+					} while (fromaddr==0xffff && byte !=EOF);
+
+					if (byte==EOF) break;
+
+					byte=fgetc(f);
+					if (byte==EOF) { printf("Bad xex file\n"); break; }
+					toaddr=byte&0xff;
+
+					byte=fgetc(f);
+					if (byte==EOF) { printf("Bad xex file\n"); break; }
+					toaddr|=((byte&0xff)<<8);
+
+					*addr=fromaddr; /* sets to last load addr */
+					if ((int)toaddr-(int)fromaddr<0) { printf("Bad xex file\n"); break; }
+					nbytes=toaddr-fromaddr+1;
+
+					/* if not full block, error */
+					if (fread(&MEMORY_mem[*addr], nbytes, 1, f) == 0) {
+						printf("Bad xex file\n");
+						break;
+					}
+				}
 				fclose(f);
+			}
+		}
+		else { /* !xex */
+			if (get_hex2(addr, &nbytes) && *addr + nbytes <= 0x10000) {
+				FILE *f = fopen(filename, "rb");
+				if (f == NULL)
+					perror(filename);
+				else {
+					/* read as many bytes as given or available */
+					if (fread(&MEMORY_mem[*addr], 1, nbytes, f) == 0)
+						printf("Could not read bytes\n");
+					fclose(f);
+				}
 			}
 		}
 	}
@@ -3030,7 +3087,11 @@ static void show_help(void)
 		"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
 		"CART                           - Show cartridge information\n");
 	printf(
-		"READ filename startaddr nbytes - Read file into memory\n"
+		"READ [XEX] filename or filename startaddr nbytes\n"
+		"                               - Read file into memory\n"
+		"                                 With XEX read Atari executable,\n"
+		"                                 does not init nor run (useful for patches)\n");
+	printf(
 		"WRITE [XEX] startaddr endaddr [runaddr] [file]\n"
 		"                               - Write memory block to a file (memdump.dat).\n"
 		"                                 With XEX, writes an Atari executable with\n"
