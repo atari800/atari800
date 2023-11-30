@@ -451,11 +451,25 @@ int PLATFORM_Keyboard(void)
 		event_found = 1;
 		switch (event.type) {
 		case SDL_KEYDOWN:
+
+			/* If the KEYDOWN event we get here is OPTION, SELECT, or START, then ignore it here as it's supposed to be it's own independent (i.e., separate from the keyboard) subsystem. */
+			if ((event.key.keysym.sym == KBD_OPTION)
+				|| (event.key.keysym.sym == KBD_SELECT)
+				|| (event.key.keysym.sym == KBD_START))
+				break;
+
 			lastkey = event.key.keysym.sym;
  			lastuni = event.key.keysym.unicode;
 			key_pressed = 1;
 			break;
 		case SDL_KEYUP:
+
+			/* Need to ignore KEYUP as well... */
+			if ((event.key.keysym.sym == KBD_OPTION)
+				|| (event.key.keysym.sym == KBD_SELECT)
+				|| (event.key.keysym.sym == KBD_START))
+				break;
+
 			lastkey = event.key.keysym.sym;
  			lastuni = 0; /* event.key.keysym.unicode is not defined for KEYUP */
 			key_pressed = 0;

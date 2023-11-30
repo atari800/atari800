@@ -442,15 +442,12 @@ static int GetKeyCode(XEvent *event)
 			break;
 		case XK_F2:
 			keyboard_consol &= (~INPUT_CONSOL_OPTION);
-			keycode = AKEY_NONE;
 			break;
 		case XK_F3:
 			keyboard_consol &= (~INPUT_CONSOL_SELECT);
-			keycode = AKEY_NONE;
 			break;
 		case XK_F4:
 			keyboard_consol &= (~INPUT_CONSOL_START);
-			keycode = AKEY_NONE;
 			break;
 		case XK_F6:
 			keycode = SHIFT | CONTROL | AKEY_HELP;
