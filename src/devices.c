@@ -496,6 +496,9 @@ int Devices_h_read_only = TRUE;
    is used. */
 char Devices_h_exe_path[FILENAME_MAX] = DEFAULT_H_PATH;
 
+/* H device rename; one can add 'D' in command line */
+char Devices_h_device_name = 'H';
+
 /* Devices_h_current_dir must be empty or terminated with Util_DIR_SEP_CHAR;
    only Util_DIR_SEP_CHAR can be used as a directory separator here */
 char Devices_h_current_dir[4][FILENAME_MAX];
@@ -604,6 +607,12 @@ int Devices_Initialise(int *argc, char *argv[])
 				Util_strlcpy(Devices_h_exe_path, argv[++i], FILENAME_MAX);
 			else a_m = TRUE;
 		}
+		else if (strcmp(argv[i], "-Hdevicename") == 0) {
+			if (i_a){
+				Devices_h_device_name = argv[++i][0];
+			}
+			else a_m = TRUE;
+		}
 		else if (strcmp(argv[i], "-hreadonly") == 0)
 			Devices_h_read_only = TRUE;
 		else if (strcmp(argv[i], "-hreadwrite") == 0)
@@ -617,6 +626,7 @@ int Devices_Initialise(int *argc, char *argv[])
 				Log_print("\t-H3 <path>       Set path for H3: device");
 				Log_print("\t-H4 <path>       Set path for H4: device");
 				Log_print("\t-Hpath <path>    Set path for Atari executables on the H: device");
+				Log_print("\t-Hdevicename <X> Rename H: device for something different");
 				Log_print("\t-hreadonly       Enable read-only mode for H: device");
 				Log_print("\t-hreadwrite      Disable read-only mode for H: device");
 				Log_print("\t-devbug          Debugging messages for H: and P: devices");
@@ -1536,7 +1546,7 @@ static void Devices_H_Load(int mydos)
 		int devnum;
 		const char *q;
 		char *r;
-		if (p[0] == 'H' && p[1] >= '1' && p[1] <= '4' && p[2] == ':') {
+		if (p[0] == Devices_h_device_name && p[1] >= '1' && p[1] <= '4' && p[2] == ':') {
 			devnum = p[1] - '1';
 			p += 3;
 		}
@@ -2517,7 +2527,9 @@ int Devices_PatchOS(void)
    So after we put H: entry in HATABS, we only check if 'H' is still where
    we put it (h_entry_address).
    Devices_UpdateHATABSEntry and Devices_RemoveHATABSEntry can be used to add
-   other devices than H:. */
+   other devices than H:.
+   Keep in mind that H: can be renamed to whatever you want in command line.
+   */
 
 #define HATABS 0x31a
 
@@ -2597,7 +2609,7 @@ static UWORD b_entry_address = 0;
 void Devices_Frame(void)
 {
 	if (Devices_enable_h_patch)
-		h_entry_address = Devices_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+		h_entry_address = Devices_UpdateHATABSEntry(Devices_h_device_name, h_entry_address, H_TABLE_ADDRESS);
 
 #ifdef R_IO_DEVICE
 	if (Devices_enable_r_patch)
@@ -2633,7 +2645,7 @@ void Devices_UpdatePatches(void)
 	}
 	else {						/* disable H: device */
 		/* remove H: entry from HATABS */
-		Devices_RemoveHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
+		Devices_RemoveHATABSEntry(Devices_h_device_name, h_entry_address, H_TABLE_ADDRESS);
 		/* remove patches */
 		ESC_Remove(ESC_HHOPEN);
 		ESC_Remove(ESC_HHCLOS);

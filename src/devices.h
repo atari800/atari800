@@ -22,6 +22,8 @@ extern int Devices_h_read_only;
 
 extern char Devices_h_exe_path[FILENAME_MAX];
 
+extern char Devices_h_device_name;
+
 extern char Devices_h_current_dir[4][FILENAME_MAX];
 
 int Devices_H_CountOpen(void);
