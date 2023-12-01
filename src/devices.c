@@ -626,7 +626,7 @@ int Devices_Initialise(int *argc, char *argv[])
 				Log_print("\t-H3 <path>       Set path for H3: device");
 				Log_print("\t-H4 <path>       Set path for H4: device");
 				Log_print("\t-Hpath <path>    Set path for Atari executables on the H: device");
-				Log_print("\t-Hdevicename <X> Rename H: device for something different");
+				Log_print("\t-Hdevicename <X> Use this letter to access the Host device, instead of H:");
 				Log_print("\t-hreadonly       Enable read-only mode for H: device");
 				Log_print("\t-hreadwrite      Disable read-only mode for H: device");
 				Log_print("\t-devbug          Debugging messages for H: and P: devices");
