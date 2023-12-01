@@ -180,6 +180,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				Util_strlcpy(Devices_atari_h_dir[3], ptr, FILENAME_MAX);
 			else if (strcmp(string, "HD_READ_ONLY") == 0)
 				Devices_h_read_only = Util_sscandec(ptr);
+			else if (strcmp(string, "HD_DEVICE_NAME") == 0)
+				Devices_h_device_name = *ptr;
 
 			else if (strcmp(string, "PRINT_COMMAND") == 0) {
 				if (!Devices_SetPrintCommand(ptr))
@@ -397,6 +399,7 @@ int CFG_WriteConfig(void)
 	for (i = 0; i < 4; i++)
 		fprintf(fp, "H%c_DIR=%s\n", '1' + i, Devices_atari_h_dir[i]);
 	fprintf(fp, "HD_READ_ONLY=%d\n", Devices_h_read_only);
+	fprintf(fp, "HD_DEVICE_NAME=%c\n", Devices_h_device_name);
 
 #ifdef HAVE_SYSTEM
 	fprintf(fp, "PRINT_COMMAND=%s\n", Devices_print_command);
