@@ -194,7 +194,7 @@ int PBI_XLD_D1GetByte(UWORD addr)
 
 
 /* D1FF: each bit indicates IRQ status of a device */
-UBYTE PBI_XLD_D1ffGetByte()
+UBYTE PBI_XLD_D1ffGetByte(void)
 {
 	UBYTE result = 0;
 	/* VOTRAX BUSY IRQ bit */

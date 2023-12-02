@@ -212,7 +212,7 @@ void COLOURS_NTSC_RestoreDefaults(void)
 	COLOURS_NTSC_setup.color_delay = default_setup.color_delay;
 }
 
-Colours_preset_t COLOURS_NTSC_GetPreset()
+Colours_preset_t COLOURS_NTSC_GetPreset(void)
 {
 	if (Util_almostequal(COLOURS_NTSC_setup.color_delay, default_setup.color_delay, 0.001))
 		return COLOURS_PRESET_STANDARD;

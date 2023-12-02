@@ -1246,7 +1246,7 @@ int VIDEOMODE_InitialiseDisplay(void)
 	return TRUE;
 }
 
-void VIDEOMODE_Exit()
+void VIDEOMODE_Exit(void)
 {
 	if (resolutions != NULL)
 		free(resolutions);

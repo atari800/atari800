@@ -323,7 +323,7 @@ int File_Export_GetNextVideoFile(char *buffer, int bufsize) {
    RETURNS: non-zero if successfully added the video frame to the file
    (indicating the size of the video frame in bytes) or 0 if failed when
    creating the video frame or adding it to the file. */
-int File_Export_WriteVideo()
+int File_Export_WriteVideo(void)
 {
 	int result;
 
