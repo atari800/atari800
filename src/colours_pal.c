@@ -383,7 +383,7 @@ void COLOURS_PAL_RestoreDefaults(void)
 	COLOURS_PAL_setup.color_delay = default_setup.color_delay;
 }
 
-Colours_preset_t COLOURS_PAL_GetPreset()
+Colours_preset_t COLOURS_PAL_GetPreset(void)
 {
 	if (Util_almostequal(COLOURS_PAL_setup.color_delay, default_setup.color_delay, 0.001))
 		return COLOURS_PRESET_STANDARD;
