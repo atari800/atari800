@@ -2215,6 +2215,7 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(17, "Turbo (F12):"),
 		UI_MENU_CHECK(19, "Slow booting of DOS binary files:"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
+		UI_MENU_ACTION_PREFIX(12, " Print command: ", Devices_print_command),
 #ifdef R_IO_DEVICE
 #ifdef DREAMCAST
 		UI_MENU_CHECK(6, "R: device (using Coder's Cable):"),
@@ -2229,7 +2230,6 @@ static void AtariSettings(void)
 		UI_MENU_FILESEL_PREFIX(9, " Host dev 3 path: ", Devices_atari_h_dir[2]),
 		UI_MENU_FILESEL_PREFIX(10, " Host dev 4 path: ", Devices_atari_h_dir[3]),
 		UI_MENU_SUBMENU(11, " Host device status..."),
-		UI_MENU_ACTION_PREFIX(12, "Print command: ", Devices_print_command),
 		UI_MENU_SUBMENU(13, "System ROM settings"),
 		UI_MENU_SUBMENU(14, "Configure directories"),
 #ifndef DREAMCAST
