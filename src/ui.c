@@ -2212,7 +2212,6 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
 		UI_MENU_CHECK(19, "Slow booting of DOS binary files:"),
-		UI_MENU_ACTION(4, "H: device (hard disk):"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 #ifdef R_IO_DEVICE
 #ifdef DREAMCAST
@@ -2221,11 +2220,13 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(6, "R: device (Atari850 via net):"),
 #endif
 #endif
-		UI_MENU_FILESEL_PREFIX(7, "H1: ", Devices_atari_h_dir[0]),
-		UI_MENU_FILESEL_PREFIX(8, "H2: ", Devices_atari_h_dir[1]),
-		UI_MENU_FILESEL_PREFIX(9, "H3: ", Devices_atari_h_dir[2]),
-		UI_MENU_FILESEL_PREFIX(10, "H4: ", Devices_atari_h_dir[3]),
-		UI_MENU_SUBMENU(11, "Advanced H: options"),
+		UI_MENU_ACTION(4, "Host device enabled:"),
+		UI_MENU_ACTION(20, " Host device SIO letter:"),
+		UI_MENU_FILESEL_PREFIX(7, " Host dev 1 path: ", Devices_atari_h_dir[0]),
+		UI_MENU_FILESEL_PREFIX(8, " Host dev 2 path: ", Devices_atari_h_dir[1]),
+		UI_MENU_FILESEL_PREFIX(9, " Host dev 3 path: ", Devices_atari_h_dir[2]),
+		UI_MENU_FILESEL_PREFIX(10, " Host dev 4 path: ", Devices_atari_h_dir[3]),
+		UI_MENU_SUBMENU(11, " Host device status..."),
 		UI_MENU_ACTION_PREFIX(12, "Print command: ", Devices_print_command),
 		UI_MENU_SUBMENU(13, "System ROM settings"),
 		UI_MENU_SUBMENU(14, "Configure directories"),
@@ -2236,6 +2237,7 @@ static void AtariSettings(void)
 		UI_MENU_END
 	};
 	char tmp_command[256];
+	char hdev_option[4];
 
 	int option = 0;
 
@@ -2251,6 +2253,9 @@ static void AtariSettings(void)
 		SetItemChecked(menu_array, 17, Atari800_turbo);
 		SetItemChecked(menu_array, 19, BINLOAD_slow_xex_loading);
 		FindMenuItem(menu_array, 4)->suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
+		strcpy(hdev_option + 1, ":");
+		hdev_option[0] = Devices_h_device_name;
+		FindMenuItem(menu_array, 20)->suffix = hdev_option;
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
 		SetItemChecked(menu_array, 6, Devices_enable_r_patch);
@@ -2345,6 +2350,13 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		case 19:
 			BINLOAD_slow_xex_loading = !BINLOAD_slow_xex_loading;
+			break;
+		case 20:
+			do {
+				Devices_h_device_name ++;
+				if( Devices_h_device_name > 'Z' )
+					Devices_h_device_name = 'A';
+			} while ( strchr("CEKS", Devices_h_device_name) );
 			break;
 		default:
 			ESC_UpdatePatches();
