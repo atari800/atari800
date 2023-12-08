@@ -1683,17 +1683,19 @@ static void TapeManagement(void)
 
 }
 
-static void AdvancedHOptions(void)
+static void HDeviceStatus(void)
 {
-	static char open_info[] = "0 currently open files";
+	static char open_info[] = " 0 currently open files";
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_ACTION(0, "Atari executables path"),
+		UI_MENU_LABEL("Atari executable path:"),
+        UI_MENU_ACTION_PREFIX(0, " ", Devices_h_exe_path),
+		UI_MENU_LABEL("File status:"),
 		UI_MENU_ACTION_TIP(1, open_info, NULL),
 		UI_MENU_LABEL("Current directories:"),
-		UI_MENU_ACTION_PREFIX_TIP(2, "H1:", Devices_h_current_dir[0], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(3, "H2:", Devices_h_current_dir[1], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(4, "H3:", Devices_h_current_dir[2], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(5, "H4:", Devices_h_current_dir[3], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(2, " Host dev 1:", Devices_h_current_dir[0], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(3, " Host dev 2:", Devices_h_current_dir[1], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(4, " Host dev 3:", Devices_h_current_dir[2], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(5, " Host dev 4:", Devices_h_current_dir[3], NULL),
 		UI_MENU_END
 	};
 	int option = 0;
@@ -1701,12 +1703,12 @@ static void AdvancedHOptions(void)
 		int i;
 		int seltype;
 		i = Devices_H_CountOpen();
-		open_info[0] = (char) ('0' + i);
-		open_info[21] = (i != 1) ? 's' : '\0';
+		open_info[1] = (char) ('0' + i);
+		open_info[22] = (i != 1) ? 's' : '\0';
 		menu_array[1].suffix = (i > 0) ? ((i == 1) ? "Backspace: close" : "Backspace: close all") : NULL;
 		for (i = 0; i < 4; i++)
 			menu_array[3 + i].suffix = Devices_h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
-		option = UI_driver->fSelect("Advanced H: options", 0, option, menu_array, &seltype);
+		option = UI_driver->fSelect("Host device status", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
 			{
@@ -2308,7 +2310,7 @@ static void AtariSettings(void)
 				UI_driver->fGetDirectoryPath(FindMenuItem(menu_array, option)->item);
 			break;
 		case 11:
-			AdvancedHOptions();
+			HDeviceStatus();
 			break;
 		case 12:
 			strcpy(tmp_command, Devices_print_command);
