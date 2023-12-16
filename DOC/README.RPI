@@ -1,16 +1,48 @@
 SYSTEM SPECIFICATION
 ====================
-Atari800 v5 and later runs on the following systems:
 
-    Pi Zero 2 W, 2, 3, 4 and 400, running Pi OS Full Bullseye or later.
+Atari800 is available for both 32-bit (armhf) and 64-bit (arm64) architectures.
+It will run on the following systems:
 
-At the time of writing (September 2023) it does not run properly on Pi OS Lite.
-It is not known whether this is a temporary situaton that will be corrected by
-further development, or if new software such as the KMS video driver that atari800
-depends upon to run at full speed have been deliberately omitted from the Lite version.
+    Pi 2 running Pi OS Full 32-bit Bookworm (armhf).
+
+    Pi Zero 2 W, 3, 4, 400 and 5, running Pi OS Full 64-bit Bookworm (arm64).
+    It is also possible to downgrade to Pi OS 32-bit and run the the armhf
+    version of atari800 on these machines, but this is not recommended.
 
 The Pi 1 and and the single core Zero are not supported.  They can run atari800 in
 tiny windows, but nothing approaching full screen.  Larger images overload their
-processors, resulting in choppy sound and video.
+processors, producing choppy sound and video.
 
+Pi OS Lite is not supported.  Atari800 may run OK with Pi OS Lite on certain
+machine/monitor combinations, but in general it cannot support proper fullscreen
+images running at full speed.  At the time of writing (December 2023) it is not 
+known whether this is a temporary situaton that will be corrected by further
+development, or if new software such as the KMS video driver that atari800 depends
+upon to run at full speed has been deliberately omitted from the Lite version.
+
+PERFORMANCE LIMITATIONS
+=======================
+
+The atari800 menu allows you to select the fullscreen resolution using <F1>,
+<Display Settings>, <Video mode settings>, <Fullscreen resolution:>.  It defaults
+to 640x480, but you can increase it to obtain more accurate representations of
+Atari screens.  The available selections go right up to the resolution of your
+monitor.  However, you may find that you overload the processor on some Pis at
+a certain point, resulting in choppy audio and video.  If this happens, back off
+to a lower resolution.  To make full use of the screen and preserve the aspect
+ratio while you make these adjustments, set <Host display apect ratio:> to
+match you monitor (or select <autodetect>), set <image aspect ratio:> to
+<authentic> and <Stretch image:> to <fit screen - full>.
+
+The Pi 2 cannot run atari800 at full speed in large windows, but fullscreen is OK.
+
+Hardware graphics acceleration is not required, and should be turned off by default.
+It is effective in reducing CPU load on the Pi 3, 4 and 5, but is very detrimental
+on other models.  Set <F1>, <Display Settings>, <Video mode settings>,
+<Hardware acceleration:> to <No>.
+
+The Raspberry Pi Imager offers Ubuntu Desktop 64-Bit as an alternative operating
+system, but it imposes higher CPU loading than Pi OS, and is unable to run
+atari800 at full speed on most models of Pi.
 
