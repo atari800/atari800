@@ -1,3 +1,78 @@
+Version 5.1.0 (2023/12/28) - released at SILK
+==========================
+
+Thanks to all the contributors (see git log for each commit author)
+
+ New features:
+ -------------
+  * New command line options:
+
+   -playbacknoexit = don't exit the emulator after playback finishes
+
+   -joy-distinct
+
+    Allows larger number of joysticks by not combining multiple physical
+    devices into a single emulated joystick. For example this allows using
+    keyboard to emulate one or two joysticks, and to use these in conjunction
+    with physical SDL joysticks / controllers in order to play with more people
+    than there are SDL joysticks. The same logic gets applied to LPT joysticks,
+    these come after joysticks from keyboard emulation.
+
+    Furthermore, the logic also gets applied to put SDL joysticks after LPT
+    joystics even when the command line flag isn't set. Since LPT joysticks
+    take precedence over SDL joysticks on the same emulated device, this takes
+    a device that was completely ignored before and makes it useful now.
+
+    The assignments are fixed at program start-up, after config file and command
+    line flags have been taken into account. If the UI is used to enable or
+    disable a keyboard-emulated joystick, this can cause an emulated joystick
+    to be controlled by multiple physical devices, or by none.
+
+  * Swap also SDL joysticks on AltL+J
+
+    This swaps all physical devices connected to the first two emulated
+    joysticks: the keyboard keys, the SDL devices, and the LPT devices.
+
+    After the swap the real joystick / hat setting in the UI will appear swapped
+    as well, but the keyboard setting won't (fixes #156).
+
+  * Show all input events on a single line during recording
+
+    This way the recording file alternates between two forms of lines: input
+    lines which contain all keyboard and joystick events in one line, and output
+    lines with the screen content digest. By filtering out the former, the
+    latter can be aggregated nicely, e.g. using a command like this:
+
+    zcat ${file:?} | grep -vE '^[0-9A-F]{8} *$' | uniq -c
+
+    Consecutive frames of equal input state will be represented as a single row,
+    with a repeat count giving an idea for how long the state was maintained.
+
+  * RAM cartridges implementation (#184)
+    - Many RAMCART and one SiDiCar cartridges
+    - Support for writeable cartridges
+    - CART monitor command
+    - Make blank cartridge UI option
+    - Reserved CART file ids for additional cartridge types currently unemulated by Atari800,
+      added also the description of the types
+
+  * added XEX reading in monitor (useful for patches)
+
+  * Added H: device rename; save it in setup file (#204)
+
+ Changes:
+ --------
+  * Altirra OS updated to v3.41
+  * Altirra BASIC updated to v1.58
+  * Fix buffer over-read in generate_partial_pmpl_colls (#165)
+  * Atari ST/TT/Falcon optimizations
+  * Fixed keystrokes for inserting/deleting of line/character (#179)
+  * SIO now resets BRKKEY (fixes Arsantica 3 demo)
+  * Fix for issue #199 (BBSB warp doesn't work)
+  * Fixes CTRL and CAPS keys when using SDL12-compat library.
+  * DOC/README.RPI explains clearly support for various RaspberryPis
+
+
 Version 5.0.0 (2022/05/28) - released at Atariada.cz (yay!)
 ==========================
 
