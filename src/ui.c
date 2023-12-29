@@ -1687,30 +1687,69 @@ static void HDeviceStatus(void)
 {
 	static char open_info[] = " 0 currently open files";
 	static UI_tMenuItem menu_array[] = {
+		UI_MENU_ACTION(0, "Device enabled:"),
+		UI_MENU_ACTION(1, "SIO letter:"),
+		UI_MENU_FILESEL_PREFIX(2, "Device 1 path: ", Devices_atari_h_dir[0]),
+		UI_MENU_FILESEL_PREFIX(3, "Device 2 path: ", Devices_atari_h_dir[1]),
+		UI_MENU_FILESEL_PREFIX(4, "Device 3 path: ", Devices_atari_h_dir[2]),
+		UI_MENU_FILESEL_PREFIX(5, "Device 4 path: ", Devices_atari_h_dir[3]),
 		UI_MENU_LABEL("Atari executable path:"),
-        UI_MENU_ACTION_PREFIX(0, " ", Devices_h_exe_path),
+		UI_MENU_ACTION_PREFIX(6, " ", Devices_h_exe_path),
 		UI_MENU_LABEL("File status:"),
-		UI_MENU_ACTION_TIP(1, open_info, NULL),
+		UI_MENU_ACTION_TIP(7, open_info, NULL),
 		UI_MENU_LABEL("Current directories:"),
-		UI_MENU_ACTION_PREFIX_TIP(2, " Host dev 1:", Devices_h_current_dir[0], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(3, " Host dev 2:", Devices_h_current_dir[1], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(4, " Host dev 3:", Devices_h_current_dir[2], NULL),
-		UI_MENU_ACTION_PREFIX_TIP(5, " Host dev 4:", Devices_h_current_dir[3], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(8, " Dev 1:", Devices_h_current_dir[0], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(9, " Dev 2:", Devices_h_current_dir[1], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(10, " Dev 3:", Devices_h_current_dir[2], NULL),
+		UI_MENU_ACTION_PREFIX_TIP(11, " Dev 4:", Devices_h_current_dir[3], NULL),
 		UI_MENU_END
 	};
 	int option = 0;
+	char hdev_option[4];
 	for (;;) {
 		int i;
 		int seltype;
 		i = Devices_H_CountOpen();
 		open_info[1] = (char) ('0' + i);
 		open_info[22] = (i != 1) ? 's' : '\0';
-		menu_array[1].suffix = (i > 0) ? ((i == 1) ? "Backspace: close" : "Backspace: close all") : NULL;
+		FindMenuItem(menu_array, 7)->suffix = (i > 0) ? ((i == 1) ? "Backspace: close" : "Backspace: close all") : NULL;
 		for (i = 0; i < 4; i++)
-			menu_array[3 + i].suffix = Devices_h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
+			menu_array[11 + i].suffix = Devices_h_current_dir[i][0] != '\0' ? "Backspace: reset to root" : NULL;
+		FindMenuItem(menu_array, 0)->suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
+		strcpy(hdev_option + 1, ":");
+		hdev_option[0] = Devices_h_device_name;
+		FindMenuItem(menu_array, 1)->suffix = hdev_option;
 		option = UI_driver->fSelect("Host device status", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
+			if (!Devices_enable_h_patch) {
+				Devices_enable_h_patch = TRUE;
+				Devices_h_read_only = TRUE;
+			}
+			else if (Devices_h_read_only)
+				Devices_h_read_only = FALSE;
+			else {
+				Devices_enable_h_patch = FALSE;
+				Devices_h_read_only = TRUE;
+			}
+			break;
+		case 1:
+			do {
+				Devices_h_device_name ++;
+				if( Devices_h_device_name > 'Z' )
+					Devices_h_device_name = 'A';
+			} while ( strchr("CEKS", Devices_h_device_name) );
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			if (seltype == UI_USER_DELETE)
+				FindMenuItem(menu_array, option)->item[0] = '\0';
+			else
+				UI_driver->fGetDirectoryPath(FindMenuItem(menu_array, option)->item);
+			break;
+		case 6:
 			{
 				char tmp_path[FILENAME_MAX];
 				strcpy(tmp_path, Devices_h_exe_path);
@@ -1718,16 +1757,16 @@ static void HDeviceStatus(void)
 					strcpy(Devices_h_exe_path, tmp_path);
 			}
 			break;
-		case 1:
+		case 7:
 			if (seltype == UI_USER_DELETE)
 				Devices_H_CloseAll();
 			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
+		case 8:
+		case 9:
+		case 10:
+		case 11:
 			if (seltype == UI_USER_DELETE)
-				Devices_h_current_dir[option - 2][0] = '\0';
+				Devices_h_current_dir[option - 8][0] = '\0';
 			break;
 		default:
 			return;
@@ -2223,13 +2262,7 @@ static void AtariSettings(void)
 		UI_MENU_CHECK(6, "R: device (Atari850 via net):"),
 #endif
 #endif
-		UI_MENU_ACTION(4, "Host device enabled:"),
-		UI_MENU_ACTION(20, " Host device SIO letter:"),
-		UI_MENU_FILESEL_PREFIX(7, " Host dev 1 path: ", Devices_atari_h_dir[0]),
-		UI_MENU_FILESEL_PREFIX(8, " Host dev 2 path: ", Devices_atari_h_dir[1]),
-		UI_MENU_FILESEL_PREFIX(9, " Host dev 3 path: ", Devices_atari_h_dir[2]),
-		UI_MENU_FILESEL_PREFIX(10, " Host dev 4 path: ", Devices_atari_h_dir[3]),
-		UI_MENU_SUBMENU(11, " Host device status..."),
+		UI_MENU_SUBMENU(11, "Host device settings"),
 		UI_MENU_SUBMENU(13, "System ROM settings"),
 		UI_MENU_SUBMENU(14, "Configure directories"),
 #ifndef DREAMCAST
@@ -2239,7 +2272,6 @@ static void AtariSettings(void)
 		UI_MENU_END
 	};
 	char tmp_command[256];
-	char hdev_option[4];
 
 	int option = 0;
 
@@ -2254,10 +2286,6 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		SetItemChecked(menu_array, 17, Atari800_turbo);
 		SetItemChecked(menu_array, 19, BINLOAD_slow_xex_loading);
-		FindMenuItem(menu_array, 4)->suffix = Devices_enable_h_patch ? (Devices_h_read_only ? "Read-only" : "Read/write") : "No ";
-		strcpy(hdev_option + 1, ":");
-		hdev_option[0] = Devices_h_device_name;
-		FindMenuItem(menu_array, 20)->suffix = hdev_option;
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
 		SetItemChecked(menu_array, 6, Devices_enable_r_patch);
@@ -2280,18 +2308,6 @@ static void AtariSettings(void)
 		case 3:
 			ESC_enable_sio_patch = !ESC_enable_sio_patch;
 			break;
-		case 4:
-			if (!Devices_enable_h_patch) {
-				Devices_enable_h_patch = TRUE;
-				Devices_h_read_only = TRUE;
-			}
-			else if (Devices_h_read_only)
-				Devices_h_read_only = FALSE;
-			else {
-				Devices_enable_h_patch = FALSE;
-				Devices_h_read_only = TRUE;
-			}
-			break;
 		case 5:
 			Devices_enable_p_patch = !Devices_enable_p_patch;
 			break;
@@ -2300,15 +2316,6 @@ static void AtariSettings(void)
 			Devices_enable_r_patch = !Devices_enable_r_patch;
 			break;
 #endif
-		case 7:
-		case 8:
-		case 9:
-		case 10:
-			if (seltype == UI_USER_DELETE)
-				FindMenuItem(menu_array, option)->item[0] = '\0';
-			else
-				UI_driver->fGetDirectoryPath(FindMenuItem(menu_array, option)->item);
-			break;
 		case 11:
 			HDeviceStatus();
 			break;
@@ -2352,13 +2359,6 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		case 19:
 			BINLOAD_slow_xex_loading = !BINLOAD_slow_xex_loading;
-			break;
-		case 20:
-			do {
-				Devices_h_device_name ++;
-				if( Devices_h_device_name > 'Z' )
-					Devices_h_device_name = 'A';
-			} while ( strchr("CEKS", Devices_h_device_name) );
 			break;
 		default:
 			ESC_UpdatePatches();
