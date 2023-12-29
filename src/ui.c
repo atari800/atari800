@@ -1734,11 +1734,18 @@ static void HDeviceStatus(void)
 			}
 			break;
 		case 1:
-			do {
-				Devices_h_device_name ++;
-				if( Devices_h_device_name > 'Z' )
-					Devices_h_device_name = 'A';
-			} while ( strchr("CEKS", Devices_h_device_name) );
+			if (seltype == UI_USER_DELETE)
+				Devices_h_device_name = 'H';
+			else {
+				hdev_option[1] = 0;
+				UI_driver->fEditString("Host Device SIO Letter:", hdev_option, 2);
+				if( hdev_option[0] >= 'a' && hdev_option[0] <= 'z' )
+					hdev_option[0] -= 'a' - 'A';
+				if( !strchr("CEKS", hdev_option[0]) )
+					Devices_h_device_name = hdev_option[0];
+				else
+					UI_driver->fMessage("Invalid device letter", 1);
+			}
 			break;
 		case 2:
 		case 3:
