@@ -1,3 +1,26 @@
+Version 5.2.0 (2023/12/29)
+==========================
+
+ New features:
+ -------------
+  * possibility of renaming the host device "letter" from previously hardcoded
+    H: to any letter but C: (cassette), E:, K: and S:
+    So if you have e.g. a program with hardcoded "D:" (as for diskette) you
+    can now use it on a host device as well by renaming the host device to D:
+    either via the Emulation configuration -> Host device settings menu
+    or using command line option
+
+    -Hdevicename <X>
+
+  * little thing but useful (for me at least): tooltip in the settings
+    menu that reminds users there are virtual host devices with
+    automatic ATASCII<->ASCII conversions (mainly end-of-line character).
+
+    Extremely useful for all text files including ATARI BASIC source code
+    that can be stored using LIST "H6:PROGRAM.LST" and read back using
+    ENTER "H6:PROGRAM.LST" (H6 = H1 with ASCII conversion, etc.).
+
+
 Version 5.1.0 (2023/12/28) - released at SILK
 ==========================
 
