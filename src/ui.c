@@ -1687,12 +1687,12 @@ static void HDeviceStatus(void)
 {
 	static char open_info[] = " 0 currently open files";
 	static UI_tMenuItem menu_array[] = {
-		UI_MENU_ACTION(0, "Device enabled:"),
+		UI_MENU_ACTION(0, "Devices enabled:"),
 		UI_MENU_ACTION(1, "SIO letter:"),
-		UI_MENU_FILESEL_PREFIX(2, "Device 1 path: ", Devices_atari_h_dir[0]),
-		UI_MENU_FILESEL_PREFIX(3, "Device 2 path: ", Devices_atari_h_dir[1]),
-		UI_MENU_FILESEL_PREFIX(4, "Device 3 path: ", Devices_atari_h_dir[2]),
-		UI_MENU_FILESEL_PREFIX(5, "Device 4 path: ", Devices_atari_h_dir[3]),
+		UI_MENU_FILESEL_PREFIX_TIP(2, "Device 1 path: ", Devices_atari_h_dir[0], "Also device 6 with ASCII conversion"),
+		UI_MENU_FILESEL_PREFIX_TIP(3, "Device 2 path: ", Devices_atari_h_dir[1], "Also device 7 with ASCII conversion"),
+		UI_MENU_FILESEL_PREFIX_TIP(4, "Device 3 path: ", Devices_atari_h_dir[2], "Also device 8 with ASCII conversion"),
+		UI_MENU_FILESEL_PREFIX_TIP(5, "Device 4 path: ", Devices_atari_h_dir[3], "Also device 9 with ASCII conversion"),
 		UI_MENU_LABEL("Atari executable path:"),
 		UI_MENU_ACTION_PREFIX(6, " ", Devices_h_exe_path),
 		UI_MENU_LABEL("File status:"),
@@ -1719,7 +1719,7 @@ static void HDeviceStatus(void)
 		strcpy(hdev_option + 1, ":");
 		hdev_option[0] = Devices_h_device_name;
 		FindMenuItem(menu_array, 1)->suffix = hdev_option;
-		option = UI_driver->fSelect("Host device status", 0, option, menu_array, &seltype);
+		option = UI_driver->fSelect("Host device settings", 0, option, menu_array, &seltype);
 		switch (option) {
 		case 0:
 			if (!Devices_enable_h_patch) {
