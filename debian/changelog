@@ -1,3 +1,14 @@
+atari800 (5.2.0) unstable; urgency=low
+
+  * New upstream version 5.2.0
+  * Packages released via GitHub, Cliff Hatch, Dec 2023:
+  * https://github.com/atari800/atari800/releases
+  * atari800_5.2.0_amd64.deb
+  * atari800_5.2.0_armhf.deb
+  * atari800_5.2.0_arm64.deb
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 30 Dec 2023 17:03:52 +0000
+
 atari800 (5.0.0) unstable; urgency=medium
 
   * New upstream version 5.0.0
