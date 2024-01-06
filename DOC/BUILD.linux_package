@@ -9,29 +9,27 @@ Ensure that you have the necessary tools installed:
     sudo apt-get install fakeroot
     sudo apt-get install devscripts
 
+INSTALL DEPENDENCIES
+====================
+Check that SDL 1.2 and it's development files are present.  They are not
+installed as standard in all Linux distributions.
+
+    sudo apt-get install libsdl1.2debian
+    sudo apt-get install libsdl1.2-dev
+
 OBTAIN SOURCE CODE
 ==================
 Download the latest release of the source code from the Github Releases Area
 (https://github.com/atari800/atari800/releases).  Look for a file with a name
-like 'atari800-4.2.0-src.tgz', where 4.2.0 denotes the version.
+like 'atari800-5.2.0-src.tgz', where 5.2.0 denotes the version.
 
 Unzip the source code.  The contents will go into a directory called
-'atari800-4.2.0' or similar, which will be referred to in these notes as the
+'atari800-5.2.0' or similar, which will be referred to in these notes as the
 'atari800' directory.
 
 Do not obtain the source code by cloning the current atari800 repository
 because this may have been modified since the last release, and may contain
 partially developed and untested code.
-
-COMPILE WITHOUT ERROR
-=====================
-Unzip the code and compile it on the target machine.  Follow the instructions
-in the following file:
-
-    DOC/BUILD.linux
-
-Confirm that the compilation completes without error.  Warnings can usually be
-ignored.
 
 UPDATE DEBIAN CHANGELOG
 =======================
@@ -47,27 +45,32 @@ Select an editor from the presented menu.  Debchange guesses a new version
 number and other details and enters some new lines into the log for you.  The
 top of the file should look something like this:
 
-    atari800 (4.2.0-1ubuntu1) UNRELEASED; urgency=medium
+    atari800 (5.0.0ubuntu1) UNRELEASED; urgency=medium
 
       *
 
-     -- Cliff <cliff@Inspiron>  Sat, 04 Jul 2020 10:06:18 +0100
+     -- Cliff <cliff@Inspiron>  Sat, 30 Dec 2023 17:03:52 +0000
 
 Edit these lines as appropriate.  For example:
 
-    atari800 (4.2.0-1) unstable; urgency=low
+    atari800 (5.2.0) unstable; urgency=low
 
-      * New upstream version 4.2.0
+      * New upstream version 5.2.0
+      * Packages released via GitHub, Cliff Hatch, Dec 2023:
+      * https://github.com/atari800/atari800/releases
+      * atari800_5.2.0_amd64.deb
+      * atari800_5.2.0_armhf.deb
+      * atari800_5.2.0_arm64.deb
 
-    -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 04 Jul 2020 10:06:18 +0100
+    -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 30 Dec 2023 17:03:52 +0000
 
-The version number '4.2.0-1' will be used as part of the name of the package
+The version number '5.2.0' will be used as part of the name of the package
 you are going to build.
 
 Label the release 'unstable'.  This does not mean it is actually unstable, just
 that no tests have been performed at this stage to prove otherwise.
 
-You may add additional comments if you wish, on lines beginning with two spaces
+You may add as many comments as you wish on lines beginning with two spaces
 and a '*'.
 
 Set urgency to 'low', or 'medium' for major updates.
@@ -92,34 +95,45 @@ BUILD THE PACKAGE
 
     dpkg-buildpackage -B -uc
 
-Even though you started with a version of the source code that compiles without
-error, it is possible that warnings and errors may be reported at this stage.
-Warnings can usually be ignored, but you will have to investigate and correct
-any errors.
+This configures and compiles atari800 and builds the package.
 
-The above command creates three files and places them in the parent of the
-atari800 directory.  They will have names like these:
+Look out for warning and error messages. Warnings can usually be ignored,
+but you will have to investigate and correct any errors.
 
-    atari800_4.2.0-1_amd64.buildinfo - Checksums and a list of dependencies
-                                       in the .deb file.
-    atari800_4.2.0-1_amd64.changes   - Changelog update and checksums for
-                                       the .deb and .buildinfo files.
-    atari800_4.2.0-1_amd64.deb       - The .deb package file for release.
+If you receive messages about missing dependencies, install them and run
+the command again.  For example if libsdl1.2debian is missing, install it with
+the command:
+
+    sudo apt-get install libsdl1.2debian
+
+The dpkg-buildpackage command creates three files and places them in the
+parent of the atari800 directory.  They will have names like these:
+
+    atari800_5.2.0_amd64.buildinfo - Checksums and a list of dependencies
+                                     in the .deb file.
+    atari800_5.2.0_amd64.changes   - Changelog update and checksums for
+                                     the .deb and .buildinfo files.
+    atari800_5.2.0_amd64.deb       - The .deb package file for release.
 
 'amd64' indicates the architecture of the machine that the build was done on.
 
+If you wish to create packages for several different architectures, you should
+copy the atari800 directory to machines with the appropriate architectures and repeat
+the build process there.
+
 INSTALL
 =======
-<Double Left Click> on the .deb file to install it.
+Some Linux distributions allow you to install packages via the GUI, e.g.:
+
+    <Double Left Click> on the .deb file to install.
 
 or
 
-<Right Click> and select the appropriate menu item, <Package Install> or
-<Open with GDebi Package Installer> etc..
+    <Right Click> and select the appropriate menu item, <Package Install> or similar.
 
-or use the command:
+If these methods don't work on your distribution, use the command:
 
-    sudo dpkg -i atari800_4.1.0-1_amd64.deb
+    sudo dpkg -i atari800_5.2.0_amd64.deb
 
 TEST
 ====
@@ -135,17 +149,17 @@ The command should also work with options, for example:
 
 UNINSTALL
 =========
-You can unistall the package if desired with:
+You can unistall the package with the Software Manager, or the command:
 
     sudo dpkg --remove atari800
 
 This removes the command and documentation, but leaves the configuration file
-.atari.cfg in place.
+.atari800.cfg in place.
 
-ISSUE A PULL REQUEST TO UPDATE THE DEBIAN CHANGELOG
-===================================================
+ISSUE A PULL REQUEST TO UPDATE THE DEBIAN CHANGELOG IF THIS HAS NOT ALREADY BEEN DONE
+=====================================================================================
 Enter the new lines you created in atari800/debian/changelog into the master
-of this file on Git, to keep the record intact.
+of this file on Git.  This is just to keep the record intact.
 
 DISTRIBUTION VIA THE GITHUB RELEASES AREA
 =========================================
