@@ -106,7 +106,7 @@ the command:
 
     sudo apt-get install libsdl1.2debian
 
-The above command dpkg-buildpackage command creates three files and places them in the
+The dpkg-buildpackage command creates three files and places them in the
 parent of the atari800 directory.  They will have names like these:
 
     atari800_5.2.0_amd64.buildinfo - Checksums and a list of dependencies
