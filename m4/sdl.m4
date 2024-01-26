@@ -13,7 +13,7 @@ dnl AM_PATH_SDL([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
 dnl Test for SDL, and define SDL_CFLAGS and SDL_LIBS
 dnl
 AC_DEFUN([AM_PATH_SDL],
-[dnl 
+[dnl
 dnl Get the cflags and libraries from the sdl-config script
 dnl
 AC_ARG_WITH(sdl-prefix,[  --with-sdl-prefix=PFX   Prefix where SDL is installed (optional)],
@@ -79,7 +79,7 @@ char*
 my_strdup (char *str)
 {
   char *new_str;
-  
+
   if (str)
     {
       new_str = (char *)malloc ((strlen (str) + 1) * sizeof(char));
@@ -87,7 +87,7 @@ my_strdup (char *str)
     }
   else
     new_str = NULL;
-  
+
   return new_str;
 }
 
@@ -134,7 +134,7 @@ int main (int argc, char *argv[])
   fi
   if test "x$no_sdl" = x ; then
      AC_MSG_RESULT(yes)
-     ifelse([$2], , :, [$2])     
+     ifelse([$2], , :, [$2])
   else
      AC_MSG_RESULT(no)
      if test "$SDL_CONFIG" = "no" ; then
@@ -184,4 +184,83 @@ int main(int argc, char *argv[])
   AC_SUBST(SDL_CFLAGS)
   AC_SUBST(SDL_LIBS)
   rm -f conf.sdltest
+])
+
+
+
+dnl AM_PATH_SDL2([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
+dnl Test for SDL2, and define SDL2_CFLAGS and SDL2_LIBS
+dnl
+AC_DEFUN([AM_PATH_SDL2],
+[dnl
+dnl Get the cflags and libraries from the sdl2-config script
+dnl
+AC_ARG_WITH(sdl2-prefix,[  --with-sdl2-prefix=PFX   Prefix where SDL2 is installed (optional)],
+            sdl2_prefix="$withval", sdl2_prefix="")
+AC_ARG_WITH(sdl2-exec-prefix,[  --with-sdl2-exec-prefix=PFX Exec prefix where SDL2 is installed (optional)],
+            sdl2_exec_prefix="$withval", sdl2_exec_prefix="")
+
+  if test x$sdl2_exec_prefix != x ; then
+    sdl2_config_args="$sdl2_config_args --exec-prefix=$sdl2_exec_prefix"
+    if test x${SDL2_CONFIG+set} != xset ; then
+      SDL2_CONFIG=$sdl2_exec_prefix/bin/sdl2-config
+    fi
+  fi
+  if test x$sdl2_prefix != x ; then
+    sdl2_config_args="$sdl2_config_args --prefix=$sdl2_prefix"
+    if test x${SDL2_CONFIG+set} != xset ; then
+      SDL2_CONFIG=$sdl2_prefix/bin/sdl2-config
+    fi
+  fi
+
+  as_save_PATH="$PATH"
+  if test "x$prefix" != xNONE; then
+    PATH="$prefix/bin:$prefix/usr/bin:$PATH"
+  fi
+  AC_PATH_PROG(SDL2_CONFIG, sdl2-config, no, [$PATH])
+  PATH="$as_save_PATH"
+  min_sdl2_version=ifelse([$1], ,0.11.0,$1)
+  AC_MSG_CHECKING(for SDL2 - version >= $min_sdl2_version)
+  no_sdl2=""
+  if test "$SDL2_CONFIG" = "no" ; then
+    no_sdl2=yes
+  else
+    SDL2_CFLAGS=`$SDL2_CONFIG $sdl2_config_args --cflags`
+    SDL2_LIBS=`$SDL2_CONFIG $sdl2_config_args --libs`
+
+    sdl2_major_version=`$SDL2_CONFIG $sdl2_config_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
+    sdl2_minor_version=`$SDL2_CONFIG $sdl2_config_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
+    sdl2_micro_version=`$SDL2_CONFIG $sdl2_config_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
+  fi
+
+  if test "x$no_sdl" = x ; then
+     AC_MSG_RESULT(yes)
+     ifelse([$2], , :, [$2])
+  else
+     AC_MSG_RESULT(no)
+     if test "$SDL2_CONFIG" = "no" ; then
+       echo "*** The sdl2-config script installed by SDL2 could not be found"
+       echo "*** If SDL2 was installed in PREFIX, make sure PREFIX/bin is in"
+       echo "*** your path, or set the SDL2_CONFIG environment variable to the"
+       echo "*** full path to sdl2-config."
+     else
+       if test -f conf.sdl2test ; then
+        :
+       else
+          echo "*** Could not run SDL2 test program, checking why..."
+          CFLAGS="$CFLAGS $SDL2_CFLAGS"
+          CXXFLAGS="$CXXFLAGS $SDL2_CFLAGS"
+          LIBS="$LIBS $SDL2_LIBS"
+          LIBS="$ac_save_LIBS"
+       fi
+     fi
+     SDL_CFLAGS=""
+     SDL_LIBS=""
+     ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(SDL2_CFLAGS)
+  AC_SUBST(SDL2_LIBS)
 ])

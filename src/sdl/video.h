@@ -18,6 +18,11 @@ extern int SDL_VIDEO_height;
 /* Indicates current display mode */
 extern VIDEOMODE_MODE_t SDL_VIDEO_current_display_mode;
 
+#if SDL2
+extern SDL_Window* SDL_VIDEO_wnd;
+extern SDL_Renderer* SDL_VIDEO_renderer;
+extern SDL_Texture* SDL_VIDEO_texture;
+#endif
 extern SDL_Surface *SDL_VIDEO_screen;
 
 #if HAVE_OPENGL
@@ -44,6 +49,13 @@ extern int SDL_VIDEO_vsync_available;
 /* Use SDL_VIDEO_SetScanlinesPercentage() to set this value. */
 extern int SDL_VIDEO_scanlines_percentage;
 void SDL_VIDEO_SetScanlinesPercentage(int value);
+
+extern int SDL_VIDEO_crt_barrel_distortion;
+void SDL_VIDEO_CrtBarrelPercentage(int value);
+extern int SDL_VIDEO_crt_beam_shape;
+void SDL_VIDEO_CrtBeamShape(int value);
+extern int SDL_VIDEO_crt_phosphor_glow;
+void SDL_VIDEO_CrtPhosphorGlow(int value);
 
 /* Get/set scanlines interplation, both in sowtfare and in OpenGL mode. */
 /* Use SDL_VIDEO_SetInterpolateScanlines() to set this value. */

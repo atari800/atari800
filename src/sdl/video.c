@@ -58,9 +58,17 @@ int SDL_VIDEO_scanlines_percentage = 5;
 int SDL_VIDEO_interpolate_scanlines = TRUE;
 int SDL_VIDEO_width;
 int SDL_VIDEO_height;
+int SDL_VIDEO_crt_barrel_distortion = 0;
+int SDL_VIDEO_crt_beam_shape = 10;
+int SDL_VIDEO_crt_phosphor_glow = 4;
 
 VIDEOMODE_MODE_t SDL_VIDEO_current_display_mode = VIDEOMODE_MODE_NORMAL;
 
+#if SDL2
+SDL_Window* SDL_VIDEO_wnd = NULL;
+SDL_Renderer* SDL_VIDEO_renderer = NULL;
+SDL_Texture* SDL_VIDEO_texture = NULL;
+#endif
 SDL_Surface *SDL_VIDEO_screen = NULL;
 
 /* Desktop screen resolution is stored here on initialisation. */
@@ -69,7 +77,12 @@ static VIDEOMODE_resolution_t desktop_resolution;
 #if VIDEO_ACCEL_ON_BY_DEFAULT
 int SDL_VIDEO_opengl = TRUE; /* Default for targets that require acceleration to run properly*/
 #elif HAVE_OPENGL
-int SDL_VIDEO_opengl = FALSE;
+int SDL_VIDEO_opengl =
+#if SDL2
+	TRUE;
+#else
+	FALSE;
+#endif
 #endif
 
 #if HAVE_OPENGL
@@ -199,8 +212,9 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 
 #if HAVE_OPENGL
 	if (SDL_VIDEO_opengl) {
-		if (!currently_opengl)
+		if (!currently_opengl) {
 			SDL_VIDEO_screen = NULL;
+        }
 		/* Switching to OpenGL can fail when the host machine doesn't
 		   support it. If so, revert to software mode. */
 		if (!SDL_VIDEO_GL_SetVideoMode(res, windowed, mode, rotate90)) {
@@ -226,6 +240,7 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 #endif
 	PLATFORM_DisplayScreen();
 
+#if !SDL2
 	/* For unknown reason (maybe window manager-related), when SDL_SetVideoMode
 	   is called twice without calling SDL_PollEvent in between, SDL may throw
 	   an SDL_VIDEORESIZE event. (Happens on KDE4 in windowed mode during
@@ -243,10 +258,25 @@ void PLATFORM_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDE
 		if (!found)
 			break;
 	}
+#endif
 }
 
 VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
 {
+#if SDL2
+	VIDEOMODE_resolution_t *resolutions;
+	resolutions = (VIDEOMODE_resolution_t *)Util_malloc(sizeof(VIDEOMODE_resolution_t));
+	resolutions[0].width = 1024;
+	resolutions[0].height = 768;
+	*size = 1;
+
+	SDL_DisplayMode mode;
+	if (SDL_GetCurrentDisplayMode(0, &mode) == 0) {
+		resolutions[0].width = mode.w;
+		resolutions[0].height = mode.h;
+	}
+
+#else
 	SDL_Rect **modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
 	VIDEOMODE_resolution_t *resolutions;
 	unsigned int num_modes;
@@ -269,7 +299,7 @@ VIDEOMODE_resolution_t *PLATFORM_AvailableResolutions(unsigned int *size)
 		resolutions[i].height = modes[i]->h;
 	}
 	*size = num_modes;
-
+#endif
 	return resolutions;
 }
 
@@ -320,6 +350,32 @@ int SDL_VIDEO_ReadConfig(char *option, char *parameters)
 	else if (strcmp(option, "VIDEO_VSYNC") == 0)
 		return (SDL_VIDEO_vsync = Util_sscanbool(parameters)) != -1;
 #if HAVE_OPENGL
+#if SDL2
+	else if (strcmp(option, "CRT_BARREL_DISTORTION") == 0) {
+		int value = Util_sscandec(parameters);
+		if (value < 0 || value > 100)
+			return FALSE;
+		else {
+			SDL_VIDEO_crt_barrel_distortion = value;
+		}
+	}
+	else if (strcmp(option, "CRT_BEAM_SHAPE") == 0) {
+		int value = Util_sscandec(parameters);
+		if (value < 0 || value > 20)
+			return FALSE;
+		else {
+			SDL_VIDEO_crt_beam_shape = value;
+		}
+	}
+	else if (strcmp(option, "CRT_PHOSPHOR_GLOW") == 0) {
+		int value = Util_sscandec(parameters);
+		if (value < 0 || value > 20)
+			return FALSE;
+		else {
+			SDL_VIDEO_crt_phosphor_glow = value;
+		}
+	}
+#endif
 	else if (strcmp(option, "VIDEO_ACCEL") == 0)
 		return (currently_opengl = SDL_VIDEO_opengl = Util_sscanbool(parameters)) != -1;
 	else if (SDL_VIDEO_GL_ReadConfig(option, parameters)) {
@@ -340,6 +396,11 @@ void SDL_VIDEO_WriteConfig(FILE *fp)
 #if HAVE_OPENGL
 	fprintf(fp, "VIDEO_ACCEL=%d\n", SDL_VIDEO_opengl);
 	SDL_VIDEO_GL_WriteConfig(fp);
+#if SDL2
+	fprintf(fp, "CRT_BARREL_DISTORTION=%d\n", SDL_VIDEO_crt_barrel_distortion);
+	fprintf(fp, "CRT_BEAM_SHAPE=%d\n", SDL_VIDEO_crt_beam_shape);
+	fprintf(fp, "CRT_PHOSPHOR_GLOW=%d\n", SDL_VIDEO_crt_phosphor_glow);
+#endif
 #endif
 	SDL_VIDEO_SW_WriteConfig(fp);
 }
@@ -352,6 +413,20 @@ void SDL_VIDEO_InitSDL(void)
 			exit(-1);
 	}
 	/* SDL_WM_SetIcon("/usr/local/atari800/atarixe.ICO"), NULL); */
+#if SDL2
+
+	SDL_DisplayMode mode;
+	if (SDL_GetDesktopDisplayMode(0, &mode) == 0) {
+		desktop_resolution.width = mode.w;
+		desktop_resolution.height = mode.h;
+	}
+	else {
+		Log_print("SDL_INIT_VIDEO reading desktop resolution failed: %s", SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+
+#else
 	SDL_WM_SetCaption(Atari800_TITLE, "Atari800");
 
 	/* Get the desktop resolution */
@@ -368,6 +443,7 @@ void SDL_VIDEO_InitSDL(void)
 
 		SDL_VIDEO_native_bpp = info->vfmt->BitsPerPixel;
 	}
+#endif /* SDL2 */
 
 #if HAVE_OPENGL
 	SDL_VIDEO_GL_InitSDL();
@@ -375,7 +451,9 @@ void SDL_VIDEO_InitSDL(void)
 		currently_opengl = SDL_VIDEO_opengl = FALSE;
 #endif
 
+#if !SDL2
 	SDL_EnableUNICODE(1);
+#endif /* !SDL2 */
 }
 
 void SDL_VIDEO_QuitSDL(void)
@@ -958,6 +1036,39 @@ void SDL_VIDEO_BlitBIT3_32(Uint32 *dest, int first_column, int last_column, int 
 	}
 }
 #endif /* BIT3 */
+
+void SDL_VIDEO_CrtBarrelPercentage(int value) {
+	if (value < 0)
+		value = 0;
+	else if (value > 100)
+		value = 100;
+	SDL_VIDEO_crt_barrel_distortion = value;
+#if HAVE_OPENGL && SDL2
+	SDL_VIDEO_GL_DisplayScreen();
+#endif /* HAVE_OPENGL && SDL2 */
+}
+
+void SDL_VIDEO_CrtBeamShape(int value) {
+	if (value < 0)
+		value = 0;
+	else if (value > 20)
+		value = 20;
+	SDL_VIDEO_crt_beam_shape = value;
+#if HAVE_OPENGL && SDL2
+	SDL_VIDEO_GL_DisplayScreen();
+#endif /* HAVE_OPENGL && SDL2 */
+}
+
+void SDL_VIDEO_CrtPhosphorGlow(int value) {
+	if (value < 0)
+		value = 0;
+	else if (value > 20)
+		value = 20;
+	SDL_VIDEO_crt_phosphor_glow = value;
+#if HAVE_OPENGL && SDL2
+	SDL_VIDEO_GL_DisplayScreen();
+#endif /* HAVE_OPENGL && SDL2 */
+}
 
 void SDL_VIDEO_SetScanlinesPercentage(int value)
 {

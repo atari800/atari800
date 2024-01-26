@@ -79,6 +79,9 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 
 	if (!help_only) {
 		i = SDL_INIT_JOYSTICK
+#if SDL2
+			| SDL_INIT_GAMECONTROLLER
+#endif
 #if HAVE_WINDOWS_H
 /* Timers are used to avoid one Windows 7 glitch, see src/sdl/input.c */
 		    | SDL_INIT_TIMER
