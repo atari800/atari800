@@ -90,4 +90,12 @@ int INPUT_Playingback(void);
 void INPUT_RecordInt(int i);
 int INPUT_PlaybackInt(void);
 
+#ifdef DREAMCAST
+extern int Atari_POT(int);
+#elif SDL2
+extern int Atari_POT(int);
+#else
+#define Atari_POT(x) 228
+#endif
+
 #endif /* INPUT_H_ */

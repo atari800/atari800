@@ -42,6 +42,7 @@ extern unsigned int VIDEOMODE_dest_offset_left;
 extern unsigned int VIDEOMODE_dest_offset_top;
 extern unsigned int VIDEOMODE_dest_width;
 extern unsigned int VIDEOMODE_dest_height;
+extern double VIDEOMODE_dest_scale_factor;
 
 /* Updates the video mode according to current settings. */
 int VIDEOMODE_Update(void);
@@ -150,6 +151,7 @@ enum {
 extern int VIDEOMODE_keep_aspect;
 int VIDEOMODE_SetKeepAspect(int value);
 int VIDEOMODE_ToggleKeepAspect(void);
+int VIDEOMODE_GetKeepAspect(void);
 
 #if SUPPORTS_ROTATE_VIDEOMODE
 /* Get/set screen rotation. */
@@ -213,6 +215,9 @@ typedef enum {
 #endif
 	VIDEOMODE_MODE_SIZE
 } VIDEOMODE_MODE_t;
+
+double VIDEOMODE_GetPixelAspectRatio(VIDEOMODE_MODE_t display_mode);
+
 #if defined(XEP80_EMULATION) || defined(PBI_PROTO80) || defined(AF80) || defined(BIT3)
 /* Indicates that 80 column display should be active when a 80 column card is available.
    Setting to TRUE does not switch to 80 column display when no 80 column card is present. */

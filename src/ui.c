@@ -2427,6 +2427,22 @@ static void ScanlinesSliderLabel(char *label, int value, void *user_data)
 	sprintf(label, "%i", value);
 	SDL_VIDEO_SetScanlinesPercentage(value);
 }
+
+static void CrtBarrelSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtBarrelPercentage(value);
+}
+
+static void CrtBeamSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtBeamShape(value);
+}
+
+static void CrtGlowSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtPhosphorGlow(value);
+}
+
 #endif /* GUI_SDL */
 
 static void VideoModeSettings(void)
@@ -2500,14 +2516,19 @@ static void VideoModeSettings(void)
 	};
 #endif /* HAVE_OPENGL */
 	static char scanlines_string[4];
+	static char barrel_string[4];
+	static char beam_string[4];
+	static char glow_string[4];
 #endif /* GUI_SDL */
 
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_SUBMENU_SUFFIX(0, "Host display aspect ratio:", ratio_string),
 #if GUI_SDL && HAVE_OPENGL
 		UI_MENU_CHECK(1, "Hardware acceleration:"),
+#if !SDL2
 		UI_MENU_CHECK(2, " Bilinear filtering:"),
 		UI_MENU_CHECK(3, " Use pixel buffer objects:"),
+#endif
 #endif /* GUI_SDL && HAVE_OPENGL */
 		UI_MENU_CHECK(4, "Fullscreen:"),
 		UI_MENU_SUBMENU_SUFFIX(5, " Fullscreen resolution:", res_string),
@@ -2531,6 +2552,11 @@ static void VideoModeSettings(void)
 #if GUI_SDL
 		UI_MENU_SUBMENU_SUFFIX(17, "Scanlines visibility:", scanlines_string),
 		UI_MENU_CHECK(18, " Interpolate scanlines:"),
+#if HAVE_OPENGL && SDL2
+		UI_MENU_SUBMENU_SUFFIX(19, "CRT barrel distortion:", barrel_string),
+		UI_MENU_SUBMENU_SUFFIX(20, "CRT beam shape:", beam_string),
+		UI_MENU_SUBMENU_SUFFIX(21, "CRT phosphor glow:", glow_string),
+#endif
 #endif /* GUI_SDL */
 		UI_MENU_END
 	};
@@ -2564,6 +2590,9 @@ static void VideoModeSettings(void)
 		}
 		snprintf(scanlines_string, sizeof(scanlines_string), "%d", SDL_VIDEO_scanlines_percentage);
 		SetItemChecked(menu_array, 18, SDL_VIDEO_interpolate_scanlines);
+		snprintf(barrel_string, sizeof(barrel_string), "%d", SDL_VIDEO_crt_barrel_distortion);
+		snprintf(beam_string, sizeof(beam_string), "%d", SDL_VIDEO_crt_beam_shape);
+		snprintf(glow_string, sizeof(glow_string), "%d", SDL_VIDEO_crt_phosphor_glow);
 #endif /* GUI_SDL */
 		SetItemChecked(menu_array, 4, !VIDEOMODE_windowed);
 		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
@@ -2797,6 +2826,35 @@ static void VideoModeSettings(void)
 		case 18:
 			SDL_VIDEO_ToggleInterpolateScanlines();
 			break;
+#if HAVE_OPENGL && SDL2
+		case 19:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT barrel",
+				                                     SDL_VIDEO_crt_barrel_distortion,
+				                                     100, &CrtBarrelSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtBarrelPercentage(value);
+			}
+			break;
+		case 20:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT beam shape",
+				                                     SDL_VIDEO_crt_beam_shape,
+				                                     20, &CrtBeamSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtBeamShape(value);
+			}
+			break;
+		case 21:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT glow",
+				                                     SDL_VIDEO_crt_phosphor_glow,
+				                                     20, &CrtGlowSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtPhosphorGlow(value);
+			}
+			break;
+#endif
 #endif /* GUI_SDL */
 		default:
 			return;
@@ -3417,7 +3475,72 @@ static void RealJoystickConfiguration(void)
 	int option = 0;
 	int i;
 	SDL_INPUT_RealJSConfig_t *js_config;
+#if SDL2
+	static UI_tMenuItem real_js_menu_array[] = {
+		UI_MENU_LABEL("Joystick 1"),
+		UI_MENU_CHECK(0, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(1, " Analog axes:"),
+		UI_MENU_ACTION(2, " Diagonals zone:"),
+		UI_MENU_LABEL("Joystick 2"),
+		UI_MENU_CHECK(3, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(4, " Analog axes:"),
+		UI_MENU_ACTION(5, " Diagonals zone:"),
+		UI_MENU_LABEL("Joystick 3"),
+		UI_MENU_CHECK(6, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(7, " Analog axes:"),
+		UI_MENU_ACTION(8, " Diagonals zone:"),
+		UI_MENU_LABEL("Joystick 4"),
+		UI_MENU_CHECK(9, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(10, " Analog axes:"),
+		UI_MENU_ACTION(11, " Diagonals zone:"),
+		UI_MENU_END
+	};
 
+	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+
+	for (;;) {
+		/*Set the CHECK items*/
+		for (i = 0; i < 4; i++) {
+			int opt = i * 3;
+			SDL_INPUT_RealJSConfig_t* cfg = SDL_INPUT_GetRealJSConfig(i);
+			SetItemChecked(real_js_menu_array, opt++, cfg->use_hat);
+		
+			FindMenuItem(real_js_menu_array, opt++)->suffix = cfg->axes == 0 ? "1&2" : "3&4";
+
+			FindMenuItem(real_js_menu_array, opt)->suffix =
+				cfg->diagonal_zones == JoystickNarrowDiagonalsZone ?
+					"Narrow" : (cfg->diagonal_zones == JoystickWideDiagonalsZone ?  "Wide" : "None");
+		}
+
+		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+
+		if (option < 0) break;
+
+		switch (option) {
+			case 0:
+			case 3:
+			case 6:
+			case 9:
+				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 1:
+			case 4:
+			case 7:
+			case 10:
+				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+				js_config->axes = js_config->axes ? 0 : 2;
+				break;
+			case 2:
+			case 5:
+			case 8:
+			case 11:
+				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+				js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
+				break;
+		}
+	}
+#else
 	static UI_tMenuItem real_js_menu_array[] = {
 		UI_MENU_LABEL("Joystick 1"),
 		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
@@ -3461,6 +3584,7 @@ static void RealJoystickConfiguration(void)
 				break;
 		}
 	}
+#endif /* SDL2 */
 }
 #endif
 

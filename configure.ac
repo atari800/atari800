@@ -295,6 +295,39 @@ dnl Don't make this a windowed app, make it a console app.
     fi
 ])
 
+a8_use_sdl2=no
+dnl Check if SDL2 library exists. If it's found, set a8_use_sdl to yes and AC_DEFINE the SDL2 symbol.
+dnl If called multiple times, it will check for the library only once.
+dnl Usage: TRY_USE_SDL2()
+AC_DEFUN([TRY_USE_SDL2],
+[
+    if [[ "$a8_use_sdl2" = no ]]; then
+        dnl Check for SDL2
+        SDL2_VERSION=2.26.0
+        AM_PATH_SDL2($SDL2_VERSION,
+        [
+            AC_DEFINE(SDL2,1,[Target: SDL2 library.])
+            AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
+            LIBS="$LIBS $SDL2_LIBS"
+            CFLAGS="$CFLAGS -std=c99"
+            CPPFLAGS="$CPPFLAGS $SDL2_CFLAGS"
+            if [[ "$a8_host" = "win" ]]; then
+dnl Defer redefinition of main - do it later, in src/Makefile.am. Otherwise
+dnl the autoconf tests would not work.
+                CPPFLAGS=${CPPFLAGS/-Dmain=SDL_main/}
+dnl Avoid making stdout.txt on Windows sdl target by discarding libSDLmain and
+dnl compiling our own src/sdl/SDL_win32_main.c (copied from libSDL dources),
+dnl with the NO_STDIO_REDIRECT macro defined.
+                LIBS=${LIBS/-lSDLmain/}
+                CPPFLAGS="$CPPFLAGS -DNO_STDIO_REDIRECT"
+dnl Don't make this a windowed app, make it a console app.
+                LIBS=${LIBS/-mwindows/}
+            fi
+            a8_use_sdl2=yes
+        ])
+    fi
+])
+
 dnl Check if host os Java NestedVM...
 if [[ "$a8_target" != "android" ]]; then
     dnl Android target cannot perform link tests
@@ -631,7 +664,7 @@ AC_ARG_WITH([video],
     [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | javanvm)
+            no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | sdl2 | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-video: "$withval"])
@@ -662,6 +695,14 @@ if [[ "$a8_target" = default ]]; then
                 with_video=sdl
             elif [[ "$with_video" = sdl ]]; then
                 AC_MSG_FAILURE([--with-video=sdl was given, but SDL library not found!])
+            fi
+        fi
+        if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = sdl2 ]]; then
+            TRY_USE_SDL2()
+            if [[ "$a8_use_sdl2" = yes ]]; then
+                with_video=sdl2
+            elif [[ "$with_video" = sdl2 ]]; then
+                AC_MSG_FAILURE([--with-video=sdl2 was given, but SDL2 library not found!])
             fi
         fi
         if [[ "$with_video" = check -o "$with_video" = yes -o "$with_video" = curses ]]; then
@@ -704,6 +745,21 @@ if [[ "$a8_target" = default ]]; then
             AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
             AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
             ;;
+        sdl2)
+            AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
+            AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
+            AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
+            AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
+            AC_DEFINE(SUPPORTS_CHANGE_VIDEOMODE,1,[Can change video modes on the fly.])
+            AC_DEFINE(SUPPORTS_ROTATE_VIDEOMODE,1,[Can display the screen rotated sideways.])
+            AC_DEFINE(PLATFORM_MAP_PALETTE,1,[Platform-specific mapping of RGB palette to display surface.])
+            WANT_XEP80_EMULATION=yes
+            WANT_NTSC_FILTER=yes
+            WANT_PAL_BLENDING=yes
+            AC_DEFINE(PBI_PROTO80,1,[A prototype 80 column card for the 1090 expansion box.])
+            AC_DEFINE(AF80,1,[The Austin Franklin 80 column card.])
+            AC_DEFINE(BIT3,1,[The Bit3 Full View 80 column card.])
+            ;;
         sdl)
             AC_DEFINE(GUI_SDL,1,[Use SDL for graphics and input.])
             AC_DEFINE(SUPPORTS_PLATFORM_CONFIGINIT,1,[Platform-specific default values.])
@@ -740,6 +796,7 @@ if [[ "$a8_target" = default ]]; then
 fi
 AM_CONDITIONAL(WITH_VIDEO_JAVANVM, test "$with_video" = javanvm)
 AM_CONDITIONAL(WITH_VIDEO_SDL, test "$with_video" = sdl)
+AM_CONDITIONAL(WITH_VIDEO_SDL2, test "$with_video" = sdl2)
 AM_CONDITIONAL(WITH_VIDEO_DOSVGA, test "$with_video" = dosvga)
 AM_CONDITIONAL(WITH_VIDEO_CURSES, test "$with_video" = curses -o "$with_video" = ncurses -o "$with_video" = pdcurses)
 AM_CONDITIONAL(WITH_VIDEO_LIBATARI800, test "$a8_target" = libatari800)
@@ -920,7 +977,7 @@ AC_ARG_WITH([sound],
     [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | dossb | oss | falcon | sdl | javanvm)
+            no | yes | check | dossb | oss | falcon | sdl | sdl2 | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-sound: "$withval"])
@@ -968,6 +1025,14 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
                 AC_MSG_FAILURE([--with-sound=sdl was given, but SDL library not found!])
             fi
         fi
+        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = sdl2 ]]; then
+            TRY_USE_SDL2()
+            if [[ "$a8_use_sdl2" = yes ]]; then
+                with_sound=sdl2
+            elif [[ "$with_sound" = sdl2 ]]; then
+                AC_MSG_FAILURE([--with-sound=sdl2 was given, but SDL2 library not found!])
+            fi
+        fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = oss ]]; then
             if [[ "$SUPPORTS_SOUND_OSS" = yes ]]; then
                 with_sound=oss
@@ -981,6 +1046,10 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
     fi
     case "$with_sound" in
         sdl)
+            WANT_SOUND_CALLBACK=yes
+            ;;
+        sdl2)
+            WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
             ;;
         falcon)
@@ -1001,9 +1070,11 @@ AM_CONDITIONAL([WITH_SOUND_JAVANVM], test "$with_sound" = javanvm)
 AM_CONDITIONAL([WITH_SOUND_FALCON], test "$with_sound" = falcon)
 AM_CONDITIONAL([WITH_SOUND_OSS], test "$with_sound" = oss)
 AM_CONDITIONAL([WITH_SOUND_SDL], test "$with_sound" = sdl)
+AM_CONDITIONAL([WITH_SOUND_SDL2], test "$with_sound" = sdl2)
 AM_CONDITIONAL([WITH_SOUND_DOSSB], test "$with_sound" = dossb)
 AM_CONDITIONAL([WITH_SOUND_LIBATARI800], test "$with_sound" = libatari800)
 AM_CONDITIONAL([A8_USE_SDL], test "$a8_use_sdl" = yes)
+AM_CONDITIONAL([A8_USE_SDL2], test "$a8_use_sdl2" = yes)
 
 dnl Set sound support options...
 
@@ -1246,7 +1317,8 @@ AC_ARG_WITH(opengl,
     [],
     [with_opengl=check])
 
-if [[ "$a8_target" != default -o "$with_video" != sdl ]]; then
+dnl TODO: check both sdl and sdl2
+if [[ "$a8_target" != default -o "$with_video" != sdl2 ]]; then
     if [[ "$with_opengl" = "yes" ]]; then
         AC_MSG_ERROR([option --with-opengl only supported with --target=default --with-video=sdl!])
     fi
@@ -1330,7 +1402,7 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
                      [Use the host serial port with the R: networking device (Linux/Unix only) (default=ON)],
                      R_SERIAL,[Define to use the host serial port with the R: device.]
                     )
-        else 
+        else
             if [[ "$a8_host" = "win" ]]; then
                 A8_NEED_LIB(ws2_32)
             fi
@@ -1447,6 +1519,9 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
 fi
 if [[ "$a8_target" = default -a "$with_video" = sdl ]]; then
     echo "Using on-screen keyboard?.............: $WANT_USE_UI_BASIC_ONSCREEN_KEYBOARD"
+    echo "Using OpenGL?.........................: $with_opengl"
+fi
+if [[ "$a8_target" = default -a "$with_video" = sdl2 ]]; then
     echo "Using OpenGL?.........................: $with_opengl"
 fi
 echo
