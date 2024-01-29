@@ -2182,8 +2182,10 @@ static void monitor_read_from_file(UWORD *addr)
 		if (xex) /* load xex file; no init nor run performed */
 		{
 			FILE *f = fopen(filename, "rb");
-			if (f == NULL)
+			if (f == NULL) {
 				perror(filename);
+				return;
+			}
 			else {
 				while (42) {
 					UWORD fromaddr;
@@ -2220,24 +2222,38 @@ static void monitor_read_from_file(UWORD *addr)
 						printf("Bad xex file\n");
 						break;
 					}
+					printf("Read dos block: %04X-%04X, %04X bytes. \n",fromaddr,toaddr, nbytes);
 				}
 				fclose(f);
 			}
+			return;
 		}
 		else { /* !xex */
-			if (get_hex2(addr, &nbytes) && *addr + nbytes <= 0x10000) {
-				FILE *f = fopen(filename, "rb");
-				if (f == NULL)
-					perror(filename);
-				else {
-					/* read as many bytes as given or available */
-					if (fread(&MEMORY_mem[*addr], 1, nbytes, f) == 0)
-						printf("Could not read bytes\n");
-					fclose(f);
+			if (get_hex(addr))
+			{
+				if (!get_hex(&nbytes))
+					nbytes=0x10000-*addr;
+
+				if (*addr + nbytes <= 0x10000) {
+
+					FILE *f = fopen(filename, "rb");
+					if (f == NULL) {
+						perror(filename);
+						return;
+					}
+					else {
+						/* read as many bytes as given or available */
+						if ((nbytes=fread(&MEMORY_mem[*addr], 1, nbytes, f)) == 0)
+							printf("Could not read bytes\n");
+						fclose(f);
+					}
+					printf("Read %d bytes at %04X-%04X\n",nbytes,*addr,*addr+nbytes-1);
+					return;
 				}
 			}
 		}
 	}
+	printf("Bad arguments\n");
 }
 
 /* Writes memory to file, from address fetched from command line.
@@ -2337,8 +2353,8 @@ static void monitor_write_to_file(void)
 			fclose(f);
 
 		/* TODO: when migrating to C99, instead of %lu and cast use %zu. */
-		printf("Wrote %lu bytes to %s file '%s'",
-				(unsigned long)wbytes, xex ? "XEX" : "RAW", filename);
+		printf("Wrote %04X bytes to %s file '%s'",
+				(unsigned int)wbytes, xex ? "XEX" : "RAW", filename);
 		if(xex) {
 			if(!have_runaddr)
 				printf(" (no run address)");
@@ -2357,13 +2373,29 @@ static void monitor_fill_mem(void)
 {
 	UWORD addr1;
 	UWORD addr2;
+	static UBYTE tab[64];
 	UWORD hexval;
 	if (get_hex3(&addr1, &addr2, &hexval)) {
+		int n = 0;
 		/* use int to avoid endless loop with addr2==0xffff */
 		int a;
-		for (a = addr1; a <= addr2; a++)
-			MEMORY_dPutByte(a, (UBYTE) hexval);
+		int c=0;
+		do {
+			tab[n++] = (UBYTE) hexval;
+			if (hexval > 0xff && n < 64)
+				tab[n++] = (UBYTE) (hexval >> 8);
+		} while (n < 64 && get_hex(&hexval));
+		for (a = addr1; a <= addr2; a++) {
+			MEMORY_dPutByte(a, tab[c++]);
+			if (c>=n) c=0;
+		}
+		printf("Filled %04X-%04X with [",addr1,addr2);
+		for (c=0; c<n; c++) printf("%s%02x",c?" ":"",tab[c]);
+		printf("]\n");
+
+		return;
 	}
+	printf("Bad arguments\n");
 }
 
 /* Changes memory contents. Start address and byte values are fetched from
@@ -2371,31 +2403,38 @@ static void monitor_fill_mem(void)
 static void monitor_change_mem(UWORD *addr)
 {
 	UWORD temp = 0;
-	get_hex(addr);
-	while (get_hex(&temp)) {
-#ifdef PAGED_ATTRIB
-		if (MEMORY_writemap[*addr >> 8] != NULL && MEMORY_writemap[*addr >> 8] != MEMORY_ROM_PutByte)
-			(*MEMORY_writemap[*addr >> 8])(*addr, (UBYTE) temp);
-#else
-		if (MEMORY_attrib[*addr] == MEMORY_HARDWARE)
-			MEMORY_HwPutByte(*addr, (UBYTE) temp);
-#endif
-		else /* RAM, ROM */
-			MEMORY_dPutByte(*addr, (UBYTE) temp);
-		(*addr)++;
-		if (temp > 0xff) {
+	UWORD taddr=0;
+	if (get_hex(addr)) {
+		taddr=*addr;
+		while (get_hex(&temp)) {
 #ifdef PAGED_ATTRIB
 			if (MEMORY_writemap[*addr >> 8] != NULL && MEMORY_writemap[*addr >> 8] != MEMORY_ROM_PutByte)
-				(*MEMORY_writemap[*addr >> 8])(*addr, (UBYTE) (temp >> 8));
+				(*MEMORY_writemap[*addr >> 8])(*addr, (UBYTE) temp);
 #else
 			if (MEMORY_attrib[*addr] == MEMORY_HARDWARE)
-				MEMORY_HwPutByte(*addr, (UBYTE) (temp >> 8));
+				MEMORY_HwPutByte(*addr, (UBYTE) temp);
 #endif
 			else /* RAM, ROM */
-				MEMORY_dPutByte(*addr, (UBYTE) (temp >> 8));
+				MEMORY_dPutByte(*addr, (UBYTE) temp);
 			(*addr)++;
+			if (temp > 0xff) {
+#ifdef PAGED_ATTRIB
+				if (MEMORY_writemap[*addr >> 8] != NULL && MEMORY_writemap[*addr >> 8] != MEMORY_ROM_PutByte)
+					(*MEMORY_writemap[*addr >> 8])(*addr, (UBYTE) (temp >> 8));
+#else
+				if (MEMORY_attrib[*addr] == MEMORY_HARDWARE)
+					MEMORY_HwPutByte(*addr, (UBYTE) (temp >> 8));
+#endif
+				else /* RAM, ROM */
+					MEMORY_dPutByte(*addr, (UBYTE) (temp >> 8));
+				(*addr)++;
+			}
 		}
+		printf("Changed %d bytes\n",*addr-taddr);
+		return;
 	}
+	else
+		printf("Bad arguments\n");
 }
 #endif /* PAGED_MEM */
 
@@ -2410,7 +2449,9 @@ static void monitor_sum_mem(void)
 		for (i = addr1; i <= addr2; i++)
 			sum += MEMORY_SafeGetByte(i);
 		printf("SUM: %X\n", sum);
+		return;
 	}
+	printf("Bad arguments\n");
 }
 
 /* Show memory contents, starting from address fetched from command line. */
@@ -2568,6 +2609,9 @@ static void monitor_search_mem(void)
 			if (hexval > 0xff && n < 64)
 				tab[n++] = (UBYTE) (hexval >> 8);
 		} while (n < 64 && get_hex(&hexval));
+	} else {
+		printf("Bad arguments\n");
+		return;
 	}
 	if (n > 0) {
 		int a;
@@ -3071,7 +3115,7 @@ static void show_help(void)
 		"SET{N,V,D,I,Z,C} 0 or 1        - Set flag value\n"
 		"C startaddr hexval...          - Change memory\n"
 		"D [startaddr]                  - Disassemble memory\n"
-		"F startaddr endaddr hexval     - Fill memory\n");
+		"F startaddr endaddr hexval...  - Fill memory\n");
 	/* split into several printfs to avoid gcc -pedantic warning: "string length 'xxx'
 	   is greater than the length '509' ISO C89 compilers are required to support" */
 	printf(
@@ -3087,7 +3131,7 @@ static void show_help(void)
 		"HARDWARE startaddr endaddr     - Convert memory block into HARDWARE\n"
 		"CART                           - Show cartridge information\n");
 	printf(
-		"READ [XEX] filename or filename startaddr nbytes\n"
+		"READ [XEX] filename or filename startaddr [nbytes]\n"
 		"                               - Read file into memory\n"
 		"                                 With XEX read Atari executable,\n"
 		"                                 does not init nor run (useful for patches)\n");
