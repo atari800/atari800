@@ -144,14 +144,17 @@ int UI_n_saved_files_dir = 0;
 
 static UI_tMenuItem *FindMenuItem(UI_tMenuItem *mip, int option)
 {
-	while (mip->retval != option)
+	while (mip->retval != option) {
+		if (mip->flags == UI_ITEM_END) return NULL;
 		mip++;
+	}
 	return mip;
 }
 
 static void SetItemChecked(UI_tMenuItem *mip, int option, int checked)
 {
-	FindMenuItem(mip, option)->flags = checked ? (UI_ITEM_CHECK | UI_ITEM_CHECKED) : UI_ITEM_CHECK;
+	UI_tMenuItem* item = FindMenuItem(mip, option);
+	if (item) item->flags = checked ? (UI_ITEM_CHECK | UI_ITEM_CHECKED) : UI_ITEM_CHECK;
 }
 
 static void FilenameMessage(const char *format, const char *filename)
@@ -3485,6 +3488,139 @@ static void KeyboardJoystickConfiguration(int joystick)
 	}
 }
 
+#if SDL2
+static UI_tMenuItem joy_buttons_menu_array[] = {
+	UI_MENU_LABEL(" Configure controller buttons"),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
+	UI_MENU_ACTION(0, ""),
+	UI_MENU_ACTION(1, ""),
+	UI_MENU_ACTION(2, ""),
+	UI_MENU_ACTION(3, ""),
+	UI_MENU_ACTION(4, ""),
+	UI_MENU_ACTION(5, ""),
+	UI_MENU_ACTION(6, ""),
+	UI_MENU_ACTION(7, ""),
+	UI_MENU_ACTION(8, ""),
+	UI_MENU_ACTION(9, ""),
+	UI_MENU_ACTION(10, ""),
+	UI_MENU_ACTION(11, ""),
+	UI_MENU_ACTION(12, ""),
+	UI_MENU_ACTION(13, ""),
+	UI_MENU_ACTION(14, ""),
+	UI_MENU_ACTION(15, ""),
+	UI_MENU_END
+};
+static char* joy_button_names[] = {
+	"A", "B", "X", "Y",
+	"Back", "Guide", "Start",
+	"Left stick", "Right stick",
+	"Left shoulder", "Right shoulder",
+	"D-Pad up", "D-Pad down", "D-Pad left", "D-Pad right",
+	"Miscellaneous"
+};
+static UI_tMenuItem joy_menu_action_key[] = {
+	UI_MENU_ACTION(1, "Action"),
+	UI_MENU_ACTION(2, "Atari key"),
+	UI_MENU_ACTION(3, "Keyboard key"),
+	UI_MENU_ACTION(0, "None"),
+	UI_MENU_END
+};
+
+#define KEYBASE 1000
+static UI_tMenuItem joy_menu_keys[] = {
+	UI_MENU_ACTION(KEYBASE + AKEY_START, "Start"),
+	UI_MENU_ACTION(KEYBASE + AKEY_SELECT, "Select"),
+	UI_MENU_ACTION(KEYBASE + AKEY_OPTION, "Option"),
+	UI_MENU_ACTION(KEYBASE + AKEY_HELP, "Help"),
+	UI_MENU_ACTION(KEYBASE + AKEY_BREAK, "Break"),
+	UI_MENU_END
+};
+static UI_tMenuItem joy_menu_actions[] = {
+	UI_MENU_ACTION(KEYBASE + UI_MENU_RUN, "Run program"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_DISK, "Disk"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_CARTRIDGE, "Cartridge"),
+	UI_MENU_ACTION(KEYBASE + AKEY_UI, "Enter setup"),
+	UI_MENU_ACTION(KEYBASE + AKEY_WARMSTART, "Reset (warm)"),
+	UI_MENU_ACTION(KEYBASE + AKEY_COLDSTART, "Reset (cold)"),
+	UI_MENU_ACTION(KEYBASE + AKEY_TURBO, "Toggle turbo"),
+	UI_MENU_ACTION(KEYBASE + AKEY_CONTROLLER_BUTTON_TRIGGER, "Joy trigger"),
+	UI_MENU_ACTION(KEYBASE + AKEY_EXIT, "Quit!"),
+	UI_MENU_END
+};
+#define BUTTONS (sizeof(joy_button_names) / sizeof(*joy_button_names))
+static char joy_key_name[BUTTONS][20];
+
+static void JoystickMenuUpdate(SDL_INPUT_RealJSConfig_t* js_config) {
+	for (int i = 0; i < BUTTONS; ++i) {
+		UI_tMenuItem* menu = FindMenuItem(joy_buttons_menu_array, i);
+		menu->item = joy_button_names[i];
+		struct INPUT_joystick_button* btn = &js_config->buttons[i];
+
+		if (btn->action == JoystickNoAction) {
+			menu->suffix = "<empty>";
+		}
+		else if (btn->action == JoystickKeyboard) {
+			int len = sizeof(joy_key_name[i]);
+			snprintf(joy_key_name[i], len - 1, "\"%.14s\"", SDL_GetKeyName(btn->key));
+			menu->suffix = joy_key_name[i];
+		}
+		else {
+			UI_tMenuItem* entry = FindMenuItem(btn->action == JoystickUiAction ? joy_menu_actions : joy_menu_keys, KEYBASE + btn->key);
+			menu->suffix = entry ? entry->item : "?";
+		}
+	}
+}
+
+static void JoystickButtonsConfiguration(SDL_INPUT_RealJSConfig_t* js_config) {
+	JoystickMenuUpdate(js_config);
+
+	for (int option = 0; option >= 0; ) {
+		option = UI_driver->fSelect("", UI_SELECT_POPUP | UI_SELECT_JOY_BTN, option, joy_buttons_menu_array, NULL);
+
+		if (option >= AKEY_CONTROLLER_BUTTON_FIRST && option <= AKEY_CONTROLLER_BUTTON_LAST) {
+			int btn = option - AKEY_CONTROLLER_BUTTON_FIRST;
+			option = btn >= 0 && btn < BUTTONS ? btn : 0;
+			continue;
+		}
+
+		if (option >= 0) {
+			int opt = UI_driver->fSelect("", UI_SELECT_POPUP, 1, joy_menu_action_key, NULL);
+			if (opt == 1) {
+				// select an action
+				int action = UI_driver->fSelect("", UI_SELECT_POPUP, 0, joy_menu_actions, NULL);
+				if (action >= 0) {
+					js_config->buttons[option].key = action - KEYBASE;
+					js_config->buttons[option].action = JoystickUiAction;
+				}
+			}
+			else if (opt == 2) {
+				// assign a key
+				int key = UI_driver->fSelect("", UI_SELECT_POPUP, 0, joy_menu_keys, NULL);
+				if (key >= 0) {
+					js_config->buttons[option].key = key - KEYBASE;
+					js_config->buttons[option].action = JoystickAtariKey;
+				}
+			}
+			else if (opt == 3) {
+				// keyboard key
+				js_config->buttons[option].key = GetRawKey();
+				js_config->buttons[option].action = JoystickKeyboard;
+			}
+			else if (opt == 0) {
+				// reset
+				js_config->buttons[option].key = 0;
+				js_config->buttons[option].action = JoystickNoAction;
+			}
+	
+			if (opt >= 0) {
+				JoystickMenuUpdate(js_config);
+			}
+		}
+	}
+}
+
+#endif /* SDL2 */
+
 static void RealJoystickConfiguration(void)
 {
 	char title[40];
@@ -3497,18 +3633,22 @@ static void RealJoystickConfiguration(void)
 		UI_MENU_CHECK(0, " Use hat/D-Pad:"),
 		UI_MENU_ACTION(1, " Analog axes:"),
 		UI_MENU_ACTION(2, " Diagonals zone:"),
+		UI_MENU_ACTION(3, " Configure buttons"),
 		UI_MENU_LABEL("Joystick 2"),
-		UI_MENU_CHECK(3, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(4, " Analog axes:"),
-		UI_MENU_ACTION(5, " Diagonals zone:"),
+		UI_MENU_CHECK(4, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(5, " Analog axes:"),
+		UI_MENU_ACTION(6, " Diagonals zone:"),
+		UI_MENU_ACTION(7, " Configure buttons"),
 		UI_MENU_LABEL("Joystick 3"),
-		UI_MENU_CHECK(6, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(7, " Analog axes:"),
-		UI_MENU_ACTION(8, " Diagonals zone:"),
+		UI_MENU_CHECK(8, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(9, " Analog axes:"),
+		UI_MENU_ACTION(10, " Diagonals zone:"),
+		UI_MENU_ACTION(11, " Configure buttons"),
 		UI_MENU_LABEL("Joystick 4"),
-		UI_MENU_CHECK(9, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(10, " Analog axes:"),
-		UI_MENU_ACTION(11, " Diagonals zone:"),
+		UI_MENU_CHECK(12, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(13, " Analog axes:"),
+		UI_MENU_ACTION(14, " Diagonals zone:"),
+		UI_MENU_ACTION(15, " Configure buttons"),
 		UI_MENU_END
 	};
 
@@ -3517,7 +3657,7 @@ static void RealJoystickConfiguration(void)
 	for (;;) {
 		/*Set the CHECK items*/
 		for (i = 0; i < 4; i++) {
-			int opt = i * 3;
+			int opt = i * 4;
 			SDL_INPUT_RealJSConfig_t* cfg = SDL_INPUT_GetRealJSConfig(i);
 			SetItemChecked(real_js_menu_array, opt++, cfg->use_hat);
 		
@@ -3532,27 +3672,34 @@ static void RealJoystickConfiguration(void)
 
 		if (option < 0) break;
 
+		js_config = SDL_INPUT_GetRealJSConfig(option / 4);
 		switch (option) {
 			case 0:
-			case 3:
-			case 6:
-			case 9:
-				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+			case 4:
+			case 8:
+			case 12:
 				js_config->use_hat = !js_config->use_hat;
 				break;
 			case 1:
-			case 4:
-			case 7:
-			case 10:
-				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+			case 5:
+			case 9:
+			case 13:
 				js_config->axes = js_config->axes ? 0 : 2;
 				break;
 			case 2:
-			case 5:
-			case 8:
-			case 11:
-				js_config = SDL_INPUT_GetRealJSConfig(option / 3);
+			case 6:
+			case 10:
+			case 14:
 				js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
+				break;
+			case 3:
+			case 7:
+			case 11:
+			case 15:
+				// configure buttons
+				JoystickButtonsConfiguration(js_config);
+				break;
+			default:
 				break;
 		}
 	}

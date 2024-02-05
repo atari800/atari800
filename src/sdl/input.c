@@ -240,6 +240,44 @@ static int set_real_js_diagonals(int joyIndex, const char* parm) {
 #endif
 }
 
+static int set_real_js_actions(int joyIndex, char* params) {
+#if SDL2
+	int btn = 0;
+	char* p = strtok(params, ",");
+	while (p) {
+		if (btn < INPUT_JOYSTICK_MAX_BUTTONS) {
+    		stick_devs[joyIndex].real_config.buttons[btn++].action = atoi(p);
+		}
+		else {
+			break;
+		}
+		p = strtok(NULL, ",");
+	}
+    return TRUE;
+#else
+	return FALSE;
+#endif
+}
+
+static int set_real_js_keys(int joyIndex, char* params) {
+#if SDL2
+	int btn = 0;
+	char* p = strtok(params, ",");
+	while (p) {
+		if (btn < INPUT_JOYSTICK_MAX_BUTTONS) {
+    		stick_devs[joyIndex].real_config.buttons[btn++].key = atoi(p);
+		}
+		else {
+			break;
+		}
+		p = strtok(NULL, ",");
+	}
+    return TRUE;
+#else
+	return FALSE;
+#endif
+}
+
 /*Reset configurations of the real joysticks*/
 static void reset_real_js_configs(void)
 {
@@ -249,6 +287,45 @@ static void reset_real_js_configs(void)
 #if SDL2
         stick_devs[i].real_config.axes = 0;
         stick_devs[i].real_config.diagonal_zones = JoystickNarrowDiagonalsZone;
+		for (int btn = 0; btn < INPUT_JOYSTICK_MAX_BUTTONS; ++btn) {
+			switch (btn) {
+			case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+			case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+			case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+			case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				stick_devs[i].real_config.buttons[btn].action = JoystickUiAction;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_CONTROLLER_BUTTON_TRIGGER;
+				break;
+			case SDL_CONTROLLER_BUTTON_A:
+				stick_devs[i].real_config.buttons[btn].action = JoystickAtariKey;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_START;
+				break;
+			case SDL_CONTROLLER_BUTTON_B:
+				stick_devs[i].real_config.buttons[btn].action = JoystickAtariKey;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_SELECT;
+				break;
+			case SDL_CONTROLLER_BUTTON_X:
+				stick_devs[i].real_config.buttons[btn].action = JoystickAtariKey;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_OPTION;
+				break;
+			case SDL_CONTROLLER_BUTTON_Y:
+				stick_devs[i].real_config.buttons[btn].action = JoystickUiAction;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_WARMSTART;
+				break;
+			case SDL_CONTROLLER_BUTTON_BACK:
+				stick_devs[i].real_config.buttons[btn].action = JoystickUiAction;
+				stick_devs[i].real_config.buttons[btn].key = AKEY_TURBO;
+				break;
+			case SDL_CONTROLLER_BUTTON_START:
+				stick_devs[i].real_config.buttons[btn].action = JoystickUiAction;
+				stick_devs[i].real_config.buttons[btn].key = UI_MENU_RUN;
+				break;
+			default:
+				stick_devs[i].real_config.buttons[btn].action = JoystickNoAction;
+				stick_devs[i].real_config.buttons[btn].key = 0;
+				break;
+			}
+		}
 #endif
     }
 }
@@ -269,6 +346,16 @@ static void write_real_js_configs(FILE* fp)
 #if SDL2
         fprintf(fp, KEY_SDL"JOY_%d_AXES=%d\n", i, stick_devs[i].real_config.axes);
         fprintf(fp, KEY_SDL"JOY_%d_DIAGONALS=%d\n", i, stick_devs[i].real_config.diagonal_zones);
+        fprintf(fp, KEY_SDL"JOY_%d_BUTTON_ACTIONS=", i);
+		for (int btn = 0; btn < INPUT_JOYSTICK_MAX_BUTTONS; ++btn) {
+        	fprintf(fp, "%d,", stick_devs[i].real_config.buttons[btn].action);
+		}
+        fprintf(fp, "\n");
+        fprintf(fp, KEY_SDL"JOY_%d_BUTTON_KEYS=", i);
+		for (int btn = 0; btn < INPUT_JOYSTICK_MAX_BUTTONS; ++btn) {
+        	fprintf(fp, "%d,", stick_devs[i].real_config.buttons[btn].key);
+		}
+        fprintf(fp, "\n");
 #endif
     }
 }
@@ -344,6 +431,22 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		return set_real_js_diagonals(2,parameters);
 	else if (strcmp(option, KEY_SDL"JOY_3_DIAGONALS") == 0)
 		return set_real_js_diagonals(3,parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_BUTTON_KEYS") == 0)
+		return set_real_js_keys(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_BUTTON_KEYS") == 0)
+		return set_real_js_keys(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_BUTTON_KEYS") == 0)
+		return set_real_js_keys(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(3, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_BUTTON_KEYS") == 0)
+		return set_real_js_keys(3, parameters);
 	else if (strcmp(option, KEY_SDL"UI_KEY") == 0)
 		return SDLKeyBind(&KBD_UI, parameters);
 	else if (strcmp(option, KEY_SDL"OPTION_KEY") == 0)
@@ -468,8 +571,26 @@ int PLATFORM_GetRawKey(void)
 				return event.key.keysym.sym;
 			}
 		}
+#if SDL2
+		SDL_Delay(10);
+#endif
 	}
 }
+
+#if SDL2
+static struct INPUT_joystick_button* JoyButtonPress(SDL_JoystickID id, int button) {
+	if (button < 0 || button >= INPUT_JOYSTICK_MAX_BUTTONS) return NULL;
+
+	for (int i = 0; i < MAX_JOYSTICKS; ++i) {
+		struct stick_dev* joy = &stick_devs[i];
+		if (joy->sdl_joy && SDL_JoystickInstanceID(joy->sdl_joy) == id) {
+			return &joy->real_config.buttons[button];
+		}
+	}
+
+	return NULL;
+}
+#endif
 
 static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
 static int lastuni = 0;
@@ -585,6 +706,75 @@ int PLATFORM_Keyboard(void)
 		case SDL_JOYDEVICEREMOVED:
 		 	Init_SDL_Joysticks();
 			break;
+
+		case SDL_JOYBUTTONDOWN: {
+			int button = event.jbutton.button;
+			struct INPUT_joystick_button* b = JoyButtonPress(event.jbutton.which, button);
+			if (UI_is_active) {
+				if (button > SDL_CONTROLLER_BUTTON_INVALID && button <= SDL_CONTROLLER_BUTTON_MISC1) {
+					return AKEY_CONTROLLER_BUTTON_FIRST + button;
+				}
+			}
+			else if (b) {
+				if (b->action == JoystickUiAction) {
+					if (b->key >= 0) {
+						UI_alt_function = b->key;
+						return AKEY_UI;
+					}
+					UI_alt_function = -1;
+					return b->key;
+				}
+				else if (b->action == JoystickAtariKey && b->key) {
+					switch (b->key) {
+					case AKEY_START:
+						INPUT_key_consol &= ~INPUT_CONSOL_START;
+						break;
+					case AKEY_SELECT:
+						INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
+						break;
+					case AKEY_OPTION:
+						INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
+						break;
+					case AKEY_HELP:
+						return AKEY_HELP ^ shiftctrl;
+					}
+					return b->key;
+				}
+				else if (b->action == JoystickKeyboard && b->key) {
+					lastkey = b->key;
+					lastuni = 0;
+					key_pressed = 1;
+				}
+			}
+		} break;
+
+		case SDL_JOYBUTTONUP: {
+			int button = event.jbutton.button;
+			struct INPUT_joystick_button* b = JoyButtonPress(event.jbutton.which, button);
+			if (!UI_is_active && b) {
+				if (b->action == JoystickAtariKey && b->key) {
+					switch (b->key) {
+					case AKEY_START:
+						INPUT_key_consol |= INPUT_CONSOL_START;
+						break;
+					case AKEY_SELECT:
+						INPUT_key_consol |= INPUT_CONSOL_SELECT;
+						break;
+					case AKEY_OPTION:
+						INPUT_key_consol |= INPUT_CONSOL_OPTION;
+						break;
+					case AKEY_HELP:
+						return AKEY_NONE;
+					}
+					return AKEY_NONE;
+				}
+				else if (b->action == JoystickKeyboard && b->key) {
+					lastkey = b->key;
+					lastuni = 0;
+					key_pressed = 0;
+				}
+			}
+		} break;
 
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
@@ -1891,19 +2081,8 @@ int PLATFORM_TRIG(int num)
 #endif
 	if (s->sdl_joy != NULL) {
 #if SDL2
-		static int buttons[] = {
-			SDL_CONTROLLER_BUTTON_A,
-			SDL_CONTROLLER_BUTTON_B,
-			SDL_CONTROLLER_BUTTON_X,
-			SDL_CONTROLLER_BUTTON_Y,
-			SDL_CONTROLLER_BUTTON_LEFTSTICK,
-			SDL_CONTROLLER_BUTTON_RIGHTSTICK,
-			SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
-			SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
-		};
-		for (int i = 0; i < sizeof(buttons)/sizeof(*buttons); ++i) {
-			int btn = buttons[i];
-			if (btn < s->nbuttons) {
+		for (int btn = 0; btn < INPUT_JOYSTICK_MAX_BUTTONS; ++btn) {
+			if (btn < s->nbuttons && s->real_config.buttons[btn].action == JoystickUiAction && s->real_config.buttons[btn].key == AKEY_CONTROLLER_BUTTON_TRIGGER) {
 				int down = SDL_JoystickGetButton(s->sdl_joy, btn);
 				if (down) {
 					trig = 0;

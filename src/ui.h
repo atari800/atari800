@@ -190,6 +190,7 @@ typedef void (*UI_fnInit)(void);
 /* Bit masks for flags */
 #define UI_SELECT_POPUP   0x01
 #define UI_SELECT_DRAG    0x02
+#define UI_SELECT_JOY_BTN 0x04
 
 /* Values returned via seltype */
 #define UI_USER_SELECT    1

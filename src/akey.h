@@ -39,6 +39,21 @@
 #define AKEY_KEYB                  -32
 #endif
 
+#if SDL2
+	// SDL_GameControllerButton(s) in AKEY
+	#define AKEY_CONTROLLER_BUTTON_FIRST      -200
+	#define AKEY_CONTROLLER_BUTTON_A          -200
+	#define AKEY_CONTROLLER_BUTTON_B          -199
+	#define AKEY_CONTROLLER_BUTTON_X          -198
+	#define AKEY_CONTROLLER_BUTTON_Y          -197
+	#define AKEY_CONTROLLER_BUTTON_DPAD_UP    -189
+	#define AKEY_CONTROLLER_BUTTON_DPAD_DOWN  -188
+	#define AKEY_CONTROLLER_BUTTON_DPAD_LEFT  -187
+	#define AKEY_CONTROLLER_BUTTON_DPAD_RIGHT -186
+	#define AKEY_CONTROLLER_BUTTON_LAST       -101
+	#define AKEY_CONTROLLER_BUTTON_TRIGGER    -100
+#endif /* SDL2 */
+
 #define AKEY_SHFT 0x40
 #define AKEY_CTRL 0x80
 #define AKEY_SHFTCTRL 0xc0

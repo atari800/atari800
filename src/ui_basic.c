@@ -128,6 +128,11 @@ static int GetKeyPress(void)
 			UI_alt_function = UI_MENU_PCXI;
 			return 0x1b; /* escape */
 		default:
+#if SDL2
+			if (keycode >= AKEY_CONTROLLER_BUTTON_FIRST && keycode <= AKEY_CONTROLLER_BUTTON_LAST) {
+				return keycode;
+			}
+#endif
 			UI_alt_function = -1; /* forget previous Main Menu shortcut */
 			break;
 		}
@@ -265,7 +270,7 @@ static int Select(int default_item, int nitems, const char *item[],
                   const char *tip[], const int nonselectable[],
                   int nrows, int ncolumns, int xoffset, int yoffset,
                   int itemwidth, int drag, const char *global_tip,
-                  int *seltype)
+                  int *seltype, int joy_buttons)
 {
 	int offset = 0;
 	int index = default_item;
@@ -327,6 +332,45 @@ static int Select(int default_item, int nitems, const char *item[],
 			int ascii;
 			int tmp_index;
 			ascii = GetKeyPress();
+#if SDL2
+			if (ascii >= AKEY_CONTROLLER_BUTTON_FIRST && ascii <= AKEY_CONTROLLER_BUTTON_LAST) {
+				if (joy_buttons) { // report buttons back to the caller?
+					*seltype = ascii;
+					return ascii;
+				}
+				else {
+					// use D-Pad for navigation, other controller keys for selection
+					switch (ascii) {
+					case AKEY_CONTROLLER_BUTTON_DPAD_UP:
+						ascii = 0x1c;
+						break;
+					case AKEY_CONTROLLER_BUTTON_DPAD_DOWN:
+						ascii = 0x1d;
+						break;
+					case AKEY_CONTROLLER_BUTTON_DPAD_LEFT:
+						ascii = 0x1e;
+						break;
+					case AKEY_CONTROLLER_BUTTON_DPAD_RIGHT:
+						ascii = 0x1f;
+						break;
+					case AKEY_CONTROLLER_BUTTON_A:
+						ascii = 0x9b; // Enter
+						break;
+					case AKEY_CONTROLLER_BUTTON_B:
+						ascii = 0x1b; // Esc
+						break;
+					case AKEY_CONTROLLER_BUTTON_X:
+						ascii = 0x7e; // Backspace
+						break;
+					case AKEY_CONTROLLER_BUTTON_Y:
+						ascii = 0x20; // Space
+						break;
+					default:
+						continue;
+					}
+				}
+			}
+#endif
 			switch (ascii) {
 			case 0x1c:				/* Up */
 				if (drag) {
@@ -477,7 +521,8 @@ static int BasicUISelect(const char *title, int flags, int default_item, const U
 	Box(0x9a, 0x94, x1, y1, x2, y2);
 	index = Select(index, nitems, item, prefix, suffix, tip, nonselectable,
 	                y2 - y1 - 1, 1, x1 + 1, y1 + 1, w,
-	                (flags & UI_SELECT_DRAG) ? TRUE : FALSE, NULL, seltype);
+	                (flags & UI_SELECT_DRAG) ? TRUE : FALSE, NULL, seltype,
+	                flags & UI_SELECT_JOY_BTN ? TRUE : FALSE);
 	if (index < 0)
 		return index;
 	for (pmenu = menu; pmenu->flags != UI_ITEM_END; pmenu++) {
@@ -522,7 +567,7 @@ static int BasicUISelectInt(int default_value, int min_value, int max_value)
 	y2 = y1 + nrows + 1;
 	Box(0x9a, 0x94, x1, y1, x2, y2);
 	value = Select((default_value >= min_value && default_value <= max_value) ? default_value - min_value : 0,
-		nitems, items, NULL, NULL, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL, NULL);
+		nitems, items, NULL, NULL, NULL, NULL, nrows, ncolumns, x1 + 1, y1 + 1, 2, FALSE, NULL, NULL, FALSE);
 	return value >= 0 ? value + min_value : default_value;
 }
 
@@ -981,7 +1026,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 			index = Select(index, n_filenames, filenames, NULL, NULL, NULL, NULL,
 			               NROWS, NCOLUMNS, 1, 2, 37 / NCOLUMNS, FALSE,
 			               select_dir ? "Space: select current directory" : NULL,
-			               &seltype);
+			               &seltype, FALSE);
 
 			if (index == -2) {
 				/* Tab = next favourite directory */
