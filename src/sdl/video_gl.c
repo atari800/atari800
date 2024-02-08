@@ -903,7 +903,9 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 			}
 #if SDL2
 			// add shaders
-			GLchar* vertexShader = read_text_file("atari800-shader.vert");
+#ifdef DEBUG_SHADERS
+			GLchar* vertexShader = 
+			read_text_file("atari800-shader.vert");
 			if (!vertexShader) {
 				Log_print("Missing vertex shader file 'atari800-shader.vert'");
 				exit(1);
@@ -913,7 +915,16 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 				Log_print("Missing fragment shader file 'atari800-shader.frag'");
 				exit(1);
 			}
-
+#else
+#include "sdl/gen-atari800-shader.vert.h"
+			GLchar* vertexShader = Util_malloc(vertexShaderArr_len + 1);
+			strncpy(vertexShader, (char*)vertexShaderArr, vertexShaderArr_len);
+			vertexShader[vertexShaderArr_len] = 0;
+#include "sdl/gen-atari800-shader.frag.h"
+			GLchar* fragmentShader = Util_malloc(fragmentShaderArr_len + 1);
+			strncpy(fragmentShader, (char*)fragmentShaderArr, fragmentShaderArr_len);
+			fragmentShader[fragmentShaderArr_len] = 0;
+#endif
 			GLint success = 0;
 
 			int vertex = gl.CreateShader(GL_VERTEX_SHADER);
