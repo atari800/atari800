@@ -2242,6 +2242,42 @@ static void SystemROMSettings(void)
 	}
 }
 
+/* percentages of normal speed, with 0 -> max speed */
+static const int turbo_speeds[] = {
+	50, 60, 70, 80, 90,
+	110, 120, 130, 140, 150,
+	170, 200, 250, 300, 400, 500,
+	600, 700, 800, 1000, 0
+};
+static const int TURBO_SPEEDS = sizeof(turbo_speeds) / sizeof(*turbo_speeds);
+
+static void format_turbo_speed(char* label, int value, void* user_data) {
+	int speed;
+	if (value < 0 || value >= TURBO_SPEEDS) {
+		strcpy(label, "?");
+		return;
+	}
+
+	speed = turbo_speeds[value];
+	if (speed == 0) {
+		strcpy(label, "Max");
+	}
+	else {
+		int prec = speed % 100 ? 1 : 0;
+		sprintf(label, "x%.*f", prec, speed / 100.0);
+	}
+}
+
+static int find_turbo_speed_index(int turbo_speed) {
+	int i;
+	for (i = 0; i < TURBO_SPEEDS; ++i) {
+		if (turbo_speeds[i] == turbo_speed) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static void AtariSettings(void)
 {
 #ifdef XEP80_EMULATION
@@ -2262,6 +2298,7 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
+		UI_MENU_ACTION(20, " Turbo speed:"),
 		UI_MENU_CHECK(19, "Slow booting of DOS binary files:"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 		UI_MENU_ACTION_PREFIX(12, " Print command: ", Devices_print_command),
@@ -2281,9 +2318,12 @@ static void AtariSettings(void)
 #endif
 		UI_MENU_END
 	};
+
 	char tmp_command[256];
+	char turbo[40];
 
 	int option = 0;
+	int speed = 0;
 
 	for (;;) {
 		int seltype;
@@ -2295,6 +2335,8 @@ static void AtariSettings(void)
 		FindMenuItem(menu_array, 18)->suffix = xep80_menu_array[XEP80_enabled ? XEP80_port + 1 : 0].item;
 #endif /* XEP80_EMULATION */
 		SetItemChecked(menu_array, 17, Atari800_turbo);
+		format_turbo_speed(turbo, find_turbo_speed_index(Atari800_turbo_speed), NULL);
+		FindMenuItem(menu_array, 20)->suffix = turbo;
 		SetItemChecked(menu_array, 19, BINLOAD_slow_xex_loading);
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
@@ -2370,6 +2412,12 @@ static void AtariSettings(void)
 		case 19:
 			BINLOAD_slow_xex_loading = !BINLOAD_slow_xex_loading;
 			break;
+		case 20:
+			speed = UI_driver->fSelectSlider("Turbo speed", find_turbo_speed_index(Atari800_turbo_speed), TURBO_SPEEDS - 1, &format_turbo_speed, NULL);
+			if (speed >= 0) {
+				Atari800_turbo_speed = turbo_speeds[speed];
+			}
+			break;
 		default:
 			ESC_UpdatePatches();
 			return;
@@ -2387,6 +2435,38 @@ static void SaveState(void)
 		result = StateSav_SaveAtariState(state_filename, "wb", TRUE);
 		if (!result)
 			CantSave(state_filename);
+	}
+}
+
+static const char* get_state_filename(void) {
+	const char* fname = ".atari800-quicksave.state";
+	char* home = getenv("HOME");
+	if (home) {
+		Util_catpath(state_filename, home, fname);
+	}
+	else {
+		strcpy(state_filename, fname);
+	}
+	return state_filename;
+}
+
+static void QuickSaveState(void) {
+	int result = StateSav_SaveAtariState(get_state_filename(), "wb", TRUE);
+	if (!result) {
+		CantSave(state_filename);
+	}
+	else {
+		Screen_SetStatusText("Saved", 120);
+	}
+}
+
+static void QuickLoadState(void) {
+	int result = StateSav_ReadAtariState(get_state_filename(), "rb");
+	if (!result) {
+		CantLoad(state_filename);
+	}
+	else {
+		Screen_SetStatusText("Loaded", 120);
 	}
 }
 
@@ -3858,8 +3938,8 @@ static void KeyboardJoystickConfiguration(int joystick)
 
 #if SDL2
 static UI_tMenuItem joy_buttons_menu_array[] = {
-	UI_MENU_LABEL(" Configure controller buttons"),
-	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
+	UI_MENU_LABEL("  Configure controller buttons"),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
 	UI_MENU_ACTION(0, ""),
 	UI_MENU_ACTION(1, ""),
 	UI_MENU_ACTION(2, ""),
@@ -3912,6 +3992,10 @@ static UI_tMenuItem joy_menu_actions[] = {
 	UI_MENU_ACTION(KEYBASE + AKEY_COLDSTART, "Reset (cold)"),
 	UI_MENU_ACTION(KEYBASE + AKEY_TURBO, "Toggle turbo"),
 	UI_MENU_ACTION(KEYBASE + AKEY_CONTROLLER_BUTTON_TRIGGER, "Joy trigger"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_SAVESTATE, "Save state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_LOADSTATE, "Load state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_QUICKSAVESTATE, "Quick save state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_QUICKLOADSTATE, "Quick load state"),
 	UI_MENU_ACTION(KEYBASE + AKEY_EXIT, "Quit!"),
 	UI_MENU_END
 };
@@ -3929,7 +4013,7 @@ static void JoystickMenuUpdate(SDL_INPUT_RealJSConfig_t* js_config) {
 		}
 		else if (btn->action == JoystickKeyboard) {
 			int len = sizeof(joy_key_name[i]);
-			snprintf(joy_key_name[i], len - 1, "\"%.14s\"", SDL_GetKeyName(btn->key));
+			snprintf(joy_key_name[i], len - 1, "\"%.16s\"", SDL_GetKeyName(btn->key));
 			menu->suffix = joy_key_name[i];
 		}
 		else {
@@ -4886,6 +4970,12 @@ void UI_Run(void)
 			/* Note: AutostartFile() handles state files, too,
 			   so we can remove LoadState() now. */
 			LoadState();
+			break;
+		case UI_MENU_QUICKSAVESTATE:
+			QuickSaveState();
+			break;
+		case UI_MENU_QUICKLOADSTATE:
+			QuickLoadState();
 			break;
 #ifndef CURSES_BASIC
 		case UI_MENU_DISPLAY:

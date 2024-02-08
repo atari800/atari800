@@ -88,14 +88,16 @@ int GetKeyName(void);
 #define UI_MENU_CASSETTE         18
 #define UI_MENU_CONTROLLER       19
 #define UI_MENU_WINDOWS	         20
+#define UI_MENU_QUICKSAVESTATE   21
+#define UI_MENU_QUICKLOADSTATE   22
 
 #ifdef DIRECTX
-	#define UI_MENU_SAVE_CONFIG      21
-	#define UI_MENU_FUNCT_KEY_HELP   22
-	#define UI_MENU_HOT_KEY_HELP     23
+	#define UI_MENU_SAVE_CONFIG      23
+	#define UI_MENU_FUNCT_KEY_HELP   24
+	#define UI_MENU_HOT_KEY_HELP     25
 #endif
 
-#define UI_MENU_VIDEO_RECORDING  24
+#define UI_MENU_VIDEO_RECORDING  26
 
 /* Structure of menu item. Each menu is just an array of items of this structure
    terminated by UI_MENU_END */

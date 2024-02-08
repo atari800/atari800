@@ -721,7 +721,6 @@ void Screen_Draw1200LED(void)
 	}
 }
 
-#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -751,7 +750,7 @@ static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places
 	return screen;
 }
 
-static UBYTE *SmallFont_DrawString(UBYTE *screen, char *s, UBYTE color1, UBYTE color2)
+static UBYTE *SmallFont_DrawString(UBYTE *screen, const char *s, UBYTE color1, UBYTE color2)
 {
 	char cin;
 	char cout;
@@ -779,6 +778,7 @@ static UBYTE *SmallFont_DrawString(UBYTE *screen, char *s, UBYTE color1, UBYTE c
 	return screen;
 }
 
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 void Screen_DrawMultimediaStats(void)
 {
 	if (Screen_show_multimedia_stats) {
@@ -849,6 +849,27 @@ void Screen_DrawMultimediaStats(void)
 	}
 }
 #endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
+
+char status_text[60] = {0};
+int status_text_duration = 0;
+
+void Screen_SetStatusText(const char* text, int duration) {
+	strncpy(status_text, text, sizeof(status_text));
+	status_text[sizeof(status_text) - 1] = 0;
+	status_text_duration = duration;
+}
+
+void Screen_DrawStatusText(void) {
+	int len = strlen(status_text);
+	int width = Screen_visible_x2 - Screen_visible_x1;
+	UBYTE* screen = (UBYTE*)Screen_atari + Screen_visible_x1 + (width - len * SMALLFONT_WIDTH) / 2
+				+ (Screen_visible_y2 - SMALLFONT_HEIGHT) * Screen_WIDTH;
+	if (status_text_duration == 0 || len == 0) return;
+
+	if (status_text_duration > 0) --status_text_duration;
+
+	SmallFont_DrawString(screen, status_text, 0x0c, 0x00);
+}
 
 #ifdef SCREENSHOTS
 int Screen_SaveScreenshot(const char *filename, int interlaced)

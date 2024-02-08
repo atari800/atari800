@@ -172,6 +172,7 @@ int Atari800_nframes = 0;
 int Atari800_refresh_rate = 1;
 int Atari800_collisions_in_skipped_frames = FALSE;
 int Atari800_turbo = FALSE;
+int Atari800_turbo_speed = 0; /* percentage speed or 0 for max turbo */
 int Atari800_start_in_monitor = FALSE;
 int Atari800_auto_frameskip = FALSE;
 
@@ -1107,6 +1108,9 @@ void Atari800_Sync(void)
 	if (! UI_is_active)
 		deltatime *= Atari800_refresh_rate;
 #endif
+	if (Atari800_turbo && Atari800_turbo_speed > 0) {
+		deltatime /= Atari800_turbo_speed / 100.0;
+	}
 	lasttime += deltatime;
 	curtime = Util_time();
 	if (Atari800_auto_frameskip)
@@ -1351,6 +1355,7 @@ void Atari800_Frame(void)
 		Screen_DrawAtariSpeed(Util_time());
 		Screen_DrawDiskLED();
 		Screen_Draw1200LED();
+		Screen_DrawStatusText();
 #endif /* CURSES_BASIC */
 #ifdef DONT_DISPLAY
 		Atari800_display_screen = FALSE;
@@ -1392,7 +1397,7 @@ void Atari800_Frame(void)
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (refresh_counter == 0)
 #endif
-		if (Atari800_turbo) {
+		if (Atari800_turbo && Atari800_turbo_speed == 0) {
 			/* No need to draw Atari frames with frequency higher than display
 			   refresh rate. */
 			static double last_display_screen_time = 0.0;
