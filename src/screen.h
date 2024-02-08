@@ -56,5 +56,7 @@ void Screen_FindScreenshotFilename(char *buffer, unsigned bufsize);
 int Screen_SaveScreenshot(const char *filename, int interlaced);
 void Screen_SaveNextScreenshot(int interlaced);
 void Screen_EntireDirty(void);
+void Screen_SetStatusText(const char* text, int duration);
+void Screen_DrawStatusText(void);
 
 #endif /* SCREEN_H_ */
