@@ -27,23 +27,23 @@
 #include "atari.h"
 #include "log.h"
 #include "platform.h"
-#include "sound.h"
+#include "sdl/sound.h"
+#include "../sound.h"
 
 static void SoundCallback(void *userdata, Uint8 *stream, int len)
 {
 	Sound_Callback(stream, len);
 }
 
-int PLATFORM_SoundSetup(Sound_setup_t *setup)
+/* Opens the SDL sound output with settings defined in *setup. *setup will be
+   modified according to the actual parameters of the opened audio output.
+   The function returns TRUE if it successfully opened the sound output. Sound
+   output is initially paused.
+   When opening failed, the function returns FALSE and quits the SDL audio
+   subsystem completely. */
+static int OpenAudio(Sound_setup_t *setup)
 {
 	SDL_AudioSpec desired;
-
-	if (Sound_enabled)
-		SDL_CloseAudio();
-	else if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
-		Log_print("SDL_INIT_AUDIO FAILED: %s", SDL_GetError());
-		return FALSE;
-	}
 
 	desired.freq = setup->freq;
 	desired.format = setup->sample_size == 2 ? AUDIO_S16SYS : AUDIO_U8;
@@ -66,6 +66,37 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	setup->buffer_frames = desired.samples;
 
 	return TRUE;
+}
+
+void SDL_SOUND_HardPause(void)
+{
+	if (Sound_enabled) {
+		Sound_Pause();
+		SDL_CloseAudio();
+	}
+}
+
+void SDL_SOUND_HardContinue(void)
+{
+	if (Sound_enabled) {
+		Sound_out = Sound_desired;
+		if ((Sound_enabled = OpenAudio(&Sound_out)))
+			Sound_Continue();
+	}
+}
+
+int PLATFORM_SoundSetup(Sound_setup_t *setup)
+{
+	SDL_AudioSpec desired;
+
+	if (Sound_enabled)
+		SDL_CloseAudio();
+	else if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+		Log_print("SDL_INIT_AUDIO FAILED: %s", SDL_GetError());
+		return FALSE;
+	}
+
+	return OpenAudio(setup);
 }
 
 void PLATFORM_SoundExit(void)

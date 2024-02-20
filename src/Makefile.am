@@ -102,7 +102,7 @@ atari800_SOURCES += \
 	remez.c remez.h
 endif
 if WITH_SOUND_SDL
-atari800_SOURCES += sound.c sound.h sdl/sound.c
+atari800_SOURCES += sound.c sound.h sdl/sound.c sdl/sound.h
 endif
 if WITH_SOUND_FALCON
 atari800_SOURCES += sound.c falcon/sound.c
