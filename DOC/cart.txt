@@ -135,7 +135,7 @@ Currently supported cartridge types:
 |101 | 800/XL/XE |  16M | Ram-Cart 16 MB cartridge                      |   |
 |102 | 800/XL/XE |  32M | Ram-Cart 32 MB cartridge                      |   |
 |103 | 800/XL/XE |   32 | SiDiCar 32 KB cartridge                       |   |
-|160 | 800/XL/XE |   64 |JRC64 cartridge (interleaved)                  | x |
+|160 | 800/XL/XE |   64 | JRC64 cartridge (interleaved)                 | x |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1247,7 +1247,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 | Type 77: MIO diagnostics 8KB cartridge                                    |
 +---------------------------------------------------------------------------+
 
- The cartridge uses the same board as type 11 - Sparta Dos X, but uses only
+ The cartridge uses the same board as type 11 - SpartaDOS X, but uses only
  one 8KB bank, turned on by access to $D5E0. This is not actually a 
  bankswitching  cartridge, just re-uses existing SDX cart design, basically
  working as standard 8KB left slot cartridge.
