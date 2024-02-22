@@ -48,12 +48,6 @@
 #include <zlib.h>
 #endif
 
-#ifdef DREAMCAST
-extern int Atari_POT(int);
-#else
-#define Atari_POT(x) 228
-#endif
-
 int INPUT_key_code = AKEY_NONE;
 int INPUT_key_shift = 0;
 int INPUT_key_consol = INPUT_CONSOL_NONE;
