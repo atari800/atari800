@@ -870,6 +870,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			case AFILE_XFD_GZ:
 			case AFILE_DCM:
 			case AFILE_PRO:
+			case AFILE_ATX:
 				j++;
 				break;
 			default:
