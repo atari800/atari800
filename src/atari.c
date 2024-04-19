@@ -1196,10 +1196,10 @@ static void basic_antic_scanline(void)
 		}
 	}
 	if (scanlines_to_dl == 1 && (IR & 0x80)) {
-		CPU_GO(ANTIC_NMIST_C);
+		CPU_GO(ANTIC_NMIST_C, FALSE);
 		ANTIC_NMIST = 0x9f;
 		if (ANTIC_NMIEN & 0x80) {
-			CPU_GO(ANTIC_NMI_C);
+			CPU_GO(ANTIC_NMI_C, TRUE);
 			CPU_NMI();
 		}
 	}
@@ -1231,7 +1231,7 @@ static void basic_antic_scanline(void)
 	}
 }
 
-#define BASIC_LINE CPU_GO(ANTIC_LINE_C); ANTIC_xpos -= ANTIC_LINE_C - ANTIC_DMAR; ANTIC_screenline_cpu_clock += ANTIC_LINE_C; ANTIC_ypos++
+#define BASIC_LINE CPU_GO(ANTIC_LINE_C, FALSE); ANTIC_xpos -= ANTIC_LINE_C - ANTIC_DMAR; ANTIC_screenline_cpu_clock += ANTIC_LINE_C; ANTIC_ypos++
 
 static void basic_frame(void)
 {
@@ -1252,10 +1252,10 @@ static void basic_frame(void)
 
 	/* scanline 248 */
 	POKEY_Scanline();			/* check and generate IRQ */
-	CPU_GO(ANTIC_NMIST_C);
+	CPU_GO(ANTIC_NMIST_C, FALSE);
 	ANTIC_NMIST = 0x5f;				/* Set VBLANK */
 	if (ANTIC_NMIEN & 0x40) {
-		CPU_GO(ANTIC_NMI_C);
+		CPU_GO(ANTIC_NMI_C, TRUE);
 		CPU_NMI();
 	}
 	BASIC_LINE;

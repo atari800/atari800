@@ -281,6 +281,13 @@ void CPU_PutStatus(void)
 #define PLP         data = PL; N = data; Z = (data & 0x02) ^ 0x02; C = (data & 0x01); CPU_regP = (data & 0x4c) + 0x30
 #endif /* NO_V_FLAG_VARIABLE */
 /* 1 or 2 extra cycles for conditional jumps */
+/* Altirra Hardware Reference Manual:
+ * A taken relative branch delays interrupt acknowledgment by one cycle:
+ * a case in which the earliest opportunity to respond to an interrupt
+ * is immediately after the branch instead is delayed to the next
+ * instruction. This occurs for any Bcc instruction which does not
+ * cross a page boundary.
+ */
 #if 0
 /* old, less efficient version */
 #define BRANCH(cond) \
@@ -288,6 +295,8 @@ void CPU_PutStatus(void)
 		SWORD sdata = (SBYTE) GET_CODE_BYTE(); \
 		if ((sdata + (UBYTE) GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
+		else \
+			delay_nmi = TRUE; \
 		ANTIC_xpos++; \
 		PC += sdata; \
 		DONE \
@@ -301,6 +310,8 @@ void CPU_PutStatus(void)
 		addr += GET_PC(); \
 		if ((addr ^ GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
+		else \
+			delay_nmi = TRUE; \
 		ANTIC_xpos++; \
 		SET_PC(addr); \
 		DONE \
@@ -381,8 +392,9 @@ static const int cycles[256] =
 #ifndef NO_GOTO
 __extension__ /* suppress -ansi -pedantic warnings */
 #endif
-void CPU_GO(int limit)
+void CPU_GO(int limit, int pending_nmi)
 {
+	int delay_nmi = FALSE;
 #ifdef NO_GOTO
 #define OPCODE_ALIAS(code)	case 0x##code:
 #define DONE				break;
@@ -536,7 +548,7 @@ void CPU_NMI(void)
 		INTERRUPT(0xfffe); \
 	}
 
-void CPU_GO(int limit)
+void CPU_GO(int limit, int pending_nmi)
 {
 #endif /* FALCON_CPUASM */
 
@@ -589,7 +601,13 @@ void CPU_GO(int limit)
 	CPUCHECKIRQ;
 
 #ifndef FALCON_CPUASM
-	while (ANTIC_xpos < ANTIC_xpos_limit) {
+	while (ANTIC_xpos < ANTIC_xpos_limit || (pending_nmi && delay_nmi)) {
+		if (ANTIC_xpos >= ANTIC_xpos_limit) {
+			/* if already delayed to the next instruction */
+			pending_nmi = FALSE;
+		}
+		delay_nmi = FALSE;
+
 #ifdef MONITOR_PROFILE
 		int old_xpos = ANTIC_xpos;
 		UWORD old_PC = GET_PC();
@@ -2421,8 +2439,8 @@ void CPU_GO(int limit)
 #else /* FALCON_CPUASM */
 
 	{
-		extern void CPU_GO_m68k(void);
-		CPU_GO_m68k();
+		extern void CPU_GO_m68k(int);
+		CPU_GO_m68k(pending_nmi);
 	}
 
 #endif /* FALCON_CPUASM */

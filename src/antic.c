@@ -429,13 +429,13 @@ unsigned int ANTIC_screenline_cpu_clock = 0;
 		draw_antic_ptr = draw_antic_table[GTIA_PRIOR >> 6][anticmode];\
 		gtia_bug_active = FALSE;\
 	}}while(0)
-#define GOEOL_CYCLE_EXACT  CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_LINE_C]); \
+#define GOEOL_CYCLE_EXACT  CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_LINE_C], FALSE); \
 	ANTIC_xpos = ANTIC_cpu2antic_ptr[ANTIC_xpos]; \
 	ANTIC_xpos -= ANTIC_LINE_C; \
 	ANTIC_screenline_cpu_clock += ANTIC_LINE_C; \
 	ANTIC_ypos++; \
 	GTIA_UpdatePmplColls();
-#define GOEOL CPU_GO(ANTIC_LINE_C); ANTIC_xpos -= ANTIC_LINE_C; ANTIC_screenline_cpu_clock += ANTIC_LINE_C; UPDATE_DMACTL; ANTIC_ypos++; UPDATE_GTIA_BUG
+#define GOEOL CPU_GO(ANTIC_LINE_C, FALSE); ANTIC_xpos -= ANTIC_LINE_C; ANTIC_screenline_cpu_clock += ANTIC_LINE_C; UPDATE_DMACTL; ANTIC_ypos++; UPDATE_GTIA_BUG
 #define OVERSCREEN_LINE	ANTIC_xpos += ANTIC_DMAR; GOEOL
 
 int ANTIC_xpos = 0;
@@ -2949,7 +2949,7 @@ void ANTIC_Frame(int draw_display)
 				lastline = normal_lastline[anticmode];
 				if (IR & 0x20) {
 					if (!vscrol_flag) {
-						CPU_GO(VSCON_C);
+						CPU_GO(VSCON_C, FALSE);
 						dctr = ANTIC_VSCROL;
 						vscrol_flag = TRUE;
 					}
@@ -3017,10 +3017,10 @@ void ANTIC_Frame(int draw_display)
 				if (no_jvb)
 					need_dl = TRUE;
 				if (IR & 0x80) {
-					CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_NMIST_C]);
+					CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_NMIST_C], FALSE);
 					ANTIC_NMIST = 0x9f;
 					if (ANTIC_NMIEN & 0x80) {
-						CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_NMI_C]);
+						CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_NMI_C], TRUE);
 						CPU_NMI();
 					}
 				}
@@ -3032,10 +3032,10 @@ void ANTIC_Frame(int draw_display)
 			if (no_jvb)
 				need_dl = TRUE;
 			if (IR & 0x80) {
-				CPU_GO(ANTIC_NMIST_C);
+				CPU_GO(ANTIC_NMIST_C, FALSE);
 				ANTIC_NMIST = 0x9f;
 				if (ANTIC_NMIEN & 0x80) {
-					CPU_GO(ANTIC_NMI_C);
+					CPU_GO(ANTIC_NMI_C, TRUE);
 					CPU_NMI();
 				}
 			}
@@ -3101,7 +3101,7 @@ void ANTIC_Frame(int draw_display)
 		if (need_load && anticmode <= 5 && ANTIC_DMACTL & 3)
 			ANTIC_xpos += before_cycles[md];
 
-		CPU_GO(SCR_C);
+		CPU_GO(SCR_C, FALSE);
 		GTIA_NewPmScanline();
 
 		ANTIC_xpos += ANTIC_DMAR;
@@ -3180,10 +3180,10 @@ void ANTIC_Frame(int draw_display)
 
 /* TODO: cycle-exact overscreen lines */
 	POKEY_Scanline();		/* check and generate IRQ */
-	CPU_GO(ANTIC_NMIST_C);
+	CPU_GO(ANTIC_NMIST_C, FALSE);
 	ANTIC_NMIST = 0x5f;				/* Set VBLANK */
 	if (ANTIC_NMIEN & 0x40) {
-		CPU_GO(ANTIC_NMI_C);
+		CPU_GO(ANTIC_NMI_C, TRUE);
 		CPU_NMI();
 	}
 	ANTIC_xpos += ANTIC_DMAR;
