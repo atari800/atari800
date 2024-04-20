@@ -25,7 +25,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <SDL.h>
-
+#if SDL2
+#include <SDL_render.h>
+#include <SDL_surface.h>
+#include <SDL_video.h>
+#endif
 #include "af80.h"
 #include "bit3.h"
 #include "artifact.h"
@@ -95,6 +99,22 @@ static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 #endif
 };
 
+void SDL_VIDEO_SW_GetPixelFormat(PLATFORM_pixel_format_t *format)
+{
+	format->bpp = SDL_VIDEO_SW_bpp;
+	format->rmask = SDL_VIDEO_screen->format->Rmask;
+	format->gmask = SDL_VIDEO_screen->format->Gmask;
+	format->bmask = SDL_VIDEO_screen->format->Bmask;
+}
+
+#if SDL2
+
+// void SDL_VIDEO_SW_MapRGB(void *dest, int const *palette, int size) {}
+// void SDL_VIDEO_SW_PaletteUpdate(void) {}
+static void Set8BitPalette(VIDEOMODE_MODE_t mode) {}
+
+#else
+
 static void Set8BitPalette(VIDEOMODE_MODE_t mode)
 {
 	int *pal = SDL_PALETTE_tab[mode].palette;
@@ -115,13 +135,7 @@ static void Set8BitPalette(VIDEOMODE_MODE_t mode)
 	SDL_SetPalette(SDL_VIDEO_screen, SDL_PHYSPAL, colors, 0, 256);
 }
 
-void SDL_VIDEO_SW_GetPixelFormat(PLATFORM_pixel_format_t *format)
-{
-	format->bpp = SDL_VIDEO_SW_bpp;
-	format->rmask = SDL_VIDEO_screen->format->Rmask;
-	format->gmask = SDL_VIDEO_screen->format->Gmask;
-	format->bmask = SDL_VIDEO_screen->format->Bmask;
-}
+#endif /* SDL2 */
 
 void SDL_VIDEO_SW_MapRGB(void *dest, int const *palette, int size)
 {
@@ -158,13 +172,75 @@ void SDL_VIDEO_SW_PaletteUpdate(void)
 static void ModeInfo(void)
 {
 	const char *fullstring = fullscreen ? "fullscreen" : "windowed";
+#if SDL2
+	const char *vsyncstring = "";
+#else
 	const char *vsyncstring = (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) ? "with vsync" : "without vsync";
+#endif
 	Log_print("Video Mode: %dx%dx%d %s %s", SDL_VIDEO_screen->w, SDL_VIDEO_screen->h,
 	          SDL_VIDEO_screen->format->BitsPerPixel, fullstring, vsyncstring);
 }
 
-static void SetVideoMode(int w, int h, int bpp)
+static void SetVideoMode(int w, int h, int bpp, int windowed)
 {
+#if SDL2
+	Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
+	if (!windowed) {
+		flags |= SDL_WINDOW_FULLSCREEN;
+	}
+
+	if (SDL_VIDEO_wnd && (!SDL_VIDEO_screen || SDL_VIDEO_screen->flags != flags)) {
+		SDL_DestroyWindow(SDL_VIDEO_wnd);
+		SDL_VIDEO_wnd = 0;
+	}
+
+	if (!SDL_VIDEO_wnd) {
+		SDL_VIDEO_wnd = SDL_CreateWindow(Atari800_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, flags);
+		if (!SDL_VIDEO_wnd) {
+			Log_print("Creating a window with size %dx%d failed: %s", w, h, SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+		}
+		SDL_VIDEO_renderer = SDL_CreateRenderer(SDL_VIDEO_wnd, -1, SDL_RENDERER_PRESENTVSYNC);
+		if (!SDL_VIDEO_renderer) {
+			Log_print("Creating a renderer failed: %s", SDL_GetError());
+			Log_flushlog();
+			exit(-1);
+		}
+	}
+
+	int width = 0, height = 0;
+	if (SDL_GetRendererOutputSize(SDL_VIDEO_renderer, &width, &height)) {
+		Log_print("Reading renderer's output size failed: %s", SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+
+	if (SDL_VIDEO_texture) {
+		SDL_DestroyTexture(SDL_VIDEO_texture);
+		SDL_VIDEO_texture = NULL;
+	}
+	SDL_VIDEO_texture = SDL_CreateTexture(SDL_VIDEO_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (!SDL_VIDEO_texture) {
+		Log_print("Creating %dx%d texture failed: %s", width, height, SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+	if (SDL_VIDEO_screen) {
+		SDL_FreeSurface(SDL_VIDEO_screen);
+	}
+	SDL_VIDEO_screen = SDL_CreateRGBSurface(0, width, height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	if (!SDL_VIDEO_screen) {
+		Log_print("Creating %dx%d surface failed: %s", width, height, SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+
+	SDL_VIDEO_width = width;
+	SDL_VIDEO_height = height;
+	VIDEOMODE_dest_scale_factor = (double)width / w;
+
+#else
 	Uint32 flags = (fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE)
 	               | SDL_HWPALETTE;
 	if (SDL_VIDEO_vsync)
@@ -187,11 +263,19 @@ static void SetVideoMode(int w, int h, int bpp)
 	/* When vsync is off, set its availability to TRUE. Otherwise check if
 	   SDL_DOUBLEBUF is supported by the screen. */
 	SDL_VIDEO_vsync_available = !SDL_VIDEO_vsync || (SDL_VIDEO_screen->flags & SDL_DOUBLEBUF);
+#endif
 	ModeInfo();
 }
 
 void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, VIDEOMODE_MODE_t mode, int rotate90)
 {
+#if SDL2
+	SetVideoMode(res->width, res->height, 0, windowed);
+	SDL_VIDEO_SW_bpp = 32;
+	SDL_SetRenderDrawColor(SDL_VIDEO_renderer, 0, 0, 0, 255);
+	SDL_RenderClear(SDL_VIDEO_renderer);
+	SDL_RenderPresent(SDL_VIDEO_renderer);
+#else
 	int old_bpp = SDL_VIDEO_screen == NULL ? 0 : SDL_VIDEO_screen->format->BitsPerPixel;
 
 	if (SDL_VIDEO_SW_bpp == 0) {
@@ -218,9 +302,9 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 
 	/* Call SetVideoMode only when there was change in width, height, bpp, windowed/fullscreen, or vsync. */
 	if (SDL_VIDEO_screen == NULL || SDL_VIDEO_screen->w != res->width || SDL_VIDEO_screen->h != res->height || old_bpp != SDL_VIDEO_SW_bpp ||
-	    fullscreen == windowed || (SDL_VIDEO_vsync && SDL_VIDEO_vsync_available) != ((SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) == SDL_DOUBLEBUF)) { 
+	    fullscreen == windowed || (SDL_VIDEO_vsync && SDL_VIDEO_vsync_available) != ((SDL_VIDEO_screen->flags & SDL_DOUBLEBUF) == SDL_DOUBLEBUF)) {
 		fullscreen = !windowed;
-		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp);
+		SetVideoMode(res->width, res->height, SDL_VIDEO_SW_bpp, windowed);
 	}
 
 	UpdatePaletteLookup(mode);
@@ -231,7 +315,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 	if (SDL_VIDEO_vsync_available)
 		/* Also clear the backbuffer. */
 		SDL_FillRect(SDL_VIDEO_screen, NULL, 0);
-
+#endif /* SDL2 */
 	SDL_ShowCursor(SDL_DISABLE);	/* hide mouse cursor */
 
 	if (mode == VIDEOMODE_MODE_NORMAL) {
@@ -245,8 +329,10 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 				blit_funcs[0] = &DisplayPalBlendingScaled;
 		}
 #endif /* PAL_BLENDING */
+#if !SDL2
 		else if (VIDEOMODE_src_width == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height)
 			blit_funcs[0] = &DisplayWithoutScaling;
+#endif
 		else
 			blit_funcs[0] = &DisplayWithScaling;
 	}
@@ -293,15 +379,15 @@ int SDL_VIDEO_SW_ToggleBpp(void)
 
 /* License of scanLines_16():*/
 /* This function has been altered from its original version */
-/* This license is a verbatim copy of the license of ZLib 
+/* This license is a verbatim copy of the license of ZLib
  * http://www.gnu.org/licenses/license-list.html#GPLCompatibleLicenses
  * This is a free software license, and compatible with the GPL. */
 /*****************************************************************************
- ** Original Source: /cvsroot/bluemsx/blueMSX/Src/VideoRender/VideoRender.c,v 
+ ** Original Source: /cvsroot/bluemsx/blueMSX/Src/VideoRender/VideoRender.c,v
  **
- ** Original Revision: 1.25 
+ ** Original Revision: 1.25
  **
- ** Original Date: 2006/01/17 08:49:34 
+ ** Original Date: 2006/01/17 08:49:34
  **
  ** More info: http://www.bluemsx.com
  **
@@ -544,7 +630,7 @@ static void DisplayProto80(void)
 	int pitch4 = SDL_VIDEO_screen->pitch / 2;
 	Uint8 *pixels = (Uint8*)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
 
-	
+
 	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
@@ -578,7 +664,7 @@ static void DisplayAF80(void)
 	AF80Frame++;
 	if (AF80Frame == 60) AF80Frame = 0;
 	blink = AF80Frame >= 30;
-	
+
 	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
@@ -612,7 +698,7 @@ static void DisplayBIT3(void)
 	BIT3Frame++;
 	if (BIT3Frame == 60) BIT3Frame = 0;
 	blink = BIT3Frame >= 30;
-	
+
 	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
 	case 8:
 		pixels += VIDEOMODE_dest_offset_left;
@@ -829,6 +915,16 @@ static void DisplayPalBlendingScaled(void)
 
 void SDL_VIDEO_SW_DisplayScreen(void)
 {
+#if SDL2
+	if (!SDL_VIDEO_texture || !SDL_VIDEO_renderer || !SDL_VIDEO_screen) {
+		return;
+	}
+	(*blit_funcs[SDL_VIDEO_current_display_mode])();
+	SDL_UpdateTexture(SDL_VIDEO_texture, NULL, SDL_VIDEO_screen->pixels, SDL_VIDEO_screen->pitch);
+	SDL_RenderClear(SDL_VIDEO_renderer);
+	SDL_RenderCopy(SDL_VIDEO_renderer, SDL_VIDEO_texture, NULL, NULL);
+	SDL_RenderPresent(SDL_VIDEO_renderer);
+#else
 	if (SDL_LockSurface(SDL_VIDEO_screen) != 0)
 		/* When the window manager decides to switch the SDL display from
 		   fullscreen to windowed mode (eg. by minimising the window after the
@@ -847,6 +943,7 @@ void SDL_VIDEO_SW_DisplayScreen(void)
 		SDL_Flip(SDL_VIDEO_screen);
 	else
 		SDL_UpdateRect(SDL_VIDEO_screen, VIDEOMODE_dest_offset_left, VIDEOMODE_dest_offset_top, VIDEOMODE_dest_width, VIDEOMODE_dest_height);
+#endif /* SDL2 */
 }
 
 int SDL_VIDEO_SW_ReadConfig(char *option, char *parameters)

@@ -194,7 +194,9 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				Atari800_refresh_rate = Util_sscandec(ptr);
 			else if (strcmp(string, "DISABLE_BASIC") == 0)
 				Atari800_disable_basic = Util_sscanbool(ptr);
-
+			else if (strcmp(string, "TURBO_SPEED") == 0) {
+				Atari800_turbo_speed = Util_sscandec(ptr);
+			}
 			else if (strcmp(string, "ENABLE_SIO_PATCH") == 0) {
 				ESC_enable_sio_patch = Util_sscanbool(ptr);
 			}
@@ -431,6 +433,7 @@ int CFG_WriteConfig(void)
 	fprintf(fp, "ENABLE_MAPRAM=%d\n", MEMORY_enable_mapram);
 
 	fprintf(fp, "DISABLE_BASIC=%d\n", Atari800_disable_basic);
+	fprintf(fp, "TURBO_SPEED=%d\n", Atari800_turbo_speed);
 	fprintf(fp, "ENABLE_SIO_PATCH=%d\n", ESC_enable_sio_patch);
 	fprintf(fp, "ENABLE_SLOW_XEX_LOADING=%d\n", BINLOAD_slow_xex_loading);
 	fprintf(fp, "ENABLE_H_PATCH=%d\n", Devices_enable_h_patch);

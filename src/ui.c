@@ -187,14 +187,17 @@ int UI_n_saved_files_dir = 0;
 
 static UI_tMenuItem *FindMenuItem(UI_tMenuItem *mip, int option)
 {
-	while (mip->retval != option)
+	while (mip->retval != option) {
+		if (mip->flags == UI_ITEM_END) return NULL;
 		mip++;
+	}
 	return mip;
 }
 
 static void SetItemChecked(UI_tMenuItem *mip, int option, int checked)
 {
-	FindMenuItem(mip, option)->flags = checked ? (UI_ITEM_CHECK | UI_ITEM_CHECKED) : UI_ITEM_CHECK;
+	UI_tMenuItem* item = FindMenuItem(mip, option);
+	if (item) item->flags = checked ? (UI_ITEM_CHECK | UI_ITEM_CHECKED) : UI_ITEM_CHECK;
 }
 
 static void FilenameMessage(const char *format, const char *filename)
@@ -2239,6 +2242,42 @@ static void SystemROMSettings(void)
 	}
 }
 
+/* percentages of normal speed, with 0 -> max speed */
+static const int turbo_speeds[] = {
+	50, 60, 70, 80, 90,
+	110, 120, 130, 140, 150,
+	170, 200, 250, 300, 400, 500,
+	600, 700, 800, 1000, 0
+};
+static const int TURBO_SPEEDS = sizeof(turbo_speeds) / sizeof(*turbo_speeds);
+
+static void format_turbo_speed(char* label, int value, void* user_data) {
+	int speed;
+	if (value < 0 || value >= TURBO_SPEEDS) {
+		strcpy(label, "?");
+		return;
+	}
+
+	speed = turbo_speeds[value];
+	if (speed == 0) {
+		strcpy(label, "Max");
+	}
+	else {
+		int prec = speed % 100 ? 1 : 0;
+		sprintf(label, "x%.*f", prec, speed / 100.0);
+	}
+}
+
+static int find_turbo_speed_index(int turbo_speed) {
+	int i;
+	for (i = 0; i < TURBO_SPEEDS; ++i) {
+		if (turbo_speeds[i] == turbo_speed) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static void AtariSettings(void)
 {
 #ifdef XEP80_EMULATION
@@ -2259,6 +2298,7 @@ static void AtariSettings(void)
 #endif /* XEP80_EMULATION */
 		UI_MENU_CHECK(3, "SIO patch (fast disk access):"),
 		UI_MENU_CHECK(17, "Turbo (F12):"),
+		UI_MENU_ACTION(20, " Turbo speed:"),
 		UI_MENU_CHECK(19, "Slow booting of DOS binary files:"),
 		UI_MENU_CHECK(5, "P: device (printer):"),
 		UI_MENU_ACTION_PREFIX(12, " Print command: ", Devices_print_command),
@@ -2278,9 +2318,12 @@ static void AtariSettings(void)
 #endif
 		UI_MENU_END
 	};
+
 	char tmp_command[256];
+	char turbo[40];
 
 	int option = 0;
+	int speed = 0;
 
 	for (;;) {
 		int seltype;
@@ -2292,6 +2335,8 @@ static void AtariSettings(void)
 		FindMenuItem(menu_array, 18)->suffix = xep80_menu_array[XEP80_enabled ? XEP80_port + 1 : 0].item;
 #endif /* XEP80_EMULATION */
 		SetItemChecked(menu_array, 17, Atari800_turbo);
+		format_turbo_speed(turbo, find_turbo_speed_index(Atari800_turbo_speed), NULL);
+		FindMenuItem(menu_array, 20)->suffix = turbo;
 		SetItemChecked(menu_array, 19, BINLOAD_slow_xex_loading);
 		SetItemChecked(menu_array, 5, Devices_enable_p_patch);
 #ifdef R_IO_DEVICE
@@ -2367,6 +2412,12 @@ static void AtariSettings(void)
 		case 19:
 			BINLOAD_slow_xex_loading = !BINLOAD_slow_xex_loading;
 			break;
+		case 20:
+			speed = UI_driver->fSelectSlider("Turbo speed", find_turbo_speed_index(Atari800_turbo_speed), TURBO_SPEEDS - 1, &format_turbo_speed, NULL);
+			if (speed >= 0) {
+				Atari800_turbo_speed = turbo_speeds[speed];
+			}
+			break;
 		default:
 			ESC_UpdatePatches();
 			return;
@@ -2384,6 +2435,38 @@ static void SaveState(void)
 		result = StateSav_SaveAtariState(state_filename, "wb", TRUE);
 		if (!result)
 			CantSave(state_filename);
+	}
+}
+
+static const char* get_state_filename(void) {
+	const char* fname = ".atari800-quicksave.state";
+	char* home = getenv("HOME");
+	if (home) {
+		Util_catpath(state_filename, home, fname);
+	}
+	else {
+		strcpy(state_filename, fname);
+	}
+	return state_filename;
+}
+
+static void QuickSaveState(void) {
+	int result = StateSav_SaveAtariState(get_state_filename(), "wb", TRUE);
+	if (!result) {
+		CantSave(state_filename);
+	}
+	else {
+		Screen_SetStatusText("Saved", 120);
+	}
+}
+
+static void QuickLoadState(void) {
+	int result = StateSav_ReadAtariState(get_state_filename(), "rb");
+	if (!result) {
+		CantLoad(state_filename);
+	}
+	else {
+		Screen_SetStatusText("Loaded", 120);
 	}
 }
 
@@ -2470,6 +2553,22 @@ static void ScanlinesSliderLabel(char *label, int value, void *user_data)
 	sprintf(label, "%i", value);
 	SDL_VIDEO_SetScanlinesPercentage(value);
 }
+
+static void CrtBarrelSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtBarrelPercentage(value);
+}
+
+static void CrtBeamSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtBeamShape(value);
+}
+
+static void CrtGlowSliderLabel(char *label, int value, void *user_data) {
+	sprintf(label, "%i", value);
+	SDL_VIDEO_CrtPhosphorGlow(value);
+}
+
 #endif /* GUI_SDL */
 
 static void VideoModeSettings(void)
@@ -2543,14 +2642,19 @@ static void VideoModeSettings(void)
 	};
 #endif /* HAVE_OPENGL */
 	static char scanlines_string[4];
+	static char barrel_string[4];
+	static char beam_string[4];
+	static char glow_string[4];
 #endif /* GUI_SDL */
 
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_SUBMENU_SUFFIX(0, "Host display aspect ratio:", ratio_string),
 #if GUI_SDL && HAVE_OPENGL
 		UI_MENU_CHECK(1, "Hardware acceleration:"),
+#if !SDL2
 		UI_MENU_CHECK(2, " Bilinear filtering:"),
 		UI_MENU_CHECK(3, " Use pixel buffer objects:"),
+#endif
 #endif /* GUI_SDL && HAVE_OPENGL */
 		UI_MENU_CHECK(4, "Fullscreen:"),
 		UI_MENU_SUBMENU_SUFFIX(5, " Fullscreen resolution:", res_string),
@@ -2574,6 +2678,11 @@ static void VideoModeSettings(void)
 #if GUI_SDL
 		UI_MENU_SUBMENU_SUFFIX(17, "Scanlines visibility:", scanlines_string),
 		UI_MENU_CHECK(18, " Interpolate scanlines:"),
+#if HAVE_OPENGL && SDL2
+		UI_MENU_SUBMENU_SUFFIX(19, "CRT barrel distortion:", barrel_string),
+		UI_MENU_SUBMENU_SUFFIX(20, "CRT beam shape:", beam_string),
+		UI_MENU_SUBMENU_SUFFIX(21, "CRT phosphor glow:", glow_string),
+#endif
 #endif /* GUI_SDL */
 		UI_MENU_END
 	};
@@ -2607,6 +2716,9 @@ static void VideoModeSettings(void)
 		}
 		snprintf(scanlines_string, sizeof(scanlines_string), "%d", SDL_VIDEO_scanlines_percentage);
 		SetItemChecked(menu_array, 18, SDL_VIDEO_interpolate_scanlines);
+		snprintf(barrel_string, sizeof(barrel_string), "%d", SDL_VIDEO_crt_barrel_distortion);
+		snprintf(beam_string, sizeof(beam_string), "%d", SDL_VIDEO_crt_beam_shape);
+		snprintf(glow_string, sizeof(glow_string), "%d", SDL_VIDEO_crt_phosphor_glow);
 #endif /* GUI_SDL */
 		SetItemChecked(menu_array, 4, !VIDEOMODE_windowed);
 		VIDEOMODE_CopyResolutionName(VIDEOMODE_GetFullscreenResolution(), res_string, 10);
@@ -2840,6 +2952,35 @@ static void VideoModeSettings(void)
 		case 18:
 			SDL_VIDEO_ToggleInterpolateScanlines();
 			break;
+#if HAVE_OPENGL && SDL2
+		case 19:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT barrel",
+				                                     SDL_VIDEO_crt_barrel_distortion,
+				                                     100, &CrtBarrelSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtBarrelPercentage(value);
+			}
+			break;
+		case 20:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT beam shape",
+				                                     SDL_VIDEO_crt_beam_shape,
+				                                     20, &CrtBeamSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtBeamShape(value);
+			}
+			break;
+		case 21:
+			{
+				int value = UI_driver->fSelectSlider("Adjust CRT glow",
+				                                     SDL_VIDEO_crt_phosphor_glow,
+				                                     20, &CrtGlowSliderLabel, NULL);
+				if (value != -1)
+					SDL_VIDEO_CrtPhosphorGlow(value);
+			}
+			break;
+#endif
 #endif /* GUI_SDL */
 		default:
 			return;
@@ -3795,13 +3936,226 @@ static void KeyboardJoystickConfiguration(int joystick)
 	}
 }
 
+#if SDL2
+static UI_tMenuItem joy_buttons_menu_array[] = {
+	UI_MENU_LABEL("  Configure controller buttons"),
+	UI_MENU_LABEL("\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022\022"),
+	UI_MENU_ACTION(0, ""),
+	UI_MENU_ACTION(1, ""),
+	UI_MENU_ACTION(2, ""),
+	UI_MENU_ACTION(3, ""),
+	UI_MENU_ACTION(4, ""),
+	UI_MENU_ACTION(5, ""),
+	UI_MENU_ACTION(6, ""),
+	UI_MENU_ACTION(7, ""),
+	UI_MENU_ACTION(8, ""),
+	UI_MENU_ACTION(9, ""),
+	UI_MENU_ACTION(10, ""),
+	UI_MENU_ACTION(11, ""),
+	UI_MENU_ACTION(12, ""),
+	UI_MENU_ACTION(13, ""),
+	UI_MENU_ACTION(14, ""),
+	UI_MENU_ACTION(15, ""),
+	UI_MENU_END
+};
+static char* joy_button_names[] = {
+	"A", "B", "X", "Y",
+	"Back", "Guide", "Start",
+	"Left stick", "Right stick",
+	"Left shoulder", "Right shoulder",
+	"D-Pad up", "D-Pad down", "D-Pad left", "D-Pad right",
+	"Miscellaneous"
+};
+static UI_tMenuItem joy_menu_action_key[] = {
+	UI_MENU_ACTION(1, "Action"),
+	UI_MENU_ACTION(2, "Atari key"),
+	UI_MENU_ACTION(3, "Keyboard key"),
+	UI_MENU_ACTION(0, "None"),
+	UI_MENU_END
+};
+
+#define KEYBASE 1000
+static UI_tMenuItem joy_menu_keys[] = {
+	UI_MENU_ACTION(KEYBASE + AKEY_START, "Start"),
+	UI_MENU_ACTION(KEYBASE + AKEY_SELECT, "Select"),
+	UI_MENU_ACTION(KEYBASE + AKEY_OPTION, "Option"),
+	UI_MENU_ACTION(KEYBASE + AKEY_HELP, "Help"),
+	UI_MENU_ACTION(KEYBASE + AKEY_BREAK, "Break"),
+	UI_MENU_END
+};
+static UI_tMenuItem joy_menu_actions[] = {
+	UI_MENU_ACTION(KEYBASE + UI_MENU_RUN, "Run program"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_DISK, "Disk"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_CARTRIDGE, "Cartridge"),
+	UI_MENU_ACTION(KEYBASE + AKEY_UI, "Enter setup"),
+	UI_MENU_ACTION(KEYBASE + AKEY_WARMSTART, "Reset (warm)"),
+	UI_MENU_ACTION(KEYBASE + AKEY_COLDSTART, "Reset (cold)"),
+	UI_MENU_ACTION(KEYBASE + AKEY_TURBO, "Toggle turbo"),
+	UI_MENU_ACTION(KEYBASE + AKEY_CONTROLLER_BUTTON_TRIGGER, "Joy trigger"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_SAVESTATE, "Save state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_LOADSTATE, "Load state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_QUICKSAVESTATE, "Quick save state"),
+	UI_MENU_ACTION(KEYBASE + UI_MENU_QUICKLOADSTATE, "Quick load state"),
+	UI_MENU_ACTION(KEYBASE + AKEY_EXIT, "Quit!"),
+	UI_MENU_END
+};
+static const int BUTTONS = sizeof(joy_button_names) / sizeof(*joy_button_names);
+static char joy_key_name[BUTTONS][20];
+
+static void JoystickMenuUpdate(SDL_INPUT_RealJSConfig_t* js_config) {
+	for (int i = 0; i < BUTTONS; ++i) {
+		UI_tMenuItem* menu = FindMenuItem(joy_buttons_menu_array, i);
+		menu->item = joy_button_names[i];
+		struct INPUT_joystick_button* btn = &js_config->buttons[i];
+
+		if (btn->action == JoystickNoAction) {
+			menu->suffix = "<empty>";
+		}
+		else if (btn->action == JoystickKeyboard) {
+			int len = sizeof(joy_key_name[i]);
+			snprintf(joy_key_name[i], len - 1, "\"%.16s\"", SDL_GetKeyName(btn->key));
+			menu->suffix = joy_key_name[i];
+		}
+		else {
+			UI_tMenuItem* entry = FindMenuItem(btn->action == JoystickUiAction ? joy_menu_actions : joy_menu_keys, KEYBASE + btn->key);
+			menu->suffix = entry ? entry->item : "?";
+		}
+	}
+}
+
+static void JoystickButtonsConfiguration(SDL_INPUT_RealJSConfig_t* js_config) {
+	JoystickMenuUpdate(js_config);
+
+	for (int option = 0; option >= 0; ) {
+		option = UI_driver->fSelect("", UI_SELECT_POPUP | UI_SELECT_JOY_BTN, option, joy_buttons_menu_array, NULL);
+
+		if (option >= AKEY_CONTROLLER_BUTTON_FIRST && option <= AKEY_CONTROLLER_BUTTON_LAST) {
+			int btn = option - AKEY_CONTROLLER_BUTTON_FIRST;
+			option = btn >= 0 && btn < BUTTONS ? btn : 0;
+			continue;
+		}
+
+		if (option >= 0) {
+			int opt = UI_driver->fSelect("", UI_SELECT_POPUP, 1, joy_menu_action_key, NULL);
+			if (opt == 1) {
+				// select an action
+				int action = UI_driver->fSelect("", UI_SELECT_POPUP, 0, joy_menu_actions, NULL);
+				if (action >= 0) {
+					js_config->buttons[option].key = action - KEYBASE;
+					js_config->buttons[option].action = JoystickUiAction;
+				}
+			}
+			else if (opt == 2) {
+				// assign a key
+				int key = UI_driver->fSelect("", UI_SELECT_POPUP, 0, joy_menu_keys, NULL);
+				if (key >= 0) {
+					js_config->buttons[option].key = key - KEYBASE;
+					js_config->buttons[option].action = JoystickAtariKey;
+				}
+			}
+			else if (opt == 3) {
+				// keyboard key
+				js_config->buttons[option].key = GetRawKey();
+				js_config->buttons[option].action = JoystickKeyboard;
+			}
+			else if (opt == 0) {
+				// reset
+				js_config->buttons[option].key = 0;
+				js_config->buttons[option].action = JoystickNoAction;
+			}
+	
+			if (opt >= 0) {
+				JoystickMenuUpdate(js_config);
+			}
+		}
+	}
+}
+
+#endif /* SDL2 */
+
 static void RealJoystickConfiguration(void)
 {
 	char title[40];
 	int option = 0;
 	int i;
 	SDL_INPUT_RealJSConfig_t *js_config;
+#if SDL2
+	static UI_tMenuItem real_js_menu_array[] = {
+		UI_MENU_LABEL("Joystick 1"),
+		UI_MENU_CHECK(0, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(1, " Analog axes:"),
+		UI_MENU_ACTION(2, " Diagonals zone:"),
+		UI_MENU_ACTION(3, " Configure buttons"),
+		UI_MENU_LABEL("Joystick 2"),
+		UI_MENU_CHECK(4, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(5, " Analog axes:"),
+		UI_MENU_ACTION(6, " Diagonals zone:"),
+		UI_MENU_ACTION(7, " Configure buttons"),
+		UI_MENU_LABEL("Joystick 3"),
+		UI_MENU_CHECK(8, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(9, " Analog axes:"),
+		UI_MENU_ACTION(10, " Diagonals zone:"),
+		UI_MENU_ACTION(11, " Configure buttons"),
+		UI_MENU_LABEL("Joystick 4"),
+		UI_MENU_CHECK(12, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(13, " Analog axes:"),
+		UI_MENU_ACTION(14, " Diagonals zone:"),
+		UI_MENU_ACTION(15, " Configure buttons"),
+		UI_MENU_END
+	};
 
+	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+
+	for (;;) {
+		/*Set the CHECK items*/
+		for (i = 0; i < 4; i++) {
+			int opt = i * 4;
+			SDL_INPUT_RealJSConfig_t* cfg = SDL_INPUT_GetRealJSConfig(i);
+			SetItemChecked(real_js_menu_array, opt++, cfg->use_hat);
+		
+			FindMenuItem(real_js_menu_array, opt++)->suffix = cfg->axes == 0 ? "1&2" : "3&4";
+
+			FindMenuItem(real_js_menu_array, opt)->suffix =
+				cfg->diagonal_zones == JoystickNarrowDiagonalsZone ?
+					"Narrow" : (cfg->diagonal_zones == JoystickWideDiagonalsZone ?  "Wide" : "None");
+		}
+
+		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+
+		if (option < 0) break;
+
+		js_config = SDL_INPUT_GetRealJSConfig(option / 4);
+		switch (option) {
+			case 0:
+			case 4:
+			case 8:
+			case 12:
+				js_config->use_hat = !js_config->use_hat;
+				break;
+			case 1:
+			case 5:
+			case 9:
+			case 13:
+				js_config->axes = js_config->axes ? 0 : 2;
+				break;
+			case 2:
+			case 6:
+			case 10:
+			case 14:
+				js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
+				break;
+			case 3:
+			case 7:
+			case 11:
+			case 15:
+				// configure buttons
+				JoystickButtonsConfiguration(js_config);
+				break;
+			default:
+				break;
+		}
+	}
+#else
 	static UI_tMenuItem real_js_menu_array[] = {
 		UI_MENU_LABEL("Joystick 1"),
 		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
@@ -3845,6 +4199,7 @@ static void RealJoystickConfiguration(void)
 				break;
 		}
 	}
+#endif /* SDL2 */
 }
 #endif
 
@@ -4615,6 +4970,12 @@ void UI_Run(void)
 			/* Note: AutostartFile() handles state files, too,
 			   so we can remove LoadState() now. */
 			LoadState();
+			break;
+		case UI_MENU_QUICKSAVESTATE:
+			QuickSaveState();
+			break;
+		case UI_MENU_QUICKLOADSTATE:
+			QuickLoadState();
 			break;
 #ifndef CURSES_BASIC
 		case UI_MENU_DISPLAY:
