@@ -119,6 +119,10 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			enableStateSave();
 		findPreference("savestate").setOnPreferenceChangeListener(this);
 
+		if (_sp.getBoolean("a800fns", false) == true)
+			findPreference("a800fns").setSummary(getString(R.string.pref_a800fns_sum_ena));
+		findPreference("a800fns").setOnPreferenceChangeListener(this);
+
 		Preference p = findPreference("launchpd");
 		if (p != null) {
 			p.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -189,6 +193,12 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			_svstfname = (String) v + ".a8s";
 			if (!saveState(false))
 				showDialog(DLG_OVRWR);
+			return true;
+		} else if (p.getKey().equals("a800fns")) {
+			if ((Boolean) v)
+				p.setSummary(getString(R.string.pref_a800fns_sum_ena));
+			else
+				p.setSummary(getString(R.string.pref_a800fns_sum_dis));
 			return true;
 		} else {
 			int k = (Integer) v;

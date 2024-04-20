@@ -655,7 +655,7 @@ public final class MainActivity extends Activity
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
 			crophoriz, cropvert, portpad, covlhold, derotkeys, actiona, actionb, actionc, ntsc,
-			paddle, plandef, browser, forceAT
+			paddle, plandef, browser, forceAT, a800fns
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -766,6 +766,8 @@ public final class MainActivity extends Activity
 				 changed(PreferenceName.forceAT) )
 				((MainActivity) _context).soundInit(true);
 
+			NativePrefKbd( Boolean.parseBoolean(_newvalues.get(PreferenceName.a800fns)) );
+
 			if (changed(PreferenceName.rompath))
 				if (!NativeSetROMPath(_newvalues.get(PreferenceName.rompath)))
 					Toast.makeText(_context, R.string.rompatherror, Toast.LENGTH_LONG).show();
@@ -861,6 +863,7 @@ public final class MainActivity extends Activity
 											 int grace, boolean paddle, boolean plandef);
 	private static native void NativePrefSound(int mixrate, int mixbufsizems, boolean sound16bit, boolean hqpokey,
 											   boolean disableOSL);
+	private static native void NativePrefKbd(boolean a800fns);
 	private static native boolean NativeSetROMPath(String path);
 	private static native String NativeGetJoypos();
 	private static native String NativeGetURL();

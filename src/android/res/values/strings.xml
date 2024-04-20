@@ -298,4 +298,7 @@
 	<string name="pref_launchpd_sum">A game revamped for touchscreen and Colleen by Tom Hudson</string>
 	<string name="pref_forceAT">Force Legacy Playback</string>
 	<string name="pref_forceAT_sum">Disable OpenSL ES sound if checked</string>
+	<string name="pref_a800fns">Atari800-compatible Function Keys</string>
+	<string name="pref_a800fns_sum_dis">F1=Help\u0020\u0020F2=Start\u0020\u0020F3=Select\u0020\u0020F4=Option\u0020\u0020F5=Reset</string>
+	<string name="pref_a800fns_sum_ena">F2=Option\u0020\u0020F3=Select\u0020\u0020F4=Start\u0020\u0020F5=Reset\u0020\u0020F6=Help</string>
 </resources>

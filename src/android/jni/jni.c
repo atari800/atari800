@@ -517,6 +517,11 @@ static void JNICALL NativePrefSound(JNIEnv *env, jobject this, int mixrate, int 
 	Android_SoundInit(mixrate, bufsizems, sound16bit, hqpokey, disableOSL);
 }
 
+static void JNICALL NativePrefKbd(JNIEnv *env, jobject this, jboolean a800fns)
+{
+	Android_A800Fns = a800fns;
+}
+
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
 {
 	const char *utf = NULL;
@@ -601,6 +606,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativePrefSoftjoy",		"(ZIIIIII[Ljava/lang/String;)V",	NativePrefSoftjoy	  },
 		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
 		{ "NativePrefSound",		"(IIZZZ)V",							NativePrefSound		  },
+		{ "NativePrefKbd",			"(Z)V",								NativePrefKbd		  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },

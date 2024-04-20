@@ -126,6 +126,11 @@
 			android:title="@string/pref_browser"
 			android:summary="@string/pref_browser_sum"
 			android:defaultValue="true"/>
+		<CheckBoxPreference
+			android:key="a800fns"
+			android:title="@string/pref_a800fns"
+			android:summary="@string/pref_a800fns_sum_dis"
+			android:defaultValue="false"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_input">

@@ -83,6 +83,7 @@ static const int derot_lut[2][4] =
 	{ KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN },	/* derot left */
 	{ KEY_LEFT, KEY_RIGHT, KEY_DOWN, KEY_UP }	/* derot right */
 };
+static const int a800_fns[6] = { KEY_MENU, KEY_OPTION, KEY_SELECT, KEY_START, KEY_RESET, KEY_HELP };
 SWORD softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
 {
 	{ KEY_LEFT,  	INPUT_STICK_LEFT    },
@@ -96,6 +97,7 @@ SWORD softjoymap[SOFTJOY_MAXKEYS + SOFTJOY_MAXACTIONS][2] =
 };
 int Android_SoftjoyEnable = TRUE;
 int Android_DerotateKeys = 0;
+int Android_A800Fns = FALSE;
 
 int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 {
@@ -424,6 +426,9 @@ void Android_KeyEvent(int k, int s)
 	if (Android_DerotateKeys && k <= KEY_UP && k >= KEY_RIGHT)
 		k = derot_lut[Android_DerotateKeys - 1][KEY_UP - k];
 
+	if (Android_A800Fns && k <= KEY_HELP && k >= KEY_MENU)
+		k = a800_fns[KEY_HELP - k];
+
 	switch (k) {
 	case KEY_SHIFT:
 		INPUT_key_shift = (s) ? AKEY_SHFT : 0;
@@ -433,6 +438,40 @@ void Android_KeyEvent(int k, int s)
 		break;
 	case KEY_FIRE:
 		Android_TrigStatus = (Android_TrigStatus & (~(s != 0))) | (s == 0);
+		break;
+	/* next five map Fn keys to console keys */
+	case KEY_RESET:
+		Keyboard_Enqueue( (s) ? ( (INPUT_key_shift) ? AKEY_COLDSTART : AKEY_WARMSTART ) : AKEY_NONE );
+		break;
+	case KEY_OPTION:
+		INPUT_key_consol = (s) ? (INPUT_key_consol & ~INPUT_CONSOL_OPTION) : (INPUT_key_consol | INPUT_CONSOL_OPTION);
+		break;
+	case KEY_SELECT:
+		INPUT_key_consol = (s) ? (INPUT_key_consol & ~INPUT_CONSOL_SELECT) : (INPUT_key_consol | INPUT_CONSOL_SELECT);
+		break;
+	case KEY_START:
+		INPUT_key_consol = (s) ? (INPUT_key_consol & ~INPUT_CONSOL_START) : (INPUT_key_consol | INPUT_CONSOL_START);
+		break;
+	case KEY_MENU:
+		/* nothing for now */
+		break;
+	/* next two handle the various insert/delete line/char combos */
+	case KEY_INSERT:
+		Keyboard_Enqueue( (s) ? ( (INPUT_key_shift) ? AKEY_INSERT_LINE : AKEY_INSERT_CHAR ) : AKEY_NONE );
+		break;
+	case KEY_DELETE:
+		/* support join-to-previous-line in the Action! editor */
+		if (INPUT_key_shift && Android_key_control)
+			Keyboard_Enqueue( (s) ? (AKEY_BACKSPACE | AKEY_SHFTCTRL) : AKEY_NONE );
+		else
+			Keyboard_Enqueue( (s) ? ( (INPUT_key_shift) ? AKEY_DELETE_LINE : AKEY_DELETE_CHAR ) : AKEY_NONE );
+		break;
+	/* next two are to support move-to-BOL/EOL in the Action! editor */
+	case KEY_LEFT:
+		Keyboard_Enqueue( (s) ? ( (INPUT_key_shift) ? (AKEY_LESS | AKEY_SHFTCTRL) : AKEY_LEFT ) : AKEY_NONE );
+		break;
+	case KEY_RIGHT:
+		Keyboard_Enqueue( (s) ? ( (INPUT_key_shift) ? (AKEY_GREATER | AKEY_SHFTCTRL) : AKEY_RIGHT ) : AKEY_NONE );
 		break;
 	default:
 		if (k >= STATIC_MAXKEYS)

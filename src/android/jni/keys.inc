@@ -11,6 +11,18 @@
 #define KEY_ENTER     249
 #define KEY_ESCAPE    248
 #define KEY_BREAK     242
+#define KEY_INSERT    241
+#define KEY_DELETE    240
+#define KEY_CLEAR     239
+#define KEY_CAPSTOGL  238
+#define KEY_HELP      237
+#define KEY_START     236
+#define KEY_SELECT    235
+#define KEY_OPTION    234
+#define KEY_RESET     233
+#define KEY_MENU      232
+#define KEY_SHFTCTRL1 231
+#define KEY_SHFTCTRL2 230
 
 /* Disable warnings caused by initializing some elements of skeyxlat twice. */
 #pragma GCC diagnostic push
@@ -127,11 +139,18 @@ static const SWORD skeyxlat[STATIC_MAXKEYS] = {
 	[KEY_ENTER    ] = AKEY_RETURN,
 	[KEY_ESCAPE   ] = AKEY_ESCAPE,
 	[KEY_BREAK    ] = AKEY_BREAK,
+	[KEY_CLEAR    ] = AKEY_CLEAR,
+	[KEY_CAPSTOGL ] = AKEY_CAPSTOGGLE,
+	[KEY_HELP     ] = AKEY_HELP,
+	[KEY_SHFTCTRL1] = AKEY_1 | AKEY_SHFTCTRL,
+	[KEY_SHFTCTRL2] = AKEY_2 | AKEY_SHFTCTRL,
 
 
 
 /* unmapped codes
+// AKEY_HELP is handled in jni/androidinput.c:Android_TouchEvent()
 #define AKEY_HELP 0x11
+// the rest of these are handled in jni/androidinput.c:Android_KeyEvent()
 #define AKEY_DELETE_CHAR 0xb4
 #define AKEY_DELETE_LINE 0x74
 #define AKEY_INSERT_CHAR 0xb7

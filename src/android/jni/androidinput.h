@@ -96,6 +96,7 @@ extern int Android_Joyleft;
 extern float Android_Splitpct;
 extern int Android_Split;
 extern int Android_DerotateKeys;
+extern int Android_A800Fns;
 extern int Android_Paddle;
 extern int Android_PlanetaryDefense;
 extern SWORD Android_POTX;
