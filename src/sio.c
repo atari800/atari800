@@ -1205,6 +1205,7 @@ void SIO_Handler(void)
 				result = 'E';
 			break;
 		case 0x53:				/* Status */
+		case 0xD3:				/* xf551 hispeed */
 			if (4 == length) {
 				result = SIO_DriveStatus(unit, DataBuffer);
 				if (result == 'C') {
@@ -1434,6 +1435,7 @@ static UBYTE Command_Frame(void)
 		SIO_last_drive = unit + 1;
 		return 'A';
 	case 0x53:				/* Status */
+	case 0xD3:				/* xf551 hispeed */
 #ifdef DEBUG
 		Log_print("Status frame: %02x %02x %02x %02x %02x",
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
@@ -1484,7 +1486,7 @@ static UBYTE Command_Frame(void)
 			CommandFrame[3], CommandFrame[4]);
 #endif
 		TransferStatus = SIO_NoFrame;
-		return 'E';
+		return 'N';
 	}
 }
 
