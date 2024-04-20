@@ -600,7 +600,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #ifdef NEW_CYCLE_EXACT
 	int x; /* the cycle-exact update position in GTIA_pm_scanline */
 	if (ANTIC_DRAWING_SCREEN) {
-		if ((addr & 0x1f) != GTIA_PRIOR) {
+		if ((addr & 0x1f) != GTIA_OFFSET_PRIOR) {
 			ANTIC_UpdateScanline();
 		} else {
 			ANTIC_UpdateScanlinePrior(byte);
