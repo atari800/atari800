@@ -49,11 +49,10 @@ many others with a little work):-
 5. "simple" version (no graphics). Should be straightforward to configure
    for any 32-bit environment supporting ANSI C.
 6. VGA Version for DOS
-7. DirectX Version for Microsoft Windows (also try the SDL version)
-8. SDL (Linux/Unix, Windows, BeOS)
-9. WinCE
-10. Java (various platforms)
-11. Static library version: libatari800
+7. SDL (Linux/Unix, Windows, BeOS)
+8. WinCE
+9. Java (various platforms)
+10. Static library version: libatari800
 
 Installed zlib (compression library) enables building the emulator with
 compressed statesave images support.

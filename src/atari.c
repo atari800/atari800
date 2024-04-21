@@ -147,9 +147,6 @@
 #ifdef SDL
 #include "sdl/init.h"
 #endif
-#ifdef DIRECTX
-#include "win32\main.h"
-#endif
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
@@ -1559,8 +1556,5 @@ void Atari800_SetTVMode(int mode)
 		Sound_Reinit();
 #endif /* defined(SUPPORTS_SOUND_REINIT) */
 #endif /* SOUND */
-#if defined(DIRECTX)
-		SetTVModeMenuItem(mode);
-#endif
 	}
 }

@@ -1,3 +1,12 @@
+Version 5.3.0 (2024/xx/xx)
+==========================
+
+Port specific changes:
+----------------------
+ * win32 (DirectX) backend removed. It served no real purpose, the last build
+   published was 2.2.1 in 04/2011
+
+
 Version 5.2.0 (2023/12/29)
 ==========================
 

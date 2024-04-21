@@ -23,14 +23,13 @@ It can be configured to run in the following ways :-
 	4. CBM Amiga
  	5. MS-DOS (DJGPP)
 	6. Atari Falcon/TT and compatible machines
-	7. MS Windows (DirectX)
-	8. SDL (running on _many_ platforms)
-	9. WinCE
-	10. Sega Dreamcast
-	11. JVM (Java applet)
-	12. Android
-	13. Raspberry Pi
-	14. libatari800 (platform independent) - the emulator core as a library
+	7. SDL (running on _many_ platforms)
+	8. WinCE
+	9. Sega Dreamcast
+	10. JVM (Java applet)
+	11. Android
+	12. Raspberry Pi
+	13. libatari800 (platform independent) - the emulator core as a library
 
 The "simple" version is only useful for running programs such as MAC65,
 Atari BASIC etc. I have had this version running on Linux,

@@ -64,8 +64,8 @@ It is generated from the source file "configure.ac" by a tool called
 
 If you opt to edit "config.h" by hand, make a copy of "config.h.in"
 under the name "config.h" and edit it changing some #undef's into #define's.
-Consult the comments and other config.h files created this way, in "dc",
-"win32/msc" and "wince/port" directories.
+Consult the comments and other config.h files created this way, in "dc"
+and "wince/port" directories.
 
 
 Compiling for the first time

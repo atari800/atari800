@@ -31,9 +31,6 @@
 /* Alternate config filename due to 8+3 fs limit. */
 #define DEFAULT_CFG_NAME	"atari800.cfg"
 
-/* Target: Windows with DirectX. */
-#undef DIRECTX
-
 /* Target: DOS VGA. */
 #undef DOSVGA
 
@@ -389,9 +386,6 @@
 
 /* Target: Curses-compatible library. */
 #undef USE_CURSES
-
-/* Define for using cursor/ctrl keys for keyboard joystick. */
-#undef USE_CURSORBLOCK
 
 /* Target: Ncurses library. */
 #undef USE_NCURSES

@@ -30,7 +30,7 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl Set a8_target...
 
 case "$target" in
-    default | falcon | firebee | ps2 | rpi | android | windx | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
+    default | falcon | firebee | ps2 | rpi | android | x11 | x11-shm | x11-motif | x11-xview | x11-xview-shm | libatari800)
         a8_target="$target"
         ;;
     shm | motif | xview | xview-shm)
@@ -51,7 +51,6 @@ case "$target" in
         echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
         echo "    firebee          (FireBee: set --host=m68k-atari-mint)"
         echo "    ps2              (Sony PlayStation 2)"
-        echo "    windx            (Windows with DirectX only)"
         echo "    libatari800      (Atari800 as a library (developers only))"
         echo "    x11              (Standard X11)"
         echo "    (x11-)motif      (Motif on X11)"
@@ -440,24 +439,6 @@ dnl BeOS has a real issue with redundant-decls
         AC_DEFINE(DIRTYRECT,1,[Define to use dirty screen partial repaints.])
         dnl AC_DEFINE(NODIRTYCOMPARE,1,[Define to skip memory comparisons - Requires DIRTYRECT.])
         ;;
-    windx)
-        AC_DEFINE(DIRECTX,1,[Target: Windows with DirectX.])
-        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
-        AC_DEFINE(SUPPORTS_PLATFORM_CONFIGSAVE,1,[Save additional config file options.])
-        AC_DEFINE(SUPPORTS_PLATFORM_PALETTEUPDATE,1,[Update the Palette if it changed.])
-        AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-        A8_NEED_LIB(ddraw)
-        A8_NEED_LIB(dinput)
-        A8_NEED_LIB(dsound)
-        A8_NEED_LIB(dxguid)
-        A8_NEED_LIB(d3d9)
-        A8_NEED_LIB(gdiplus)
-        A8_NEED_LIB(stdc++)
-        A8_NEED_LIB(ws2_32)
-        A8_NEED_LIB(gdi32)
-        CFLAGS="$CFLAGS -ansi -pedantic -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wstrict-prototypes -Winline"
-        LDFLAGS="$LDFLAGS -mwindows"
-        ;;
     libatari800)
         AC_DEFINE(LIBATARI800,1,[Target: Atari800 as a library.])
         AC_DEFINE(SUPPORTS_PLATFORM_CONFIGURE,1,[Additional config file options.])
@@ -510,7 +491,6 @@ AM_CONDITIONAL([CONFIGURE_TARGET_ANDROID], test "$a8_target" = android)
 AM_CONDITIONAL([CONFIGURE_TARGET_FALCON], test "$a8_target" = falcon)
 AM_CONDITIONAL([CONFIGURE_TARGET_PS2], test "$a8_target" = ps2)
 AM_CONDITIONAL([CONFIGURE_TARGET_RPI], test "$a8_target" = rpi)
-AM_CONDITIONAL([CONFIGURE_TARGET_WINDX], test "$a8_target" = windx)
 AM_CONDITIONAL([CONFIGURE_TARGET_LIBATARI800], test "$a8_target" = libatari800)
 AM_CONDITIONAL([CONFIGURE_TARGET_X11], test "$WANT_X11" = yes)
 
@@ -929,10 +909,10 @@ AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|win|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
-            no | yes | check | dossb | oss | falcon | win | sdl | javanvm)
+            no | yes | check | dossb | oss | falcon | sdl | javanvm)
                 ;;
             *)
                 AC_MSG_ERROR([unrecognized value for --with-sound: "$withval"])
@@ -964,16 +944,6 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             elif [[ "$with_sound" = javanvm ]]; then
                 AC_MSG_ERROR([--with-sound=javanvm was given, but host system is not NestedVM!])
             fi
-        fi
-        if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = win ]]; then
-            AC_CHECK_LIB([winmm], [main],
-                [LIBS="-lwinmm $LIBS"
-                 with_sound=win
-                ],
-                [if [[ "$with_sound" = win ]]; then
-                    AC_MSG_FAILURE([--with-sound=win was given, but WinMM library not found!])
-                 fi
-                ])
         fi
         if [[ "$with_sound" = check -o "$with_sound" = yes -o "$with_sound" = falcon ]]; then
             if [[ "$a8_host" = falcon -o "$a8_host" = firebee ]]; then
@@ -1016,9 +986,6 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
             WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
             ;;
-        win)
-            AC_DEFINE(SUPPORTS_SOUND_REINIT,1,[Reinitialise the sound system.])
-            ;;
         falcon)
             AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
             WANT_SOUND_THIN_API=yes
@@ -1042,7 +1009,6 @@ AM_CONDITIONAL([WITH_SOUND_JAVANVM], test "$with_sound" = javanvm)
 AM_CONDITIONAL([WITH_SOUND_FALCON], test "$with_sound" = falcon)
 AM_CONDITIONAL([WITH_SOUND_OSS], test "$with_sound" = oss)
 AM_CONDITIONAL([WITH_SOUND_SDL], test "$with_sound" = sdl)
-AM_CONDITIONAL([WITH_SOUND_WIN], test "$with_sound" = win)
 AM_CONDITIONAL([WITH_SOUND_DOSSB], test "$with_sound" = dossb)
 AM_CONDITIONAL([WITH_SOUND_LIBATARI800], test "$with_sound" = libatari800)
 AM_CONDITIONAL([A8_USE_SDL], test "$a8_use_sdl" = yes)
@@ -1369,13 +1335,6 @@ if [[ "$a8_host" = "linux" ]]; then
     esac
 fi
 
-if [[ "$a8_target" = "windx" ]]; then
-    A8_OPTION(cursorblock,no,
-              [Using cursor/ctrl keys for keyboard joystick (windx targets only) (default=OFF)],
-              USE_CURSORBLOCK,[Define for using cursor/ctrl keys for keyboard joystick.]
-             )
-fi
-
 if [[ "$WANT_XEP80_EMULATION" = "yes" ]]; then
     AC_DEFINE(XEP80_EMULATION,1,[Emulate the XEP80.])
 fi
@@ -1520,9 +1479,6 @@ if [[ "$a8_host" = "linux" ]]; then
         x11*)
             echo "Using Linux joystick?.................: $WANT_LINUX_JOYSTICK"
     esac
-fi
-if [[ "$a8_target" = "windx" ]]; then
-    echo "Using cursor/ctrl keys?...............: $WANT_USE_CURSORBLOCK"
 fi
 if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
     echo "Using R: device?......................: $WANT_R_IO_DEVICE"

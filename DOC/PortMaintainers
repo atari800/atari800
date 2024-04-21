@@ -13,7 +13,6 @@ Port (platform, OS):   Maintainer:
 ----------------------+-----------------------------------------
 DOS                    James Wilkinson    <james@slor.net>
 BeOS                   James Wilkinson    <james@slor.net>
-Win32                  James Wilkinson    <james@slor.net>
 WinCE, Android         Kostas Nakos       <knakos@gmail.com>
 Mac OS X               Mark Grebe         <markgrebe@yahoo.com>
 Atari Falcon/TT        Miro Kropacek      <miro.kropacek@gmail.com>

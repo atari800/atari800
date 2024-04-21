@@ -118,7 +118,7 @@ else {
 
 # supported targets
 my @targets = qw(
-	default falcon windx x11 x11-motif x11-shm
+	default falcon x11 x11-motif x11-shm
 	x11-xview x11-xview-shm motif shm xview xview-shm
 );
 
@@ -158,11 +158,7 @@ for (@ARGV) {
 	}
 }
 
-# gfx-generating target: windx on Win32, default otherwise
 my $gfx_target = 'default';
-if ($^O =~ /win/i) {
-	$gfx_target = 'windx';
-}
 
 # must initialize this after parsing the command line
 # in order to fill in $reference_program

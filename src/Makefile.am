@@ -116,9 +116,6 @@ endif
 if WITH_SOUND_OSS
 atari800_SOURCES += sound.c sound_oss.c
 endif
-if WITH_SOUND_WIN
-atari800_SOURCES += win32/sound.c
-endif
 if WITH_SOUND_LIBATARI800
 atari800_SOURCES += sound.c libatari800/sound.c libatari800/sound.h
 endif
@@ -175,23 +172,6 @@ endif
 
 if CONFIGURE_TARGET_RPI
 atari800_SOURCES += atari_rpi.c gles2/video.c sdl/main.c sdl/input.c sdl/input.h
-endif
-
-if CONFIGURE_TARGET_WINDX
-noinst_LIBRARIES = libwin32.a
-libwin32_a_SOURCES = \
-	win32/atari_win32.c win32/atari_win32.h \
-	win32/screen_win32.c win32/screen_win32.h \
-	win32/render_direct3d.c win32/render_direct3d.h \
-	win32/render_directdraw.c win32/render_directdraw.h \
-	win32/render_gdi.c win32/render_gdi.h \
-	win32/render_gdiplus.c win32/render_gdiplus.h \
-	win32/main.c win32/main.h win32/main_menu.h \
-	win32/keyboard.c win32/keyboard.h \
-	win32/joystick.c win32/joystick.h
-atari800_LDADD += libwin32.a win32/atari.ro
-# A special rule for win32 to not compile with -ansi -pedantic
-libwin32_a_CFLAGS = $(CFLAGS_NOANSI)
 endif
 
 if CONFIGURE_TARGET_X11
@@ -314,19 +294,6 @@ sdl/SDL_win32_main.o: sdl/SDL_win32_main.c
 ide.o: ide.c ide.h ide_internal.h
 	$(CC) -c -o $@ $(AM_CPPFLAGS) $(CFLAGS_NOANSI) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
 
-win32/atari.ro: win32/atari.rc
-	$(WINDRES) -o $@ --output-format coff --target pe-i386 --define WIN32 --define __MINGW32__ $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $< 
-
-# some special rules for some win32 source files which are actually C++
-win32/main.o: win32/main.c
-	$(CC) -x c++ -c -o $@ $(AM_CPPFLAGS) $(CFLAGS_NOANSI) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
-win32/render_gdiplus.o: win32/render_gdiplus.c
-	$(CC) -x c++ -c -o $@ $(AM_CPPFLAGS) $(CFLAGS_NOANSI) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
-win32/render_direct3d.o: win32/render_direct3d.c
-	$(CC) -x c++ -c -o $@ $(AM_CPPFLAGS) $(CFLAGS_NOANSI) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(DEFS) -Wno-missing-declarations -Wno-missing-prototypes $<
-
-
-
 .asm.o:
 	$(CCAS) $(CCASFLAGS) -o $@ $<
 
@@ -361,7 +328,6 @@ CLEANFILES += roms/*.o roms/*.bak roms/*~
 CLEANFILES += dos/*.o dos/*.bak dos/*~
 CLEANFILES += falcon/*.o falcon/*.bak falcon/*~
 CLEANFILES += sdl/*.o sdl/*.bak sdl/*~
-CLEANFILES += win32/*.o win32/*.ro win32/*.bak win32/*~
 CLEANFILES += javanvm/*.o javanvm/*.bak javanvm/*~
 CLEANFILES += atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
 CLEANFILES += android/libs android/obj android/bin android/gen
@@ -385,12 +351,10 @@ doc: readme.html
 
 EXTRA_DIST = $(doc_DATA) atari800.man
 EXTRA_DIST += joycfg.c mkimg.c
-EXTRA_DIST += win32/atari.rc win32/atari1.ico
 EXTRA_DIST += vtxsmpls.inc
 EXTRA_DIST += javanvm/UnixRuntime.patch javanvm/atari800.java
 EXTRA_DIST += macosx
 EXTRA_DIST += wince
-EXTRA_DIST += win32/msc
 EXTRA_DIST += amiga
 EXTRA_DIST += \
 	android/AndroidManifest.xml \

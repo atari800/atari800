@@ -59,12 +59,6 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 int GetRawKey(void);
 #endif
 
-#ifdef DIRECTX
-void PLATFORM_GetButtonAssignments(int stick, int button, char *buffer, int bufsize);
-void PLATFORM_SetButtonAssignment(int stick, int button, int value);
-int GetKeyName(void);
-#endif
-
 /* Menu codes for Alt+letter shortcuts.
    Store in UI_alt_function and put AKEY_UI in INPUT_key_code. */
 #define UI_MENU_DISK             0
@@ -88,12 +82,6 @@ int GetKeyName(void);
 #define UI_MENU_CASSETTE         18
 #define UI_MENU_CONTROLLER       19
 #define UI_MENU_WINDOWS	         20
-
-#ifdef DIRECTX
-	#define UI_MENU_SAVE_CONFIG      21
-	#define UI_MENU_FUNCT_KEY_HELP   22
-	#define UI_MENU_HOT_KEY_HELP     23
-#endif
 
 #define UI_MENU_VIDEO_RECORDING  24
 

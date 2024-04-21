@@ -51,16 +51,8 @@
 #include "util.h"
 #include "ui_basic.h"
 
-#ifdef DIRECTX
-	#include "win32/main.h"
-#endif
-
 static int initialised = FALSE;
 static UBYTE charset[1024];
-
-#ifdef DIRECTX
-	POINT UI_mouse_click = {-1, -1};
-#endif
 
 const unsigned char UI_BASIC_key_to_ascii[256] =
 {
@@ -113,9 +105,6 @@ static int GetKeyPress(void)
 	}
 
 	do { 
-#ifdef DIRECTX
-		DoEvents();
-#endif	
 		Atari800_Sync();
 		keycode = PLATFORM_Keyboard();
 		switch (keycode) {
@@ -129,12 +118,8 @@ static int GetKeyPress(void)
 			UI_alt_function = UI_MENU_EXIT;
 			return 0x1b; /* escape */
 		case AKEY_UI:
-#ifdef DIRECTX			
-			UI_Run();
-#else	
 			if (UI_alt_function >= 0)  /* Alt+letter, not F1 */
-#endif
-			return 0x1b; /* escape */				
+				return 0x1b; /* escape */				
 			break;
 		case AKEY_SCREENSHOT:
 			UI_alt_function = UI_MENU_PCX;
@@ -150,34 +135,6 @@ static int GetKeyPress(void)
 
 	return UI_BASIC_key_to_ascii[keycode];
 }
-
-#ifdef DIRECTX
-/* Convert atari-pixel based mouse click coordinates to simplified
-   UI coordinates consisting of 20 horizontal bands and 2 columns */
-void SetMouseIndex(int x, int y)
-{
-	int yband;
-	
-	/* set the y-band that the user clicked on */
-	yband = y / DX_MENU_ITEM_HEIGHT - 5;
-	if (y < 37 || x > 346 || yband < 0 || yband > 20)
-		UI_mouse_click.y = -1;
-	else
-		UI_mouse_click.y = yband;
-		
-	/* set the x-band that the user clicked on */
-	if (x >= 37 && x < 186)
-		UI_mouse_click.x = 1;
-	else if (x >= 186 && x <= 346)
-		UI_mouse_click.x = 2;
-	else 
-		UI_mouse_click.x = -1;
-		
-	/* set any click outside of any band to -1,-1 */
-	if (UI_mouse_click.x == -1 || UI_mouse_click.y == -1)
-		UI_mouse_click.x = UI_mouse_click.y = -1;
-}
-#endif
 
 static void Plot(int fg, int bg, int ch, int x, int y)
 {
@@ -303,17 +260,6 @@ int GetRawKey(void)
 }
 #endif /* GUI_SDL */
 
-#ifdef DIRECTX
-int GetKeyName(void)
-{
-	ClearRectangle(0x94, 13, 11, 25, 13);
-	Box(0x9a, 0x94, 13, 11, 25, 13);
-	CenterPrint(0x94, 0x9a, "Press a key", 12);
-	PLATFORM_DisplayScreen();
-	return PLATFORM_GetKeyName();
-}
-#endif
-
 static int Select(int default_item, int nitems, const char *item[],
                   const char *prefix[], const char *suffix[],
                   const char *tip[], const int nonselectable[],
@@ -431,37 +377,6 @@ static int Select(int default_item, int nitems, const char *item[],
 			case 0x9b:				/* Return=Select */
 				*seltype = UI_USER_SELECT;
 				return index;
-#ifdef DIRECTX
-			case 0xAA:              /* Mouse click */
-			
-			/* mouse click location, adjusted by context 
-			   this is all we need for one column */
-			tmp_index = UI_mouse_click.y - yoffset + 2;
-					  
-			/* handle two column mode scenarios */
-			if (ncolumns == 2) {
-				/* special case - do nothing if user clicks empty 
-			       bottom cell in column 1 in two column mode.   */	
-				if (UI_mouse_click.x == 1 && UI_mouse_click.y == 20) {
-					UI_mouse_click.x = UI_mouse_click.y = -1;
-					break;
-				} 
-				/* handle two column, multi-page scenarios */
-				else if (UI_mouse_click.x == 1) 
-					tmp_index += offset;
-				else if (UI_mouse_click.x == 2)
-					tmp_index += offset + 20;
-			}
-
-			/* if cell is a valid one, update the index */
-			if (tmp_index > -1 && tmp_index < nitems)
-				index = tmp_index;
-			else 
-				/* otherwise, invalid item, so do nothing */
-				UI_mouse_click.x = UI_mouse_click.y = -1;
-				
-			break;
-#endif 
 			case 0x1b:				/* Esc=Cancel */
 				return -1;
 			default:

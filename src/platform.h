@@ -71,10 +71,6 @@ void PLATFORM_ToggleKbdJoystickEnabled(int num);
 int PLATFORM_GetRawKey(void);
 #endif /* GUI_SDL */
 
-#ifdef DIRECTX
-int PLATFORM_GetKeyName(void);
-#endif
-
 #if SUPPORTS_CHANGE_VIDEOMODE
 /* Returns whether the platform-specific code support the given display mode, MODE,
    with/without stretching and with/without rotation. */

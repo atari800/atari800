@@ -27,7 +27,6 @@ EXTRA_DIST = $(doc_DATA) \
 	TODO \
 	cart.txt \
 	coverage.txt \
-	directx.txt \
 	emuos.txt \
 	pokeysnd.txt \
 	r_device.txt \
