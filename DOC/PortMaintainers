@@ -16,7 +16,7 @@ BeOS                   James Wilkinson    <james@slor.net>
 Win32                  James Wilkinson    <james@slor.net>
 WinCE, Android         Kostas Nakos       <knakos@gmail.com>
 Mac OS X               Mark Grebe         <markgrebe@yahoo.com>
-Atari Falcon/TT        Petr Stehlik       <pstehlik@sophics.cz>
+Atari Falcon/TT        Miro Kropacek      <miro.kropacek@gmail.com>
 OS/2                   <volunteer wanted>
 *BSD                   <volunteer wanted>
 Amiga                  Sebastian Bauer
@@ -27,5 +27,4 @@ If there is a volunteer for any of the above listed ports or if there
 is another port working that I didn't list then please contact me
 at <pstehlik@sophics.cz>.
 
-This document was created on 2003/02/11 and last updated on 2011/02/06.
-
+This document was created on 2003/02/11 and last updated on 2024/04/21.
