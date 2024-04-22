@@ -135,7 +135,16 @@ Currently supported cartridge types:
 |101 | 800/XL/XE |  16M | Ram-Cart 16 MB cartridge                      |   |
 |102 | 800/XL/XE |  32M | Ram-Cart 32 MB cartridge                      |   |
 |103 | 800/XL/XE |   32 | SiDiCar 32 KB cartridge                       |   |
-|160 | 800/XL/XE |   64 | JRC64 cartridge (interleaved)                 | x |
+|104 | 800/XL/XE |    8 | J(atari)Cart8(kB)                             |   |
+|105 | 800/XL/XE |   16 | J(atari)Cart16(kB)                            |   |
+|106 | 800/XL/XE |   32 | J(atari)Cart32(kB)                            |   |
+|107 | 800/XL/XE |   64 | J(atari)Cart64(kB)                            |   |
+|108 | 800/XL/XE |  128 | J(atari)Cart128(kB)                           |   |
+|109 | 800/XL/XE |  256 | J(atari)Cart256(kB)                           |   |
+|110 | 800/XL/XE |  512 | J(atari)Cart512(kB)                           |   |
+|111 | 800/XL/XE | 1024 | J(atari)Cart1024(kB)                          |   |
+|112 | 800/XL/XE |  512 | DCart 512 KB                                  |   |        
+|160 | 800/XL/XE |   64 |JRC64 cartridge (interleaved)                  | x |
 +----+-----------+------+-----------------------------------------------+---+
 
 Id is the cartridge type code stored in the CART file.
@@ -1247,7 +1256,7 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 | Type 77: MIO diagnostics 8KB cartridge                                    |
 +---------------------------------------------------------------------------+
 
- The cartridge uses the same board as type 11 - SpartaDOS X, but uses only
+ The cartridge uses the same board as type 11 - Sparta Dos X, but uses only
  one 8KB bank, turned on by access to $D5E0. This is not actually a 
  bankswitching  cartridge, just re-uses existing SDX cart design, basically
  working as standard 8KB left slot cartridge.
@@ -1755,6 +1764,133 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
 
  Reference:
  http://atariki.krap.pl/index.php/SiDiCar
+
++---------------------------------------------------------------------------+
+| Type 104: J(atari)Cart 8 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. Only one bank can be used. Bit 7 of $D5xx address disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 105: J(atari)Cart 16 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 2 banks, 8 KB each.
+ The one lowest bits of the address written to $D500-$D501 select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 106: J(atari)Cart 32 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 4 banks, 8 KB each.
+ The two lowest bits of the address written to $D500-$D503 select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 107: J(atari)Cart 64 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 8 banks, 8 KB each.
+ The free lowest bits of the address written to $D500-$D507 select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 108: J(atari)Cart 128 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 16 banks, 8 KB each.
+ The four lowest bits of the address written to $D500-$D50F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 109: J(atari)Cart 256 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 32 banks, 8 KB each.
+ The five lowest bits of the address written to $D500-$D51F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 110: J(atari)Cart 512 kB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
+ The six lowest bits of the address written to $D500-$D53F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 111: J(atari)Cart 1 MB Flash cartridge                               |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 128 banks, 8 KB each.
+ The seven lowest bits of the address written to $D500-$D57F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 112: DCart 512 kB Flash cartridge                                    |
++---------------------------------------------------------------------------+
+
+ This bank-switched cartridge occupies 8 KB of address space between $A000
+ and $BFFF. The cartridge memory is divided into 64 banks, 8 KB each.
+ The six lowest bits of the address written to $D500-$D53F select the bank
+ mapped to $A000-$BFFF, bit 7 disables the cartridge.
+
+ On the $D500 - $D5FF always you can read code from bank (Also when 
+ the bank is turned off.). It is mirror from $B500 - $B5FF.
+
+ Upon power up, bank 0 is selected.
+ 
+ The cartridge also supports programming of the Flash ROM - this feature is
+ currently not emulated.
 
 +---------------------------------------------------------------------------+
 | Type 160: JRC64 cartridge (interleaved)                                   |
