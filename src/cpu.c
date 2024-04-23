@@ -191,6 +191,7 @@ UBYTE CPU_regX;
 UBYTE CPU_regY;
 UBYTE CPU_regP;						/* Processor Status Byte (Partial) */
 UBYTE CPU_regS;
+UBYTE CPU_delay_nmi;
 
 /* Transfer 6502 registers between global variables and local variables inside CPU_GO() */
 #define UPDATE_GLOBAL_REGS  CPU_regPC = GET_PC(); CPU_regS = S; CPU_regA = A; CPU_regX = X; CPU_regY = Y
@@ -296,7 +297,7 @@ void CPU_PutStatus(void)
 		if ((sdata + (UBYTE) GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
 		else \
-			delay_nmi = TRUE; \
+			CPU_delay_nmi = TRUE; \
 		ANTIC_xpos++; \
 		PC += sdata; \
 		DONE \
@@ -311,7 +312,7 @@ void CPU_PutStatus(void)
 		if ((addr ^ GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
 		else \
-			delay_nmi = TRUE; \
+			CPU_delay_nmi = TRUE; \
 		ANTIC_xpos++; \
 		SET_PC(addr); \
 		DONE \
@@ -327,9 +328,15 @@ void CPU_PutStatus(void)
 /* Triggers a Non-Maskable Interrupt */
 void CPU_NMI(void)
 {
-	UBYTE S = CPU_regS;
+	UBYTE S;
 	UBYTE data;
 
+	/* If last instruction was a taken branch that did not cross a page,
+	 * we need to delay exactly 1 more cycle for the NMI */
+	if(CPU_delay_nmi)
+		CPU_GO(ANTIC_xpos_limit + 1);
+
+	S = CPU_regS;
 	PHW(CPU_regPC);
 	PHPB0;
 	CPU_SetI;
@@ -392,9 +399,8 @@ static const int cycles[256] =
 #ifndef NO_GOTO
 __extension__ /* suppress -ansi -pedantic warnings */
 #endif
-void CPU_GO(int limit, int pending_nmi)
+void CPU_GO(int limit)
 {
-	int delay_nmi = FALSE;
 #ifdef NO_GOTO
 #define OPCODE_ALIAS(code)	case 0x##code:
 #define DONE				break;
@@ -548,7 +554,7 @@ void CPU_NMI(void)
 		INTERRUPT(0xfffe); \
 	}
 
-void CPU_GO(int limit, int pending_nmi)
+void CPU_GO(int limit)
 {
 #endif /* FALCON_CPUASM */
 
@@ -601,13 +607,8 @@ void CPU_GO(int limit, int pending_nmi)
 	CPUCHECKIRQ;
 
 #ifndef FALCON_CPUASM
-	while (ANTIC_xpos < ANTIC_xpos_limit || (pending_nmi && delay_nmi)) {
-		if (ANTIC_xpos >= ANTIC_xpos_limit) {
-			/* if already delayed to the next instruction */
-			pending_nmi = FALSE;
-		}
-		delay_nmi = FALSE;
-
+	while (ANTIC_xpos < ANTIC_xpos_limit) {
+		CPU_delay_nmi = FALSE;
 #ifdef MONITOR_PROFILE
 		int old_xpos = ANTIC_xpos;
 		UWORD old_PC = GET_PC();
@@ -2440,7 +2441,7 @@ void CPU_GO(int limit, int pending_nmi)
 
 	{
 		extern void CPU_GO_m68k(int);
-		CPU_GO_m68k(pending_nmi);
+		CPU_GO_m68k();
 	}
 
 #endif /* FALCON_CPUASM */

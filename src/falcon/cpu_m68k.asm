@@ -76,6 +76,7 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   xdef _CPU_regS
   xdef _CPU_regX
   xdef _CPU_regY
+  xdef _CPU_delay_nmi
   xref _MEMORY_mem
   xref _MEMORY_attrib
   ifne PROFILE
@@ -672,8 +673,7 @@ _CPU_PutStatus:
   rts
 
 _CPU_GO_m68k:
-  move.w (6,sp),pending_nmi
-  clr.w  delay_nmi
+  clr.w  _CPU_delay_nmi
   movem.l d2-d7/a2-a6,-(a7)
   move.l _ANTIC_xpos,CD
   lea    _MEMORY_mem,memory_pointer
@@ -2826,7 +2826,7 @@ SOLVE:
   and.w  #$ff00,d0
   bne.s  SOLVE_PB
   addq.l #cy_Bcc1,CD
-  addq.w #1,delay_nmi
+  addq.w #1,_CPU_delay_nmi
   bra.w  NEXTCHANGE_WITHOUT
 SOLVE_PB:
   addq.l #cy_Bcc2,CD
@@ -3257,19 +3257,8 @@ COMPARE:
 NEXTCHANGE_N:
   ext.w  NFLAG
 NEXTCHANGE_WITHOUT:
-  cmp.l  _ANTIC_xpos_limit,CD
-  blt.s  .next_cycle
-
-  move.w pending_nmi,d0
-  beq.s  END_OF_CYCLE
-
-  tst.w  delay_nmi
-  beq.s  END_OF_CYCLE
-
-  clr.w  pending_nmi
-
-.next_cycle:
-  clr.w  delay_nmi
+  cmp.l _ANTIC_xpos_limit,CD
+  bge.s END_OF_CYCLE
 ****************************************
   ifne   MONITOR_BREAK  ;following block of code allows you to enter
                      ;a break address
@@ -3904,11 +3893,3 @@ cy_FlagCS equ 2  ; flag clear/set
 cy_RegChg equ 2  ; register only manipulation
 cy_RegPH equ 3   ; push register to stack
 cy_RegPL equ 4   ; pull register from stack
-
-  SECTION BSS
-  even
-
-pending_nmi:
-  ds.w 1
-delay_nmi:
-  ds.w 1

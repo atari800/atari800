@@ -22,7 +22,7 @@ void CPU_Reset(void);
 void CPU_StateSave(UBYTE SaveVerbose);
 void CPU_StateRead(UBYTE SaveVerbose, UBYTE StateVersion);
 void CPU_NMI(void);
-void CPU_GO(int limit, int pending_nmi);
+void CPU_GO(int limit);
 #define CPU_GenerateIRQ() (CPU_IRQ = 1)
 
 extern UWORD CPU_regPC;
@@ -31,6 +31,7 @@ extern UBYTE CPU_regP;
 extern UBYTE CPU_regS;
 extern UBYTE CPU_regY;
 extern UBYTE CPU_regX;
+extern UBYTE CPU_delay_nmi;
 
 #define CPU_SetN CPU_regP |= CPU_N_FLAG
 #define CPU_ClrN CPU_regP &= (~CPU_N_FLAG)
