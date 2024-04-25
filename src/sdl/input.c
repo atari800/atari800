@@ -61,6 +61,10 @@
 #include "ui_basic.h"
 #endif
 
+#ifndef M_PI
+# define M_PI 3.141592653589793
+#endif
+
 static int grab_mouse = FALSE;
 static int swap_joysticks = FALSE;
 static int joy_distinct = FALSE;
@@ -249,15 +253,22 @@ static void reset_real_js_configs(void)
     }
 }
 
+/* Configuration for SDL1 and SDL2 keys is separate; SDL2 redefined key codes */
+#if SDL2
+# define KEY_SDL "SDL2_"
+#else
+# define KEY_SDL "SDL_"
+#endif
+
 /*Write configurations of real joysticks*/
 static void write_real_js_configs(FILE* fp)
 {
     int i;
     for (i = 0; i < MAX_JOYSTICKS; i++) {
-        fprintf(fp, "SDL_JOY_%d_USE_HAT=%d\n", i, stick_devs[i].real_config.use_hat);
+        fprintf(fp, KEY_SDL"JOY_%d_USE_HAT=%d\n", i, stick_devs[i].real_config.use_hat);
 #if SDL2
-        fprintf(fp, "SDL_JOY_%d_AXES=%d\n", i, stick_devs[i].real_config.axes);
-        fprintf(fp, "SDL_JOY_%d_DIAGONALS=%d\n", i, stick_devs[i].real_config.diagonal_zones);
+        fprintf(fp, KEY_SDL"JOY_%d_AXES=%d\n", i, stick_devs[i].real_config.axes);
+        fprintf(fp, KEY_SDL"JOY_%d_DIAGONALS=%d\n", i, stick_devs[i].real_config.diagonal_zones);
 #endif
     }
 }
@@ -279,81 +290,81 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		was_config_initialized=TRUE;
 	}
 
-	if (strcmp(option, "SDL_JOY_0_ENABLED") == 0) {
+	if (strcmp(option, KEY_SDL"JOY_0_ENABLED") == 0) {
 		kbd_joy_0_enabled = (parameters != NULL && parameters[0] != '0');
 		update_kbd_sticks();
 		return TRUE;
 	}
-	else if (strcmp(option, "SDL_JOY_1_ENABLED") == 0) {
+	else if (strcmp(option, KEY_SDL"JOY_1_ENABLED") == 0) {
 		kbd_joy_1_enabled = (parameters != NULL && parameters[0] != '0');
 		update_kbd_sticks();
 		return TRUE;
 	}
-	else if (strcmp(option, "SDL_JOY_0_LEFT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_0_LEFT, parameters);
-	else if (strcmp(option, "SDL_JOY_0_RIGHT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_RIGHT") == 0)
 		return SDLKeyBind(&KBD_STICK_0_RIGHT, parameters);
-	else if (strcmp(option, "SDL_JOY_0_DOWN") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_DOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_0_DOWN, parameters);
-	else if (strcmp(option, "SDL_JOY_0_UP") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_UP") == 0)
 		return SDLKeyBind(&KBD_STICK_0_UP, parameters);
-	else if (strcmp(option, "SDL_JOY_0_TRIGGER") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_0, parameters);
-	else if (strcmp(option, "SDL_JOY_1_LEFT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_LEFT") == 0)
 		return SDLKeyBind(&KBD_STICK_1_LEFT, parameters);
-	else if (strcmp(option, "SDL_JOY_1_RIGHT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_RIGHT") == 0)
 		return SDLKeyBind(&KBD_STICK_1_RIGHT, parameters);
-	else if (strcmp(option, "SDL_JOY_1_DOWN") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_DOWN") == 0)
 		return SDLKeyBind(&KBD_STICK_1_DOWN, parameters);
-	else if (strcmp(option, "SDL_JOY_1_UP") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_UP") == 0)
 		return SDLKeyBind(&KBD_STICK_1_UP, parameters);
-	else if (strcmp(option, "SDL_JOY_1_TRIGGER") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_TRIGGER") == 0)
 		return SDLKeyBind(&KBD_TRIG_1, parameters);
-	else if (strcmp(option, "SDL_JOY_0_USE_HAT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_USE_HAT") == 0)
 		return set_real_js_use_hat(0,parameters);
-	else if (strcmp(option, "SDL_JOY_1_USE_HAT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_USE_HAT") == 0)
 		return set_real_js_use_hat(1,parameters);
-	else if (strcmp(option, "SDL_JOY_2_USE_HAT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_2_USE_HAT") == 0)
 		return set_real_js_use_hat(2,parameters);
-	else if (strcmp(option, "SDL_JOY_3_USE_HAT") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_3_USE_HAT") == 0)
 		return set_real_js_use_hat(3,parameters);
-	else if (strcmp(option, "SDL_JOY_0_AXES") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_AXES") == 0)
 		return set_real_js_axes(0,parameters);
-	else if (strcmp(option, "SDL_JOY_1_AXES") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_AXES") == 0)
 		return set_real_js_axes(1,parameters);
-	else if (strcmp(option, "SDL_JOY_2_AXES") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_2_AXES") == 0)
 		return set_real_js_axes(2,parameters);
-	else if (strcmp(option, "SDL_JOY_3_AXES") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_3_AXES") == 0)
 		return set_real_js_axes(3,parameters);
-	else if (strcmp(option, "SDL_JOY_0_DIAGONALS") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_0_DIAGONALS") == 0)
 		return set_real_js_diagonals(0,parameters);
-	else if (strcmp(option, "SDL_JOY_1_DIAGONALS") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_1_DIAGONALS") == 0)
 		return set_real_js_diagonals(1,parameters);
-	else if (strcmp(option, "SDL_JOY_2_DIAGONALS") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_2_DIAGONALS") == 0)
 		return set_real_js_diagonals(2,parameters);
-	else if (strcmp(option, "SDL_JOY_3_DIAGONALS") == 0)
+	else if (strcmp(option, KEY_SDL"JOY_3_DIAGONALS") == 0)
 		return set_real_js_diagonals(3,parameters);
-	else if (strcmp(option, "SDL_UI_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"UI_KEY") == 0)
 		return SDLKeyBind(&KBD_UI, parameters);
-	else if (strcmp(option, "SDL_OPTION_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"OPTION_KEY") == 0)
 		return SDLKeyBind(&KBD_OPTION, parameters);
-	else if (strcmp(option, "SDL_SELECT_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"SELECT_KEY") == 0)
 		return SDLKeyBind(&KBD_SELECT, parameters);
-	else if (strcmp(option, "SDL_START_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"START_KEY") == 0)
 		return SDLKeyBind(&KBD_START, parameters);
-	else if (strcmp(option, "SDL_RESET_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"RESET_KEY") == 0)
 		return SDLKeyBind(&KBD_RESET, parameters);
-	else if (strcmp(option, "SDL_HELP_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"HELP_KEY") == 0)
 		return SDLKeyBind(&KBD_HELP, parameters);
-	else if (strcmp(option, "SDL_BREAK_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"BREAK_KEY") == 0)
 		return SDLKeyBind(&KBD_BREAK, parameters);
-	else if (strcmp(option, "SDL_MON_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"MON_KEY") == 0)
 		return SDLKeyBind(&KBD_MON, parameters);
-	else if (strcmp(option, "SDL_EXIT_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"EXIT_KEY") == 0)
 		return SDLKeyBind(&KBD_EXIT, parameters);
-	else if (strcmp(option, "SDL_SSHOT_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"SSHOT_KEY") == 0)
 		return SDLKeyBind(&KBD_SSHOT, parameters);
-	else if (strcmp(option, "SDL_TURBO_KEY") == 0)
+	else if (strcmp(option, KEY_SDL"TURBO_KEY") == 0)
 		return SDLKeyBind(&KBD_TURBO, parameters);
 	else
 		return FALSE;
@@ -364,31 +375,31 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
    cleaned up by joy */
 void SDL_INPUT_WriteConfig(FILE *fp)
 {
-	fprintf(fp, "SDL_JOY_0_ENABLED=%d\n", kbd_joy_0_enabled);
-	fprintf(fp, "SDL_JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
-	fprintf(fp, "SDL_JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
-	fprintf(fp, "SDL_JOY_0_UP=%d\n", KBD_STICK_0_UP);
-	fprintf(fp, "SDL_JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
-	fprintf(fp, "SDL_JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
+	fprintf(fp, KEY_SDL"JOY_0_ENABLED=%d\n", kbd_joy_0_enabled);
+	fprintf(fp, KEY_SDL"JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
+	fprintf(fp, KEY_SDL"JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
+	fprintf(fp, KEY_SDL"JOY_0_UP=%d\n", KBD_STICK_0_UP);
+	fprintf(fp, KEY_SDL"JOY_0_DOWN=%d\n", KBD_STICK_0_DOWN);
+	fprintf(fp, KEY_SDL"JOY_0_TRIGGER=%d\n", KBD_TRIG_0);
 
-	fprintf(fp, "SDL_JOY_1_ENABLED=%d\n", kbd_joy_1_enabled);
-	fprintf(fp, "SDL_JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
-	fprintf(fp, "SDL_JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
-	fprintf(fp, "SDL_JOY_1_UP=%d\n", KBD_STICK_1_UP);
-	fprintf(fp, "SDL_JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
-	fprintf(fp, "SDL_JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
+	fprintf(fp, KEY_SDL"JOY_1_ENABLED=%d\n", kbd_joy_1_enabled);
+	fprintf(fp, KEY_SDL"JOY_1_LEFT=%d\n", KBD_STICK_1_LEFT);
+	fprintf(fp, KEY_SDL"JOY_1_RIGHT=%d\n", KBD_STICK_1_RIGHT);
+	fprintf(fp, KEY_SDL"JOY_1_UP=%d\n", KBD_STICK_1_UP);
+	fprintf(fp, KEY_SDL"JOY_1_DOWN=%d\n", KBD_STICK_1_DOWN);
+	fprintf(fp, KEY_SDL"JOY_1_TRIGGER=%d\n", KBD_TRIG_1);
 
-	fprintf(fp, "SDL_UI_KEY=%d\n", KBD_UI);
-	fprintf(fp, "SDL_OPTION_KEY=%d\n", KBD_OPTION);
-	fprintf(fp, "SDL_SELECT_KEY=%d\n", KBD_SELECT);
-	fprintf(fp, "SDL_START_KEY=%d\n", KBD_START);
-	fprintf(fp, "SDL_RESET_KEY=%d\n", KBD_RESET);
-	fprintf(fp, "SDL_HELP_KEY=%d\n", KBD_HELP);
-	fprintf(fp, "SDL_BREAK_KEY=%d\n", KBD_BREAK);
-	fprintf(fp, "SDL_MON_KEY=%d\n", KBD_MON);
-	fprintf(fp, "SDL_EXIT_KEY=%d\n", KBD_EXIT);
-	fprintf(fp, "SDL_SSHOT_KEY=%d\n", KBD_SSHOT);
-	fprintf(fp, "SDL_TURBO_KEY=%d\n", KBD_TURBO);
+	fprintf(fp, KEY_SDL"UI_KEY=%d\n", KBD_UI);
+	fprintf(fp, KEY_SDL"OPTION_KEY=%d\n", KBD_OPTION);
+	fprintf(fp, KEY_SDL"SELECT_KEY=%d\n", KBD_SELECT);
+	fprintf(fp, KEY_SDL"START_KEY=%d\n", KBD_START);
+	fprintf(fp, KEY_SDL"RESET_KEY=%d\n", KBD_RESET);
+	fprintf(fp, KEY_SDL"HELP_KEY=%d\n", KBD_HELP);
+	fprintf(fp, KEY_SDL"BREAK_KEY=%d\n", KBD_BREAK);
+	fprintf(fp, KEY_SDL"MON_KEY=%d\n", KBD_MON);
+	fprintf(fp, KEY_SDL"EXIT_KEY=%d\n", KBD_EXIT);
+	fprintf(fp, KEY_SDL"SSHOT_KEY=%d\n", KBD_SSHOT);
+	fprintf(fp, KEY_SDL"TURBO_KEY=%d\n", KBD_TURBO);
 
 	write_real_js_configs(fp);
 }

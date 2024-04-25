@@ -50,6 +50,10 @@
 #include "sdl/video.h"
 #include "sdl/video_gl.h"
 
+#ifndef M_PI
+# define M_PI 3.141592653589793
+#endif
+
 static int currently_rotated = FALSE;
 /* If TRUE, then 32 bit, else 16 bit screen. */
 static int bpp_32 = FALSE;
@@ -525,13 +529,16 @@ static void CleanDisplayTexture(void)
 		gl.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 }
 
+#if SDL2
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-function-pointer-types"
+#endif
+
 /* Sets pointers to OpenGL functions. Returns TRUE on success, FALSE on failure. */
 static int InitGlFunctions(void)
 {
 	if (
 #if SDL2
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-function-pointer-types"
 	(gl.GetError = GetGlFunc("glGetError")) == NULL ||
 	(gl.CreateShader = GetGlFunc("glCreateShader")) == NULL ||
 	(gl.ShaderSource = GetGlFunc("glShaderSource")) == NULL ||
@@ -560,7 +567,6 @@ static int InitGlFunctions(void)
 	(gl.GetUniformLocation = GetGlFunc("glGetUniformLocation")) == NULL ||
 	(gl.GetAttribLocation = GetGlFunc("glGetAttribLocation")) == NULL ||
 	(gl.DrawElements = GetGlFunc("glDrawElements")) == NULL ||
-#pragma GCC diagnostic pop
 #endif
 	    (gl.Viewport = (void(APIENTRY*)(GLint,GLint,GLsizei,GLsizei))GetGlFunc("glViewport")) == NULL ||
 	    (gl.ClearColor = (void(APIENTRY*)(GLfloat, GLfloat, GLfloat, GLfloat))GetGlFunc("glClearColor")) == NULL ||
@@ -592,6 +598,10 @@ static int InitGlFunctions(void)
 		return FALSE;
 	return TRUE;
 }
+
+#if SDL2
+#pragma GCC diagnostic pop
+#endif
 
 /* Checks availability of Pixel Buffer Objests extension and sets pointers of PBO-related OpenGL functions.
    Returns TRUE on success, FALSE on failure. */
