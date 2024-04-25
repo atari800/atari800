@@ -103,6 +103,7 @@ unsigned int CPU_remember_jmp_curpos = 0;
 
 UBYTE CPU_cim_encountered = FALSE;
 UBYTE CPU_IRQ;
+UBYTE CPU_delayed_nmi;
 
 #ifndef FALCON_CPUASM
 /* Windows headers define it */
@@ -281,6 +282,13 @@ void CPU_PutStatus(void)
 #define PLP         data = PL; N = data; Z = (data & 0x02) ^ 0x02; C = (data & 0x01); CPU_regP = (data & 0x4c) + 0x30
 #endif /* NO_V_FLAG_VARIABLE */
 /* 1 or 2 extra cycles for conditional jumps */
+/* Altirra Hardware Reference Manual:
+ * A taken relative branch delays interrupt acknowledgment by one cycle:
+ * a case in which the earliest opportunity to respond to an interrupt
+ * is immediately after the branch instead is delayed to the next
+ * instruction. This occurs for any Bcc instruction which does not
+ * cross a page boundary.
+ */
 #if 0
 /* old, less efficient version */
 #define BRANCH(cond) \
@@ -288,6 +296,8 @@ void CPU_PutStatus(void)
 		SWORD sdata = (SBYTE) GET_CODE_BYTE(); \
 		if ((sdata + (UBYTE) GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
+		else \
+			CPU_delayed_nmi = 1; \
 		ANTIC_xpos++; \
 		PC += sdata; \
 		DONE \
@@ -301,6 +311,8 @@ void CPU_PutStatus(void)
 		addr += GET_PC(); \
 		if ((addr ^ GET_PC()) & 0xff00) \
 			ANTIC_xpos++; \
+		else \
+			CPU_delayed_nmi = 1; \
 		ANTIC_xpos++; \
 		SET_PC(addr); \
 		DONE \
@@ -316,9 +328,13 @@ void CPU_PutStatus(void)
 /* Triggers a Non-Maskable Interrupt */
 void CPU_NMI(void)
 {
-	UBYTE S = CPU_regS;
+	UBYTE S;
 	UBYTE data;
 
+	if(CPU_delayed_nmi > 0)
+		CPU_GO(ANTIC_xpos_limit + CPU_delayed_nmi);
+
+	S = CPU_regS;
 	PHW(CPU_regPC);
 	PHPB0;
 	CPU_SetI;
@@ -516,24 +532,35 @@ void CPU_GO(int limit)
 
 #define PH(x)  MEMORY_dPutByte(0x0100 + S--, x)
 #define PHW(x) PH((x) >> 8); PH((x) & 0xff)
-#define INTERRUPT(address)  \
-	UBYTE S = CPU_regS;     \
-	PHW(CPU_regPC);         \
-	PH(CPU_regP & 0xef);	\
-	CPU_SetI;               \
-	CPU_regPC = MEMORY_dGetWordAligned(address); \
-	CPU_regS = S;           \
-	ANTIC_xpos += 7;        \
-	INC_RET_NESTING;
 
+/* TODO: Unify with non-FALCON_CPUASM code */
 void CPU_NMI(void)
 {
-	INTERRUPT(0xfffa);
+	UBYTE S;
+
+	if(CPU_delayed_nmi > 0)
+		CPU_GO(ANTIC_xpos_limit + CPU_delayed_nmi);
+
+	S = CPU_regS;
+	PHW(CPU_regPC);
+	PH(CPU_regP & 0xef);
+	CPU_SetI;
+	CPU_regPC = MEMORY_dGetWordAligned(0xfffa);
+	CPU_regS = S;
+	ANTIC_xpos += 7;
+	INC_RET_NESTING;
 }
 
 #define CPUCHECKIRQ \
 	if (CPU_IRQ && !(CPU_regP & CPU_I_FLAG) && ANTIC_xpos < ANTIC_xpos_limit) { \
-		INTERRUPT(0xfffe); \
+		UBYTE S = CPU_regS;     \
+		PHW(CPU_regPC);         \
+		PH(CPU_regP & 0xef);	\
+		CPU_SetI;               \
+		CPU_regPC = MEMORY_dGetWordAligned(0xfffe); \
+		CPU_regS = S;           \
+		ANTIC_xpos += 7;        \
+		INC_RET_NESTING;		\
 	}
 
 void CPU_GO(int limit)
@@ -590,6 +617,7 @@ void CPU_GO(int limit)
 
 #ifndef FALCON_CPUASM
 	while (ANTIC_xpos < ANTIC_xpos_limit) {
+		CPU_delayed_nmi = 0;
 #ifdef MONITOR_PROFILE
 		int old_xpos = ANTIC_xpos;
 		UWORD old_PC = GET_PC();

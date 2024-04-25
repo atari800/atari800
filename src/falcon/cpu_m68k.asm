@@ -108,6 +108,7 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   xdef _CPU_PutStatus
   xref _CPU_cim_encountered
   xref _CPU_rts_handler
+  xref _CPU_delayed_nmi
 
   ifne MONITOR_BREAK
 rem_pc_steps  equ 64  ; has to be equal to REMEMBER_PC_STEPS
@@ -2824,6 +2825,7 @@ SOLVE:
   and.w  #$ff00,d0
   bne.s  SOLVE_PB
   addq.l #cy_Bcc1,CD
+  move.b #1,_CPU_delayed_nmi
   bra.w  NEXTCHANGE_WITHOUT
 SOLVE_PB:
   addq.l #cy_Bcc2,CD
@@ -3254,8 +3256,8 @@ COMPARE:
 NEXTCHANGE_N:
   ext.w  NFLAG
 NEXTCHANGE_WITHOUT:
-  cmp.l _ANTIC_xpos_limit,CD
-  bge.s END_OF_CYCLE
+  cmp.l  _ANTIC_xpos_limit,CD
+  bge.s  END_OF_CYCLE
 ****************************************
   ifne   MONITOR_BREAK  ;following block of code allows you to enter
                      ;a break address
@@ -3310,6 +3312,7 @@ NEXTCHANGE_WITHOUT:
 .get_first
   endif
 ****************************************
+  clr.b  _CPU_delayed_nmi
   moveq  #0,d7
   move.b (PC6502)+,d7
   ifne   PROFILE
