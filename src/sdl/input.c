@@ -1524,9 +1524,9 @@ static int get_SDL_joystick_hat_state(SDL_Joystick* joystick)
 	return stick;
 }
 
+#ifdef LPTJOY
 static int get_LPT_joystick_state(int fd)
 {
-#ifdef LPTJOY
 	int status, stick;
 
 	ioctl(fd, LPGETSTATUS, &status);
@@ -1541,10 +1541,8 @@ static int get_LPT_joystick_state(int fd)
 	if (status & 0x10)
 		stick &= INPUT_STICK_FORWARD;
 	return stick;
-#else
-	return 0;
-#endif /* LPTJOY */
 }
+#endif /* LPTJOY */
 
 static int single_stick_port(int num) {
 	int port;
