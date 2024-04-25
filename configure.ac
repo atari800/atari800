@@ -1317,8 +1317,8 @@ AC_ARG_WITH(opengl,
     [],
     [with_opengl=check])
 
-dnl TODO: check both sdl and sdl2
-if [[ "$a8_target" != default -o "$with_video" != sdl2 ]]; then
+dnl Check both sdl and sdl2
+if [[ "$a8_target" != default -o \( "$with_video" != sdl -a "$with_video" != sdl2 \) ]]; then
     if [[ "$with_opengl" = "yes" ]]; then
         AC_MSG_ERROR([option --with-opengl only supported with --target=default --with-video=sdl!])
     fi
