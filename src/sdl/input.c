@@ -725,7 +725,7 @@ int PLATFORM_Keyboard(void)
 			case SDLK_m:
 				grab_mouse = !grab_mouse;
 #if SDL2
-	//TODO - there's no mouse grab function in SDL2
+	//TODO - there`s no mouse grab function in SDL2
 #else
 				SDL_WM_GrabInput(grab_mouse ? SDL_GRAB_ON : SDL_GRAB_OFF);
 #endif

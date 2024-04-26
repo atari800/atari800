@@ -2428,6 +2428,7 @@ static void ScanlinesSliderLabel(char *label, int value, void *user_data)
 	SDL_VIDEO_SetScanlinesPercentage(value);
 }
 
+#if HAVE_OPENGL && SDL2
 static void CrtBarrelSliderLabel(char *label, int value, void *user_data) {
 	sprintf(label, "%i", value);
 	SDL_VIDEO_CrtBarrelPercentage(value);
@@ -2443,6 +2444,7 @@ static void CrtGlowSliderLabel(char *label, int value, void *user_data) {
 	SDL_VIDEO_CrtPhosphorGlow(value);
 }
 
+#endif /* HAVE_OPENGL && SDL2 */
 #endif /* GUI_SDL */
 
 static void VideoModeSettings(void)

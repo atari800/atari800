@@ -531,7 +531,7 @@ static void CleanDisplayTexture(void)
 
 #if SDL2
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-function-pointer-types"
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 #endif
 
 /* Sets pointers to OpenGL functions. Returns TRUE on success, FALSE on failure. */
