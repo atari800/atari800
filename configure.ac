@@ -1035,8 +1035,8 @@ if [[ "$with_sound" != no ]]; then
     fi
 
     A8_OPTION(nonlinear_mixing,yes,
-              [Use nonlinear POKEY mixing (default=ON)],
-              NONLINEAR_MIXING,[Define to use nonlinear POKEY mixing.]
+              [Use nonlinear mixing on high fidelity POKEY (default=ON)],
+              NONLINEAR_MIXING,[Define to use nonlinear mixing on high fidelity POKEY.]
              )
 
     A8_OPTION(interpolatesound,yes,

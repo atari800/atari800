@@ -9,8 +9,9 @@ DIR_ATARI800_CF="atari800-cf"
 
 DIR_SYSROOT="$(m68k-atari-mint-gcc -print-sysroot)"
 
-COMMON_FLAGS='--host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording
-	--disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --with-readline=no'
+COMMON_FLAGS='--host=m68k-atari-mint --enable-veryslow --disable-nonlinear_mixing --disable-pbi_bb --disable-pbi_mio --with-readline=no
+	--disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-monitorutf8 --disable-monitoransi
+	--disable-eventrecording --disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording'
 
 rm -rf ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
@@ -20,15 +21,15 @@ make distclean || echo "Already cleaned"
 cd -
 
 cd ${DIR_ATARI800_CLASSIC}
-${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=falcon --enable-falconcpuasm && make V=1
+${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=falcon --enable-falconcpuasm --disable-interpolatesound && make V=1
 cd -
 
 cd ${DIR_ATARI800_FAST}
-${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=falcon --enable-falconcpuasm --disable-newcycleexact && make V=1
+${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=falcon --enable-falconcpuasm --disable-interpolatesound --disable-newcycleexact && make V=1
 cd -
 
 cd ${DIR_ATARI800_SDL}
-PATH=${DIR_SYSROOT}/usr/bin/m68020-60:$PATH ${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=default --enable-falconcpuasm && make V=1
+PATH=${DIR_SYSROOT}/usr/bin/m68020-60:$PATH ${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=default --enable-falconcpuasm --disable-interpolatesound && make V=1
 cd -
 
 cd ${DIR_ATARI800_CF}
