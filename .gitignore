@@ -35,3 +35,7 @@
 /tools/cart
 /tools/Makefile
 /tools/Makefile.in
+
+# Qt Creator
+/atari800.creator.user
+/.qtc_clangd
