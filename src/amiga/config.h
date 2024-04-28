@@ -330,9 +330,6 @@
 /* Define to the type of arg 5 for `select'. */
 #undef SELECT_TYPE_ARG5
 
-/* Define to allow serial in/out sound. */
-#define SERIO_SOUND 1
-
 /* Target: X11 with shared memory extensions. */
 #undef SHM
 

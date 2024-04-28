@@ -143,9 +143,6 @@ UBYTE POKEY_GetByte(UWORD addr, int no_side_effects)
 #ifdef DEBUG3
 		printf("SERIO: SERIN read, bytevalue %02x\n", POKEY_SERIN);
 #endif
-#ifdef SERIO_SOUND
-		POKEYSND_UpdateSerio(0,byte);
-#endif
 		break;
 	case POKEY_OFFSET_IRQST:
 		byte = POKEY_IRQST;
@@ -284,9 +281,6 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 				POKEY_DELAYED_XMTDONE_IRQ = 0;
 			}
 		};
-#ifdef SERIO_SOUND
-		POKEYSND_UpdateSerio(1, byte);
-#endif
 		break;
 	case POKEY_OFFSET_STIMER:
 		POKEY_DivNIRQ[POKEY_CHAN1] = POKEY_DivNMax[POKEY_CHAN1];

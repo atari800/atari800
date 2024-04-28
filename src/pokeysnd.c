@@ -172,13 +172,6 @@ static void null_pokey_sound(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain) {}
 void (*POKEYSND_Update_ptr) (UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
   = null_pokey_sound;
 
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data);
-static void null_serio_sound(int out, UBYTE data) {}
-void (*POKEYSND_UpdateSerio)(int out, UBYTE data) = null_serio_sound;
-int POKEYSND_serio_sound_enabled = 1;
-#endif
-
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_rf(int set);
 static void null_consol_sound(int set) {}
@@ -353,9 +346,6 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 	UBYTE chan;
 
 	POKEYSND_Update_ptr = Update_pokey_sound_rf;
-#ifdef SERIO_SOUND
-	POKEYSND_UpdateSerio = Update_serio_sound_rf;
-#endif
 #ifdef CONSOLE_SOUND
 	POKEYSND_UpdateConsol_ptr = Update_consol_sound_rf;
 #endif
@@ -1039,12 +1029,6 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 		}
 	}
 }
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data)
-{
-}
-#endif /* SERIO_SOUND */
 
 void POKEYSND_SetVolume(int vol)
 {

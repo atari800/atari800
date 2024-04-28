@@ -1245,9 +1245,6 @@ found:
 static void mzpokeysnd_process_8(void* sndbuffer, int sndn);
 static void mzpokeysnd_process_16(void* sndbuffer, int sndn);
 static void Update_pokey_sound_mz(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain);
-#ifdef SERIO_SOUND
-static void Update_serio_sound_mz(int out, UBYTE data);
-#endif
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set );
 #endif
@@ -1290,9 +1287,6 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
     snd_quality = quality;
 
     POKEYSND_Update_ptr = Update_pokey_sound_mz;
-#ifdef SERIO_SOUND
-    POKEYSND_UpdateSerio = Update_serio_sound_mz;
-#endif
 #ifdef CONSOLE_SOUND
     POKEYSND_UpdateConsol_ptr = Update_consol_sound_mz;
 #endif
@@ -2386,12 +2380,6 @@ static void generate_sync(unsigned int num_ticks)
 			advance_ticks(pokey_states + i, num_ticks);
 	}
 }
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_mz( int out, UBYTE data )
-{
-}
-#endif /* SERIO_SOUND */
 
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set )

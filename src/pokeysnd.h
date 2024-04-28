@@ -92,7 +92,6 @@ extern int POKEYSND_bienias_fix;
 
 extern void (*POKEYSND_Process_ptr)(void *sndbuffer, int sndn);
 extern void (*POKEYSND_Update_ptr)(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain);
-extern void (*POKEYSND_UpdateSerio)(int out, UBYTE data);
 extern void (*POKEYSND_UpdateConsol_ptr)(int set);
 
 int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,

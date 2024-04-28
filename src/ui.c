@@ -3653,9 +3653,6 @@ static int SoundSettings(void)
 #ifdef CONSOLE_SOUND
 		UI_MENU_CHECK(7, "Speaker (Key Click):"),
 #endif
-#ifdef SERIO_SOUND
-		UI_MENU_CHECK(8, "Serial IO Sound:"),
-#endif
 		UI_MENU_ACTION(9, "Enable higher frequencies:"),
 		UI_MENU_END
 	};
@@ -3684,9 +3681,6 @@ static int SoundSettings(void)
 		SetItemChecked(menu_array, 6, POKEYSND_enable_new_pokey);
 #ifdef CONSOLE_SOUND
 		SetItemChecked(menu_array, 7, POKEYSND_console_sound_enabled);
-#endif
-#ifdef SERIO_SOUND
-		SetItemChecked(menu_array, 8, POKEYSND_serio_sound_enabled);
 #endif
 		FindMenuItem(menu_array, 9)->suffix = POKEYSND_enable_new_pokey ? "N/A" : POKEYSND_bienias_fix ? "Yes" : "No ";
 
@@ -3771,11 +3765,6 @@ static int SoundSettings(void)
 #ifdef CONSOLE_SOUND
 		case 7:
 			POKEYSND_console_sound_enabled = !POKEYSND_console_sound_enabled;
-			break;
-#endif
-#ifdef SERIO_SOUND
-		case 8:
-			POKEYSND_serio_sound_enabled = !POKEYSND_serio_sound_enabled;
 			break;
 #endif
 		case 9:

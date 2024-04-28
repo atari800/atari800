@@ -339,9 +339,6 @@
 /* Define to the type of arg 5 for `select'. */
 #define SELECT_TYPE_ARG5 const struct timeval
 
-/* Define to allow serial in/out sound. */
-#undef SERIO_SOUND
-
 /* Target: X11 with shared memory extensions. */
 #undef SHM
 

@@ -227,11 +227,6 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 				POKEYSND_console_sound_enabled = Util_sscanbool(ptr);
 #endif
 			}
-			else if (strcmp(string, "SERIO_SOUND") == 0) {
-#ifdef SERIO_SOUND
-				POKEYSND_serio_sound_enabled = Util_sscanbool(ptr);
-#endif
-			}
 			else if (strcmp(string, "MACHINE_TYPE") == 0) {
 				if (strcmp(ptr, "Atari 400/800") == 0 ||
 				    /* Also recognise legacy values of this parameter */
@@ -444,9 +439,6 @@ int CFG_WriteConfig(void)
 #endif
 #ifdef CONSOLE_SOUND
 	fprintf(fp, "SPEAKER_SOUND=%d\n", POKEYSND_console_sound_enabled);
-#endif
-#ifdef SERIO_SOUND
-	fprintf(fp, "SERIO_SOUND=%d\n", POKEYSND_serio_sound_enabled);
 #endif
 #endif /* SOUND */
 	fprintf(fp, "BUILTIN_BASIC=%d\n", Atari800_builtin_basic);
