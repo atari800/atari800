@@ -10,14 +10,13 @@ DIR_ATARI800_CF="atari800-cf"
 DIR_SYSROOT="$(m68k-atari-mint-gcc -print-sysroot)"
 
 COMMON_FLAGS='--host=m68k-atari-mint --enable-veryslow --disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-eventrecording
-	--disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice --with-readline=no'
+	--disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording --disable-monitorutf8 --disable-monitoransi --disable-pbi_bb --disable-pbi_mio --with-readline=no'
 
 rm -rf ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 
 cd ${DIR_ATARI800_SRC}
-git clean -f -x -d -f
-./autogen.sh
+make distclean || echo "Already cleaned"
 cd -
 
 cd ${DIR_ATARI800_CLASSIC}

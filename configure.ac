@@ -80,6 +80,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 WANT_IDE="yes"
 WANT_POKEYREC="yes"
+SUPPORTS_RDEVICE="yes"
 
 dnl Set a8_host...
 
@@ -188,10 +189,12 @@ fi
 if [[ "$a8_host" = "falcon" ]]; then
 	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-m68020-60"
+	SUPPORTS_RDEVICE=no
 fi
 if [[ "$a8_host" = "firebee" ]]; then
 	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
 	LDFLAGS="-mcpu=5475"
+	SUPPORTS_RDEVICE=no
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
     with_readline=no
@@ -343,7 +346,6 @@ AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h un
 AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
-SUPPORTS_RDEVICE=yes
 if [[ "$a8_host" = "win" ]]; then
     AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no)
 else
