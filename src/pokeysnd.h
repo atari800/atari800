@@ -94,7 +94,6 @@ extern void (*POKEYSND_Process_ptr)(void *sndbuffer, int sndn);
 extern void (*POKEYSND_Update_ptr)(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain);
 extern void (*POKEYSND_UpdateSerio)(int out, UBYTE data);
 extern void (*POKEYSND_UpdateConsol_ptr)(int set);
-extern void (*POKEYSND_UpdateVolOnly)(void);
 
 int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
                      int flags
@@ -112,22 +111,6 @@ void POKEYSND_Process(void *sndbuffer, int sndn);
 int POKEYSND_DoInit(void);
 void POKEYSND_SetMzQuality(int quality);
 void POKEYSND_SetVolume(int vol);
-
-/* Volume only emulations declarations */
-#ifdef VOL_ONLY_SOUND
-
-#define	POKEYSND_SAMPBUF_MAX	2000
-extern int	POKEYSND_sampbuf_val[POKEYSND_SAMPBUF_MAX];	/* volume values */
-extern int	POKEYSND_sampbuf_cnt[POKEYSND_SAMPBUF_MAX];	/* relative start time */
-extern int	POKEYSND_sampbuf_ptr;                    /* pointer to sampbuf */
-extern int	POKEYSND_sampbuf_rptr;                   /* pointer to read from sampbuf */
-extern int	POKEYSND_sampbuf_last;                   /* last absolute time */
-extern int	POKEYSND_sampbuf_AUDV[4 * POKEY_MAXPOKEYS];	/* prev. channel volume */
-extern int	POKEYSND_sampbuf_lastval;		/* last volume */
-extern int	POKEYSND_sampout;			/* last out volume */
-extern int	POKEYSND_samp_freq;
-extern int	POKEYSND_samp_consol_val;		/* actual value of console sound */
-#endif  /* VOL_ONLY_SOUND */
 
 #ifdef SYNCHRONIZED_SOUND
 extern UBYTE *POKEYSND_process_buffer;

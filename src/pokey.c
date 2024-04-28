@@ -459,10 +459,6 @@ void POKEY_Scanline(void)
 	pokey_update();
 #endif
 
-#ifdef VOL_ONLY_SOUND
-	POKEYSND_UpdateVolOnly();
-#endif
-
 #ifndef BASIC
 	INPUT_Scanline();	/* Handle Amiga and ST mice. */
 						/* It's not a part of POKEY emulation, */

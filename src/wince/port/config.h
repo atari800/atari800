@@ -393,9 +393,6 @@
 /* Define to use very slow computer support (faster -refresh). */
 #undef VERY_SLOW
 
-/* Define to allow volume only sound. */
-#define VOL_ONLY_SOUND		1
-
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN

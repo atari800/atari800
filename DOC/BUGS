@@ -13,8 +13,6 @@ Bugs and Known Problems
 
 * new Pokey engine doesn't switch to mono output in STEREO_SOUND config
 
-* new Pokey engine doesn't support VOL_ONLY_SOUND on the second Pokey
-
 * a few keyboard-related bugs: e.g. pressing SHIFT+1 and then
   releasing SHIFT should still give '!' characters
 
@@ -82,10 +80,6 @@ Bugs and Known Problems
   - Saturday Demo (demo) (music)
   - The Last Guardian (game) (speech)
   - Digital Trash (demo) (music)
-
-* VOL_ONLY_SOUND causes sound bugs in following programs:
-  - Ghostbusters (game)
-  - Overmind (demo)
 
 * intensive 130xe-banks switching slows down emulation much.
   This causes performance problems in following programs:
