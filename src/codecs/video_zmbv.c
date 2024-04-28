@@ -77,11 +77,11 @@ static int video_width;
 static int video_height;
 
 static int lrange, urange;
-static UBYTE *work_buf;
 static UBYTE pal[768];
 static UBYTE *prev_buf, *prev_buf_start;
 static int pstride;
 #ifdef HAVE_LIBZ
+static UBYTE *work_buf;
 static int zlib_init_ok;
 static z_stream zstream;
 #endif
