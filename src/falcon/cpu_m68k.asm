@@ -26,8 +26,8 @@ P65C02 equ 0            ; set to 1 to emulate this version of processor (6502 ha
                         ; you can emulate this bug by commenting out this line :)
   endif
 
-  ifnd PROFILE
-PROFILE equ 0           ; set to 1 to fill the 'CPU_instruction_count' array for instruction profiling
+  ifnd MONITOR_PROFILE
+MONITOR_PROFILE equ 0   ; set to 1 to fill the 'CPU_instruction_count' array for instruction profiling
   endif
 
   ifnd MONITOR_BREAK
@@ -78,7 +78,7 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   xdef _CPU_regY
   xref _MEMORY_mem
   xref _MEMORY_attrib
-  ifne PROFILE
+  ifne MONITOR_PROFILE
   xref _CPU_instruction_count
   endif
   ifne MONITOR_BREAK
@@ -3315,7 +3315,7 @@ NEXTCHANGE_WITHOUT:
   clr.b  _CPU_delayed_nmi
   moveq  #0,d7
   move.b (PC6502)+,d7
-  ifne   PROFILE
+  ifne   MONITOR_PROFILE
   lea    _CPU_instruction_count,a0
   addq.l #1,(a0,d7.l*4)
   endif
