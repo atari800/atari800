@@ -112,13 +112,11 @@ int POKEYSND_DoInit(void);
 void POKEYSND_SetMzQuality(int quality);
 void POKEYSND_SetVolume(int vol);
 
-#ifdef SYNCHRONIZED_SOUND
 extern UBYTE *POKEYSND_process_buffer;
 extern unsigned int POKEYSND_process_buffer_length;
 extern unsigned int POKEYSND_process_buffer_fill;
 extern void (*POKEYSND_GenerateSync)(unsigned int num_ticks);
 int POKEYSND_UpdateProcessBuffer(void);
-#endif /* SYNCHRONIZED_SOUND */
 
 #ifdef __cplusplus
 }

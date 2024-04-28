@@ -50,9 +50,6 @@ static int votrax_sync_samples;
 static int dsprate;
 static int num_pokeys;
 static int samples_per_frame;
-/*if SYNCHRONIZED_SOUND is not used and the sound generation runs in a
- * separate thread, then these variables are accessed in two different
- * threads: */
 static int votrax_written = FALSE;
 static int votrax_written_byte = 0x3f;
 

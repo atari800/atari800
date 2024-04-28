@@ -113,10 +113,8 @@ typedef double qev_t;
 typedef unsigned char qev_t;
 #endif
 
-#ifdef SYNCHRONIZED_SOUND
 static double ticks_per_sample;
 static double samp_pos;
-#endif /* SYNCHRONIZED_SOUND */
 
 /* State variables for single Pokey Chip */
 typedef struct stPokeyState
@@ -463,7 +461,6 @@ static double read_resam_all(PokeyState* ps)
     return sum;
 }
 
-#ifdef SYNCHRONIZED_SOUND
 /* linear interpolation of filter data */
 static double interp_filter_data(int pos, double frac)
 {
@@ -516,7 +513,6 @@ static double interp_read_resam_all(PokeyState* ps, double frac)
 
     return sum;
 }
-#endif  /* SYNCHRONIZED_SOUND */
 
 static void add_change(PokeyState* ps, qev_t a)
 {
@@ -953,16 +949,10 @@ static void advance_ticks(PokeyState* ps, int ticks)
     {
         ps->forcero = 0;
 #ifdef NONLINEAR_MIXING
-#ifdef SYNCHRONIZED_SOUND
         outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3 + ps->speaker];
 #else
-        outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3];
-#endif /* SYNCHRONIZED_SOUND */
-#else
         outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
-#ifdef SYNCHRONIZED_SOUND
         outvol_new += ps->speaker;
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* NONLINEAR_MIXING */
         if(outvol_new != ps->outvol_all)
         {
@@ -1125,16 +1115,10 @@ static void advance_ticks(PokeyState* ps, int ticks)
             }
 
 #ifdef NONLINEAR_MIXING
-#ifdef SYNCHRONIZED_SOUND
             outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3 + ps->speaker];
 #else
-            outvol_new = pokeymix[ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3];
-#endif /* SYNCHRONIZED_SOUND */
-#else
             outvol_new = ps->outvol_0 + ps->outvol_1 + ps->outvol_2 + ps->outvol_3;
-#ifdef SYNCHRONIZED_SOUND
             outvol_new += ps->speaker;
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* NONLINEAR_MIXING */
             if(outvol_new != ps->outvol_all)
             {
@@ -1283,7 +1267,6 @@ static void Update_consol_sound_mz( int set );
 /*                                                                           */
 /*****************************************************************************/
 
-#ifdef SYNCHRONIZED_SOUND
 static void generate_sync(unsigned int num_ticks);
 
 static void init_syncsound(void)
@@ -1294,7 +1277,6 @@ static void init_syncsound(void)
     samp_pos = 0.0;
     POKEYSND_GenerateSync = generate_sync;
 }
-#endif /* SYNCHRONIZED_SOUND */
 
 int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
                         int flags, int quality
@@ -1413,11 +1395,9 @@ int MZPOKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 	}
 	num_cur_pokeys = num_pokeys;
 
-#ifdef SYNCHRONIZED_SOUND
 	init_syncsound();
-#endif
-        volume.s8 = POKEYSND_volume * 0xff / 256.0;
-        volume.s16 = POKEYSND_volume * 0xffff / 256.0;
+	volume.s8 = POKEYSND_volume * 0xff / 256.0;
+	volume.s16 = POKEYSND_volume * 0xffff / 256.0;
 
 	return 0; /* OK */
 }
@@ -2356,7 +2336,6 @@ static void mzpokeysnd_process_16(void* sndbuffer, int sndn)
     }
 }
 
-#ifdef SYNCHRONIZED_SOUND
 static void generate_sync(unsigned int num_ticks)
 {
 	double new_samp_pos;
@@ -2407,7 +2386,6 @@ static void generate_sync(unsigned int num_ticks)
 			advance_ticks(pokey_states + i, num_ticks);
 	}
 }
-#endif /* SYNCHRONIZED_SOUND */
 
 #ifdef SERIO_SOUND
 static void Update_serio_sound_mz( int out, UBYTE data )
@@ -2418,12 +2396,10 @@ static void Update_serio_sound_mz( int out, UBYTE data )
 #ifdef CONSOLE_SOUND
 static void Update_consol_sound_mz( int set )
 {
-#ifdef SYNCHRONIZED_SOUND
 	if (set) { /* The set variable is 0 only in VOL_ONLY_SOUND routines */
 		pokey_states[0].speaker = GTIA_speaker*CONSOLE_VOL;
 		pokey_states[0].forcero = 1; /* first chip */
 	}
-#endif  /* SYNCHRONIZED_SOUND */
 }
 #endif
 

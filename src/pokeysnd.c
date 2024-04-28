@@ -186,7 +186,6 @@ void (*POKEYSND_UpdateConsol_ptr)(int set) = null_consol_sound;
 int POKEYSND_console_sound_enabled = 1;
 #endif
 
-#ifdef SYNCHRONIZED_SOUND
 UBYTE *POKEYSND_process_buffer = NULL;
 unsigned int POKEYSND_process_buffer_length;
 unsigned int POKEYSND_process_buffer_fill;
@@ -200,7 +199,6 @@ static double ticks_per_sample;
 static double samp_pos;
 static int speaker;
 static int const CONSOLE_VOL = 32;
-#endif /* SYNCHRONIZED_SOUND */
 
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
@@ -280,7 +278,6 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 #ifdef __PLUS
 	mz_clear_regs = clear_regs;
 #endif
-#ifdef SYNCHRONIZED_SOUND
 	{
 		/* A single call to Atari800_Frame may emulate a bit more CPU ticks than the exact number of
 		   ticks per frame (Atari800_tv_mode*114). So we add a few ticks to buffer size just to be safe. */
@@ -295,7 +292,6 @@ int POKEYSND_Init(ULONG freq17, int playback_freq, UBYTE num_pokeys,
 		POKEYSND_process_buffer_fill = 0;
 	    prev_update_tick = ANTIC_CPU_CLOCK;
 	}
-#endif /* SYNCHRONIZED_SOUND */
 
 #if defined(PBI_XLD) || defined (VOICEBOX)
 	VOTRAXSND_Init(playback_freq, num_pokeys, (flags & POKEYSND_BIT16));
@@ -319,7 +315,6 @@ void POKEYSND_Process(void *sndbuffer, int sndn)
 #endif
 }
 
-#ifdef SYNCHRONIZED_SOUND
 static void Update_synchronized_sound(void)
 {
 	POKEYSND_GenerateSync(ANTIC_CPU_CLOCK - prev_update_tick);
@@ -341,9 +336,7 @@ int POKEYSND_UpdateProcessBuffer(void)
 #endif
 	return sndn;
 }
-#endif /* SYNCHRONIZED_SOUND */
 
-#ifdef SYNCHRONIZED_SOUND
 static void init_syncsound(void)
 {
 	double samples_per_frame = (double)POKEYSND_playback_freq/(Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
@@ -353,7 +346,6 @@ static void init_syncsound(void)
 	POKEYSND_GenerateSync = Generate_sync_rf;
 	speaker = 0;
 }
-#endif /* SYNCHRONIZED_SOUND */
 
 static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
            UBYTE num_pokeys, int flags)
@@ -393,9 +385,7 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 	/* set the number of pokey chips currently emulated */
 	Num_pokeys = num_pokeys;
 
-#ifdef SYNCHRONIZED_SOUND
 	init_syncsound();
-#endif
 	return 0; /* OK */
 }
 
@@ -421,9 +411,7 @@ static int pokeysnd_init_rf(ULONG freq17, int playback_freq,
 
 void POKEYSND_Update(UWORD addr, UBYTE val, UBYTE chip, UBYTE gain)
 {
-#ifdef SYNCHRONIZED_SOUND
     Update_synchronized_sound();
-#endif /* SYNCHRONIZED_SOUND */
 	POKEYSND_Update_ptr(addr, val, chip, gain);
 }
 
@@ -727,9 +715,7 @@ static void pokeysnd_process_8(void *sndbuffer, int sndn)
 		count--;
 	} while (count);
 
-#ifdef SYNCHRONIZED_SOUND
 	cur_val += speaker;
-#endif
 
 	/* loop until the buffer is filled */
 	while (n) {
@@ -1092,7 +1078,6 @@ static void pokeysnd_process_16(void *sndbuffer, int sndn)
 	}
 }
 
-#ifdef SYNCHRONIZED_SOUND
 static void Generate_sync_rf(unsigned int num_ticks)
 {
 	double new_samp_pos;
@@ -1128,26 +1113,21 @@ static void Generate_sync_rf(unsigned int num_ticks)
 
 	POKEYSND_process_buffer_fill = buffer - POKEYSND_process_buffer;
 }
-#endif /* SYNCHRONIZED_SOUND */
 
 #ifdef CONSOLE_SOUND
 void POKEYSND_UpdateConsol(int set)
 {
 	if (!POKEYSND_console_sound_enabled)
 		return;
-#ifdef SYNCHRONIZED_SOUND
 	if (set)
 		Update_synchronized_sound();
-#endif /* SYNCHRONIZED_SOUND */
 	POKEYSND_UpdateConsol_ptr(set);
 }
 
 static void Update_consol_sound_rf(int set)
 {
-#ifdef SYNCHRONIZED_SOUND
 	if (set)
 		speaker = CONSOLE_VOL * GTIA_speaker;
-#endif /* SYNCHRONIZED_SOUND */
 }
 #endif /* CONSOLE_SOUND */
 

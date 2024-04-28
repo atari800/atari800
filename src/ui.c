@@ -3608,9 +3608,7 @@ static int SoundSettings(void)
 	Sound_setup_t setup = Sound_desired;
 	static char freq_string[9]; /* "nnnnn Hz\0" */
 	static char hw_buflen_string[15]; /* "auto (nnnn ms)\0" */
-#ifdef SYNCHRONIZED_SOUND
 	static char latency_string[8]; /* nnnn ms\0" */
-#endif /* SYNCHRONIZED_SOUND */
 
 	static const unsigned int freq_values[] = {
 		8192,
@@ -3647,9 +3645,7 @@ static int SoundSettings(void)
 		UI_MENU_SUBMENU_SUFFIX(1, "Frequency:", freq_string),
 		UI_MENU_ACTION(2, "Bit depth:"),
 		UI_MENU_SUBMENU_SUFFIX(3, "Hardware buffer length:", hw_buflen_string),
-#ifdef SYNCHRONIZED_SOUND
 		UI_MENU_SUBMENU_SUFFIX(4, "Latency:", latency_string),
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		UI_MENU_CHECK(0, "Enable sound:"),
@@ -3683,9 +3679,7 @@ static int SoundSettings(void)
 		}
 		else
 			snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
-#ifdef SYNCHRONIZED_SOUND
 		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		SetItemChecked(menu_array, 0, glob_snd_ena);
@@ -3763,13 +3757,11 @@ static int SoundSettings(void)
 					setup.buffer_ms = option2;
 			}
 			break;
-#ifdef SYNCHRONIZED_SOUND
 		case 4:
 			snprintf(latency_string, sizeof(latency_string), "%u", Sound_latency); /* Remove " ms" suffix */
 			if (UI_driver->fEditString("Enter sound latency", latency_string, sizeof(latency_string)-3))
 				Sound_SetLatency(atoi(latency_string));
 			break;
-#endif /* SYNCHRONIZED_SOUND */
 #endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		case 0:
