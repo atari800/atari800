@@ -3604,7 +3604,6 @@ static void ControllerConfiguration(void)
 
 static int SoundSettings(void)
 {
-#ifdef SOUND_THIN_API
 	Sound_setup_t setup = Sound_desired;
 	static char freq_string[9]; /* "nnnnn Hz\0" */
 	static char hw_buflen_string[15]; /* "auto (nnnn ms)\0" */
@@ -3637,16 +3636,13 @@ static int SoundSettings(void)
 		UI_MENU_ACTION(1, "custom"),
 		UI_MENU_END
 	};
-#endif /* SOUND_THIN_API */
 
 	static UI_tMenuItem menu_array[] = {
-#ifdef SOUND_THIN_API
 		UI_MENU_CHECK(0, "Enable sound:"),
 		UI_MENU_SUBMENU_SUFFIX(1, "Frequency:", freq_string),
 		UI_MENU_ACTION(2, "Bit depth:"),
 		UI_MENU_SUBMENU_SUFFIX(3, "Hardware buffer length:", hw_buflen_string),
 		UI_MENU_SUBMENU_SUFFIX(4, "Latency:", latency_string),
-#endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		UI_MENU_CHECK(0, "Enable sound:"),
 #endif
@@ -3667,7 +3663,6 @@ static int SoundSettings(void)
 	int option = 0;
 
 	for (;;) {
-#ifdef SOUND_THIN_API
 		SetItemChecked(menu_array, 0, Sound_enabled);
 		snprintf(freq_string, sizeof(freq_string), "%i Hz", setup.freq);
 		menu_array[2].suffix = setup.sample_size == 2 ? "16 bit" : "8 bit";
@@ -3680,16 +3675,11 @@ static int SoundSettings(void)
 		else
 			snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
 		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
-#endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		SetItemChecked(menu_array, 0, glob_snd_ena);
 #endif
 #ifdef STEREO_SOUND
-#ifdef SOUND_THIN_API
 		SetItemChecked(menu_array, 5, setup.channels == 2);
-#else /* !defined(SOUND_THIN_API) */
-		SetItemChecked(menu_array, 5, POKEYSND_stereo_enabled);
-#endif /* SOUND_THIN_API */
 #endif /* STEREO_SOUND */
 		SetItemChecked(menu_array, 6, POKEYSND_enable_new_pokey);
 #ifdef CONSOLE_SOUND
@@ -3702,7 +3692,6 @@ static int SoundSettings(void)
 
 		option = UI_driver->fSelect("Sound Settings", 0, option, menu_array, NULL);
 		switch (option) {
-#ifdef SOUND_THIN_API
 		case 0:
 			if (Sound_enabled)
 				Sound_Exit();
@@ -3762,7 +3751,6 @@ static int SoundSettings(void)
 			if (UI_driver->fEditString("Enter sound latency", latency_string, sizeof(latency_string)-3))
 				Sound_SetLatency(atoi(latency_string));
 			break;
-#endif /* SOUND_THIN_API */
 #ifdef DREAMCAST
 		case 0:
 			glob_snd_ena = !glob_snd_ena;
@@ -3770,14 +3758,7 @@ static int SoundSettings(void)
 #endif
 #ifdef STEREO_SOUND
 		case 5:
-#ifdef SOUND_THIN_API
 			setup.channels = 3 - setup.channels; /* Toggle 1<->2 */
-#else /* !defined(SOUND_THIN_API) */
-			POKEYSND_stereo_enabled = !POKEYSND_stereo_enabled;
-#ifdef SUPPORTS_SOUND_REINIT
-			Sound_Reinit();
-#endif
-#endif /* SOUND_THIN_API */
 			break;
 #endif
 		case 6:
@@ -3802,7 +3783,6 @@ static int SoundSettings(void)
 				POKEYSND_bienias_fix = !POKEYSND_bienias_fix;
 			break;
 		default:
-#ifdef SOUND_THIN_API
 			if (!Sound_enabled)
 				/* Only store setup from menu in Sound_desired. */
 				Sound_desired = setup;
@@ -3821,7 +3801,6 @@ static int SoundSettings(void)
 				}
 				setup = Sound_desired;
 			}
-#endif /* SOUND_THIN_API */
 			return FALSE;
 		}
 	}

@@ -11,11 +11,7 @@ void Sound_Exit(void);
 void Sound_Update(void);
 void Sound_Pause(void);
 void Sound_Continue(void);
-#ifdef SUPPORTS_SOUND_REINIT
-void Sound_Reinit(void);
-#endif /* SUPPORTS_SOUND_REINIT */
 
-#ifdef SOUND_THIN_API
 /* Nomenclature used:
    Sample - a single portion of one channel of audio signal. Sample size equals
    1 byte for 8-bit audio and 2 bytes for 16-bit audio.
@@ -93,7 +89,5 @@ double Sound_AdjustSpeed(void);
    equal a power of 2. Returns a power of 2 that is not lower than NUM
    (0 <= NUM < UINT_MAX). */
 unsigned int Sound_NextPow2(unsigned int num);
-
-#endif /* SOUND_THIN_API */
 
 #endif /* SOUND_H_ */
