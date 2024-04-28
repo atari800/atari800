@@ -926,15 +926,8 @@ AC_ARG_WITH([sound],
 if [[ "$a8_target" = libatari800 ]]; then
     if [[ "$with_sound" = check -o "$with_sound" = yes ]]; then
         with_sound=libatari800
-        WANT_SOUND_THIN_API=yes
         WANT_SOUND_CALLBACK=no
         WANT_CONSOLE_SOUND=yes
-        WANT_SERIO_SOUND=yes
-        WANT_VOL_ONLY_SOUND=no
-
-        WANT_SYNCHRONIZED_SOUND=no
-        dnl workaround for WANT_SYNCHRONIZED_SOUND being ignored by A8_OPTION macro
-        enable_synchronized_sound=no
     else
         AC_MSG_ERROR([--with-audio option not needed to build libatari800!])
     fi
@@ -981,22 +974,13 @@ elif [[ "$a8_target" != "ps2" -a "$a8_target" != "android" ]]; then
         with_sound=no
     fi
     case "$with_sound" in
-        javanvm)
-            WANT_SOUND_THIN_API=yes
-            ;;
         sdl)
-            WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
             ;;
         falcon)
             AC_DEFINE(POKEYSND_SIGNED_SAMPLES,1,[Use 8-bit signed samples.])
-            WANT_SOUND_THIN_API=yes
-            ;;
-        oss)
-            WANT_SOUND_THIN_API=yes
             ;;
         dossb)
-            WANT_SOUND_THIN_API=yes
             WANT_SOUND_CALLBACK=yes
             ;;
         no)
@@ -1021,17 +1005,8 @@ if [[ "$with_sound" != no ]]; then
 
     AC_DEFINE(SOUND, 1, [Define to activate sound support.])
 
-    if [[ "$WANT_SOUND_THIN_API" = "yes" ]]; then
-        AC_DEFINE(SOUND_THIN_API,1,[Use new sound API.])
-        A8_OPTION(synchronized_sound,yes,
-                  [Use synchronized sound (default=ON)],
-                  SYNCHRONIZED_SOUND,[Define to use synchronized sound.]
-                 )
-        if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
-            AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
-        fi
-    else
-        WANT_SYNCHRONIZED_SOUND="no"
+    if [[ "$WANT_SOUND_CALLBACK" = "yes" ]]; then
+        AC_DEFINE(SOUND_CALLBACK,1,[Platform updates sound buffer by callback function.])
     fi
 
     A8_OPTION(nonlinear_mixing,yes,
@@ -1049,25 +1024,10 @@ if [[ "$with_sound" != no ]]; then
               STEREO_SOUND,[Define to allow stereo sound.]
              )
 
-    if [[ "$WANT_SYNCHRONIZED_SOUND" != "yes" ]]; then
-        A8_OPTION(volonlysound,yes,
-                  [Use volume only sound (digitized sound effects) (default=ON)],
-                  VOL_ONLY_SOUND,[Define to allow volume only sound.]
-                 )
-    fi
-    if [[ "$WANT_SYNCHRONIZED_SOUND" = "yes" -o "$WANT_VOL_ONLY_SOUND" = "yes" ]]; then
-        A8_OPTION(consolesound,yes,
-                  [Use console sound (keyboard clicks) (default=ON)],
-                  CONSOLE_SOUND,[Define to allow console sound (keyboard clicks).]
-                 )
-        A8_OPTION(seriosound,no,
-                  [Use serial in/out sound (default=OFF)],
-                  SERIO_SOUND,[Define to allow serial in/out sound.]
-                 )
-    else
-        WANT_CONSOLE_SOUND="no"
-        WANT_SERIO_SOUND="no"
-    fi
+    A8_OPTION(consolesound,yes,
+              [Use console sound (keyboard clicks) (default=ON)],
+              CONSOLE_SOUND,[Define to allow console sound (keyboard clicks).]
+             )
 
     A8_OPTION(clipsound,no,
               [Use sound clipping (default=OFF)],
@@ -1128,12 +1088,9 @@ if [[ "$with_sound" != no ]]; then
     fi
 else
     WANT_NONLINEAR_MIXING="no"
-    WANT_SYNCHRONIZED_SOUND="no"
     WANT_INTERPOLATE_SOUND="no"
     WANT_STEREO_SOUND="no"
-    WANT_VOL_ONLY_SOUND="no"
     WANT_CONSOLE_SOUND="no"
-    WANT_SERIO_SOUND="no"
     WANT_CLIP_SOUND="no"
     WANT_PBI_XLD_SOUND="no"
     WANT_AUDIO_RECORDING="no"
@@ -1446,16 +1403,9 @@ echo "Using Pokey registers recording?......: $WANT_POKEYREC"
 echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
-    echo "    Using synchronized sound?.........: $WANT_SYNCHRONIZED_SOUND"
     echo "    Using sound interpolation?........: $WANT_INTERPOLATE_SOUND"
     echo "    Using stereo sound?...............: $WANT_STEREO_SOUND"
-    echo "    Using volume only sound?..........: $WANT_VOL_ONLY_SOUND"
-    if [[ "$WANT_VOL_ONLY_SOUND" = "yes" ]]; then
-        echo "        Using console sound?..........: $WANT_CONSOLE_SOUND"
-        echo "        Using serial I/O sound?.......: $WANT_SERIO_SOUND"
-    else
-        echo "        (Volume only sound sub-options disabled)"
-    fi
+    echo "    Using console sound?..............: $WANT_CONSOLE_SOUND"
     echo "    Using 1400XL/1450XLD emulation?...: $WANT_PBI_XLD"
     echo "    Using sound clipping?.............: $WANT_CLIP_SOUND"
     echo "    Using audio recording?............: $WANT_AUDIO_RECORDING"
