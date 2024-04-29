@@ -86,7 +86,6 @@ extern int POKEYSND_volume;
 
 extern int POKEYSND_enable_new_pokey;
 extern int POKEYSND_stereo_enabled;
-extern int POKEYSND_serio_sound_enabled;
 extern int POKEYSND_console_sound_enabled;
 extern int POKEYSND_bienias_fix;
 

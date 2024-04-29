@@ -217,7 +217,7 @@ int Sound_Setup(void)
 	if (!(Sound_enabled = PLATFORM_SoundSetup(&Sound_out)))
 		return FALSE;
 
-	Sound_out.buffer_ms = Sound_out.buffer_frames * 1000 / Sound_out.freq;
+	Sound_out.buffer_ms = (unsigned int)(Sound_out.buffer_frames * 1000.0f / Sound_out.freq + 0.5f);
 
 	/* Now setup contains actual audio output settings. */
 	if ((POKEYSND_enable_new_pokey && Sound_out.freq < 8192)

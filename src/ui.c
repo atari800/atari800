@@ -3604,6 +3604,8 @@ static void ControllerConfiguration(void)
 static int SoundSettings(void)
 {
 	Sound_setup_t setup = Sound_desired;
+	int sound_out_valid = setup.buffer_ms == 0;	/* Sound_out has been initialized */
+	int update_sound_params = TRUE;
 	static char freq_string[9]; /* "nnnnn Hz\0" */
 	static char hw_buflen_string[15]; /* "auto (nnnn ms)\0" */
 	static char latency_string[8]; /* nnnn ms\0" */
@@ -3659,21 +3661,25 @@ static int SoundSettings(void)
 	int option = 0;
 
 	for (;;) {
-		SetItemChecked(menu_array, 0, Sound_enabled);
-		snprintf(freq_string, sizeof(freq_string), "%i Hz", setup.freq);
-		menu_array[2].suffix = setup.sample_size == 2 ? "16 bit" : "8 bit";
-		if (setup.buffer_ms == 0) {
-			if (Sound_enabled)
-				snprintf(hw_buflen_string, sizeof(hw_buflen_string), "auto (%u ms)", Sound_out.buffer_ms);
+		if (update_sound_params) {
+			SetItemChecked(menu_array, 0, Sound_enabled);
+			snprintf(freq_string, sizeof(freq_string), "%i Hz", setup.freq);
+			menu_array[2].suffix = setup.sample_size == 2 ? "16 bit" : "8 bit";
+			if (setup.buffer_ms == 0) {
+				if (Sound_enabled && sound_out_valid) {
+					snprintf(hw_buflen_string, sizeof(hw_buflen_string), "auto (%u ms)", Sound_out.buffer_ms);
+					sound_out_valid = FALSE;
+				}
+				else
+					strncpy(hw_buflen_string, "auto", sizeof(hw_buflen_string));
+			}
 			else
-				strncpy(hw_buflen_string, "auto", sizeof(hw_buflen_string));
-		}
-		else
-			snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
-		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
+				snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
 #ifdef STEREO_SOUND
-		SetItemChecked(menu_array, 5, setup.channels == 2);
+			SetItemChecked(menu_array, 5, setup.channels == 2);
 #endif /* STEREO_SOUND */
+		}
+		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
 		SetItemChecked(menu_array, 6, POKEYSND_enable_new_pokey);
 #ifdef CONSOLE_SOUND
 		SetItemChecked(menu_array, 7, POKEYSND_console_sound_enabled);
@@ -3689,9 +3695,12 @@ static int SoundSettings(void)
 				Sound_desired = setup;
 				if (!Sound_Setup())
 					UI_driver->fMessage("Error: can't open sound device", 1);
-				else
+				else {
 					setup = Sound_desired;
+					sound_out_valid = TRUE;
+				}
 			}
+			update_sound_params = TRUE;
 			break;
 		case 1:
 			{
@@ -3710,10 +3719,13 @@ static int SoundSettings(void)
 				}
 				else if (option2 >= 0)
 					setup.freq = freq_values[option2];
+
+				update_sound_params = (option2 >= 0);
 			}
 			break;
 		case 2:
 			setup.sample_size = 3 - setup.sample_size; /* Toggle 1<->2 */
+			update_sound_params = TRUE;
 			break;
 		case 3:
 			{
@@ -3734,6 +3746,8 @@ static int SoundSettings(void)
 				}
 				else if (option2 >= 0)
 					setup.buffer_ms = option2;
+
+				update_sound_params = (option2 >= 0);
 			}
 			break;
 		case 4:
@@ -3744,6 +3758,7 @@ static int SoundSettings(void)
 #ifdef STEREO_SOUND
 		case 5:
 			setup.channels = 3 - setup.channels; /* Toggle 1<->2 */
+			update_sound_params = TRUE;
 			break;
 #endif
 		case 6:
