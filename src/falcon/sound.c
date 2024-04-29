@@ -26,13 +26,15 @@
 
 #ifdef SOUND
 
-#include <mint/cookie.h>
 #include <mint/falcon.h>
 #include <mint/osbind.h>
 #include <mint/ostruct.h>
 
 #include <stdlib.h>
 #include <string.h>
+
+/* https://github.com/mikrosk/atari_sound_setup */
+#include <usound.h>
 
 #include "platform.h"
 #include "sound.h"
@@ -96,170 +98,57 @@ void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
-	long cookie;
-	int mode;
-	int diff50, diff33, diff25, diff20, diff16, diff12, diff10, diff8;
-	int clk;
-	int xbiosApiPresent = FALSE;
-	int extendedXbiosApi = FALSE;
-	int compatiblePrescaler = FALSE;
+	AudioSpec desired, obtained;
 
 	if (Sound_enabled) {
 		PLATFORM_SoundExit();
 	}
 
-	if (Locksnd() < 0) {
+	/*
+	 * Sound_Setup():
+	 *	- calculates setup->buffer_frames which may be NULL if setup->buffer_ms == 0
+	 *	- calls PLATFORM_SoundSetup(setup)
+	 *	- calculates setup->buffer_ms from setup->buffer_frames and setup->freq on success
+	 */
+	desired.frequency = setup->freq;
+	desired.channels  = setup->channels;
+	desired.format    = setup->sample_size == 1 ? AudioFormatSigned8 : AudioFormatSigned16MSB;
+	desired.samples   = Sound_NextPow2(setup->buffer_frames == 0
+		? setup->freq / 50	/* buffer for at least 1/50th of a second */
+		: setup->buffer_frames);
+
+	if (!AtariSoundSetupInitXbios(&desired, &obtained)) {
 		return FALSE;
 	}
 
-	if (Getcookie(C__SND, &cookie) == C_FOUND) {
-		if (setup->sample_size == 1 && !(cookie & SND_8BIT)) {
-			if (cookie & SND_16BIT) {
-				setup->sample_size = 2;
-			} else {
-				return FALSE;
-			}
-		} else if (setup->sample_size == 2 && !(cookie & SND_16BIT)) {
-			if (cookie & SND_8BIT) {
-				setup->sample_size = 1;
-			} else {
-				return FALSE;
-			}
-		}
-		/* virtually all APIs have bit #2 set */
-		xbiosApiPresent = (cookie & SND_16BIT) != 0 || (cookie & SND_EXT) != 0;
-		extendedXbiosApi = (cookie & SND_EXT) != 0;
-	} else {
-		/* Try XBIOS API emulators which do not set '_SND' */
-		if (Getcookie(C_STFA, &cookie) == C_FOUND) {	/* STFA (8-bit/16-bit) */
-			xbiosApiPresent = TRUE;
-			extendedXbiosApi = TRUE;
-			compatiblePrescaler = TRUE;
-		} else if (Getcookie(C_McSn, &cookie) == C_FOUND) {	/* X-SOUND (8-bit/16-bit) or MacSound (16-bit) */
-			xbiosApiPresent = TRUE;
-			extendedXbiosApi = TRUE;
-			/* Soundcmd(SETPRESCALE, ...) is actually ignored */
-		}
-	}
-
-	if (!xbiosApiPresent) {
-		return FALSE;
-	}
-
-	if (compatiblePrescaler) {
-		diff50 = abs(50066 - setup->freq);
-		diff25 = abs(25033 - setup->freq);
-		diff12 = abs(12517 - setup->freq);
-
-		if (diff50 < diff25) {
-			setup->freq = 50066;
-			clk = PRE160;
-		} else if (diff25 < diff12) {
-			setup->freq = 25033;
-			clk = PRE320;
-		} else {
-			setup->freq = 12517;
-			clk = PRE640;
-		}
-	} else {
-		diff50 = abs(49170 - setup->freq);
-		diff33 = abs(32780 - setup->freq);
-		diff25 = abs(24585 - setup->freq);
-		diff20 = abs(19668 - setup->freq);
-		diff16 = abs(16390 - setup->freq);
-		diff12 = abs(12292 - setup->freq);
-		diff10 = abs(9834 - setup->freq);
-		diff8  = abs(8195 - setup->freq);
-
-		if (diff50 < diff33) {
-			setup->freq = 49170;
-			clk = CLK50K;
-		} else if (diff33 < diff25) {
-			setup->freq = 32780;
-			clk = CLK33K;
-		} else if (diff25 < diff20) {
-			setup->freq = 24585;
-			clk = CLK25K;
-		} else if (diff20 < diff16) {
-			setup->freq = 19668;
-			clk = CLK20K;
-		} else if (diff16 < diff12) {
-			setup->freq = 16390;
-			clk = CLK16K;
-		} else if (diff12 < diff10) {
-			setup->freq = 12292;
-			clk = CLK12K;
-		} else if (diff10 < diff8) {
-			setup->freq = 9834;
-			clk = CLK10K;
-		} else {
-			setup->freq = 8195;
-			clk = CLK8K;
-		}
-	}
-
-	if (setup->buffer_frames == 0) {
-		setup->buffer_frames = setup->freq / 50;	/* buffer for 1/50th of a second */
-	}
-	setup->buffer_frames = Sound_NextPow2(setup->buffer_frames);
-
-	if (setup->channels == 2) {
-		mode = setup->sample_size == 1 ? MODE_STEREO8 : MODE_STEREO16;
-	} else if (setup->sample_size == 1) {
-		/* 8-bit MONO */
-		mode = MODE_MONO;
-	} else {
-		/* 16-bit MONO is not available */
-		mode = MODE_MONO;
-		setup->sample_size = 1;
-	}
-
-	Sndstatus(SND_RESET);
-
-	if (Setmode(mode) != 0) {
-		/* give it a chance ... */
-		if (mode == MODE_STEREO16 && Setmode(MODE_STEREO8) == 0) {
-			setup->sample_size = 1;
-		} else if (mode == MODE_STEREO8 && Setmode(MODE_STEREO16) == 0) {
-			setup->sample_size = 2;
-		} else if (mode == MODE_MONO && Setmode(MODE_STEREO16) == 0) {
-			setup->channels = 2;
-			setup->sample_size = 2;
-		} else {
-			return FALSE;
-		}
-	}
+	setup->freq          = obtained.frequency;
+	setup->channels      = obtained.channels;
+	setup->sample_size   = (obtained.format == AudioFormatSigned8 || obtained.format == AudioFormatUnsigned8) ? 1 : 2;
+	setup->buffer_frames = desired.samples;	/* stick with requested */
 
 	/* channels * 8/16 bit * freq in Hz * seconds */
 	bufferSize = setup->channels * setup->sample_size * setup->buffer_frames;
 
 	pBuffer = (char*)Mxalloc(2*bufferSize, MX_STRAM);
 	if (pBuffer == NULL) {
-		return FALSE;
+		goto malloc_failed;
 	}
 	memset(pBuffer, 0, 2*bufferSize);
 
 	pPhysical = pBuffer;
 	pLogical = pBuffer + bufferSize;
 
-	if (Devconnect(DMAPLAY, DAC, CLK25M, compatiblePrescaler ? CLKOLD : clk, NO_SHAKE) != 0 && extendedXbiosApi) {
-		/* Devconnect's return value on Falcon is broken! */
-		goto error;
-	} else if (compatiblePrescaler) {
-		Soundcmd(SETPRESCALE, clk);
-	}
-
-	Soundcmd(ADDERIN, MATIN);
-
 	if (Setbuffer(SR_PLAY, pBuffer, pBuffer + 2*bufferSize) != 0) {
-		goto error;
+		goto set_buffer_failed;
 	}
 
 	return TRUE;
 
-error:
+set_buffer_failed:
 	Mfree(pBuffer);
 	pBuffer = NULL;
+malloc_failed:
+	AtariSoundSetupDeinitXbios();
 
 	return FALSE;
 }
@@ -273,7 +162,7 @@ void PLATFORM_SoundExit(void)
 		pBuffer = NULL;
 	}
 
-	Unlocksnd();
+	AtariSoundSetupDeinitXbios();
 }
 
 void PLATFORM_SoundPause(void)
