@@ -83,7 +83,6 @@ static
 
 int x_adj, y_adj;  /* screen position adjustment */
 int emulate_paddles = FALSE;
-int glob_snd_ena = TRUE;
 int db_mode = FALSE;
 int screen_tv_mode;    /* mode of connected tv set */
 
@@ -1833,7 +1832,6 @@ void DCStateSave(void)
 	StateSav_SaveINT(&b_ovr, 1);
 	StateSav_SaveINT(&b_key, 1);
 	StateSav_SaveINT(&emulate_paddles, 1);
-	StateSav_SaveINT(&glob_snd_ena, 1);
 	StateSav_SaveINT(&db_mode, 1);
 	StateSav_SaveINT(&INPUT_joy_autofire[0], 1);
 	StateSav_SaveINT(&disable_js, 1);
@@ -1861,7 +1859,6 @@ void DCStateRead(void)
 	StateSav_ReadINT(&b_ovr, 1);
 	StateSav_ReadINT(&b_key, 1);
 	StateSav_ReadINT(&emulate_paddles, 1);
-	StateSav_ReadINT(&glob_snd_ena, 1);
 	StateSav_ReadINT(&db_mode, 1);
 	StateSav_ReadINT(&INPUT_joy_autofire[0], 1);
 	StateSav_ReadINT(&disable_js, 1);
@@ -2078,7 +2075,7 @@ void Sound_Pause(void)
 
 void Sound_Continue(void)
 {
-	if (! sound_enabled && glob_snd_ena) {
+	if (! sound_enabled && Sound_enabled) {
 		sound_enabled = TRUE;
 		su_first_call = TRUE;
 	}

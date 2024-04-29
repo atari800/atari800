@@ -108,7 +108,6 @@ extern void AboutPocketAtari(void);
 extern int db_mode;
 extern int screen_tv_mode;
 extern int emulate_paddles;
-extern int glob_snd_ena;
 extern void JoystickConfiguration(void);
 extern void ButtonConfiguration(void);
 extern void AboutAtariDC(void);
@@ -3672,9 +3671,6 @@ static int SoundSettings(void)
 		else
 			snprintf(hw_buflen_string, sizeof(hw_buflen_string), "%u ms", setup.buffer_ms);
 		snprintf(latency_string, sizeof(latency_string), "%u ms", Sound_latency);
-#ifdef DREAMCAST
-		SetItemChecked(menu_array, 0, glob_snd_ena);
-#endif
 #ifdef STEREO_SOUND
 		SetItemChecked(menu_array, 5, setup.channels == 2);
 #endif /* STEREO_SOUND */
@@ -3745,11 +3741,6 @@ static int SoundSettings(void)
 			if (UI_driver->fEditString("Enter sound latency", latency_string, sizeof(latency_string)-3))
 				Sound_SetLatency(atoi(latency_string));
 			break;
-#ifdef DREAMCAST
-		case 0:
-			glob_snd_ena = !glob_snd_ena;
-			break;
-#endif
 #ifdef STEREO_SOUND
 		case 5:
 			setup.channels = 3 - setup.channels; /* Toggle 1<->2 */
