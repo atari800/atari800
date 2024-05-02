@@ -114,7 +114,7 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	desired.channels  = setup->channels;
 	desired.format    = setup->sample_size == 1 ? AudioFormatSigned8 : AudioFormatSigned16MSB;
 	desired.samples   = Sound_NextPow2(setup->buffer_frames == 0
-		? setup->freq / 50	/* buffer for at least 1/50th of a second */
+		? setup->freq * 2 / 50	/* buffer for at least two 50 Hz frames */
 		: setup->buffer_frames);
 
 	if (!AtariSoundSetupInitXbios(&desired, &obtained)) {

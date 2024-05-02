@@ -42,6 +42,7 @@
 #include "monitor.h"
 #include "platform.h"
 #ifdef SOUND
+#include "../pokeysnd.h"
 #include "../sound.h"
 #endif
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
@@ -51,6 +52,21 @@
 #include "videomode.h"
 #include "sdl/video.h"
 #include "sdl/input.h"
+
+void PLATFORM_ConfigInit(void)
+{
+#if defined(SOUND) && defined(__MINT__)
+	/* too slow on Falcon */
+	POKEYSND_enable_new_pokey = FALSE;
+	/* set default desired sound */
+	Sound_desired.freq = 24585;
+	Sound_desired.sample_size = 1;
+	Sound_desired.channels = 2;
+	Sound_desired.buffer_ms = 40;
+	/* same as hardware buffer size */
+	Sound_latency = 40;
+#endif
+}
 
 int PLATFORM_Configure(char *option, char *parameters)
 {

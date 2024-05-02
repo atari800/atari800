@@ -1441,16 +1441,25 @@ double PLATFORM_Time(void)
 
 /* -------------------------------------------------------------------------- */
 
-int main(int argc, char **argv)
+void PLATFORM_ConfigInit(void)
 {
 #ifdef SOUND
+	/* too slow on Falcon */
+	POKEYSND_enable_new_pokey = FALSE;
 	/* set default desired sound */
 	Sound_desired.freq = 24585;
 	Sound_desired.sample_size = 1;
 	Sound_desired.channels = 2;
 	Sound_desired.buffer_ms = 40;
+	/* same as hardware buffer size */
+	Sound_latency = 40;
 #endif
+}
 
+/* -------------------------------------------------------------------------- */
+
+int main(int argc, char **argv)
+{
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return EXIT_FAILURE;

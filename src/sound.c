@@ -33,7 +33,7 @@
 #include "pokeysnd.h"
 #include "util.h"
 
-#define DEBUG 0
+#define DEBUG 0 || __MINT__
 
 int Sound_enabled = 1;
 
