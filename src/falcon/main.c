@@ -130,7 +130,6 @@ UBYTE *odkud, *kam;
 UBYTE *oldscreen = NULL;	/* pointer to previous screen if double buffering is turned on */
 
 /* parameters for DisplayScreen */
-static int skip_N_frames;
 static int delta_screen;
 
 extern void init_kb(void);
@@ -336,15 +335,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	int force_videl = FALSE;	/* force Atari800 to switch VIDEL into new resolution by direct HW programming */
 
 	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc);		/* is argument available? */
-		int a_m = FALSE;			/* error, argument missing! */
-
-		if (strcmp(argv[i], "-interlace") == 0) {
-			if (i_a)
-				skip_N_frames = Util_sscandec(argv[++i]);
-			else a_m = TRUE;
-		}
-		else if (strcmp(argv[i], "-joyswap") == 0)
+		if (strcmp(argv[i], "-joyswap") == 0)
 			joyswap = TRUE;
 		else if (strcmp(argv[i], "-videl") == 0)
 			force_videl = TRUE;
@@ -356,7 +347,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			vga50 = TRUE;
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
-				Log_print("\t-interlace x  Generate Falcon screen only every X frame\n");
 				Log_print("\t-joyswap      Exchange joysticks\n");
 				Log_print("\t-videl        Direct VIDEL programming (Falcon only); enables double buffering\n");
 				Log_print("\t-double       Double width/height (ignored for planar modes and -videl)\n");
@@ -365,11 +355,6 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 			}
 
 			argv[j++] = argv[i];
-		}
-
-		if (a_m) {
-			Log_print("Missing argument for '%s'", argv[i]);
-			return FALSE;
 		}
 	}
 
@@ -679,7 +664,6 @@ int PLATFORM_Exit(int run_monitor)
 
 void PLATFORM_DisplayScreen(void)
 {
-	static int i = 0;
 	static ULONG Screen_ui[Screen_HEIGHT*Screen_WIDTH/sizeof(ULONG)];
 
 #ifdef SHOW_DISK_LED
@@ -687,12 +671,6 @@ void PLATFORM_DisplayScreen(void)
 		if (--LED_timeout == 0)
 			Atari_Set_LED(0);
 #endif
-
-	if (i < skip_N_frames) {
-		i++;
-		return;
-	}
-	i = 0;
 
 	if (!sv) {
 		/* not direct rendering */

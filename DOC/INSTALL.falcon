@@ -1,4 +1,4 @@
-                                                                      Oct 2022
+                                                                        May 2024
 
     Hi all Atari users,
 
@@ -8,7 +8,7 @@ capable of resolution 320x240 (or higher) in 256 colors. Atari800 contains
 special routines for direct VIDEL programming (for achieving 336x240 resolution
 on RGB/VGA monitors) and also dedicated NOVA (ISA ATI Mach64) and SuperVidel
 graphics support. For proper sound output on the TT it requires installation
-of an XBIOS sound emulator like STFA or X-Sound.
+of an XBIOS sound emulator like STFA or X-Sound (or usage of EmuTOS).
 
 Atari800 had originally been developed by David Firth though it's been a
 community project for more than 15 years already. The Falcon port was initially
@@ -38,26 +38,27 @@ assembler core included! No more dilemmas about speed vs. compatibility.
 ===========================================================================
 All m68k versions are built with following switches:
 
---host=m68k-atari-mint --enable-veryslow --disable-monitorbreak \
---disable-monitorhints --disable-crashmenu --disable-monitorasm \
---disable-eventrecording --disable-pokeyrec --disable-videorecording \
---disable-screenshots --disable-audiorecording --disable-monitorutf8 \
---disable-monitoransi --disable-pbi_bb --disable-pbi_mio --disable-riodevice \
---with-readline=no
+--host=m68k-atari-mint --enable-veryslow --disable-nonlinear_mixing
+--disable-pbi_bb --disable-pbi_mio --with-readline=no
+--disable-monitorbreak --disable-monitorhints --disable-crashmenu
+--disable-monitorasm --disable-monitorutf8 --disable-monitoransi
+--disable-eventrecording --disable-pokeyrec --disable-videorecording
+--disable-screenshots --disable-audiorecording
 
 Then specifically:
 
 ATARI800.GTP (XBIOS audio, GEM/Videl video, cycle exact 6502/ANTIC)
---target=falcon --enable-falconcpuasm
+--target=falcon --enable-falconcpuasm --disable-interpolatesound
 
 ATARIFST.GTP (XBIOS audio, GEM/Videl video, inexact 6502/ANTIC)
---target=falcon --enable-falconcpuasm --disable-newcycleexact
+--target=falcon --enable-falconcpuasm --disable-interpolatesound
+--disable-newcycleexact
 (fastest version, you can gain a few % by adding --without-sound)
 
 ATARISDL.GTP (XBIOS audio, SDL video, cycle exact 6502/ANTIC)
 # point to -m68020-60 aware `sdl-config`
 PATH=$(m68k-atari-mint-gcc -print-sysroot)/usr/bin/m68020-60:$PATH
---target=default --enable-falconcpuasm
+--target=default --enable-falconcpuasm --disable-interpolatesound
 
 ATARI_CF.GTP (ATARISDL.GTP for the FireBee, without asm emulation core)
 # point to -mcpu=5475 aware `sdl-config`
@@ -94,7 +95,9 @@ Help = Help key
 Joystick emulation works fine. Both real joysticks (CX-40 type) can be
 connected.
 
-Several special command line parameters were introduced in this Falcon port. Use "-help" to learn more.
+Several special command line parameters were introduced in this Falcon port.
+With "-videl -delta -refresh 2" I'm able to achieve 100% of Atari speed on my
+CT60@66 MHz with most games and basic demos. Use "-help" to learn more.
 
 For bugreports of Falcon port please write to me (Miro Kropacek)
 
