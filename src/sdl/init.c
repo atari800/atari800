@@ -45,6 +45,11 @@ void SDL_INIT_Exit(void)
 	SDL_Quit();
 }
 
+void PLATFORM_Sleep(double s)
+{
+	SDL_Delay(s * 1e+3);
+}
+
 double PLATFORM_Time(void)
 {
 	return SDL_GetTicks() * 1e-3;

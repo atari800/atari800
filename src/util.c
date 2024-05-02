@@ -579,13 +579,11 @@ double Util_time(void)
 
 void Util_sleep(double s)
 {
+	if (s > 0) {
 #ifdef SUPPORTS_PLATFORM_SLEEP
 	PLATFORM_Sleep(s);
 #else /* !SUPPORTS_PLATFORM_SLEEP */
-	if (s > 0) {
-#ifdef HAVE_WINDOWS_H
-		Sleep((DWORD) (s * 1e3));
-#elif defined(DJGPP)
+#if defined(DJGPP)
 		/* DJGPP has usleep and select, but they don't work that good */
 		/* XXX: find out why */
 		double curtime = Util_time();
@@ -613,8 +611,8 @@ void Util_sleep(double s)
 		double curtime = Util_time();
 		while ((curtime + s) > Util_time());
 #endif
-	}
 #endif /* !SUPPORTS_PLATFORM_SLEEP */
+	}
 }
 
 char *Util_getcwd(char *buf, size_t size)

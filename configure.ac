@@ -271,6 +271,7 @@ AC_DEFUN([TRY_USE_SDL],
         AM_PATH_SDL($SDL_VERSION,
         [
             AC_DEFINE(SDL,1,[Target: SDL library.])
+            AC_DEFINE(SUPPORTS_PLATFORM_SLEEP,1,[Platform-specific sleep function.])
             AC_DEFINE(SUPPORTS_PLATFORM_TIME,1,[Platform-specific time function.])
             LIBS="$LIBS $SDL_LIBS"
             CPPFLAGS="$CPPFLAGS $SDL_CFLAGS"
