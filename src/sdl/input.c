@@ -437,6 +437,18 @@ int PLATFORM_Keyboard(void)
 	static int resize_w, resize_h;
 #endif /* HAVE_WINDOWS_H */
 
+#if !defined(SDL12_COMPAT_HEADERS) || SDL_VERSIONNUM >= 1270
+	/* Very ugly fix for SDL CAPSLOCK brokenness.  This will let the user
+	 * press CAPSLOCK and get a brief keypress on the Atari but it is not
+	 * possible to emulate holding down CAPSLOCK for longer periods with
+	 * the broken SDL*/
+	if (lastkey == SDLK_CAPSLOCK) {
+		lastkey = SDLK_UNKNOWN;
+		key_pressed = 0;
+ 		lastuni = 0;
+	}
+#endif
+
 	while (SDL_PollEvent(&event)) {
 		event_found = 1;
 		switch (event.type) {
@@ -463,6 +475,14 @@ int PLATFORM_Keyboard(void)
 			lastkey = event.key.keysym.sym;
  			lastuni = 0; /* event.key.keysym.unicode is not defined for KEYUP */
 			key_pressed = 0;
+#if !defined(SDL12_COMPAT_HEADERS) || SDL_VERSIONNUM >= 1270
+			/* ugly hack to fix broken SDL CAPSLOCK*/
+			/* Because SDL is only sending Keydown and keyup for every change
+			 * of state of the CAPSLOCK status, rather than the actual key.*/
+			if(lastkey == SDLK_CAPSLOCK) {
+				key_pressed = 1;
+			}
+#endif
 			break;
 		case SDL_VIDEORESIZE:
 #if HAVE_WINDOWS_H
