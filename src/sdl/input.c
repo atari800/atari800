@@ -422,7 +422,7 @@ int PLATFORM_Keyboard(void)
 {
 	int shiftctrl = 0;
 	SDL_Event event;
-	int event_found = 0; /* Was there at least one event? */
+	int keyboad_event_found = FALSE;
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 	if (!atari_screen_backup)
@@ -449,10 +449,10 @@ int PLATFORM_Keyboard(void)
 	}
 #endif
 
-	while (SDL_PollEvent(&event)) {
-		event_found = 1;
+	while (!keyboad_event_found && SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
+			keyboad_event_found = TRUE;
 
 			/* If the KEYDOWN event we get here is OPTION, SELECT, or START, then ignore it here as it's supposed to be it's own independent (i.e., separate from the keyboard) subsystem. */
 			if ((event.key.keysym.sym == KBD_OPTION)
@@ -465,6 +465,7 @@ int PLATFORM_Keyboard(void)
 			key_pressed = 1;
 			break;
 		case SDL_KEYUP:
+			keyboad_event_found = TRUE;
 
 			/* Need to ignore KEYUP as well... */
 			if ((event.key.keysym.sym == KBD_OPTION)
@@ -539,7 +540,7 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	if (!event_found && !key_pressed) {
+	if (!key_pressed) {
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		SDL_consol_keys();
 		return SDL_controller_kb();
