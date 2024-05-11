@@ -1,0 +1,12 @@
+- check real joysticks (https://github.com/atari800/atari800/issues/105):
+	- on Falcon build, fire seems to gets stuck
+	- on SDL build it doesn't work at all
+- broken load/save state
+- super-slow bank switching (The Asskicker's main menu)
+- support unsigned and/or little endian samples
+- try to avoid the intermediate sound buffer
+- add support for m68k-atari-mintelf-gcc
+- compile against SDL with https://github.com/agranlund/SDL-1.2 changes
+- update man page (videl options, caps/inverse...)
+
+- eventually merge Falcon and SDL port
