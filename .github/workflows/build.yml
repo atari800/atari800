@@ -1,0 +1,29 @@
+name: Build CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master" ]
+  pull_request:
+
+jobs:
+  build-amd64:
+    name: Build on Linux amd64
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: install depends
+      run: sudo apt-get install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure --with-sdl --with-opengl --with-readline --with-mp3=lame --with-sound=sdl --with-video=sdl
+    - name: building
+      run: make -j4
+    - name: Archive Atari800 binary
+      uses: actions/upload-artifact@v4
+      with:
+       name: atari800-linux-amd64
+       path: src/atari800
+
