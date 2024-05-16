@@ -540,7 +540,7 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	if (!key_pressed) {
+	if (!keyboad_event_found && !key_pressed) {
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		SDL_consol_keys();
 		return SDL_controller_kb();
