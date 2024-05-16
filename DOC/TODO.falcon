@@ -1,5 +1,5 @@
-- check real joysticks (https://github.com/atari800/atari800/issues/105):
-	- on Falcon build, fire seems to gets stuck
+- check fire button on real joysticks:
+	- on Falcon build it seems to be stuck
 	- on SDL build it doesn't work at all
 - broken load/save state
 - super-slow bank switching (The Asskicker's main menu)

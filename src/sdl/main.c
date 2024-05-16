@@ -94,17 +94,14 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	*argc = j;
 
 	if (!help_only) {
-		i = SDL_INIT_JOYSTICK
 #if HAVE_WINDOWS_H
-/* Timers are used to avoid one Windows 7 glitch, see src/sdl/input.c */
-		    | SDL_INIT_TIMER
-#endif /* HAVE_WINDOWS_H */
-		;
-		if (SDL_InitSubSystem(i) != 0) {
+		/* Timers are used to avoid one Windows 7 glitch, see src/sdl/input.c */
+		if (SDL_InitSubSystem(SDL_INIT_TIMER) != 0) {
 			Log_print("SDL_InitSubSystem FAILED: %s", SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
+#endif /* HAVE_WINDOWS_H */
 	}
 
 	if (!SDL_VIDEO_Initialise(argc, argv)

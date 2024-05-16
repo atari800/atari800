@@ -1318,6 +1318,13 @@ static void Init_SDL_Joysticks(void)
 {
 	int sdl_idx = 0;
 	int emu_idx = 0;
+
+	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) != 0) {
+		Log_print("SDL_InitSubSystem FAILED: %s", SDL_GetError());
+		Log_flushlog();
+		exit(-1);
+	}
+
 	while (sdl_idx < SDL_NumJoysticks() && emu_idx < MAX_JOYSTICKS) {
 		struct stick_dev *s = &stick_devs[emu_idx];
 		if (s->fd_lpt != -1 || (joy_distinct && s->kbd != NULL)) {
@@ -1330,7 +1337,7 @@ static void Init_SDL_Joysticks(void)
 			sdl_idx++;
 			continue;
 		}
-		Log_print("Joystick %i mapped to emulated joystick %i", sdl_idx, emu_idx);
+		Log_print("Joystick %i (%s) mapped to emulated joystick %i", sdl_idx, SDL_JoystickName(sdl_idx), emu_idx);
 		s->nbuttons = SDL_JoystickNumButtons(s->sdl_joy);
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		if (osk_stick == NULL) {
