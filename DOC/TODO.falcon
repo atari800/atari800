@@ -1,6 +1,3 @@
-- check fire button on real joysticks:
-	- on Falcon build it seems to be stuck
-	- on SDL build it doesn't work at all
 - broken load/save state
 - super-slow bank switching (The Asskicker's main menu)
 - support unsigned and/or little endian samples
