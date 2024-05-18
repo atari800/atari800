@@ -953,8 +953,18 @@ int PLATFORM_Keyboard(void)
 		else
 			keycode = *(UBYTE *) (key_tab->unshift + scancode);
 
-		if (control_key)
-			keycode -= 96;
+		if (control_key) {
+			switch (keycode) {
+			case 0x00:	/* CAPSLOCK and others */
+			case 0x08:	/* BACKSPACE */
+			case 0x09:	/* TAB */
+			case 0x0d:	/* RETURN */
+				break;
+			default:
+				keycode -= 96;
+				break;
+			}
+		}
 
 		switch (keycode) {
 		case 0x01:
@@ -1059,6 +1069,10 @@ int PLATFORM_Keyboard(void)
 		case '~':
 			/* same as SCANCODE_CAPSLOCK */
 			keycode = AKEY_CAPSTOGGLE;
+			if (shift_key)
+				keycode |= AKEY_SHFT;
+			if (control_key)
+				keycode |= AKEY_CTRL;
 			break;
 		case '!':
 			keycode = AKEY_EXCLAMATION;
@@ -1337,6 +1351,10 @@ int PLATFORM_Keyboard(void)
 			switch (scancode) {
 			case SCANCODE_CAPSLOCK:
 				keycode = AKEY_CAPSTOGGLE;
+				if (shift_key)
+					keycode |= AKEY_SHFT;
+				if (control_key)
+					keycode |= AKEY_CTRL;
 				break;
 			case SCANCODE_F1:
 			case SCANCODE_UNDO:
