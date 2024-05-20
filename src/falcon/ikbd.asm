@@ -20,14 +20,14 @@
 ;  along with Atari800; if not, write to the Free Software
 ;  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-	xdef	_init_kb
-	xdef	_rem_kb
-	xdef	_key_buf
-	xdef	_joy0
-	xdef	_joy1
-	xdef	_buttons
-	xref	_kbhead
-	xref	_keybuf
+	xdef	init_kb
+	xdef	rem_kb
+	xdef	key_buf
+	xdef	joy0
+	xdef	joy1
+	xdef	buttons
+	xref	kbhead
+	xref	keybuf
 *=======================================================*
 *	IKBD routines: latest update 25/03/96		*
 *=======================================================*
@@ -41,11 +41,11 @@ key_dat		=	$fffffc02	; keyboard data register
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
 * Initialise custom keyboard packet handler		*
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
-_init_kb:
+init_kb:
 initialise_ikbd:
 *-------------------------------------------------------*
 	bsr	empty_buffer
-	lea	key_buffer,a0
+	lea	key_buf,a0
 	moveq	#(128/4)-1,d0
 .clear_keybd:
 	clr.l	(a0)+
@@ -58,7 +58,7 @@ initialise_ikbd:
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
 * Remove custom keyboard packet handler			*
 *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
-_rem_kb:
+rem_kb:
 remove_ikbd:
 *-------------------------------------------------------*
 	move.l	old_ikbd,ikbd.w
@@ -129,17 +129,17 @@ do_joy1:
 
 
 key_press:
-	move.l	_kbhead,d1
-	lea	_keybuf,a0
+	move.l	kbhead,d1
+	lea	keybuf,a0
 	move.b	d0,(a0,d1.l)
 	addq.l	#1,d1
 	and.w	#256-1,d1
-	move.l	d1,_kbhead
+	move.l	d1,kbhead
 
 	btst	#7,d0			; test release bit
 	seq	d1			; d1.b cleared if release bit set
 	and.w	#$7f,d0			; mask off release bit
-	lea	key_buffer,a0
+	lea	key_buf,a0
 	move.b	d1,(a0,d0.w)
 
 ikbd_aq:
@@ -241,15 +241,11 @@ last_key:		ds.w	1
 mouse_dx:		ds.w	1
 mouse_dy:		ds.w	1
 
-_joy0:
 joy0:			ds.b	1
-_joy1:
 joy1:			ds.b	1
-_buttons:
 buttons:		ds.b	1
 			even
-_key_buf:
-key_buffer:		ds.b	128
+key_buf:		ds.b	128
 
 *-------------------------------------------------------*
 			text

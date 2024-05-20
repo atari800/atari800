@@ -232,7 +232,7 @@ case $os in
 	-psos*)
 		os=-psos
 		;;
-	-mint | -mint[0-9]*)
+	-mint | -mintelf | -mint[0-9]*)
 		basic_machine=m68k-atari
 		os=-mint
 		;;
@@ -826,7 +826,7 @@ case $basic_machine in
 	miniframe)
 		basic_machine=m68000-convergent
 		;;
-	*mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
+	*mint | *mintelf | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
 		basic_machine=m68k-atari
 		os=-mint
 		;;
@@ -1496,7 +1496,7 @@ case $os in
 	-ose*)
 		os=-ose
 		;;
-	-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+	-*mint | -*mintelf | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
 		os=-mint
 		;;
 	-zvmoe)
@@ -1779,7 +1779,7 @@ case $basic_machine in
 			-mpw* | -macos*)
 				vendor=apple
 				;;
-			-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+			-*mint | -*mintelf | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
 				vendor=atari
 				;;
 			-vos*)

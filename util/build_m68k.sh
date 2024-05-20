@@ -7,9 +7,9 @@ DIR_ATARI800_FAST="atari800-fast"
 DIR_ATARI800_SDL="atari800-sdl"
 DIR_ATARI800_CF="atari800-cf"
 
-DIR_SYSROOT="$(m68k-atari-mint-gcc -print-sysroot)"
+DIR_SYSROOT="$(m68k-atari-mintelf-gcc -print-sysroot)"
 
-COMMON_FLAGS='--host=m68k-atari-mint --enable-veryslow --disable-nonlinear_mixing --disable-pbi_bb --disable-pbi_mio --with-readline=no
+COMMON_FLAGS='--host=m68k-atari-mintelf --enable-veryslow --disable-nonlinear_mixing --disable-pbi_bb --disable-pbi_mio --with-readline=no
 	--disable-monitorbreak --disable-monitorhints --disable-crashmenu --disable-monitorasm --disable-monitorutf8 --disable-monitoransi
 	--disable-eventrecording --disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording'
 
@@ -38,9 +38,9 @@ cd -
 
 for d in ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 do
-	m68k-atari-mint-stack --fix=256k "$d/src/atari800"
-	m68k-atari-mint-flags -S "$d/src/atari800"
-	m68k-atari-mint-strip -s "$d/src/atari800"
+	m68k-atari-mintelf-stack --fix=256k "$d/src/atari800"
+	m68k-atari-mintelf-flags -S "$d/src/atari800"
+	m68k-atari-mintelf-strip -s "$d/src/atari800"
 done
 
 cp ${DIR_ATARI800_CLASSIC}/src/atari800 atari800.gtp

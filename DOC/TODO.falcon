@@ -2,7 +2,6 @@
 - super-slow bank switching (The Asskicker's main menu)
 - support unsigned and/or little endian samples
 - try to avoid the intermediate sound buffer
-- add support for m68k-atari-mintelf-gcc
 - compile against SDL with https://github.com/agranlund/SDL-1.2 changes
 - update man page (videl options, caps/inverse...)
 

@@ -31,16 +31,16 @@
 *	external variables				*
 *-------------------------------------------------------*
 
-	xref		_screenw,_screenh
-	xref		_vramw,_vramh
-	xref		_odkud,_kam
-	xref		_oldscreen
+	xref		screenw,screenh
+	xref		vramw,vramh
+	xref		odkud,kam
+	xref		oldscreen
 
 *-------------------------------------------------------*
 *	General functions				*
 *-------------------------------------------------------*
 
-	xdef		_rplanes_delta
+	xdef		rplanes_delta
 
 pushall	macro
 	movem.l		d2-d7/a2-a6,-(sp)
@@ -50,40 +50,40 @@ popall	macro
 	movem.l		(sp)+,d2-d7/a2-a6
 	endm
 
-_rplanes_delta:
+rplanes_delta:
 *-------------------------------------------------------*
 	pushall
 *-------------------------------------------------------*
-	move.l		_odkud,a0
-	move.l		_kam,a1
-	move.l		_oldscreen,a2
+	move.l		odkud,a0
+	move.l		kam,a1
+	move.l		oldscreen,a2
 	clr.l		d0
 
 ; centering of view at screen
 	move.w		#384,d0		; width of Atari800 emulated screen
-	sub.w		_screenw,d0	; width  of active screen area
+	sub.w		screenw,d0	; width  of active screen area
 	move.l		d0,a3
 	lsr.w		#1,d0
 	add.l		d0,a0
 	add.l		d0,a2
 
 ; centering of screen in videoram in horizontal axis
-	move.w		_vramw,d0	; width of screen area
-	sub.w		_screenw,d0	; width  of active screen area
+	move.w		vramw,d0	; width of screen area
+	sub.w		screenw,d0	; width  of active screen area
 	move.l		d0,a4
 	lsr.w		#1,d0
 	and.b		#%11110000,d0	; make sure intial offset % 16 == 0
 	add.l		d0,a1
 
 ; centering of screen in videoram in vertical axis
-	move.w		_vramh,d1	; height of screen area
-	sub.w		_screenh,d1	; height of active screen area
+	move.w		vramh,d1	; height of screen area
+	sub.w		screenh,d1	; height of active screen area
 	lsr.w		#1,d1
-	mulu.w		_vramw,d1	; width of screen area
+	mulu.w		vramw,d1	; width of screen area
 	add.l		d1,a1
 
 ; precompute end of line address
-	move.w		_screenw,d0	; width  of active screen area
+	move.w		screenw,d0	; width  of active screen area
 	lea		(a0,d0.l),a5
 
 ; precompute src end address

@@ -20,8 +20,8 @@
 ;  along with Atari800; if not, write to the Free Software
 ;  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-	xdef		_load_r,_save_r,_p_str_p
-	xdef		_store_palette,_restore_palette,_set_falcon_palette
+	xdef		load_r,save_r,p_str_p
+	xdef		store_palette,restore_palette,set_falcon_palette
 *-------------------------------------------------------*
 	section		text
 *-------------------------------------------------------*
@@ -126,11 +126,11 @@ vbcount			=	$462
 *-------------------------------------------------------*
 *	Load Videl registers				*
 *-------------------------------------------------------*
-_load_r:
+load_r:
 *-------------------------------------------------------*
 *	Register file pointer				*
 *-------------------------------------------------------*
-	move.l		_p_str_p,a0
+	move.l		p_str_p,a0
 *-------------------------------------------------------*
 *	Allow previous VBlank changes to settle		*
 *-------------------------------------------------------*
@@ -208,7 +208,7 @@ _load_r:
 *-------------------------------------------------------*
 *	Save Videl registers				*
 *-------------------------------------------------------*
-_save_r:
+save_r:
 	movem.l		d2/a2,-(sp)
 *-------------------------------------------------------*
 *	Get Modecode					*
@@ -220,7 +220,7 @@ _save_r:
 *-------------------------------------------------------*
 *	Register file pointer				*
 *-------------------------------------------------------*
-	move.l		_p_str_p,a0
+	move.l		p_str_p,a0
 *-------------------------------------------------------*
 *	Save Modecode					*
 *-------------------------------------------------------*
@@ -319,7 +319,7 @@ videl_re_sync:
 .nsync:	move.l		(sp)+,d2
 	rts
 
-_store_palette:
+store_palette:
 	movem.l		d2-d7/a2-a6,-(sp)
 
 	lea		$ffff9800.w,a0			; save falcon palette
@@ -335,7 +335,7 @@ _store_palette:
 	movem.l		(sp)+,d2-d7/a2-a6
 	rts
 
-_restore_palette
+restore_palette
 	movem.l		d2-d7/a2-a6,-(sp)
 
 	lea		$ffff9800.w,a0			; restore falcon palette
@@ -350,9 +350,9 @@ _restore_palette
 	movem.l		(sp)+,d2-d7/a2-a6
 	rts
 
-_set_falcon_palette:
+set_falcon_palette:
 	lea		$ffff9800.w,a0			; set falcon palette
-	move.l		_p_str_p,a1			;
+	move.l		p_str_p,a1			;
 	move.w		#256-1,d0			;
 .loop:	move.l		(a1)+,(a0)+			;
 	dbra		d0,.loop			;
@@ -362,7 +362,7 @@ _set_falcon_palette:
 	section 	bss
 *-------------------------------------------------------*
 
-_p_str_p:
+p_str_p:
 	ds.l	1
 save_pal:
 	ds.l	256+8					; old colours (falcon+st/e)

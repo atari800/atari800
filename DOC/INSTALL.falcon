@@ -38,7 +38,7 @@ assembler core included! No more dilemmas about speed vs. compatibility.
 ===========================================================================
 All m68k versions are built with following switches:
 
---host=m68k-atari-mint --enable-veryslow --disable-nonlinear_mixing
+--host=m68k-atari-mintelf --enable-veryslow --disable-nonlinear_mixing
 --disable-pbi_bb --disable-pbi_mio --with-readline=no
 --disable-monitorbreak --disable-monitorhints --disable-crashmenu
 --disable-monitorasm --disable-monitorutf8 --disable-monitoransi
@@ -57,19 +57,19 @@ ATARIFST.GTP (XBIOS audio, GEM/Videl video, inexact 6502/ANTIC)
 
 ATARISDL.GTP (XBIOS audio, SDL video, cycle exact 6502/ANTIC)
 # point to -m68020-60 aware `sdl-config`
-PATH=$(m68k-atari-mint-gcc -print-sysroot)/usr/bin/m68020-60:$PATH
+PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m68020-60:$PATH
 --target=default --enable-falconcpuasm --disable-interpolatesound
 
 ATARI_CF.GTP (ATARISDL.GTP for the FireBee, without asm emulation core)
 # point to -mcpu=5475 aware `sdl-config`
-PATH=$(m68k-atari-mint-gcc -print-sysroot)/usr/bin/m5475
+PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m5475
 --target=firebee --enable-pagedattrib --enable-cyclesperopcode
 
 Then for all versions:
 
-m68k-atari-mint-stack --fix=256k atari800
-m68k-atari-mint-flags -S atari800
-m68k-atari-mint-strip -s atari800
+m68k-atari-mintelf-stack --fix=256k atari800
+m68k-atari-mintelf-flags -S atari800
+m68k-atari-mintelf-strip -s atari800
 
 The `flags` command is needed to run properly on machines with memory protection
 enabled because atari800 hooks on the system keyboard vector and in case of the

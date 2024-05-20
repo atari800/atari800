@@ -637,29 +637,29 @@ int PLATFORM_Exit(int run_monitor)
 /* -------------------------------------------------------------------------- */
 
 #define DoubleSizeIt(in, out1, out2) \
-	__asm__ (				\
-		"\n\tmove.l	%2,%0"	\
-		"\n\tmove.l	%0,%1"	\
-		"\n\tclr.w	%0"		\
-		"\n\teor.l	%0,%1"	\
+	__asm__ (					\
+		"\n\tmove.l	%2,%0"		\
+		"\n\tmove.l	%0,%1"		\
+		"\n\tclr.w	%0"			\
+		"\n\teor.l	%0,%1"		\
 							\
-		"\n\tmove.l	%0,d2"	\
-		"\n\tmove.l	%1,d3"	\
+		"\n\tmove.l	%0,%%d2"	\
+		"\n\tmove.l	%1,%%d3"	\
 							\
-		"\n\tswap	%1"		\
-		"\n\tswap	d2"		\
+		"\n\tswap	%1"			\
+		"\n\tswap	%%d2"		\
 							\
-		"\n\tor.l	d2,%0"	\
-		"\n\tor.l	d3,%1"	\
+		"\n\tor.l	%%d2,%0"	\
+		"\n\tor.l	%%d3,%1"	\
 							\
-		"\n\tror.w	#8,%0"	\
-		"\n\tror.w	#8,%1"	\
+		"\n\tror.w	#8,%0"		\
+		"\n\tror.w	#8,%1"		\
 							\
-		"\n\tror.l	#8,%0"	\
-		"\n\tror.l	#8,%1"	\
+		"\n\tror.l	#8,%0"		\
+		"\n\tror.l	#8,%1"		\
 		: "=d" (out1), "=d" (out2) \
-		: "g" (in) 			\
-		: "cc", "d2", "d3"	\
+		: "g" (in)				\
+		: "cc", "d2", "d3"		\
 	);
 
 void PLATFORM_DisplayScreen(void)

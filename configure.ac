@@ -48,8 +48,8 @@ case "$target" in
         echo "Possible values for the '--target' option are:"
         echo "    default          (autodetect available graphics and sound libraries)"
         echo "    android          (Android devices)"
-        echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint)"
-        echo "    firebee          (FireBee: set --host=m68k-atari-mint)"
+        echo "    falcon           (Atari Falcon: set --host=m68k-atari-mint(elf))"
+        echo "    firebee          (FireBee: set --host=m68k-atari-mint(elf))"
         echo "    ps2              (Sony PlayStation 2)"
         echo "    libatari800      (Atari800 as a library (developers only))"
         echo "    x11              (Standard X11)"
@@ -256,8 +256,11 @@ AC_DEFUN([A8_ADD_INCLUDE_PATH], [
 
 
 AC_DEFUN([AM_PROG_AS], []) dnl dummy to make automake happy, since vasm is used instead
-CCAS=vasm
-CCASFLAGS="-quiet -devpac -opt-allbra -Faout"
+CCAS=vasmm68k_mot
+CCASFLAGS="-quiet -devpac -opt-allbra -Faout -underscore"
+if echo | $CC -dM -E - | grep __ELF__ > /dev/null; then
+CCASFLAGS="-quiet -devpac -opt-allbra -Felf -elfregs"
+fi
 
 a8_use_sdl=no
 dnl Check if SDL library exists. If it's found, set a8_use_sdl to yes and AC_DEFINE the SDL symbol.
