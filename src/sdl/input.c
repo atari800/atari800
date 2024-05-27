@@ -755,16 +755,20 @@ int PLATFORM_Keyboard(void)
 	}
 
 	/* SHIFT STATE */
-	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT]))
+	if ((kbhits[SDLK_LSHIFT]) || (kbhits[SDLK_RSHIFT])) {
 		INPUT_key_shift = 1;
-	else
+		shiftctrl ^= AKEY_SHFT;
+	} else {
 		INPUT_key_shift = 0;
+	}
 
 	/* CONTROL STATE */
-	if ((kbhits[SDLK_LCTRL]) || (kbhits[SDLK_RCTRL]))
+	if ((kbhits[SDLK_LCTRL]) || (kbhits[SDLK_RCTRL])) {
 		key_control = 1;
-	else
+		shiftctrl ^= AKEY_CTRL;
+	} else {
 		key_control = 0;
+	}
 
 	/*
 	if (event.type == 2 || event.type == 3) {
@@ -847,9 +851,6 @@ int PLATFORM_Keyboard(void)
 		}
 	}
 
-	if (INPUT_key_shift)
-		shiftctrl ^= AKEY_SHFT;
-
 	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
 		if (lastkey == SDLK_F4)
 			return AKEY_5200_START ^ shiftctrl;
@@ -886,9 +887,6 @@ int PLATFORM_Keyboard(void)
 		}
 		return AKEY_NONE;
 	}
-
-	if (key_control)
-		shiftctrl ^= AKEY_CTRL;
 
 	switch (lastkey) {
 	case SDLK_BACKQUOTE: /* fallthrough */
