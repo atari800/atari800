@@ -457,7 +457,11 @@ int PLATFORM_Keyboard(void)
 			/* If the KEYDOWN event we get here is OPTION, SELECT, or START, then ignore it here as it's supposed to be it's own independent (i.e., separate from the keyboard) subsystem. */
 			if ((event.key.keysym.sym == KBD_OPTION)
 				|| (event.key.keysym.sym == KBD_SELECT)
-				|| (event.key.keysym.sym == KBD_START))
+				|| (event.key.keysym.sym == KBD_START)
+				|| (event.key.keysym.sym == SDLK_LSHIFT)
+				|| (event.key.keysym.sym == SDLK_RSHIFT)
+				|| (event.key.keysym.sym == SDLK_LCTRL)
+				|| (event.key.keysym.sym == SDLK_RCTRL))
 				break;
 
 			lastkey = event.key.keysym.sym;
@@ -470,7 +474,11 @@ int PLATFORM_Keyboard(void)
 			/* Need to ignore KEYUP as well... */
 			if ((event.key.keysym.sym == KBD_OPTION)
 				|| (event.key.keysym.sym == KBD_SELECT)
-				|| (event.key.keysym.sym == KBD_START))
+				|| (event.key.keysym.sym == KBD_START)
+				|| (event.key.keysym.sym == SDLK_LSHIFT)
+				|| (event.key.keysym.sym == SDLK_RSHIFT)
+				|| (event.key.keysym.sym == SDLK_LCTRL)
+				|| (event.key.keysym.sym == SDLK_RCTRL))
 				break;
 
 			lastkey = event.key.keysym.sym;
