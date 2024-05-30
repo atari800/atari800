@@ -268,37 +268,37 @@ int PLATFORM_Keyboard(void)
 
 	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active && lastloc == KEY_LOCATION_STANDARD) {
 		if (lastkey == VK_F4)
-			return AKEY_5200_START ^ shiftctrl;
+			return AKEY_5200_START;
 		switch (lastuni) {
 		case 'p':
-			return AKEY_5200_PAUSE ^ shiftctrl;
+			return AKEY_5200_PAUSE;
 		case 'r':
-			return AKEY_5200_RESET ^ shiftctrl;
+			return AKEY_5200_RESET;
 		case '0':
-			return AKEY_5200_0 ^ shiftctrl;
+			return AKEY_5200_0;
 		case '1':
-			return AKEY_5200_1 ^ shiftctrl;
+			return AKEY_5200_1;
 		case '2':
-			return AKEY_5200_2 ^ shiftctrl;
+			return AKEY_5200_2;
 		case '3':
-			return AKEY_5200_3 ^ shiftctrl;
+			return AKEY_5200_3;
 		case '4':
-			return AKEY_5200_4 ^ shiftctrl;
+			return AKEY_5200_4;
 		case '5':
-			return AKEY_5200_5 ^ shiftctrl;
+			return AKEY_5200_5;
 		case '6':
-			return AKEY_5200_6 ^ shiftctrl;
+			return AKEY_5200_6;
 		case '7':
-			return AKEY_5200_7 ^ shiftctrl;
+			return AKEY_5200_7;
 		case '8':
-			return AKEY_5200_8 ^ shiftctrl;
+			return AKEY_5200_8;
 		case '9':
-			return AKEY_5200_9 ^ shiftctrl;
+			return AKEY_5200_9;
 		case '#':
 		case '=':
-			return AKEY_5200_HASH ^ shiftctrl;
+			return AKEY_5200_HASH;
 		case '*':
-			return AKEY_5200_ASTERISK ^ shiftctrl;
+			return AKEY_5200_ASTERISK;
 		}
 		return AKEY_NONE;
 	}

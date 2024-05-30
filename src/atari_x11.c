@@ -377,47 +377,46 @@ static int GetKeyCode(XEvent *event)
 		if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
 			switch (keysym) {
 			case XK_F4:
-				keycode = SHIFT | AKEY_5200_START;
+				keycode = AKEY_5200_START;
 				break;
 			case XK_P:
 			case XK_p:
-				keycode = SHIFT | AKEY_5200_PAUSE;
+				keycode = AKEY_5200_PAUSE;
 				break;
 			case XK_R:
 			case XK_r:
-				keycode = SHIFT | AKEY_5200_RESET;
+				keycode = AKEY_5200_RESET;
 				break;
 			case XK_0:
-				keycode = SHIFT | AKEY_5200_0;
+				keycode = AKEY_5200_0;
 				break;
 			case XK_1:
-				keycode = SHIFT | AKEY_5200_1;
+				keycode = AKEY_5200_1;
 				break;
 			case XK_2:
-				keycode = SHIFT | AKEY_5200_2;
+				keycode = AKEY_5200_2;
 				break;
 			case XK_3:
-				keycode = SHIFT | AKEY_5200_3;
+				keycode = AKEY_5200_3;
 				break;
 			case XK_4:
-				keycode = SHIFT | AKEY_5200_4;
+				keycode = AKEY_5200_4;
 				break;
 			case XK_5:
-				keycode = SHIFT | AKEY_5200_5;
+				keycode = AKEY_5200_5;
 				break;
 			case XK_6:
-				keycode = SHIFT | AKEY_5200_6;
+				keycode = AKEY_5200_6;
 				break;
 			case XK_7:
-				keycode = SHIFT | AKEY_5200_7;
+				keycode = AKEY_5200_7;
 				break;
 			case XK_8:
-				keycode = SHIFT | AKEY_5200_8;
+				keycode = AKEY_5200_8;
 				break;
 			case XK_9:
-				keycode = SHIFT | AKEY_5200_9;
+				keycode = AKEY_5200_9;
 				break;
-			/* XXX: "SHIFT | " harmful for '#' and '*' ? */
 			case XK_numbersign:
 			case XK_equal:
 				keycode = AKEY_5200_HASH;
