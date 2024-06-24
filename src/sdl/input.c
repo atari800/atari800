@@ -1465,7 +1465,12 @@ static void Init_SDL_Joysticks(void)
 			sdl_idx++;
 			continue;
 		}
-		Log_print("Joystick %i (%s) mapped to emulated joystick %i", sdl_idx, SDL_JoystickName(sdl_idx), emu_idx);
+		Log_print("Joystick %i (%s) mapped to emulated joystick %i", sdl_idx, 
+#if SDL2
+			SDL_JoystickName(s->sdl_joy), emu_idx);
+#else
+			SDL_JoystickName(sdl_idx), emu_idx);
+#endif
 		s->nbuttons = SDL_JoystickNumButtons(s->sdl_joy);
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 		if (osk_stick == NULL) {
