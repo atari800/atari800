@@ -310,7 +310,7 @@ Express 64 KB cartridge
 Diamond 64 KB cartridge
 .TP
 .B 11
-SpartaDos X 64 KB cartridge
+SpartaDOS X 64 KB cartridge
 .TP
 .B 12
 XEGS 32 KB cartridge
@@ -406,7 +406,7 @@ Atarimax 128 KB Flash cartridge
 Atarimax 1 MB Flash cartridge (old)
 .TP
 .B 43
-SpartaDos X 128 KB cartridge
+SpartaDOS X 128 KB cartridge
 .TP
 .B 44
 OSS 8 KB cartridge

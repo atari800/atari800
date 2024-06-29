@@ -133,15 +133,16 @@ cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "Ram-Cart 32 MB cartridge",            32*1024 },
 	{ "SiDiCar 32 KB cartridge",                  32 },
 
-	{ "",                                          0 },
-	{ "",                                          0 },
-	{ "",                                          0 },
-	{ "",                                          0 },
-	{ "",                                          0 },
-	{ "",                                          0 },
-	{ "",                                          0 }, /* 110 */
-	{ "",                                          0 },
-	{ "",                                          0 },
+	{ "J(atari)Cart8(kB) cartridge",               8 },
+	{ "J(atari)Cart16(kB) cartridge",             16 },
+	{ "J(atari)Cart32(kB) cartridge",             32 },
+	{ "J(atari)Cart64(kB) cartridge",             64 },
+	{ "J(atari)Cart128(kB) cartridge",           128 },
+	{ "J(atari)Cart256(kB) cartridge",           256 },
+	{ "J(atari)Cart512(kB) cartridge",           512 }, /* 110 */
+	{ "J(atari)Cart1024(kB) cartridge",         1024 },
+	
+	{ "DCart cartridge",                         512 },
 	{ "",                                          0 },
 	{ "",                                          0 },
 	{ "",                                          0 },
