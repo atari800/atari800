@@ -189,7 +189,7 @@ cart_t const CARTRIDGES[CARTRIDGE_TYPE_COUNT] = {
 	{ "",                                          0 },
 	{ "",                                          0 },
 	{ "",                                          0 },
-	{ "",                                          0 },
+	{ "Bounty Bob 40 KB 5200 cartridge (alt.)",   40 },
 
 	{ "JRC64 cartridge (interleaved)",            64 } /* 160 */
 };
