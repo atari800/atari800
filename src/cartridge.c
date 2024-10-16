@@ -58,6 +58,7 @@ static int CartIsFor5200(int type)
 	case CARTRIDGE_5200_32:
 	case CARTRIDGE_5200_EE_16:
 	case CARTRIDGE_5200_40:
+	case CARTRIDGE_5200_40_ALT:
 	case CARTRIDGE_5200_NS_16:
 	case CARTRIDGE_5200_8:
 	case CARTRIDGE_5200_4:
@@ -520,6 +521,21 @@ static void MapActiveCart(void)
 			MEMORY_CopyFromCart(0x5000, 0x5fff, active_cart->image + 0x4000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
 			MEMORY_CopyFromCart(0x8000, 0x9fff, active_cart->image + 0x8000);
 			MEMORY_CopyFromCart(0xa000, 0xbfff, active_cart->image + 0x8000);
+#ifndef PAGED_ATTRIB
+			MEMORY_SetHARDWARE(0x4ff6, 0x4ff9);
+			MEMORY_SetHARDWARE(0x5ff6, 0x5ff9);
+#else
+			MEMORY_readmap[0x4f] = CARTRIDGE_BountyBob1GetByte;
+			MEMORY_readmap[0x5f] = CARTRIDGE_BountyBob2GetByte;
+			MEMORY_writemap[0x4f] = CARTRIDGE_BountyBob1PutByte;
+			MEMORY_writemap[0x5f] = CARTRIDGE_BountyBob2PutByte;
+#endif
+			break;
+		case CARTRIDGE_5200_40_ALT:
+			MEMORY_CopyFromCart(0x4000, 0x4fff, active_cart->image + 0x2000 + (active_cart->state & 0x03) * 0x1000);
+			MEMORY_CopyFromCart(0x5000, 0x5fff, active_cart->image + 0x6000 + ((active_cart->state & 0x0c) >> 2) * 0x1000);
+			MEMORY_CopyFromCart(0x8000, 0x9fff, active_cart->image);
+			MEMORY_CopyFromCart(0xa000, 0xbfff, active_cart->image);
 #ifndef PAGED_ATTRIB
 			MEMORY_SetHARDWARE(0x4ff6, 0x4ff9);
 			MEMORY_SetHARDWARE(0x5ff6, 0x5ff9);
@@ -1322,8 +1338,12 @@ static void access_BountyBob1(UWORD addr)
 		addr -= 0xf6;
 		new_state = (active_cart->state & 0x0c) | addr;
 		if (new_state != active_cart->state) {
-			MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
-			               active_cart->image + addr * 0x1000);
+			if (active_cart->type == CARTRIDGE_5200_40_ALT)
+				MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
+			            	active_cart->image + 0x2000 + addr * 0x1000);
+			else
+				MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
+			               	active_cart->image + addr * 0x1000);
 			active_cart->state = new_state;
 		}
 	}
@@ -1339,8 +1359,12 @@ static void access_BountyBob2(UWORD addr)
 		addr -= 0xf6;
 		new_state = (active_cart->state & 0x03) | (addr << 2);
 		if (new_state != active_cart->state) {
-			MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
-			               active_cart->image + 0x4000 + addr * 0x1000);
+			if (active_cart->type == CARTRIDGE_5200_40_ALT)
+				MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
+							active_cart->image + 0x6000 + addr * 0x1000);
+			else
+				MEMORY_CopyFromCart(base_addr, base_addr + 0x0fff,
+							active_cart->image + 0x4000 + addr * 0x1000);
 			active_cart->state = new_state;
 		}
 	}

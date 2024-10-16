@@ -124,6 +124,7 @@ cart_types_t cart_list_5200[] = {
 	{128, 72, "Super Cart 128 KB 5200",},
 	{256, 73, "Super Cart 256 KB 5200",},
 	{512, 74, "Super Cart 512 KB 5200",},
+	{40, 159, "Bounty Bob 40 KB 5200 (alt.)",},
 	{0, 0, NULL},
 };
 

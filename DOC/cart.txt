@@ -144,6 +144,7 @@ Currently supported cartridge types:
 |110 | 800/XL/XE |  512 | J(atari)Cart512(kB)                           |   |
 |111 | 800/XL/XE | 1024 | J(atari)Cart1024(kB)                          |   |
 |112 | 800/XL/XE |  512 | DCart 512 KB                                  |   |        
+|159 |   5200    |   40 | Bounty Bob Strikes Back 40 KB 5200 alt.       |   | 
 |160 | 800/XL/XE |   64 |JRC64 cartridge (interleaved)                  | x |
 +----+-----------+------+-----------------------------------------------+---+
 
@@ -1891,6 +1892,19 @@ Reference: http://www.retrobits.net/atari/osshack.shtml
  
  The cartridge also supports programming of the Flash ROM - this feature is
  currently not emulated.
+
++---------------------------------------------------------------------------+
+| Type 159: Bounty Bob Strikes Back 40 KB 5200 alternative cartridge        |
++---------------------------------------------------------------------------+
+
+ Similar to type 7, but the banks are distributed differently in the ROM
+ file:
+ - The first 8 KB is mapped to upper 16 KB of cartridge address space
+   in Atari 5200. That is, $8000-$9FFF and $A000-$BFFF contain same data.
+ - Four 4 KB banks (0,1,2,3) are mapped into $4000-$4FFF. An access to $4FF6
+   selects bank 0, $4FF7 - bank 1, $4FF8 - bank 2, $4FF9 - bank 3.
+ - Four 4 KB banks (4,5,6,7) are mapped into $5000-$5FFF. An access to $5FF6
+   selects bank 4, $5FF7 - bank 5, $5FF8 - bank 6, $5FF9 - bank 7.
 
 +---------------------------------------------------------------------------+
 | Type 160: JRC64 cartridge (interleaved)                                   |
