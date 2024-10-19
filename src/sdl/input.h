@@ -3,9 +3,21 @@
 
 #include <stdio.h>
 
+#if SDL2
+enum INPUT_joystick_diagonals {
+	JoystickNoDiagonals = 0,
+	JoystickNarrowDiagonalsZone,
+	JoystickWideDiagonalsZone,
+};
+#endif
+
 /*Configuration of a real SDL joystick*/
 typedef struct SDL_INPUT_RealJSConfig_t {
 	int use_hat;    
+#if SDL2
+	int axes;
+	enum INPUT_joystick_diagonals diagonal_zones;
+#endif
 } SDL_INPUT_RealJSConfig_t;
 
 int SDL_INPUT_ReadConfig(char *option, char *parameters);

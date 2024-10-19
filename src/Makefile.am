@@ -7,14 +7,14 @@ TARGET_BASE_NAME = atari800
 endif
 TARGET = $(TARGET_BASE_NAME)
 
-bin_PROGRAMS = 
+bin_PROGRAMS =
 noinst_PROGRAMS =
 
 man1dir = $(mandir)/man1
 
 SUFFIXES = .c .cpp .s .o .h .asm
 
-doc_DATA = 
+doc_DATA =
 
 atari800_CPPFLAGS =
 
@@ -87,6 +87,10 @@ atari800_SOURCES = \
 	util.c util.h
 atari800_LDADD =
 
+if A8_USE_SDL2
+atari800_SOURCES += sdl/init.c sdl/init.h
+endif
+
 if A8_USE_SDL
 atari800_SOURCES += sdl/init.c sdl/init.h
 if CONFIGURE_HOST_WIN
@@ -100,6 +104,9 @@ atari800_SOURCES += \
 	pokeysnd.c pokeysnd.h \
 	mzpokeysnd.c mzpokeysnd.h \
 	remez.c remez.h
+endif
+if WITH_SOUND_SDL2
+atari800_SOURCES += sound.c sound.h sdl/sound.c
 endif
 if WITH_SOUND_SDL
 atari800_SOURCES += sound.c sound.h sdl/sound.c
@@ -183,6 +190,17 @@ atari800_SOURCES += javanvm/main.c javanvm/javanvm.h javanvm/video.c javanvm/vid
 endif
 
 if WITH_VIDEO_SDL
+atari800_SOURCES += \
+	videomode.c videomode.h \
+	sdl/main.c \
+	sdl/video.c sdl/video.h \
+	sdl/video_sw.c sdl/video_sw.h \
+	sdl/input.c sdl/input.h \
+	sdl/palette.c sdl/palette.h
+atari800_SOURCES += pbi_proto80.c pbi_proto80.h af80.c af80.h bit3.c bit3.h
+endif
+
+if WITH_VIDEO_SDL2
 atari800_SOURCES += \
 	videomode.c videomode.h \
 	sdl/main.c \
