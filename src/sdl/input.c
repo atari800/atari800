@@ -792,8 +792,12 @@ int PLATFORM_Keyboard(void)
 		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
 	if (kbhits[KBD_SELECT])
 		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
-	if (kbhits[KBD_START])
+	if (kbhits[KBD_START]) {
 		INPUT_key_consol &= ~INPUT_CONSOL_START;
+		/* Special case: 5200's START is mapped to console START */
+		if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active)
+			return AKEY_5200_START;
+	}
 
 	if (key_pressed == 0)
 		return AKEY_NONE;
@@ -860,8 +864,6 @@ int PLATFORM_Keyboard(void)
 	}
 
 	if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active) {
-		if (lastkey == SDLK_F4)
-			return AKEY_5200_START;
 		switch (lastuni) {
 		case 'p':
 			return AKEY_5200_PAUSE;
