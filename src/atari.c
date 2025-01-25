@@ -721,7 +721,16 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef R_IO_DEVICE
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
+#ifdef STEREO_SOUND
+					Log_print("\t-stereo          Turn on emulation of two POKEYs");
+					Log_print("\t-nostereo        Turn off emulation of two POKEYs");
+#endif
 					Log_print("\t-turbo           Run emulated Atari as fast as possible");
+					Log_print("\t-monitor         Start emulated Atari in the monitor");
+#ifdef MONITOR_BREAK
+					Log_print("\t-bbrk            Break on BRK instruction");
+					Log_print("\t-bpc <addr>      Break on PC=<addr>");
+#endif
 #ifdef MONITOR_HINTS
 					Log_print("\t-label-file <f>  Load monitor labels from file <f>");
 #endif
