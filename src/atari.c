@@ -1103,7 +1103,9 @@ void Atari800_Sync(void)
 	double deltatime = 1.0 / ((Atari800_tv_mode == Atari800_TV_PAL) ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
 	double curtime;
 
+#if defined(SOUND) && !defined(__PLUS)
 	deltatime *= Sound_AdjustSpeed();
+#endif
 #ifdef ALTERNATE_SYNC_WITH_HOST
 	if (! UI_is_active)
 		deltatime *= Atari800_refresh_rate;
