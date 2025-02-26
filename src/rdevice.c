@@ -73,6 +73,7 @@
  */
 
 #include "config.h"
+#define _POSIX_C_SOURCE 200112L  /* for snprintf() in stdio.h on Linux */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
