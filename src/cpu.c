@@ -2,7 +2,7 @@
  * cpu.c - 6502 CPU emulation
  *
  * Copyright (C) 1995-1998 David Firth
- * Copyright (C) 1998-2005 Atari800 development team (see DOC/CREDITS)
+ * Copyright (C) 1998-2025 Atari800 development team (see DOC/CREDITS)
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
@@ -301,10 +301,10 @@ void CPU_PutStatus(void)
 			CPU_delayed_nmi = 1; \
 		ANTIC_xpos++; \
 		PC += sdata; \
-		DONE \
+		DONE; \
 	} \
 	PC++; \
-	DONE
+	DONE;
 #else
 #define BRANCH(cond) \
 	if (cond) { \
@@ -316,10 +316,10 @@ void CPU_PutStatus(void)
 			CPU_delayed_nmi = 1; \
 		ANTIC_xpos++; \
 		SET_PC(addr); \
-		DONE \
+		DONE; \
 	} \
 	PC++; \
-	DONE
+	DONE;
 #endif
 
 /* 1 extra cycle for X (or Y) index overflow */
@@ -453,10 +453,10 @@ void CPU_GO(int limit)
 {
 #ifdef NO_GOTO
 #define OPCODE_ALIAS(code)	case 0x##code:
-#define DONE				break;
+#define DONE				break
 #else
 #define OPCODE_ALIAS(code)	opcode_##code:
-#define DONE				goto next;
+#define DONE				goto next
 	static const void *opcode[256] =
 	{
 		&&opcode_00, &&opcode_01, &&opcode_02, &&opcode_03,
@@ -893,12 +893,12 @@ void CPU_GO(int limit)
 			SET_PC(MEMORY_dGetWordAligned(0xfffe));
 			INC_RET_NESTING;
 		}
-		DONE
+		DONE;
 
 	OPCODE(01)				/* ORA (ab,x) */
 		INDIRECT_X;
 		ORA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(03)				/* ASO (ab,x) [unofficial - ASL then ORA with Acc] */
 		INDIRECT_X;
@@ -909,13 +909,13 @@ void CPU_GO(int limit)
 		data <<= 1;
 		MEMORY_PutByte(addr, data);
 		Z = N = A |= data;
-		DONE
+		DONE;
 
 	OPCODE_ALIAS(04)		/* NOP ab [unofficial - skip byte] */
 	OPCODE_ALIAS(44)
 	OPCODE(64)
 		PC++;
-		DONE
+		DONE;
 
 	OPCODE_ALIAS(14)		/* NOP ab,x [unofficial - skip byte] */
 	OPCODE_ALIAS(34)
@@ -924,7 +924,7 @@ void CPU_GO(int limit)
 	OPCODE_ALIAS(d4)
 	OPCODE(f4)
 		PC++;
-		DONE
+		DONE;
 
 	OPCODE_ALIAS(80)		/* NOP #ab [unofficial - skip byte] */
 	OPCODE_ALIAS(82)
@@ -932,12 +932,12 @@ void CPU_GO(int limit)
 	OPCODE_ALIAS(c2)
 	OPCODE(e2)
 		PC++;
-		DONE
+		DONE;
 
 	OPCODE(05)				/* ORA ab */
 		ZPAGE;
 		ORA(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(06)				/* ASL ab */
 		ZPAGE;
@@ -945,7 +945,7 @@ void CPU_GO(int limit)
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(07)				/* ASO ab [unofficial - ASL then ORA with Acc] */
 		ZPAGE;
@@ -956,35 +956,35 @@ void CPU_GO(int limit)
 		data <<= 1;
 		MEMORY_dPutByte(addr, data);
 		Z = N = A |= data;
-		DONE
+		DONE;
 
 	OPCODE(08)				/* PHP */
 		PHPB1;
-		DONE
+		DONE;
 
 	OPCODE(09)				/* ORA #ab */
 		ORA(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(0a)				/* ASL */
 		C = (A & 0x80) ? 1 : 0;
 		Z = N = A <<= 1;
-		DONE
+		DONE;
 
 	OPCODE_ALIAS(0b)		/* ANC #ab [unofficial - AND then copy N to C (Fox) */
 	OPCODE(2b)
 		AND(IMMEDIATE);
 		C = N >= 0x80;
-		DONE
+		DONE;
 
 	OPCODE(0c)				/* NOP abcd [unofficial - skip word] */
 		PC += 2;
-		DONE
+		DONE;
 
 	OPCODE(0d)				/* ORA abcd */
 		ABSOLUTE;
 		ORA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(0e)				/* ASL abcd */
 		ABSOLUTE;
@@ -992,7 +992,7 @@ void CPU_GO(int limit)
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(0f)				/* ASO abcd [unofficial - ASL then ORA with Acc] */
 		ABSOLUTE;
@@ -1005,7 +1005,7 @@ void CPU_GO(int limit)
 		INDIRECT_Y;
 		NCYCLES_Y;
 		ORA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(13)				/* ASO (ab),y [unofficial - ASL then ORA with Acc] */
 		INDIRECT_Y;
@@ -1014,7 +1014,7 @@ void CPU_GO(int limit)
 	OPCODE(15)				/* ORA ab,x */
 		ZPAGE_X;
 		ORA(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(16)				/* ASL ab,x */
 		ZPAGE_X;
@@ -1022,7 +1022,7 @@ void CPU_GO(int limit)
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(17)				/* ASO ab,x [unofficial - ASL then ORA with Acc] */
 		ZPAGE_X;
@@ -1030,13 +1030,13 @@ void CPU_GO(int limit)
 
 	OPCODE(18)				/* CLC */
 		C = 0;
-		DONE
+		DONE;
 
 	OPCODE(19)				/* ORA abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		ORA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(1b)				/* ASO abcd,y [unofficial - ASL then ORA with Acc] */
 		ABSOLUTE_Y;
@@ -1051,13 +1051,13 @@ void CPU_GO(int limit)
 		if (OP_BYTE + X >= 0x100)
 			ANTIC_xpos++;
 		PC += 2;
-		DONE
+		DONE;
 
 	OPCODE(1d)				/* ORA abcd,x */
 		ABSOLUTE_X;
 		NCYCLES_X;
 		ORA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(1e)				/* ASL abcd,x */
 		ABSOLUTE_X;
@@ -1065,7 +1065,7 @@ void CPU_GO(int limit)
 		C = (data & 0x80) ? 1 : 0;
 		Z = N = data << 1;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(1f)				/* ASO abcd,x [unofficial - ASL then ORA with Acc] */
 		ABSOLUTE_X;
@@ -1082,12 +1082,12 @@ void CPU_GO(int limit)
 			PHW(retaddr);
 		}
 		SET_PC(OP_WORD);
-		DONE
+		DONE;
 
 	OPCODE(21)				/* AND (ab,x) */
 		INDIRECT_X;
 		AND(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(23)				/* RLA (ab,x) [unofficial - ROL Mem, then AND with A] */
 		INDIRECT_X;
@@ -1104,7 +1104,7 @@ void CPU_GO(int limit)
 		}
 		MEMORY_PutByte(addr, data);
 		Z = N = A &= data;
-		DONE
+		DONE;
 
 	OPCODE(24)				/* BIT ab */
 		ZPAGE;
@@ -1115,12 +1115,12 @@ void CPU_GO(int limit)
 		CPU_regP = (CPU_regP & 0xbf) + (N & 0x40);
 #endif
 		Z = (A & N);
-		DONE
+		DONE;
 
 	OPCODE(25)				/* AND ab */
 		ZPAGE;
 		AND(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(26)				/* ROL ab */
 		ZPAGE;
@@ -1128,7 +1128,7 @@ void CPU_GO(int limit)
 		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(27)				/* RLA ab [unofficial - ROL Mem, then AND with A] */
 		ZPAGE;
@@ -1145,22 +1145,22 @@ void CPU_GO(int limit)
 		}
 		MEMORY_dPutByte(addr, data);
 		Z = N = A &= data;
-		DONE
+		DONE;
 
 	OPCODE(28)				/* PLP */
 		PLP;
 		CPUCHECKIRQ;
-		DONE
+		DONE;
 
 	OPCODE(29)				/* AND #ab */
 		AND(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(2a)				/* ROL */
 		Z = N = (A << 1) + C;
 		C = (A & 0x80) ? 1 : 0;
 		A = Z;
-		DONE
+		DONE;
 
 	OPCODE(2c)				/* BIT abcd */
 		ABSOLUTE;
@@ -1171,12 +1171,12 @@ void CPU_GO(int limit)
 		CPU_regP = (CPU_regP & 0xbf) + (N & 0x40);
 #endif
 		Z = (A & N);
-		DONE
+		DONE;
 
 	OPCODE(2d)				/* AND abcd */
 		ABSOLUTE;
 		AND(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(2e)				/* ROL abcd */
 		ABSOLUTE;
@@ -1184,7 +1184,7 @@ void CPU_GO(int limit)
 		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(2f)				/* RLA abcd [unofficial - ROL Mem, then AND with A] */
 		ABSOLUTE;
@@ -1197,7 +1197,7 @@ void CPU_GO(int limit)
 		INDIRECT_Y;
 		NCYCLES_Y;
 		AND(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(33)				/* RLA (ab),y [unofficial - ROL Mem, then AND with A] */
 		INDIRECT_Y;
@@ -1206,7 +1206,7 @@ void CPU_GO(int limit)
 	OPCODE(35)				/* AND ab,x */
 		ZPAGE_X;
 		AND(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(36)				/* ROL ab,x */
 		ZPAGE_X;
@@ -1214,7 +1214,7 @@ void CPU_GO(int limit)
 		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(37)				/* RLA ab,x [unofficial - ROL Mem, then AND with A] */
 		ZPAGE_X;
@@ -1222,13 +1222,13 @@ void CPU_GO(int limit)
 
 	OPCODE(38)				/* SEC */
 		C = 1;
-		DONE
+		DONE;
 
 	OPCODE(39)				/* AND abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		AND(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(3b)				/* RLA abcd,y [unofficial - ROL Mem, then AND with A] */
 		ABSOLUTE_Y;
@@ -1238,7 +1238,7 @@ void CPU_GO(int limit)
 		ABSOLUTE_X;
 		NCYCLES_X;
 		AND(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(3e)				/* ROL abcd,x */
 		ABSOLUTE_X;
@@ -1246,7 +1246,7 @@ void CPU_GO(int limit)
 		Z = N = (data << 1) + C;
 		C = (data & 0x80) ? 1 : 0;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(3f)				/* RLA abcd,x [unofficial - ROL Mem, then AND with A] */
 		ABSOLUTE_X;
@@ -1261,12 +1261,12 @@ void CPU_GO(int limit)
 		if (MONITOR_break_ret && --MONITOR_ret_nesting <= 0)
 			MONITOR_break_step = TRUE;
 #endif
-		DONE
+		DONE;
 
 	OPCODE(41)				/* EOR (ab,x) */
 		INDIRECT_X;
 		EOR(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(43)				/* LSE (ab,x) [unofficial - LSR then EOR result with A] */
 		INDIRECT_X;
@@ -1277,12 +1277,12 @@ void CPU_GO(int limit)
 		data >>= 1;
 		MEMORY_PutByte(addr, data);
 		Z = N = A ^= data;
-		DONE
+		DONE;
 
 	OPCODE(45)				/* EOR ab */
 		ZPAGE;
 		EOR(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(46)				/* LSR ab */
 		ZPAGE;
@@ -1291,7 +1291,7 @@ void CPU_GO(int limit)
 		Z = data >> 1;
 		N = 0;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(47)				/* LSE ab [unofficial - LSR then EOR result with A] */
 		ZPAGE;
@@ -1302,26 +1302,26 @@ void CPU_GO(int limit)
 		data >>= 1;
 		MEMORY_dPutByte(addr, data);
 		Z = N = A ^= data;
-		DONE
+		DONE;
 
 	OPCODE(48)				/* PHA */
 		PH(A);
-		DONE
+		DONE;
 
 	OPCODE(49)				/* EOR #ab */
 		EOR(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(4a)				/* LSR */
 		C = A & 1;
 		Z = N = A >>= 1;
-		DONE
+		DONE;
 
 	OPCODE(4b)				/* ALR #ab [unofficial - Acc AND Data, LSR result] */
 		data = A & IMMEDIATE;
 		C = data & 1;
 		Z = N = A = (data >> 1);
-		DONE
+		DONE;
 
 	OPCODE(4c)				/* JMP abcd */
 #ifdef MONITOR_BREAK
@@ -1329,12 +1329,12 @@ void CPU_GO(int limit)
 		CPU_remember_jmp_curpos = (CPU_remember_jmp_curpos + 1) % CPU_REMEMBER_JMP_STEPS;
 #endif
 		SET_PC(OP_WORD);
-		DONE
+		DONE;
 
 	OPCODE(4d)				/* EOR abcd */
 		ABSOLUTE;
 		EOR(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(4e)				/* LSR abcd */
 		ABSOLUTE;
@@ -1343,7 +1343,7 @@ void CPU_GO(int limit)
 		Z = data >> 1;
 		N = 0;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(4f)				/* LSE abcd [unofficial - LSR then EOR result with A] */
 		ABSOLUTE;
@@ -1360,7 +1360,7 @@ void CPU_GO(int limit)
 		INDIRECT_Y;
 		NCYCLES_Y;
 		EOR(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(53)				/* LSE (ab),y [unofficial - LSR then EOR result with A] */
 		INDIRECT_Y;
@@ -1369,7 +1369,7 @@ void CPU_GO(int limit)
 	OPCODE(55)				/* EOR ab,x */
 		ZPAGE_X;
 		EOR(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(56)				/* LSR ab,x */
 		ZPAGE_X;
@@ -1378,7 +1378,7 @@ void CPU_GO(int limit)
 		Z = data >> 1;
 		N = 0;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(57)				/* LSE ab,x [unofficial - LSR then EOR result with A] */
 		ZPAGE_X;
@@ -1387,13 +1387,13 @@ void CPU_GO(int limit)
 	OPCODE(58)				/* CLI */
 		CPU_ClrI;
 		CPUCHECKIRQ;
-		DONE
+		DONE;
 
 	OPCODE(59)				/* EOR abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		EOR(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(5b)				/* LSE abcd,y [unofficial - LSR then EOR result with A] */
 		ABSOLUTE_Y;
@@ -1403,7 +1403,7 @@ void CPU_GO(int limit)
 		ABSOLUTE_X;
 		NCYCLES_X;
 		EOR(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(5e)				/* LSR abcd,x */
 		ABSOLUTE_X;
@@ -1412,7 +1412,7 @@ void CPU_GO(int limit)
 		Z = data >> 1;
 		N = 0;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(5f)				/* LSE abcd,x [unofficial - LSR then EOR result with A] */
 		ABSOLUTE_X;
@@ -1429,7 +1429,7 @@ void CPU_GO(int limit)
 			CPU_rts_handler();
 			CPU_rts_handler = NULL;
 		}
-		DONE
+		DONE;
 
 	OPCODE(61)				/* ADC (ab,x) */
 		INDIRECT_X;
@@ -1463,7 +1463,7 @@ void CPU_GO(int limit)
 		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(67)				/* RRA ab [unofficial - ROR Mem, then ADC to Acc] */
 		ZPAGE;
@@ -1483,7 +1483,7 @@ void CPU_GO(int limit)
 
 	OPCODE(68)				/* PLA */
 		Z = N = A = PL;
-		DONE
+		DONE;
 
 	OPCODE(69)				/* ADC #ab */
 		data = IMMEDIATE;
@@ -1493,7 +1493,7 @@ void CPU_GO(int limit)
 		Z = N = (C << 7) + (A >> 1);
 		C = A & 1;
 		A = Z;
-		DONE
+		DONE;
 
 	OPCODE(6b)				/* ARR #ab [unofficial - Acc AND Data, ROR result] */
 		/* It does some 'BCD fixup' if D flag is set */
@@ -1526,7 +1526,7 @@ void CPU_GO(int limit)
 			CPU_regP = (CPU_regP & 0xbf) + ((A ^ data) & 0x40);
 #endif
 		}
-		DONE
+		DONE;
 
 	OPCODE(6c)				/* JMP (abcd) */
 #ifdef MONITOR_BREAK
@@ -1544,7 +1544,7 @@ void CPU_GO(int limit)
 		else
 			SET_PC(MEMORY_dGetWord(addr));
 #endif
-		DONE
+		DONE;
 
 	OPCODE(6d)				/* ADC abcd */
 		ABSOLUTE;
@@ -1557,7 +1557,7 @@ void CPU_GO(int limit)
 		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(6f)				/* RRA abcd [unofficial - ROR Mem, then ADC to Acc] */
 		ABSOLUTE;
@@ -1591,7 +1591,7 @@ void CPU_GO(int limit)
 		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(77)				/* RRA ab,x [unofficial - ROR Mem, then ADC to Acc] */
 		ZPAGE_X;
@@ -1599,7 +1599,7 @@ void CPU_GO(int limit)
 
 	OPCODE(78)				/* SEI */
 		CPU_SetI;
-		DONE
+		DONE;
 
 	OPCODE(79)				/* ADC abcd,y */
 		ABSOLUTE_Y;
@@ -1623,7 +1623,7 @@ void CPU_GO(int limit)
 		Z = N = (C << 7) + (data >> 1);
 		C = data & 1;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(7f)				/* RRA abcd,x [unofficial - ROR Mem, then ADC to Acc] */
 		ABSOLUTE_X;
@@ -1632,70 +1632,70 @@ void CPU_GO(int limit)
 	OPCODE(81)				/* STA (ab,x) */
 		INDIRECT_X;
 		MEMORY_PutByte(addr, A);
-		DONE
+		DONE;
 
 	/* AXS doesn't change flags and SAX is better name for it (Fox) */
 	OPCODE(83)				/* SAX (ab,x) [unofficial - Store result A AND X */
 		INDIRECT_X;
 		data = A & X;
 		MEMORY_PutByte(addr, data);
-		DONE
+		DONE;
 
 	OPCODE(84)				/* STY ab */
 		ZPAGE;
 		MEMORY_dPutByte(addr, Y);
-		DONE
+		DONE;
 
 	OPCODE(85)				/* STA ab */
 		ZPAGE;
 		MEMORY_dPutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(86)				/* STX ab */
 		ZPAGE;
 		MEMORY_dPutByte(addr, X);
-		DONE
+		DONE;
 
 	OPCODE(87)				/* SAX ab [unofficial - Store result A AND X] */
 		ZPAGE;
 		data = A & X;
 		MEMORY_dPutByte(addr, data);
-		DONE
+		DONE;
 
 	OPCODE(88)				/* DEY */
 		Z = N = --Y;
-		DONE
+		DONE;
 
 	OPCODE(8a)				/* TXA */
 		Z = N = A = X;
-		DONE
+		DONE;
 
 	OPCODE(8b)				/* ANE #ab [unofficial - A AND X AND (Mem OR $EF) to Acc] (Fox) */
 		data = IMMEDIATE;
 		Z = N = A & X & data;
 		A &= X & (data | 0xef);
-		DONE
+		DONE;
 
 	OPCODE(8c)				/* STY abcd */
 		ABSOLUTE;
 		MEMORY_PutByte(addr, Y);
-		DONE
+		DONE;
 
 	OPCODE(8d)				/* STA abcd */
 		ABSOLUTE;
 		MEMORY_PutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(8e)				/* STX abcd */
 		ABSOLUTE;
 		MEMORY_PutByte(addr, X);
-		DONE
+		DONE;
 
 	OPCODE(8f)				/* SAX abcd [unofficial - Store result A AND X] */
 		ABSOLUTE;
 		data = A & X;
 		MEMORY_PutByte(addr, data);
-		DONE
+		DONE;
 
 	OPCODE(90)				/* BCC */
 		BRANCH(!C)
@@ -1703,7 +1703,7 @@ void CPU_GO(int limit)
 	OPCODE(91)				/* STA (ab),y */
 		INDIRECT_Y;
 		MEMORY_PutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(93)				/* SHA (ab),y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		/* It seems previous memory value is important - also in 9f */
@@ -1716,41 +1716,41 @@ void CPU_GO(int limit)
 		else {
 			MEMORY_PutByte(addr + Y, data);
 		}
-		DONE
+		DONE;
 
 	OPCODE(94)				/* STY ab,x */
 		ZPAGE_X;
 		MEMORY_dPutByte(addr, Y);
-		DONE
+		DONE;
 
 	OPCODE(95)				/* STA ab,x */
 		ZPAGE_X;
 		MEMORY_dPutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(96)				/* STX ab,y */
 		ZPAGE_Y;
 		MEMORY_PutByte(addr, X);
-		DONE
+		DONE;
 
 	OPCODE(97)				/* SAX ab,y [unofficial - Store result A AND X] */
 		ZPAGE_Y;
 		data = A & X;
 		MEMORY_dPutByte(addr, data);
-		DONE
+		DONE;
 
 	OPCODE(98)				/* TYA */
 		Z = N = A = Y;
-		DONE
+		DONE;
 
 	OPCODE(99)				/* STA abcd,y */
 		ABSOLUTE_Y;
 		MEMORY_PutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(9a)				/* TXS */
 		S = X;
-		DONE
+		DONE;
 
 	OPCODE(9b)				/* SHS abcd,y [unofficial, UNSTABLE] (Fox) */
 		/* Transfer A AND X to S, then store S AND (H+1)] */
@@ -1764,7 +1764,7 @@ void CPU_GO(int limit)
 		else {
 			MEMORY_PutByte(addr + Y, data);
 		}
-		DONE
+		DONE;
 
 	OPCODE(9c)				/* SHY abcd,x [unofficial - Store Y and (H+1)] (Fox) */
 		/* Seems to be stable */
@@ -1777,12 +1777,12 @@ void CPU_GO(int limit)
 		else {
 			MEMORY_PutByte(addr + X, data);
 		}
-		DONE
+		DONE;
 
 	OPCODE(9d)				/* STA abcd,x */
 		ABSOLUTE_X;
 		MEMORY_PutByte(addr, A);
-		DONE
+		DONE;
 
 	OPCODE(9e)				/* SHX abcd,y [unofficial - Store X and (H+1)] (Fox) */
 		/* Seems to be stable */
@@ -1795,7 +1795,7 @@ void CPU_GO(int limit)
 		else {
 			MEMORY_PutByte(addr + Y, data);
 		}
-		DONE
+		DONE;
 
 	OPCODE(9f)				/* SHA abcd,y [unofficial, UNSTABLE - Store A AND X AND (H+1) ?] (Fox) */
 		ABSOLUTE;
@@ -1806,81 +1806,81 @@ void CPU_GO(int limit)
 		else {
 			MEMORY_PutByte(addr + Y, data);
 		}
-		DONE
+		DONE;
 
 	OPCODE(a0)				/* LDY #ab */
 		LDY(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(a1)				/* LDA (ab,x) */
 		INDIRECT_X;
 		LDA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(a2)				/* LDX #ab */
 		LDX(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(a3)				/* LAX (ab,x) [unofficial] */
 		INDIRECT_X;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(a4)				/* LDY ab */
 		ZPAGE;
 		LDY(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(a5)				/* LDA ab */
 		ZPAGE;
 		LDA(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(a6)				/* LDX ab */
 		ZPAGE;
 		LDX(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(a7)				/* LAX ab [unofficial] */
 		ZPAGE;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(a8)				/* TAY */
 		Z = N = Y = A;
-		DONE
+		DONE;
 
 	OPCODE(a9)				/* LDA #ab */
 		LDA(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(aa)				/* TAX */
 		Z = N = X = A;
-		DONE
+		DONE;
 
 	OPCODE(ab)				/* ANX #ab [unofficial - AND #ab, then TAX] */
 		Z = N = X = A &= IMMEDIATE;
-		DONE
+		DONE;
 
 	OPCODE(ac)				/* LDY abcd */
 		ABSOLUTE;
 		LDY(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(ad)				/* LDA abcd */
 		ABSOLUTE;
 		LDA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(ae)				/* LDX abcd */
 		ABSOLUTE;
 		LDX(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(af)				/* LAX abcd [unofficial] */
 		ABSOLUTE;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(b0)				/* BCS */
 		BRANCH(C)
@@ -1889,33 +1889,33 @@ void CPU_GO(int limit)
 		INDIRECT_Y;
 		NCYCLES_Y;
 		LDA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(b3)				/* LAX (ab),y [unofficial] */
 		INDIRECT_Y;
 		NCYCLES_Y;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(b4)				/* LDY ab,x */
 		ZPAGE_X;
 		LDY(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(b5)				/* LDA ab,x */
 		ZPAGE_X;
 		LDA(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(b6)				/* LDX ab,y */
 		ZPAGE_Y;
 		LDX(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(b7)				/* LAX ab,y [unofficial] */
 		ZPAGE_Y;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(b8)				/* CLV */
 #ifndef NO_V_FLAG_VARIABLE
@@ -1923,17 +1923,17 @@ void CPU_GO(int limit)
 #else
 		CPU_ClrV;
 #endif
-		DONE
+		DONE;
 
 	OPCODE(b9)				/* LDA abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		LDA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(ba)				/* TSX */
 		Z = N = X = S;
-		DONE
+		DONE;
 
 /* AXA [unofficial - original decode by R.Sterba and R.Petruzela 15.1.1998 :-)]
    AXA - this is our new imaginative name for instruction with opcode hex BB.
@@ -1947,40 +1947,40 @@ void CPU_GO(int limit)
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		Z = N = A = X = S &= MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(bc)				/* LDY abcd,x */
 		ABSOLUTE_X;
 		NCYCLES_X;
 		LDY(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(bd)				/* LDA abcd,x */
 		ABSOLUTE_X;
 		NCYCLES_X;
 		LDA(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(be)				/* LDX abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		LDX(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(bf)				/* LAX abcd,y [unofficial] */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		Z = N = X = A = MEMORY_GetByte(addr);
-		DONE
+		DONE;
 
 	OPCODE(c0)				/* CPY #ab */
 		CPY(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(c1)				/* CMP (ab,x) */
 		INDIRECT_X;
 		CMP(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(c3)				/* DCM (ab,x) [unofficial - DEC Mem then CMP with Acc] */
 		INDIRECT_X;
@@ -1990,23 +1990,23 @@ void CPU_GO(int limit)
 		data--;
 		MEMORY_PutByte(addr, data);
 		CMP(data);
-		DONE
+		DONE;
 
 	OPCODE(c4)				/* CPY ab */
 		ZPAGE;
 		CPY(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(c5)				/* CMP ab */
 		ZPAGE;
 		CMP(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(c6)				/* DEC ab */
 		ZPAGE;
 		Z = N = MEMORY_dGetByte(addr) - 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(c7)				/* DCM ab [unofficial - DEC Mem then CMP with Acc] */
 		ZPAGE;
@@ -2015,19 +2015,19 @@ void CPU_GO(int limit)
 		data = MEMORY_dGetByte(addr) - 1;
 		MEMORY_dPutByte(addr, data);
 		CMP(data);
-		DONE
+		DONE;
 
 	OPCODE(c8)				/* INY */
 		Z = N = ++Y;
-		DONE
+		DONE;
 
 	OPCODE(c9)				/* CMP #ab */
 		CMP(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(ca)				/* DEX */
 		Z = N = --X;
-		DONE
+		DONE;
 
 	OPCODE(cb)				/* SBX #ab [unofficial - store ((A AND X) - Mem) in X] (Fox) */
 		X &= A;
@@ -2035,24 +2035,24 @@ void CPU_GO(int limit)
 		C = X >= data;
 		/* MPC 05/24/00 */
 		Z = N = X -= data;
-		DONE
+		DONE;
 
 	OPCODE(cc)				/* CPY abcd */
 		ABSOLUTE;
 		CPY(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(cd)				/* CMP abcd */
 		ABSOLUTE;
 		CMP(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(ce)				/* DEC abcd */
 		ABSOLUTE;
 		RMW_GetByte(Z, addr);
 		N = --Z;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(cf)				/* DCM abcd [unofficial - DEC Mem then CMP with Acc] */
 		ABSOLUTE;
@@ -2065,7 +2065,7 @@ void CPU_GO(int limit)
 		INDIRECT_Y;
 		NCYCLES_Y;
 		CMP(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(d3)				/* DCM (ab),y [unofficial - DEC Mem then CMP with Acc] */
 		INDIRECT_Y;
@@ -2074,13 +2074,13 @@ void CPU_GO(int limit)
 	OPCODE(d5)				/* CMP ab,x */
 		ZPAGE_X;
 		CMP(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(d6)				/* DEC ab,x */
 		ZPAGE_X;
 		Z = N = MEMORY_dGetByte(addr) - 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(d7)				/* DCM ab,x [unofficial - DEC Mem then CMP with Acc] */
 		ZPAGE_X;
@@ -2088,13 +2088,13 @@ void CPU_GO(int limit)
 
 	OPCODE(d8)				/* CLD */
 		CPU_ClrD;
-		DONE
+		DONE;
 
 	OPCODE(d9)				/* CMP abcd,y */
 		ABSOLUTE_Y;
 		NCYCLES_Y;
 		CMP(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(db)				/* DCM abcd,y [unofficial - DEC Mem then CMP with Acc] */
 		ABSOLUTE_Y;
@@ -2104,14 +2104,14 @@ void CPU_GO(int limit)
 		ABSOLUTE_X;
 		NCYCLES_X;
 		CMP(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(de)				/* DEC abcd,x */
 		ABSOLUTE_X;
 		RMW_GetByte(Z, addr);
 		N = --Z;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(df)				/* DCM abcd,x [unofficial - DEC Mem then CMP with Acc] */
 		ABSOLUTE_X;
@@ -2119,7 +2119,7 @@ void CPU_GO(int limit)
 
 	OPCODE(e0)				/* CPX #ab */
 		CPX(IMMEDIATE);
-		DONE
+		DONE;
 
 	OPCODE(e1)				/* SBC (ab,x) */
 		INDIRECT_X;
@@ -2138,7 +2138,7 @@ void CPU_GO(int limit)
 	OPCODE(e4)				/* CPX ab */
 		ZPAGE;
 		CPX(MEMORY_dGetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(e5)				/* SBC ab */
 		ZPAGE;
@@ -2149,7 +2149,7 @@ void CPU_GO(int limit)
 		ZPAGE;
 		Z = N = MEMORY_dGetByte(addr) + 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(e7)				/* INS ab [unofficial - INC Mem then SBC with Acc] */
 		ZPAGE;
@@ -2161,7 +2161,7 @@ void CPU_GO(int limit)
 
 	OPCODE(e8)				/* INX */
 		Z = N = ++X;
-		DONE
+		DONE;
 
 	OPCODE_ALIAS(e9)		/* SBC #ab */
 	OPCODE(eb)				/* SBC #ab [unofficial] */
@@ -2175,12 +2175,12 @@ void CPU_GO(int limit)
 	OPCODE_ALIAS(7a)
 	OPCODE_ALIAS(da)
 	OPCODE(fa)
-		DONE
+		DONE;
 
 	OPCODE(ec)				/* CPX abcd */
 		ABSOLUTE;
 		CPX(MEMORY_GetByte(addr));
-		DONE
+		DONE;
 
 	OPCODE(ed)				/* SBC abcd */
 		ABSOLUTE;
@@ -2192,7 +2192,7 @@ void CPU_GO(int limit)
 		RMW_GetByte(Z, addr);
 		N = ++Z;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(ef)				/* INS abcd [unofficial - INC Mem then SBC with Acc] */
 		ABSOLUTE;
@@ -2220,7 +2220,7 @@ void CPU_GO(int limit)
 		ZPAGE_X;
 		Z = N = MEMORY_dGetByte(addr) + 1;
 		MEMORY_dPutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(f7)				/* INS ab,x [unofficial - INC Mem then SBC with Acc] */
 		ZPAGE_X;
@@ -2228,7 +2228,7 @@ void CPU_GO(int limit)
 
 	OPCODE(f8)				/* SED */
 		CPU_SetD;
-		DONE
+		DONE;
 
 	OPCODE(f9)				/* SBC abcd,y */
 		ABSOLUTE_Y;
@@ -2251,7 +2251,7 @@ void CPU_GO(int limit)
 		RMW_GetByte(Z, addr);
 		N = ++Z;
 		MEMORY_PutByte(addr, Z);
-		DONE
+		DONE;
 
 	OPCODE(ff)				/* INS abcd,x [unofficial - INC Mem then SBC with Acc] */
 		ABSOLUTE_X;
@@ -2277,7 +2277,7 @@ void CPU_GO(int limit)
 		if (MONITOR_break_ret && --MONITOR_ret_nesting <= 0)
 			MONITOR_break_step = TRUE;
 #endif
-		DONE
+		DONE;
 
 	OPCODE(f2)				/* ESC #ab (CIM) - on Atari is here instruction CIM [unofficial] !RS! */
 		/* OPCODE(ff: ESC #ab - opcode FF is now used for INS [unofficial] instruction !RS! */
@@ -2287,7 +2287,7 @@ void CPU_GO(int limit)
 		ESC_Run(data);
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
-		DONE
+		DONE;
 
 #endif /* ASAP */
 
@@ -2305,7 +2305,7 @@ void CPU_GO(int limit)
 #ifdef ASAP
 
 		ASAP_CIM();
-		DONE
+		DONE;
 
 #else
 
@@ -2333,7 +2333,7 @@ void CPU_GO(int limit)
 
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
-		DONE
+		DONE;
 
 #endif /* ASAP */
 
@@ -2379,7 +2379,7 @@ void CPU_GO(int limit)
 			C = tmp > 0xff;
 			A = (UBYTE) tmp;
 		}
-		DONE
+		DONE;
 
 	sbc:
 		if (!(CPU_regP & CPU_D_FLAG)) {
@@ -2419,7 +2419,7 @@ void CPU_GO(int limit)
 
 			A = tmp;
 		}
-		DONE
+		DONE;
 
 #ifdef NO_GOTO
 	}
