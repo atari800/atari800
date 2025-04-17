@@ -47,12 +47,23 @@ UBYTE PIA_PORT_input[2];
 
 UBYTE PIA_PORTA_mask;
 UBYTE PIA_PORTB_mask;
+/* PROCEED (CA1) pin state */
+int PIA_CA1 = 1;
+int PIA_CA1_negpending = 0;
+int PIA_CA1_pospending = 0;
+/* CA2 (cassette motor) pin state */
 int PIA_CA2 = 1;
 int PIA_CA2_negpending = 0;
 int PIA_CA2_pospending = 0;
+/* INTERRUPT (CB1) pin state */
+int PIA_CB1 = 1;
+int PIA_CB1_negpending = 0;
+int PIA_CB1_pospending = 0;
+/* CB2 (command frame) pin state */
 int PIA_CB2 = 1;
 int PIA_CB2_negpending = 0;
 int PIA_CB2_pospending = 0;
+/* PIA IRQ status */
 int PIA_IRQ = 0;
 
 int PIA_Initialise(int *argc, char *argv[])
@@ -98,6 +109,29 @@ static void set_CB2(int value)
 		SIO_SwitchCommandFrame(!value);
 	}
 	PIA_CB2 = value;
+}
+    
+/* ----- PROCEED (CA1) and INTERRUPT (CB1) input pin handling ----- */
+/* Update PROCEED pin (CA1) */
+static void set_CA1(int value)
+{
+    if (PIA_CA1 != value) {
+        /* CA1 transition: set flag and update IRQ */
+        PIA_PACTL |= 0x01;
+        update_PIA_IRQ();
+    }
+    PIA_CA1 = value;
+}
+
+/* Update INTERRUPT pin (CB1) */
+static void set_CB1(int value)
+{
+    if (PIA_CB1 != value) {
+        /* CB1 transition: set flag and update IRQ */
+        PIA_PBCTL |= 0x01;
+        update_PIA_IRQ();
+    }
+    PIA_CB1 = value;
 }
 
 static void update_PIA_IRQ(void)
