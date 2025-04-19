@@ -193,6 +193,15 @@ int SIO_Initialise(int *argc, char *argv[])
 	}
 	TransferStatus = SIO_NoFrame;
 
+	/* Start FujiNet */
+	if(fujinet_init("localhost", 9997) < 0)
+	{
+		perror("Failed to init FujiNet");
+	}
+	else
+	{
+		perror("FujiNet Initialized");
+	}
 	return TRUE;
 }
 
@@ -1348,6 +1357,20 @@ static UBYTE Command_Frame(void)
 	int unit;
 	int sector;
 	int realsize;
+
+	/* Forward raw SIO command frame to FujiNet‑PC bridge */
+    {
+        unsigned char respbuf[sizeof(DataBuffer)];
+        int resp_len = fujinet_process_command(CommandFrame, sizeof(CommandFrame), respbuf, sizeof(respbuf));
+        if (resp_len > 0) {
+            /* Use response as read frame */
+            memcpy(DataBuffer, respbuf, resp_len);
+            DataIndex = 0;
+            ExpectedBytes = resp_len;
+            TransferStatus = SIO_ReadFrame;
+            return 'A';
+        }
+    }
 
 	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
 	unit = CommandFrame[0] - '1';
