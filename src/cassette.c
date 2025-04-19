@@ -34,6 +34,7 @@
 #include "img_tape.h"
 #include "log.h"
 #include "util.h"
+#include "fujinet.h"
 #include "pokey.h"
 
 static IMG_TAPE_t *cassette_file = NULL;
@@ -310,6 +311,12 @@ void CASSETTE_TapeMotor(int onoff)
 			IMG_TAPE_Flush(cassette_file);
 		cassette_motor = onoff;
 		UpdateFlags();
+		/* Notify FujiNet‑PC of motor state change */
+		{
+			char fn_buf[16];
+			int fn_len = snprintf(fn_buf, sizeof(fn_buf), "MOTOR %d\n", cassette_motor ? 1 : 0);
+			fujinet_process_command((unsigned char *)fn_buf, fn_len, NULL, 0);
+		}
 	}
 }
 
