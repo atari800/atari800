@@ -703,6 +703,24 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-bpc") == 0)
 				if (i_a) MONITOR_BPC(argv[++i]); else a_m = TRUE;
 #endif /* MONITOR_BREAK */
+/* NETSIO */
+			else if (strcmp(argv[i], "-netsio") == 0) {
+				if (netsio_init("127.0.0.1", 9997) < 0) {
+					perror("netsio_init");
+					/* return 1; */
+				}
+				else
+				{
+					netsio_enabled = 1;
+				}
+
+				/* sleep(5); 
+				if (netsio_send_byte(0xFF) < 0) {
+					fprintf(stderr, "Failed to queue Cold‐Reset byte\n");
+				}*/
+
+			}
+/* NETSIO */
 			else {
 				/* all options known to main module tried but none matched */
 

@@ -77,6 +77,7 @@ atari800_SOURCES = \
 	log.c log.h \
 	memory.c memory.h \
 	monitor.c monitor.h \
+	netsio.c netsio.h \
 	pbi.c pbi.h \
 	pia.c pia.h \
 	pokey.c pokey.h \
