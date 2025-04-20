@@ -134,7 +134,7 @@ static void set_CB1(int value)
     PIA_CB1 = value;
 }
 
-static void update_PIA_IRQ(void)
+void update_PIA_IRQ(void)
 {
 	PIA_IRQ = 0;
 	if (((PIA_PACTL & 0x40) && (PIA_PACTL & 0x28) == 0x08) || 
