@@ -31,6 +31,6 @@ void PIA_StateRead(UBYTE version);
 /* Set PROCEED (CA1) and INTERRUPT (CB1) pin values */
 void PIA_SetCA1(int value);
 void PIA_SetCB1(int value);
-static void update_PIA_IRQ(void);
+void update_PIA_IRQ(void);
 
 #endif /* PIA_H_ */
