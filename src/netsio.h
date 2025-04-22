@@ -48,7 +48,7 @@ extern int netsio_enabled;
 
 /* Initialize NetSIO subsystem, connecting to FujiNet-PC at host:port. */
 /* Returns 0 on success, non-zero on error. */
-int netsio_init(const char *host, uint16_t port);
+int netsio_init(uint16_t port);
 
 /* Shutdown NetSIO, join the thread, close socket. */
 void netsio_shutdown(void);
