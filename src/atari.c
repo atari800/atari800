@@ -705,7 +705,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* MONITOR_BREAK */
 /* NETSIO */
 			else if (strcmp(argv[i], "-netsio") == 0) {
-				if (netsio_init("127.0.0.1", 9997) < 0) {
+				if (netsio_init(9997) < 0) {
 					perror("netsio_init");
 					/* return 1; */
 				}
