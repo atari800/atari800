@@ -49,6 +49,7 @@
 #include "statesav.h"
 #endif
 #include "fujinet.h"
+#include "netsio.h"
 
 #undef DEBUG_PRO
 #undef DEBUG_VAPI
@@ -1518,6 +1519,8 @@ static UBYTE Command_Frame(void)
 void SIO_SwitchCommandFrame(int onoff)
 {
 	if (onoff) {				/* Enabled */
+		netsio_send_byte(NETSIO_COMMAND_ON);
+		Log_print("sio: CMD ON");
 		if (TransferStatus != SIO_NoFrame)
 			Log_print("Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
@@ -1526,6 +1529,7 @@ void SIO_SwitchCommandFrame(int onoff)
 		TransferStatus = SIO_CommandFrame;
 	}
 	else {
+		netsio_send_byte(NETSIO_COMMAND_OFF_SYNC);
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
