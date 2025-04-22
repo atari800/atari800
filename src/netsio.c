@@ -203,27 +203,28 @@ static void *fujinet_rx_thread(void *arg) {
                 continue;
             }
 
-            size_t pkt_len = 1;
-            if (cmd == NETSIO_DATA_BYTE || cmd == NETSIO_DATA_BYTE_SYNC) {
+            /* DATA_BYTE or DATA_BYTE_SYNC: length = 2 */
+            if ((cmd == NETSIO_DATA_BYTE) ||
+                (cmd == NETSIO_DATA_BYTE_SYNC)) {
                 if (remaining < 2) break;
-                pkt_len = 2;
+                memcpy(packet, buf + head, 2);
+                enqueue_to_emulator(packet, 2);
+                head += 2;
+                continue;
             }
-            else if (cmd == NETSIO_DATA_BLOCK) {
+            /* DATA_BLOCK: length = 3 + payload */
+            if (cmd == NETSIO_DATA_BLOCK) {
                 if (remaining < 3) break;
-                uint16_t len = (uint16_t)buf[head+1] | ((uint16_t)buf[head+2] << 8);
-                if (remaining < 3 + len) break;
-                pkt_len = 3 + len;
-            }
-            else {
-                /* all other commands are single-byte */
-                pkt_len = 1;
+                uint16_t L = buf[head+1] | (buf[head+2] << 8);
+                if (remaining < 3 + L) break;
+                memcpy(packet, buf + head, 3 + L);
+                enqueue_to_emulator(packet, 3 + L);
+                head += 3 + L;
+                continue;
             }
 
-            /* forward complete packet to emulator */
-            memcpy(packet, buf + head, pkt_len);
-            enqueue_to_emulator(packet, pkt_len);
-
-            head += pkt_len;
+            /* unknown cmd: drop it */
+            head++;
         }
 
         /* slide leftover bytes to front */
@@ -238,48 +239,66 @@ static void *fujinet_rx_thread(void *arg) {
 /* Thread: receive from emulator FIFO and send to FujiNet socket */
 static void *emu_tx_thread(void *arg) {
     uint8_t buf[4096];
-    size_t  head = 0, tail = 0;
+    size_t head = 0, tail = 0;
     uint8_t packet[65536];
+    int i;
 
     for (;;) {
-        /* read some bytes from emulator */
         ssize_t n = read(fds1[0], buf + tail, sizeof(buf) - tail);
         if (n <= 0) {
-            perror("netsio: read from tx FIFO");
+            perror("netsio: read from TX FIFO");
             exit(1);
         }
         tail += n;
 
-        /* process as many complete packets as possible */
         head = 0;
         while (head < tail) {
             uint8_t cmd = buf[head];
-            size_t  remaining = tail - head;
-            size_t  pkt_len = 1;
+            size_t rem = tail - head;
 
-            if (cmd == NETSIO_DATA_BYTE || cmd == NETSIO_DATA_BYTE_SYNC) {
-                if (remaining < 2) break;
+            /* Handle COMMAND ON */
+            if (cmd == NETSIO_COMMAND_ON) {
+                Log_print("netsio: CMD ON");
+                send_to_fujinet(cmd, 1);
+                head++;
+                continue;
+            }
+
+            /* Handle COMMAND OFF */
+            if (cmd == NETSIO_COMMAND_OFF) {
+                Log_print("netsio: CMD OFF");
+                send_to_fujinet(cmd, 1);
+                head++;
+                continue;
+            }
+
+            /* Handle COMMAND OFF SYNC */
+            if (cmd == NETSIO_COMMAND_OFF_SYNC) {
+                Log_print("netsio: CMD OFF SYNC");
+                send_to_fujinet(cmd, 1);
+                send_to_fujinet(1, 1);
+                head++;
+                continue;
+            }
+
+            /* Handle other NETSIO frames */
+            size_t pkt_len = 1;
+            if ((cmd == NETSIO_DATA_BYTE) || (cmd == NETSIO_DATA_BYTE_SYNC)) {
+                if (rem < 2) break;
                 pkt_len = 2;
-            }
-            else if (cmd == NETSIO_DATA_BLOCK) {
-                if (remaining < 3) break;
-                uint16_t len = (uint16_t)buf[head+1] | ((uint16_t)buf[head+2] << 8);
-                if (remaining < 3 + len) break;
-                pkt_len = 3 + len;
-            }
-            else {
-                /* all other commands are single-byte */
-                pkt_len = 1;
+            } else if (cmd == NETSIO_DATA_BLOCK) {
+                if (rem < 3) break;
+                uint16_t L = buf[head+1] | (buf[head+2] << 8);
+                if (rem < 3 + L) break;
+                pkt_len = 3 + L;
             }
 
-            /* send full packet in one go */
             memcpy(packet, buf + head, pkt_len);
             send_to_fujinet(packet, pkt_len);
             head += pkt_len;
         }
 
-        /* slide leftover bytes to front */
-        if (head > 0) {
+        if (head) {
             memmove(buf, buf + head, tail - head);
             tail -= head;
         }
