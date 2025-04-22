@@ -32,6 +32,9 @@ static volatile int netsio_running = 0;
 /* Forward declare the thread function */
 static void *netsio_thread_func(void *arg);
 
+
+int netsio_enabled = 0;
+
 int netsio_init(const char *host, uint16_t port)
 {
     struct hostent *he;
