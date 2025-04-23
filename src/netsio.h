@@ -45,6 +45,7 @@ typedef struct NetSIOMsg {
 } NetSIOMsg;
 
 extern int netsio_enabled;
+extern uint8_t netsio_sync_num;
 
 /* Initialize NetSIO subsystem, connecting to FujiNet-PC at host:port. */
 /* Returns 0 on success, non-zero on error. */
@@ -60,5 +61,10 @@ int netsio_send_byte(uint8_t b);
 /* Dequeue one byte received from FujiNet-PC. */
 /* Returns 0 on success, -1 if FIFO is empty. */
 int netsio_recv_byte(uint8_t *b);
+
+int netsio_cmd_on(void);
+int netsio_cmd_off(void);
+int netsio_cmd_off_sync(void);
+
 
 #endif /* NETSIO_H */

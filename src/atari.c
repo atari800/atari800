@@ -689,10 +689,11 @@ int Atari800_Initialise(int *argc, char *argv[])
 					perror("netsio_init");
 					/* return 1; */
 				}
-				else
-				{
-					netsio_enabled = 1;
-				}
+
+				/* Wait for Fujinet before continuing */
+				/*while (netsio_enabled != 1){
+					sleep(1);
+				}*/
 
 				/* sleep(5); 
 				if (netsio_send_byte(0xFF) < 0) {
