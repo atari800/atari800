@@ -192,17 +192,6 @@ int SIO_Initialise(int *argc, char *argv[])
 		SIO_format_sectorcount[i] = 720;
 	}
 	TransferStatus = SIO_NoFrame;
-
-	/* Start FujiNet */
-	if(fujinet_init("localhost", 9997) < 0)
-	{
-		perror("Failed to init FujiNet");
-	}
-	else
-	{
-		perror("FujiNet Initialized");
-	}
-	return TRUE;
 }
 
 /* umount disks so temporary files are deleted */
@@ -1358,7 +1347,7 @@ static UBYTE Command_Frame(void)
 	int sector;
 	int realsize;
 
-	/* Forward raw SIO command frame to FujiNet‑PC bridge */
+	/* Forward raw SIO command frame to netsio */
     {
         unsigned char respbuf[sizeof(DataBuffer)];
         int resp_len = fujinet_process_command(CommandFrame, sizeof(CommandFrame), respbuf, sizeof(respbuf));
@@ -1720,6 +1709,10 @@ void SIO_PutByte(int byte)
 		}
 		break;
 	}
+	netsio_send_byte(byte);
+#ifdef DEBUG
+	Log_print("netsio: send byte: %x", byte);
+#endif
 	CASSETTE_PutByte(byte);
 	/* POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL; */ /* already set in pokey.c */
 #ifdef DEBUG2
