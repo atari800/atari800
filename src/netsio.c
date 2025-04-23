@@ -565,6 +565,15 @@ static void *fujinet_rx_thread(void *arg) {
                 break;
             }
 
+            /* SYNC RESPONSE: 1 + 5 bytes */
+            if (cmd == NETSIO_SYNC_RESPONSE) {
+                if (remaining < 6) break;
+                /* TODO: figure out how to pause the emulator and restart here after sync */
+                Log_print("netsio: sync response rcvd");
+                head += 5;
+                continue;
+            }
+
             case NETSIO_SYNC_RESPONSE:
             {
                 /* packet: [cmd][sync#][ack_type][ack_byte][write_lo][write_hi] */
