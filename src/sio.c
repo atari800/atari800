@@ -190,17 +190,6 @@ int SIO_Initialise(int *argc, char *argv[])
 		SIO_format_sectorcount[i] = 720;
 	}
 	TransferStatus = SIO_NoFrame;
-
-	/* Start FujiNet */
-	if(fujinet_init("localhost", 9997) < 0)
-	{
-		perror("Failed to init FujiNet");
-	}
-	else
-	{
-		perror("FujiNet Initialized");
-	}
-	return TRUE;
 }
 
 /* umount disks so temporary files are deleted */
@@ -1356,7 +1345,7 @@ static UBYTE Command_Frame(void)
 	int sector;
 	int realsize;
 
-	/* Forward raw SIO command frame to FujiNet‑PC bridge */
+	/* Forward raw SIO command frame to netsio */
     {
         unsigned char respbuf[sizeof(DataBuffer)];
         int resp_len = fujinet_process_command(CommandFrame, sizeof(CommandFrame), respbuf, sizeof(respbuf));
@@ -1519,8 +1508,8 @@ static UBYTE Command_Frame(void)
 void SIO_SwitchCommandFrame(int onoff)
 {
 	if (onoff) {				/* Enabled */
-		netsio_send_byte(NETSIO_COMMAND_ON);
-		Log_print("sio: CMD ON");
+		netsio_cmd_on();
+		/* Log_print("sio: CMD ON"); */
 		if (TransferStatus != SIO_NoFrame)
 			Log_print("Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
@@ -1529,7 +1518,8 @@ void SIO_SwitchCommandFrame(int onoff)
 		TransferStatus = SIO_CommandFrame;
 	}
 	else {
-		netsio_send_byte(NETSIO_COMMAND_OFF_SYNC);
+		netsio_cmd_off_sync();
+		/* Log_print("sio: CMD OFF"); */
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
@@ -1615,6 +1605,10 @@ void SIO_PutByte(int byte)
 		}
 		break;
 	}
+	netsio_send_byte(byte);
+#ifdef DEBUG
+	Log_print("netsio: send byte: %x", byte);
+#endif
 	CASSETTE_PutByte(byte);
 	/* POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL; */ /* already set in pokey.c */
 }
