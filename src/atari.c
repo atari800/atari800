@@ -711,11 +711,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 				}
 
 				/* Wait for Fujinet before continuing */
-				/*while (netsio_enabled != 1){
+				while (netsio_enabled == 0){
 					sleep(1);
-				}*/
+				}
 
-				/* sleep(5); 
+				/* sleep(5); */
+				/* 
 				if (netsio_send_byte(0xFF) < 0) {
 					fprintf(stderr, "Failed to queue Cold‐Reset byte\n");
 				}*/
