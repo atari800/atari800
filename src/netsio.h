@@ -44,7 +44,7 @@ typedef struct NetSIOMsg {
     double tstamp;
 } NetSIOMsg;
 
-extern int netsio_enabled;
+extern volatile int netsio_enabled;
 extern uint8_t netsio_sync_num;
 
 /* Initialize NetSIO subsystem, connecting to FujiNet-PC at host:port. */
