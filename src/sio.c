@@ -1518,7 +1518,7 @@ void SIO_SwitchCommandFrame(int onoff)
 		TransferStatus = SIO_CommandFrame;
 	}
 	else {
-		netsio_cmd_off_sync();
+		netsio_cmd_off();
 		/* Log_print("sio: CMD OFF"); */
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {

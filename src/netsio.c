@@ -21,7 +21,7 @@
 #include "log.h"
 
 /* Flag to know when netsio is enabled */
-int netsio_enabled = 0;
+volatile int netsio_enabled = 0;
 /* Holds sync to fujinet-pc incremented number */
 uint8_t netsio_sync_num = 0;
 /* if we have heard from fujinet-pc or not */
@@ -144,7 +144,8 @@ int netsio_init(uint16_t port) {
 int netsio_cmd_on(void)
 {
     Log_print("netsio: CMD ON");
-    netsio_send_byte(NETSIO_COMMAND_ON);
+    uint8_t p = NETSIO_COMMAND_ON;
+    send_to_fujinet(&p, 1);
     return 0;
 
 }
@@ -153,7 +154,8 @@ int netsio_cmd_on(void)
 int netsio_cmd_off(void)
 {
     Log_print("netsio: CMD OFF");
-    netsio_send_byte(NETSIO_COMMAND_OFF);
+    uint8_t p = NETSIO_COMMAND_OFF;
+    send_to_fujinet(&p, 1);
     return 0;
 
 }
@@ -162,8 +164,8 @@ int netsio_cmd_off(void)
 int netsio_cmd_off_sync(void)
 {
     Log_print("netsio: CMD OFF SYNC");
-    netsio_send_byte(NETSIO_COMMAND_OFF_SYNC);
-    netsio_send_byte(netsio_sync_num);
+    uint8_t p[2] = { NETSIO_COMMAND_ON, netsio_sync_num };
+    send_to_fujinet(&p, sizeof(p));
     netsio_sync_num++;
     return 0;
 
@@ -171,7 +173,8 @@ int netsio_cmd_off_sync(void)
 
 /* The emulator calls this to send a byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
-    send_to_fujinet(&b, sizeof(b));  
+    uint8_t pkt[2] = { NETSIO_DATA_BYTE, b };
+    send_to_fujinet(pkt, 2);
     return 0;
 }
 
