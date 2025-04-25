@@ -471,6 +471,10 @@ void POKEY_Scanline(void)
 	if (!ESC_enable_sio_patch) {
 		if (CASSETTE_AddScanLine())
 			POKEY_DELAYED_SERIN_IRQ = 1;
+		
+		if (netsio_available())
+			POKEY_DELAYED_SERIN_IRQ = 1; 
+
 	}
 
 	if ((POKEY_SKCTL & 0x03) == 0)
