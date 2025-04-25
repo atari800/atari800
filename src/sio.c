@@ -1120,6 +1120,7 @@ void SIO_Handler(void)
 	int realsize = 0;
 	int cmd = MEMORY_dGetByte(0x302);
 
+	Log_print("sio: SIO_Handler()");
 	if ((unsigned int)MEMORY_dGetByte(0x300) + (unsigned int)MEMORY_dGetByte(0x301) > 0xff) {
 		/* carry */
 		unit++;
@@ -1346,20 +1347,19 @@ static UBYTE Command_Frame(void)
 	int unit;
 	int sector;
 	int realsize;
-
-	/* Forward raw SIO command frame to netsio */
+	Log_print("sio: Command_Frame()");
+	/* Forward raw SIO command frame to netsio
     {
         unsigned char respbuf[sizeof(DataBuffer)];
         int resp_len = fujinet_process_command(CommandFrame, sizeof(CommandFrame), respbuf, sizeof(respbuf));
         if (resp_len > 0) {
-            /* Use response as read frame */
             memcpy(DataBuffer, respbuf, resp_len);
             DataIndex = 0;
             ExpectedBytes = resp_len;
             TransferStatus = SIO_ReadFrame;
             return 'A';
         }
-    }
+    } */
 
 	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
 	unit = CommandFrame[0] - '1';
@@ -1556,7 +1556,7 @@ void SIO_SwitchCommandFrame(int onoff)
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
-				Log_print("Command frame %02x unfinished.", TransferStatus);
+				Log_print("sio_switchcommandframe: Command frame %02x unfinished.", TransferStatus);
 			TransferStatus = SIO_NoFrame;
 		}
 		CommandIndex = 0;
@@ -1664,7 +1664,8 @@ void SIO_PutByte(int byte)
 		if (CommandIndex < ExpectedBytes) {
 			CommandFrame[CommandIndex++] = byte;
 			if (CommandIndex >= ExpectedBytes) {
-				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && (SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF || BINLOAD_start_binloading)) {
+				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38) { 
+				/* if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && (SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF || BINLOAD_start_binloading)) { */
 					TransferStatus = SIO_StatusRead;
 					POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + SIO_ACK_INTERVAL;
 				}
@@ -1673,7 +1674,7 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			Log_print("Invalid command frame!");
+			Log_print("sio_putbyte: Invalid command frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1705,14 +1706,11 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			Log_print("Invalid data frame!");
+			Log_print("sio_putbyte: Invalid data frame!");
 		}
 		break;
 	}
 	netsio_send_byte(byte);
-#ifdef DEBUG
-	Log_print("netsio: send byte: %x", byte);
-#endif
 	CASSETTE_PutByte(byte);
 	/* POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL; */ /* already set in pokey.c */
 #ifdef DEBUG2
@@ -1819,13 +1817,17 @@ int SIO_GetByte(void)
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
+		Log_print("sio: GetByte() StatusRead");
 		byte = Command_Frame();		/* Handle now the command */
 		break;
 	case SIO_FormatFrame:
+		Log_print("sio: GetByte() FormatFrame");
 		TransferStatus = SIO_ReadFrame;
 		POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 3;
 		/* FALL THROUGH */
 	case SIO_ReadFrame:
+		Log_print("sio: GetByte() ReadFrame");
+
 		if (DataIndex < ExpectedBytes) {
 			byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
@@ -1843,6 +1845,8 @@ int SIO_GetByte(void)
 		}
 		break;
 	case SIO_FinalStatus:
+		Log_print("sio: GetByte() FinalStatus");
+
 		if (DataIndex < ExpectedBytes) {
 			byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
