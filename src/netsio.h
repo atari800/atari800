@@ -47,6 +47,13 @@ typedef struct NetSIOMsg {
 extern volatile int netsio_enabled;
 extern uint8_t netsio_sync_num;
 
+/* FIFO pipes:
+* fds0: FujiNet->emulator
+* fds1: emulator->FujiNet
+*/
+extern int fds0[2];
+extern int fds1[2];
+
 /* Initialize NetSIO subsystem, connecting to FujiNet-PC at host:port. */
 /* Returns 0 on success, non-zero on error. */
 int netsio_init(uint16_t port);
@@ -66,5 +73,8 @@ int netsio_cmd_on(void);
 int netsio_cmd_off(void);
 int netsio_cmd_off_sync(void);
 
+int netsio_available(void);
+
+void netsio_test_cmd(void);
 
 #endif /* NETSIO_H */

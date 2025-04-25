@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include "netsio.h"
 #include "log.h"
@@ -31,7 +32,7 @@ int fujinet_known = 0;
 * fds0: FujiNet->emulator
 * fds1: emulator->FujiNet
 */
-static int fds0[2], fds1[2];
+int fds0[2], fds1[2];
 
 /* UDP socket for NetSIO and return address holder */
 static int sockfd = -1;
@@ -42,7 +43,19 @@ static socklen_t fujinet_addr_len = sizeof(fujinet_addr);
 static void *fujinet_rx_thread(void *arg);
 static void *emu_tx_thread(void *arg);
 
-/* write a full packet to emulator FIFO (fujinet_rx_thread) */
+/* Return number of bytes waiting from FujiNet to emulator */
+int netsio_available(void) {
+    int avail = 0;
+    if (fds0[0] >= 0) {
+        if (ioctl(fds0[0], FIONREAD, &avail) < 0) {
+                Log_print("netsio_avail: ioctl error");
+                return 0;
+        }
+    }
+    return avail;
+}
+
+/* write data to emulator FIFO (fujinet_rx_thread) */
 static void enqueue_to_emulator(const uint8_t *pkt, size_t len) {
     ssize_t n;
     while (len > 0) {
@@ -62,22 +75,72 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
     ssize_t n;
 
     /* if we never received a ping from FujiNet or we have no address to reply to */
-    if (fujinet_known == 0 || fujinet_addr.ss_family != AF_INET) {
-        /* skip sending */
+    if (!fujinet_known || fujinet_addr.ss_family != AF_INET) {
+        Log_print("netsio: can't send_to_fujinet, no address");
         return;
     }
 
-    while (len > 0) {
-        n = sendto(sockfd, pkt, len, 0,
-                   (struct sockaddr *)&fujinet_addr, fujinet_addr_len);
-        if (n < 0) {
-            if (errno == EINTR) continue;
-            perror("netsio: send to FujiNet");
-            /*exit(1);*/
+    n = sendto(
+        sockfd,
+        pkt, len, 0,
+        (struct sockaddr *)&fujinet_addr,
+        fujinet_addr_len
+    );
+    if (n < 0) {
+        if (errno == EINTR) {
+            /* transient, try once more */
+            n = sendto(
+                sockfd,
+                pkt, len, 0,
+                (struct sockaddr *)&fujinet_addr,
+                fujinet_addr_len
+            );
         }
-        pkt  += n;
-        len  -= n;
+        if (n < 0) {
+            perror("netsio: sendto FujiNet");
+            return;
+        }
+    } else if ((size_t)n != len) {
+        Log_print("netsio: partial send (%zd of %zu bytes)", n, len);
+        return;
     }
+
+    /* build a hex string: each byte "XX " */
+    size_t buf_size = len * 3 + 1;
+    char hexdump[buf_size];
+    size_t pos = 0;
+    size_t i = 0;
+    for (i = 0; i < len; i++) {
+        /* snprintf returns number of chars (excluding trailing NUL) */
+        int written = snprintf(&hexdump[pos], buf_size - pos, "%02X ", pkt[i]);
+        if (written < 0 || (size_t)written >= buf_size - pos) {
+            break;
+        }
+        pos += written;
+    }
+    hexdump[pos] = '\0';
+    /* Log_print("netsio: send: %zu bytes → %s", len, hexdump); */
+}
+
+
+/* Send a single byte as a DATA_BYTE packet */
+void send_byte_to_fujinet(uint8_t data_byte) {
+    uint8_t packet[2];
+    packet[0] = NETSIO_DATA_BYTE;
+    packet[1] = data_byte;
+    send_to_fujinet(packet, sizeof(packet));
+}
+
+/* Send up to 512 bytes as a DATA_BLOCK packet */
+void send_block_to_fujinet(const uint8_t *block, size_t len) {
+    if (len == 0 || len > 512) return;  /* sanity check */
+
+    uint8_t packet[512 + 2];
+    packet[0] = NETSIO_DATA_BLOCK;
+    memcpy(&packet[1], block, len);
+    /* Pad the end with a junk byte or FN-PC won't accept the packet */
+    packet[1 + len] = 0xFF;
+    send_to_fujinet(packet, len + 2);
 }
 
 /* Initialize NetSIO:
@@ -164,7 +227,7 @@ int netsio_cmd_off(void)
 int netsio_cmd_off_sync(void)
 {
     Log_print("netsio: CMD OFF SYNC");
-    uint8_t p[2] = { NETSIO_COMMAND_ON, netsio_sync_num };
+    uint8_t p[2] = { NETSIO_COMMAND_OFF_SYNC, netsio_sync_num };
     send_to_fujinet(&p, sizeof(p));
     netsio_sync_num++;
     return 0;
@@ -174,7 +237,7 @@ int netsio_cmd_off_sync(void)
 /* The emulator calls this to send a byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
     uint8_t pkt[2] = { NETSIO_DATA_BYTE, b };
-    send_to_fujinet(pkt, 2);
+    send_to_fujinet(&pkt, 2);
     return 0;
 }
 
@@ -193,102 +256,158 @@ int netsio_recv_byte(uint8_t *b) {
     return 0;
 }
 
-/* Thread: receive from FujiNet socket */
+/* Send a test command frame to fujinet-pc */
+void netsio_test_cmd(void)
+{
+    uint8_t p[6] = { 0x70, 0xE8, 0x00, 0x00, 0x59 }; /* Send fujidev get adapter config request */
+    netsio_cmd_on(); /* Turn on CMD */
+    send_block_to_fujinet(p, sizeof(p));
+    /* send_byte_to_fujinet(0x70);
+    send_byte_to_fujinet(0xE8);
+    send_byte_to_fujinet(0x00);
+    send_byte_to_fujinet(0x00);
+    send_byte_to_fujinet(0x59); */
+    netsio_cmd_off_sync(); /* Turn off CMD */
+}
+
+/* Thread: receive from FujiNet socket (one packet == one command) */
 static void *fujinet_rx_thread(void *arg) {
-    uint8_t  buf[4096];
-    size_t   head = 0, tail = 0;
-    uint8_t  packet[65536];
+    uint8_t buf[4096];
+    uint8_t packet[65536];
 
     for (;;) {
         fujinet_addr_len = sizeof(fujinet_addr);
-        ssize_t n = recvfrom(sockfd, buf + tail, sizeof(buf) - tail, 0,
+        ssize_t n = recvfrom(sockfd,
+                             buf, sizeof(buf),
+                             0,
                              (struct sockaddr *)&fujinet_addr,
                              &fujinet_addr_len);
         if (n <= 0) {
             perror("netsio: recv");
-            /*exit(1);*/
+            continue;
         }
-        
         fujinet_known = 1;
 
-        tail += n;
-
-        /* process as many complete packets as possible */
-        head = 0;
-        while (head < tail) {
-            uint8_t cmd = buf[head];
-            size_t  remaining = tail - head;
-
-            /* PING request and immediate response */
-            if (cmd == NETSIO_PING_REQUEST) {
-                uint8_t r = NETSIO_PING_RESPONSE;
-                send_to_fujinet(&r, 1);
-                Log_print("netsio: PING->PONG");
-                netsio_enabled = 1;
-                head++;
-                continue;
-            }
-
-            /* Alive request and immediate response */
-            if (cmd == NETSIO_ALIVE_REQUEST) {
-                uint8_t r = NETSIO_ALIVE_RESPONSE;
-                send_to_fujinet(&r, 1);
-                head++;
-                continue;
-            }
-            /* SPEED_CHANGE: 1 + 4 bytes of baud */
-            if (cmd == NETSIO_SPEED_CHANGE) {
-                if (remaining < 5) break;
-                /* parse little-endian 32-bit baud */
-                uint32_t baud = buf[head+1]
-                              | (buf[head+2] << 8)
-                              | (buf[head+3] << 16)
-                              | (buf[head+4] << 24);
-                /* TODO: apply baud somewhere */
-                Log_print("netsio: requested baud rate %u\n", baud);
-                (void)baud;
-                head += 5;
-                continue;
-            }
-
-            /* SYNC RESPONSE: 1 + 5 bytes */
-            if (cmd == NETSIO_SYNC_RESPONSE) {
-                if (remaining < 6) break;
-                /* TODO: figure out how to pause the emulator and restart here after sync */
-                Log_print("netsio: sync response rcvd");
-                head += 5;
-                continue;
-            }
-
-            /* DATA_BYTE or DATA_BYTE_SYNC: length = 2 */
-            if ((cmd == NETSIO_DATA_BYTE) ||
-                (cmd == NETSIO_DATA_BYTE_SYNC)) {
-                if (remaining < 2) break;
-                memcpy(packet, buf + head, 2);
-                enqueue_to_emulator(packet, 2);
-                head += 2;
-                continue;
-            }
-
-            /* DATA_BLOCK: length = 3 + payload */
-            if (cmd == NETSIO_DATA_BLOCK) {
-                if (remaining < 3) break;
-                uint16_t L = buf[head+1] | (buf[head+2] << 8);
-                if (remaining < 3 + L) break;
-                memcpy(packet, buf + head, 3 + L);
-                enqueue_to_emulator(packet, 3 + L);
-                head += 3 + L;
-                continue;
-            }
-
-            /* unknown cmd: drop it */
-            head++;
+        /* Every packet must be at least one byte (the command) */
+        if (n < 1) {
+            Log_print("netsio: empty packet");
+            continue;
         }
 
-        /* slide leftover bytes to front */
-        if (head > 0) {
-            memmove(buf, buf + head, tail - head);
-            tail -= head;
+        uint8_t cmd = buf[0];
+
+        switch (cmd) {
+            case NETSIO_PING_REQUEST: {
+                uint8_t r = NETSIO_PING_RESPONSE;
+                send_to_fujinet(&r, 1);
+                Log_print("netsio: recv: PING→PONG");
+                netsio_enabled = 1;
+                break;
+            }
+
+            case NETSIO_DEVICE_CONNECTED: {
+                Log_print("netsio: recv: device connected");
+                break;
+            }
+
+            case NETSIO_DEVICE_DISCONNECTED: {
+                Log_print("netsio: recv: device disconnected");
+                netsio_enabled = 0;
+                break;
+            }
+            
+            case NETSIO_ALIVE_REQUEST: {
+                uint8_t r = NETSIO_ALIVE_RESPONSE;
+                send_to_fujinet(&r, 1);
+                Log_print("netsio: recv: IT'S ALIVE!");
+                break;
+            }
+
+            case NETSIO_CREDIT_STATUS: {
+                /* packet should be 2 bytes long */
+                if (n < 2) {
+                    Log_print("netsio: recv: CREDIT_STATUS packet too short (%zd)", n);
+                }
+                uint8_t reply[2] = { NETSIO_CREDIT_UPDATE, 3 };
+                send_to_fujinet(reply, sizeof(reply));
+                Log_print("netsio: recv: credit status & response");
+                break;
+            }
+
+            case NETSIO_SPEED_CHANGE: {
+                /* packet: [cmd][baud32le] */
+                if (n < 5) {
+                    Log_print("netsio: recv: SPEED_CHANGE packet too short (%zd)", n);
+                    break;
+                }
+                uint32_t baud = buf[1]
+                              | (uint32_t)buf[2] << 8
+                              | (uint32_t)buf[3] << 16
+                              | (uint32_t)buf[4] << 24;
+                Log_print("netsio: recv: requested baud rate %u", baud);
+                /* TODO: apply baud */
+                break;
+            }
+
+            case NETSIO_SYNC_RESPONSE: {
+                /* packet: [cmd][sync#][ack_type][ack_byte][write_lo][write_hi] */
+                if (n < 6) {
+                    Log_print("netsio: recv: SYNC_RESPONSE too short (%zd)", n);
+                    break;
+                }
+                uint8_t  resp_sync  = buf[1];
+                uint8_t  ack_type   = buf[2];
+                uint8_t  ack_byte   = buf[3];
+                uint16_t write_size = buf[4] | (uint16_t)buf[5] << 8;
+
+                if (resp_sync != netsio_sync_num - 1) {
+                    Log_print("netsio: recv: sync-response: got %u, want %u",
+                              resp_sync, netsio_sync_num - 1);
+                } else {
+                    if (ack_type == 0) {
+                        Log_print("netsio: recv: sync %u NAK, dropping", resp_sync);
+                    } else if (ack_type == 1) {
+                        Log_print("netsio: recv: sync %u ACK byte=0x%02X",
+                                  resp_sync, ack_byte);
+                        enqueue_to_emulator(&ack_byte, 1);
+                    } else {
+                        Log_print("netsio: recv: sync %u unknown ack_type %u",
+                                  resp_sync, ack_type);
+                    }
+                    /* netsio_next_write_size = write_size; */
+                }
+                break;
+            }
+
+            case NETSIO_DATA_BYTE: {
+                /* packet: [cmd][data] */
+                if (n < 2) {
+                    Log_print("netsio: recv: DATA_BYTE too short (%zd)", n);
+                    break;
+                }
+                uint8_t data = buf[1];
+                Log_print("netsio: recv: data byte: 0x%02X", data);
+                enqueue_to_emulator(&data, 1);
+                break;
+            }
+
+            case NETSIO_DATA_BLOCK: {
+                /* packet: [cmd][payload...] */
+                if (n < 2) {
+                    Log_print("netsio: recv: DATA_BLOCK too short (%zd)", n);
+                    break;
+                }
+                /* payload length is everything after the command byte */
+                size_t payload_len = n - 1;
+                Log_print("netsio: recv: DATA_BLOCK %zu bytes", payload_len);
+                /* forward only buf[1]..buf[n-1] */
+                enqueue_to_emulator(buf + 1, payload_len);
+                break;
+            }            
+
+            default:
+                Log_print("netsio: recv: unknown cmd 0x%02X, length %zd", cmd, n);
+                break;
         }
     }
     return NULL;
