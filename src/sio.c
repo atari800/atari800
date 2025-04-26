@@ -51,6 +51,8 @@
 #include "fujinet.h"
 #include "netsio.h"
 
+#include "SDL/SDL.h"
+
 #undef DEBUG_PRO
 #undef DEBUG_VAPI
 
@@ -1346,18 +1348,6 @@ static UBYTE Command_Frame(void)
 	int sector;
 	int realsize;
 	Log_print("sio: Command_Frame()");
-	/* Forward raw SIO command frame to netsio
-    {
-        unsigned char respbuf[sizeof(DataBuffer)];
-        int resp_len = fujinet_process_command(CommandFrame, sizeof(CommandFrame), respbuf, sizeof(respbuf));
-        if (resp_len > 0) {
-            memcpy(DataBuffer, respbuf, resp_len);
-            DataIndex = 0;
-            ExpectedBytes = resp_len;
-            TransferStatus = SIO_ReadFrame;
-            return 'A';
-        }
-    } */
 
 	sector = CommandFrame[2] | (((UWORD) CommandFrame[3]) << 8);
 	unit = CommandFrame[0] - '1';
@@ -1418,35 +1408,72 @@ static UBYTE Command_Frame(void)
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
-		SIO_SizeOfSector((UBYTE) unit, sector, &realsize, NULL);
-		DataBuffer[0] = SIO_ReadSector(unit, sector, DataBuffer + 1);
-		DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, realsize);
-		DataIndex = 0;
-		ExpectedBytes = 2 + realsize;
-		TransferStatus = SIO_ReadFrame;
-		/* wait longer before confirmation because bytes could be lost */
-		/* before the buffer was set (see $E9FB & $EA37 in XL-OS) */
-		POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
-		if (image_type[unit] == IMAGE_TYPE_VAPI) {
-			vapi_additional_info_t *info;
-			info = (vapi_additional_info_t *)additional_info[unit];
-			if (info == NULL)
-				POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
-			else
-				POKEY_DELAYED_SERIN_IRQ = ((info->vapi_delay_time + 114/2) / 114) - 12;
-		} 
+		if (netsio_enabled)
+		{
+			UBYTE b;
+			int i = 0;
+
+			netsio_recv_byte(&b);
+			if (b != 0x41)
+				return;       /* no ACK, bail out */
+
+			netsio_recv_byte(&b);
+			if (b != 0x43)
+				return;       /* no complete, bail out */
+
+            /* read in the 128‐byte sector payload */
+            for (i = 0; i < 128; i++) {
+                netsio_recv_byte(&b);
+                DataBuffer[1 + i] = b;
+            }
+
+            /* read the trailing checksum */
+            netsio_recv_byte(&b);
+            DataBuffer[1 + 128] = b;
+
+            DataBuffer[0]     = 'C';           /* Complete */
+            DataIndex         = 0;
+            ExpectedBytes     = 1 + 128 + 1;   /* code + 128 data + checksum */
+            TransferStatus    = SIO_ReadFrame;
+
+            POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2;
+
+            SIO_last_op       = SIO_LAST_READ;
+            SIO_last_op_time  = 10;
+            SIO_last_drive    = unit + 1;
+		}
+		else
+		{
+			SIO_SizeOfSector((UBYTE) unit, sector, &realsize, NULL);
+			DataBuffer[0] = SIO_ReadSector(unit, sector, DataBuffer + 1);
+			DataBuffer[1 + realsize] = SIO_ChkSum(DataBuffer + 1, realsize);
+			DataIndex = 0;
+			ExpectedBytes = 2 + realsize;
+			TransferStatus = SIO_ReadFrame;
+			/* wait longer before confirmation because bytes could be lost */
+			/* before the buffer was set (see $E9FB & $EA37 in XL-OS) */
+			POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
+			if (image_type[unit] == IMAGE_TYPE_VAPI) {
+				vapi_additional_info_t *info;
+				info = (vapi_additional_info_t *)additional_info[unit];
+				if (info == NULL)
+					POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL << 2; 
+				else
+					POKEY_DELAYED_SERIN_IRQ = ((info->vapi_delay_time + 114/2) / 114) - 12;
+			} 
 #ifndef NO_SECTOR_DELAY
-		else if (sector == 1) {
-			POKEY_DELAYED_SERIN_IRQ += delay_counter;
-			delay_counter = SECTOR_DELAY;
-		}
-		else {
-			delay_counter = 0;
-		}
+			else if (sector == 1) {
+				POKEY_DELAYED_SERIN_IRQ += delay_counter;
+				delay_counter = SECTOR_DELAY;
+			}
+			else {
+				delay_counter = 0;
+			}
 #endif
-		SIO_last_op = SIO_LAST_READ;
-		SIO_last_op_time = 10;
-		SIO_last_drive = unit + 1;
+			SIO_last_op = SIO_LAST_READ;
+			SIO_last_op_time = 10;
+			SIO_last_drive = unit + 1;
+		}
 		return 'A';
 	case 0x53:				/* Status */
 	case 0xD3:				/* xf551 hispeed */
@@ -1455,11 +1482,40 @@ static UBYTE Command_Frame(void)
 			CommandFrame[0], CommandFrame[1], CommandFrame[2],
 			CommandFrame[3], CommandFrame[4]);
 #endif
-		DataBuffer[0] = SIO_DriveStatus(unit, DataBuffer + 1);
-		DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
-		DataIndex = 0;
-		ExpectedBytes = 6;
-		TransferStatus = SIO_ReadFrame;
+		if (netsio_enabled)
+		{
+            UBYTE b;
+			int i = 0;
+
+            netsio_recv_byte(&b);
+            if (b != 0x41)
+                return;       /* no ACK, bail out */
+
+            netsio_recv_byte(&b);
+            if (b != 0x43)
+                return;       /* no complete, bail out */
+
+            for (i = 0; i < 4; i++) {
+				netsio_recv_byte(&b);
+                DataBuffer[1 + i] = b;
+            }
+
+            DataBuffer[0] = 'C';                    /* per SIO_DriveStatus() */
+			netsio_recv_byte(&b);
+            DataBuffer[5] = b;     /* final checksum */
+
+            DataIndex      = 0;
+            ExpectedBytes  = 6;                     /* 'C' + 4 data + checksum */
+            TransferStatus = SIO_ReadFrame;
+		}
+		else
+		{
+			DataBuffer[0] = SIO_DriveStatus(unit, DataBuffer + 1);
+			DataBuffer[1 + 4] = SIO_ChkSum(DataBuffer + 1, 4);
+			DataIndex = 0;
+			ExpectedBytes = 6;
+			TransferStatus = SIO_ReadFrame;
+		}
 		POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL;
 		return 'A';
 	/*case 0x66:*/			/* US Doubler Format - I think! */
@@ -1519,6 +1575,14 @@ void SIO_SwitchCommandFrame(int onoff)
 	}
 	else {
 		netsio_cmd_off_sync();
+		/* Wait for sync response */
+		int ticker = 0;
+		while (netsio_sync_wait) { 
+			SDL_Delay(5);
+			if (ticker > 7)
+				break;
+			ticker++;			
+		}
 		/* Log_print("sio: CMD OFF"); */
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
@@ -1559,6 +1623,7 @@ void SIO_PutByte(int byte)
 	case SIO_CommandFrame:
 		if (CommandIndex < ExpectedBytes) {
 			CommandFrame[CommandIndex++] = byte;
+			netsio_send_byte(byte);
 			if (CommandIndex >= ExpectedBytes) {
 				if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38) { 
 				/* if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && (SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF || BINLOAD_start_binloading)) { */
@@ -1606,7 +1671,6 @@ void SIO_PutByte(int byte)
 		}
 		break;
 	}
-	netsio_send_byte(byte);
 	CASSETTE_PutByte(byte);
 	/* POKEY_DELAYED_SEROUT_IRQ = SIO_SEROUT_INTERVAL; */ /* already set in pokey.c */
 }
@@ -1615,24 +1679,7 @@ void SIO_PutByte(int byte)
 int SIO_GetByte(void)
 {
 	int byte = 0;
-	ssize_t  r;
-	uint8_t netsio_byte;
-
-	/* Wait for netsio data, read it and return */
-	while (!netsio_available()) {
-	}
-	r = read(fds0[0], &netsio_byte, 1);
-	if (r < 0) {
-		Log_print("sio: netsio read error");
-	}
-	else if (r == 0) {
-		Log_print("sio: netsio FIFO empty");
-	}
-	else
-	{
-		Log_print("sio: netsio byte returned: %x", netsio_byte);
-		return netsio_byte;
-	}
+	uint8_t b;
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
@@ -1648,7 +1695,14 @@ int SIO_GetByte(void)
 		Log_print("sio: GetByte() ReadFrame");
 
 		if (DataIndex < ExpectedBytes) {
-			byte = DataBuffer[DataIndex++];
+			if (netsio_available())
+			{
+				netsio_recv_byte(&b);
+				byte = b;
+				DataIndex++; /* Should I do this?? */
+			}
+			else
+				byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
 				TransferStatus = SIO_NoFrame;
 			}
