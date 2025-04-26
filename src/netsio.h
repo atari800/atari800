@@ -46,6 +46,8 @@ typedef struct NetSIOMsg {
 
 extern volatile int netsio_enabled;
 extern uint8_t netsio_sync_num;
+extern int netsio_sync_wait;
+extern int netsio_cmd_state;
 
 /* FIFO pipes:
 * fds0: FujiNet->emulator
@@ -65,6 +67,8 @@ void netsio_shutdown(void);
 /* Returns 0 on success, -1 if FIFO is full. */
 int netsio_send_byte(uint8_t b);
 
+int netsio_send_block(const uint8_t *block, ssize_t len);
+
 /* Dequeue one byte received from FujiNet-PC. */
 /* Returns 0 on success, -1 if FIFO is empty. */
 int netsio_recv_byte(uint8_t *b);
@@ -72,6 +76,7 @@ int netsio_recv_byte(uint8_t *b);
 int netsio_cmd_on(void);
 int netsio_cmd_off(void);
 int netsio_cmd_off_sync(void);
+void netsio_toggle_cmd(int v);
 
 int netsio_available(void);
 

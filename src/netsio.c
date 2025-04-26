@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include "netsio.h"
 #include "log.h"
+#include "pia.h" /* For toggling PROC & INT */
 
 /* Flag to know when netsio is enabled */
 volatile int netsio_enabled = 0;
@@ -27,6 +28,10 @@ volatile int netsio_enabled = 0;
 uint8_t netsio_sync_num = 0;
 /* if we have heard from fujinet-pc or not */
 int fujinet_known = 0;
+/* wait for fujinet sync if true */
+int netsio_sync_wait = 0;
+/* true if cmd line pulled */
+int netsio_cmd_state = 0;
 
 /* FIFO pipes:
 * fds0: FujiNet->emulator
@@ -43,16 +48,23 @@ static socklen_t fujinet_addr_len = sizeof(fujinet_addr);
 static void *fujinet_rx_thread(void *arg);
 static void *emu_tx_thread(void *arg);
 
-/* Return number of bytes waiting from FujiNet to emulator */
-int netsio_available(void) {
-    int avail = 0;
-    if (fds0[0] >= 0) {
-        if (ioctl(fds0[0], FIONREAD, &avail) < 0) {
-                Log_print("netsio_avail: ioctl error");
-                return 0;
-        }
+char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len) {
+    /* each byte takes "XX " == 3 chars, +1 for trailing NUL */
+    size_t needed = len * 3 + 1;
+    char *s = malloc(needed);
+    size_t i = 0;
+    if (!s) return NULL;
+    char *p = s;
+    for (i = 0; i < len; i++) {
+        sprintf(p, "%02X ", buf[offset + i]);
+        p += 3;
     }
-    return avail;
+    if (len) {
+        p[-1] = '\0';
+    } else {
+        *p = '\0';
+    }
+    return s;
 }
 
 /* write data to emulator FIFO (fujinet_rx_thread) */
@@ -203,14 +215,26 @@ int netsio_init(uint16_t port) {
     return 0;
 }
 
+/* Return number of bytes waiting from FujiNet to emulator */
+int netsio_available(void) {
+    int avail = 0;
+    if (fds0[0] >= 0) {
+        if (ioctl(fds0[0], FIONREAD, &avail) < 0) {
+                Log_print("netsio_avail: ioctl error");
+                return -1;
+        }
+    }
+    return avail;
+}
+
 /* COMMAND ON */
 int netsio_cmd_on(void)
 {
     Log_print("netsio: CMD ON");
+    netsio_cmd_state = 1;
     uint8_t p = NETSIO_COMMAND_ON;
     send_to_fujinet(&p, 1);
     return 0;
-
 }
 
 /* COMMAND OFF */
@@ -220,7 +244,6 @@ int netsio_cmd_off(void)
     uint8_t p = NETSIO_COMMAND_OFF;
     send_to_fujinet(&p, 1);
     return 0;
-
 }
 
 /* COMMAND OFF with SYNC */
@@ -230,18 +253,35 @@ int netsio_cmd_off_sync(void)
     uint8_t p[2] = { NETSIO_COMMAND_OFF_SYNC, netsio_sync_num };
     send_to_fujinet(&p, sizeof(p));
     netsio_sync_num++;
+    netsio_sync_wait = 1; /* pause emulation til we hear back */
     return 0;
-
 }
 
-/* The emulator calls this to send a byte out to FujiNet */
+/* Toggle Command Line */
+void netsio_toggle_cmd(int v)
+{
+    if (!v)
+        netsio_cmd_off_sync();
+    else
+        netsio_cmd_on();
+}
+
+/* The emulator calls this to send a data byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
     uint8_t pkt[2] = { NETSIO_DATA_BYTE, b };
+    Log_print("netsio: send byte: %02X", b);
     send_to_fujinet(&pkt, 2);
     return 0;
 }
 
-/* The emulator calls this to receive a byte from FujiNet */
+/* The emulator calls this to send a data block out to FujiNet */
+int netsio_send_block(const uint8_t *block, ssize_t len) {
+    /* ssize_t len = sizeof(block);*/ 
+    send_block_to_fujinet(block, len);
+    Log_print("netsio: send block, %i bytes:\n  %s", len, buf_to_hex(block, 0, len));
+}
+
+/* The emulator calls this to receive a data byte from FujiNet */
 int netsio_recv_byte(uint8_t *b) {
     ssize_t n = read(fds0[0], b, 1);
     if (n < 0) {
@@ -253,6 +293,7 @@ int netsio_recv_byte(uint8_t *b) {
         /* FIFO closed? */
         return -1;
     }
+    Log_print("netsio: read to emu: %02X", (unsigned)*b);
     return 0;
 }
 
@@ -301,12 +342,15 @@ static void *fujinet_rx_thread(void *arg) {
                 uint8_t r = NETSIO_PING_RESPONSE;
                 send_to_fujinet(&r, 1);
                 Log_print("netsio: recv: PING→PONG");
-                netsio_enabled = 1;
                 break;
             }
 
             case NETSIO_DEVICE_CONNECTED: {
                 Log_print("netsio: recv: device connected");
+                /* give it some credits 
+                uint8_t reply[2] = { NETSIO_CREDIT_UPDATE, 3 };
+                send_to_fujinet(reply, sizeof(reply)); */
+                netsio_enabled = 1;
                 break;
             }
 
@@ -376,9 +420,29 @@ static void *fujinet_rx_thread(void *arg) {
                     }
                     /* netsio_next_write_size = write_size; */
                 }
+                netsio_sync_wait = 0; /* continue emulation */
                 break;
             }
 
+            /* set_CA1 */
+            case NETSIO_PROCEED_ON: {
+
+                break;
+            }
+            case NETSIO_PROCEED_OFF: {
+
+                break;
+            }
+
+            /* set_CB1 */
+            case NETSIO_INTERRUPT_ON: {
+
+                break;
+            }
+            case NETSIO_INTERRUPT_OFF: {
+
+                break;
+            }
             case NETSIO_DATA_BYTE: {
                 /* packet: [cmd][data] */
                 if (n < 2) {
@@ -394,12 +458,12 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_DATA_BLOCK: {
                 /* packet: [cmd][payload...] */
                 if (n < 2) {
-                    Log_print("netsio: recv: DATA_BLOCK too short (%zd)", n);
+                    Log_print("netsio: recv: data block too short (%zd)", n);
                     break;
                 }
                 /* payload length is everything after the command byte */
                 size_t payload_len = n - 1;
-                Log_print("netsio: recv: DATA_BLOCK %zu bytes", payload_len);
+                Log_print("netsio: recv: data block %zu bytes:\n  %s", payload_len, buf_to_hex(buf, 1, payload_len));
                 /* forward only buf[1]..buf[n-1] */
                 enqueue_to_emulator(buf + 1, payload_len);
                 break;
