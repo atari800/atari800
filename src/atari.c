@@ -709,15 +709,21 @@ int Atari800_Initialise(int *argc, char *argv[])
 				ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
 				if (netsio_init(9997) < 0) {
 					perror("netsio_init");
-					/* return 1; */
+					return 1;
 				}
 
 				/* Wait for Fujinet before continuing */
-				while (netsio_enabled == 0){
+				Log_print("Waiting for FujiNet-PC...");
+				while (!netsio_enabled){
 					sleep(1);
 				}
 
-				/* sleep(5); */
+				/* Now we are connected. Wait just a bit longer and send our test command */
+				/*sleep(5);
+				netsio_test_cmd();
+				sleep(2);
+				return 0; 
+				*/
 				/* 
 				if (netsio_send_byte(0xFF) < 0) {
 					fprintf(stderr, "Failed to queue Cold‐Reset byte\n");
