@@ -29,9 +29,11 @@ uint8_t netsio_sync_num = 0;
 /* if we have heard from fujinet-pc or not */
 int fujinet_known = 0;
 /* wait for fujinet sync if true */
-int netsio_sync_wait = 0;
+volatile int netsio_sync_wait = 0;
 /* true if cmd line pulled */
 int netsio_cmd_state = 0;
+/* data frame size for SIO write commands */
+volatile int netsio_next_write_size = 0;
 
 /* FIFO pipes:
 * fds0: FujiNet->emulator
@@ -281,6 +283,17 @@ int netsio_send_block(const uint8_t *block, ssize_t len) {
     Log_print("netsio: send block, %i bytes:\n  %s", len, buf_to_hex(block, 0, len));
 }
 
+/* DATA BYTE with SYNC */
+int netsio_send_byte_sync(uint8_t b)
+{
+    Log_print("netsio: send byte: 0x%02X sync: %d", b, netsio_sync_num);
+    uint8_t p[3] = { NETSIO_DATA_BYTE_SYNC, b, netsio_sync_num};
+    send_to_fujinet(&p, sizeof(p));
+    netsio_sync_num++;
+    netsio_sync_wait = 1; /* pause emulation til we hear back */
+    return 0;
+}
+
 /* The emulator calls this to receive a data byte from FujiNet */
 int netsio_recv_byte(uint8_t *b) {
     ssize_t n = read(fds0[0], b, 1);
@@ -363,7 +376,7 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_ALIVE_REQUEST: {
                 uint8_t r = NETSIO_ALIVE_RESPONSE;
                 send_to_fujinet(&r, 1);
-                Log_print("netsio: recv: IT'S ALIVE!");
+                // Log_print("netsio: recv: IT'S ALIVE!");
                 break;
             }
 
@@ -390,6 +403,7 @@ static void *fujinet_rx_thread(void *arg) {
                               | (uint32_t)buf[4] << 24;
                 Log_print("netsio: recv: requested baud rate %u", baud);
                 /* TODO: apply baud */
+                send_to_fujinet(buf, 5); /* echo back */
                 break;
             }
 
@@ -404,9 +418,9 @@ static void *fujinet_rx_thread(void *arg) {
                 uint8_t  ack_byte   = buf[3];
                 uint16_t write_size = buf[4] | (uint16_t)buf[5] << 8;
 
-                if (resp_sync != netsio_sync_num - 1) {
+                if (resp_sync != (uint8_t)(netsio_sync_num - 1)) {
                     Log_print("netsio: recv: sync-response: got %u, want %u",
-                              resp_sync, netsio_sync_num - 1);
+                              resp_sync, (uint8_t)(netsio_sync_num - 1));
                 } else {
                     if (ack_type == 0) {
                         Log_print("netsio: recv: sync %u NAK, dropping", resp_sync);
@@ -418,7 +432,7 @@ static void *fujinet_rx_thread(void *arg) {
                         Log_print("netsio: recv: sync %u unknown ack_type %u",
                                   resp_sync, ack_type);
                     }
-                    /* netsio_next_write_size = write_size; */
+                    netsio_next_write_size = write_size;
                 }
                 netsio_sync_wait = 0; /* continue emulation */
                 break;
