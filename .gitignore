@@ -39,3 +39,6 @@
 # Qt Creator
 /atari800.creator.user
 /.qtc_clangd
+
+# VS Code
+/.vscode
