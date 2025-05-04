@@ -48,7 +48,7 @@
 #ifndef BASIC
 #include "statesav.h"
 #endif
-#include "fujinet.h"
+/* NETSIO */
 #include "netsio.h"
 
 #undef DEBUG_PRO
@@ -1792,9 +1792,10 @@ static UBYTE Command_Frame_FN_Network(void)
 /* Enable/disable the command frame */
 void SIO_SwitchCommandFrame(int onoff)
 {
-	if (onoff) {				/* Enabled */
-		netsio_cmd_on();
-		/* Log_print("sio: CMD ON"); */
+	if (onoff)
+	{				/* Enabled */
+		if (netsio_enabled)
+			netsio_cmd_on();
 		if (TransferStatus != SIO_NoFrame)
 			Log_print("sio_switchcommandframe: Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
@@ -1802,10 +1803,13 @@ void SIO_SwitchCommandFrame(int onoff)
 		ExpectedBytes = 5;
 		TransferStatus = SIO_CommandFrame;
 	}
-	else {
-		netsio_cmd_off_sync();
-		netsio_wait_for_sync(); /* Wait for sync response */
-		/* Log_print("sio: CMD OFF"); */
+	else
+	{
+		if (netsio_enabled)
+		{
+			netsio_cmd_off_sync();
+			netsio_wait_for_sync(); /* Wait for sync response */
+		}
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
@@ -1847,7 +1851,8 @@ void SIO_PutByte(int byte)
 			CommandFrame[CommandIndex++] = byte;
 			/* netsio_send_byte(byte); /* TODO collect bytes into data block and then send */
 			if (CommandIndex >= ExpectedBytes) {
-				netsio_send_block(CommandFrame, ExpectedBytes);
+				if (netsio_enabled)
+					netsio_send_block(CommandFrame, ExpectedBytes);
 				if ((CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38) ||
 					(CommandFrame[0] >= 0x70 && CommandFrame[0] <= 0x78)) {
 				/* if (CommandFrame[0] >= 0x31 && CommandFrame[0] <= 0x38 && (SIO_drive_status[CommandFrame[0]-0x31] != SIO_OFF || BINLOAD_start_binloading)) { */
@@ -1869,7 +1874,8 @@ void SIO_PutByte(int byte)
 			if (DataIndex >= ExpectedBytes) {
 				UBYTE sum = SIO_ChkSum(DataBuffer, ExpectedBytes - 1);
 				if (sum == DataBuffer[ExpectedBytes - 1]) {
-					if (netsio_enabled) {
+					if (netsio_enabled)
+					{
 						netsio_send_block(DataBuffer, ExpectedBytes-1); /* TODO: handle blocks > 512 bytes*/
 						netsio_send_byte_sync(sum);
 						netsio_wait_for_sync(); /* wait for sync response */
@@ -1878,7 +1884,8 @@ void SIO_PutByte(int byte)
 						POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + SIO_ACK_INTERVAL;
 						TransferStatus = SIO_FinalStatus;
 					}
-					else {
+					else
+					{
 						UBYTE result = WriteSectorBack();
 						if (result != 0) {
 							DataBuffer[0] = 'A';
@@ -1936,7 +1943,7 @@ int SIO_GetByte(void)
 		Log_print("sio: GetByte() ReadFrame");
 
 		if (DataIndex < ExpectedBytes) {
-			if (netsio_available())
+			if (netsio_enabled && netsio_available())
 			{
 				netsio_recv_byte(&b);
 				byte = b;
@@ -1964,9 +1971,8 @@ int SIO_GetByte(void)
 		break;
 	case SIO_FinalStatus:
 		Log_print("sio: GetByte() FinalStatus");
-		if (netsio_enabled) {
+		if (netsio_enabled)
 			netsio_recv_byte(&DataBuffer[DataIndex]);
-		}
 		if (DataIndex < ExpectedBytes) {
 			byte = DataBuffer[DataIndex++];
 			if (DataIndex >= ExpectedBytes) {
