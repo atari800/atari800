@@ -51,8 +51,6 @@
 #include "fujinet.h"
 #include "netsio.h"
 
-#include "SDL/SDL.h"
-
 #undef DEBUG_PRO
 #undef DEBUG_VAPI
 
@@ -1613,9 +1611,11 @@ static UBYTE Command_Frame_FN_Fuji(void)
 
 	switch (CommandFrame[1]) {
 	/* commands with no data */
+	case 0xD7:				/* MOUNT ALL */
+	case 0xD9:				/* EN/DIS ABLE CONFIG DISK */
+	case 0xE4:				/* SET DIRECTORY POSITION */
 	case 0xF5:				/* CLOSE DIRECTORY */
 	case 0xF9:				/* MOUNT HOST */
-	case 0xE4:				/* SET DIRECTORY POSITION */
 		{
 #ifdef DEBUG
 			if (CommandFrame[1] == 0xF5)
@@ -1675,10 +1675,10 @@ static UBYTE Command_Frame_FN_Fuji(void)
 			return 'A';
 		}
 	/* commands with N bytes response */
-	case 0xF4:				/* READ HOST SLOTS */
-	case 0xF2:				/* READ DEVICE SLOTS */
-	case 0xDA:				/* GET DEVICE FULLPATH */
 	case 0xC4:				/* GET ADAPTERCONFIG EXTENDED */
+	case 0xDA:				/* GET DEVICE FULLPATH */
+	case 0xF2:				/* READ DEVICE SLOTS */
+	case 0xF4:				/* READ HOST SLOTS */
 	case 0xF6:				/* READ DIRECTORY */
 		{
 			int n = 256;
@@ -1743,8 +1743,9 @@ static UBYTE Command_Frame_FN_Fuji(void)
 			return 'A';
 		}
 	/* commands with data write to device */
-	case 0xF7:			/* OPEN DIRECTORY */
+	case 0xE2:			/* SET FILENAME FOR DEVICE SLOT */
 	case 0xF3:			/* WRITE_HOST_SLOTS */
+	case 0xF7:			/* OPEN DIRECTORY */
 		{
 			/*int n = 256;*/
 #ifdef DEBUG
@@ -1803,14 +1804,7 @@ void SIO_SwitchCommandFrame(int onoff)
 	}
 	else {
 		netsio_cmd_off_sync();
-		/* Wait for sync response */
-		int ticker = 0;
-		while (netsio_sync_wait) { 
-			SDL_Delay(5);
-			if (ticker > 7)
-				break;
-			ticker++;			
-		}
+		netsio_wait_for_sync(); /* Wait for sync response */
 		/* Log_print("sio: CMD OFF"); */
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
@@ -1877,16 +1871,8 @@ void SIO_PutByte(int byte)
 				if (sum == DataBuffer[ExpectedBytes - 1]) {
 					if (netsio_enabled) {
 						netsio_send_block(DataBuffer, ExpectedBytes-1); /* TODO: handle blocks > 512 bytes*/
-						// netsio_send_byte(sum);
 						netsio_send_byte_sync(sum);
-						/* Wait for sync response */
-						// int ticker = 0;
-						// while (netsio_sync_wait) {
-						// 	SDL_Delay(5);
-						// 	if (ticker > 7)
-						// 		break;
-						// 	ticker++;			
-						// }
+						netsio_wait_for_sync(); /* wait for sync response */
 						DataIndex = 0;
 						ExpectedBytes = 2;
 						POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + SIO_ACK_INTERVAL;
@@ -1957,11 +1943,15 @@ int SIO_GetByte(void)
 				DataIndex++; /* Should I do this?? */
 			}
 			else
+			{
 				byte = DataBuffer[DataIndex++];
-			if (DataIndex >= ExpectedBytes) {
+			}
+			if (DataIndex >= ExpectedBytes)
+			{
 				TransferStatus = SIO_NoFrame;
 			}
-			else {
+			else
+			{
 				/* set delay using the expected transfer speed */
 				POKEY_DELAYED_SERIN_IRQ = (DataIndex == 1) ? SIO_SERIN_INTERVAL
 					: ((SIO_SERIN_INTERVAL * POKEY_AUDF[POKEY_CHAN3] - 1) / 0x28 + 1);
