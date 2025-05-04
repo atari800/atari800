@@ -703,34 +703,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-bpc") == 0)
 				if (i_a) MONITOR_BPC(argv[++i]); else a_m = TRUE;
 #endif /* MONITOR_BREAK */
-/* NETSIO */
-			else if (strcmp(argv[i], "-netsio") == 0) {
-				/* Disable patched SIO for all devices */
-				ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
-				if (netsio_init(9997) < 0) {
-					perror("netsio_init");
-					return 1;
-				}
-
-				/* Wait for Fujinet before continuing */
-				Log_print("Waiting for FujiNet-PC...");
-				while (!netsio_enabled){
-					sleep(1);
-				}
-
-				/* Now we are connected. Wait just a bit longer and send our test command */
-				/*sleep(5);
-				netsio_test_cmd();
-				sleep(2);
-				return 0; 
-				*/
-				/* 
-				if (netsio_send_byte(0xFF) < 0) {
-					fprintf(stderr, "Failed to queue Cold‐Reset byte\n");
-				}*/
-
-			}
-/* NETSIO */
 			else {
 				/* all options known to main module tried but none matched */
 
