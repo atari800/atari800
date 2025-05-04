@@ -71,7 +71,6 @@ atari800_SOURCES = \
 	crc32.c crc32.h \
 	devices.c devices.h \
 	esc.c esc.h \
-	fujinet.c fujinet.h \
 	gtia.c gtia.h \
 	img_tape.c img_tape.h \
 	log.c log.h \
