@@ -21,6 +21,7 @@
 #include "netsio.h"
 #include "log.h"
 #include "pia.h" /* For toggling PROC & INT */
+#include "SDL/SDL.h" /* For SDL_Delay() */
 
 /* Flag to know when netsio is enabled */
 volatile int netsio_enabled = 0;
@@ -217,6 +218,18 @@ int netsio_init(uint16_t port) {
     return 0;
 }
 
+/* Called when a command frame with sync response is sent to FujiNet */
+void netsio_wait_for_sync(void)
+{
+    int ticker = 0;
+    while (netsio_sync_wait) {
+        SDL_Delay(5);
+        if (ticker > 7)
+            break;
+        ticker++;
+    }
+}
+
 /* Return number of bytes waiting from FujiNet to emulator */
 int netsio_available(void) {
     int avail = 0;
@@ -376,7 +389,7 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_ALIVE_REQUEST: {
                 uint8_t r = NETSIO_ALIVE_RESPONSE;
                 send_to_fujinet(&r, 1);
-                // Log_print("netsio: recv: IT'S ALIVE!");
+                /* Log_print("netsio: recv: IT'S ALIVE!"); */
                 break;
             }
 
