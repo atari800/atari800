@@ -192,6 +192,7 @@ int SIO_Initialise(int *argc, char *argv[])
 		SIO_format_sectorcount[i] = 720;
 	}
 	TransferStatus = SIO_NoFrame;
+	return 1;
 }
 
 /* umount disks so temporary files are deleted */
