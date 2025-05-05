@@ -265,9 +265,9 @@ int netsio_cmd_off(void)
 int netsio_cmd_off_sync(void)
 {
     Log_print("netsio: CMD OFF SYNC");
+    netsio_sync_num++;
     uint8_t p[2] = { NETSIO_COMMAND_OFF_SYNC, netsio_sync_num };
     send_to_fujinet(&p, sizeof(p));
-    netsio_sync_num++;
     netsio_sync_wait = 1; /* pause emulation til we hear back */
     return 0;
 }
@@ -299,10 +299,10 @@ int netsio_send_block(const uint8_t *block, ssize_t len) {
 /* DATA BYTE with SYNC */
 int netsio_send_byte_sync(uint8_t b)
 {
+    netsio_sync_num++;
     Log_print("netsio: send byte: 0x%02X sync: %d", b, netsio_sync_num);
     uint8_t p[3] = { NETSIO_DATA_BYTE_SYNC, b, netsio_sync_num};
     send_to_fujinet(&p, sizeof(p));
-    netsio_sync_num++;
     netsio_sync_wait = 1; /* pause emulation til we hear back */
     return 0;
 }
@@ -431,9 +431,9 @@ static void *fujinet_rx_thread(void *arg) {
                 uint8_t  ack_byte   = buf[3];
                 uint16_t write_size = buf[4] | (uint16_t)buf[5] << 8;
 
-                if (resp_sync != (uint8_t)(netsio_sync_num - 1)) {
+                if (resp_sync != netsio_sync_num) {
                     Log_print("netsio: recv: sync-response: got %u, want %u",
-                              resp_sync, (uint8_t)(netsio_sync_num - 1));
+                              resp_sync, netsio_sync_num);
                 } else {
                     if (ack_type == 0) {
                         Log_print("netsio: recv: sync %u NAK, dropping", resp_sync);
