@@ -1613,6 +1613,7 @@ static UBYTE Command_Frame_FN_Fuji(void)
 
 	switch (CommandFrame[1]) {
 	/* commands with no data */
+	case 0xDB:				/* CLOSE APP KEY */
 	case 0xD7:				/* MOUNT ALL */
 	case 0xD9:				/* EN/DIS ABLE CONFIG DISK */
 	case 0xE4:				/* SET DIRECTORY POSITION */
@@ -1679,6 +1680,7 @@ static UBYTE Command_Frame_FN_Fuji(void)
 	/* commands with N bytes response */
 	case 0xC4:				/* GET ADAPTERCONFIG EXTENDED */
 	case 0xDA:				/* GET DEVICE FULLPATH */
+	case 0xDD:				/* READ APP KEY */
 	case 0xF2:				/* READ DEVICE SLOTS */
 	case 0xF4:				/* READ HOST SLOTS */
 	case 0xF6:				/* READ DIRECTORY */
@@ -1714,7 +1716,12 @@ static UBYTE Command_Frame_FN_Fuji(void)
 #endif
 				n = CommandFrame[2]; /* aux1 */
 			}
-
+			else if (CommandFrame[1] == 0xDD) {
+#ifdef DEBUG
+				Log_print("READ APPKEY");
+#endif
+				n = 66;
+			}
 			UBYTE b;
 			int i = 0;
 
@@ -1745,9 +1752,12 @@ static UBYTE Command_Frame_FN_Fuji(void)
 			return 'A';
 		}
 	/* commands with data write to device */
-	case 0xE2:			/* SET FILENAME FOR DEVICE SLOT */
-	case 0xF3:			/* WRITE_HOST_SLOTS */
-	case 0xF7:			/* OPEN DIRECTORY */
+	case 0xDC:				/* OPEN APP KEY */
+	case 0xDE:				/* WRITE APP KEY */
+	case 0xE2:				/* SET FILENAME FOR DEVICE SLOT */
+	case 0xF1:				/* WRITE DEVICE SLOTS */
+	case 0xF3:				/* WRITE_HOST_SLOTS */
+	case 0xF7:				/* OPEN DIRECTORY */
 		{
 			/*int n = 256;*/
 #ifdef DEBUG
@@ -1755,6 +1765,14 @@ static UBYTE Command_Frame_FN_Fuji(void)
 				Log_print("OPEN DIRECTORY");
 			else if (CommandFrame[1] == 0xF3)
 				Log_print("WRITE_HOST_SLOTS");
+			else if (CommandFrame[1] == 0xDC)
+				Log_print("OPEN APP KEY");
+			else if (CommandFrame[1] == 0xDE)
+				Log_print("WRITE APP KEY");
+			else if (CommandFrame[1] == 0xE2)
+				Log_print("SET FILENAME FOR DEVICE SLOT");
+			else if (CommandFrame[1] == 0xF1)
+				Log_print("WRITE DEVICE SLOTS");
 #endif
 			UBYTE b;
 			netsio_recv_byte(&b);
