@@ -223,6 +223,7 @@ void netsio_wait_for_sync(void)
 {
     int ticker = 0;
     while (netsio_sync_wait) {
+        Log_print("netsio: waiting for sync response - %d", ticker);
         SDL_Delay(5);
         if (ticker > 7)
             break;
@@ -319,7 +320,9 @@ int netsio_recv_byte(uint8_t *b) {
         /* FIFO closed? */
         return -1;
     }
+#ifdef DEBUG2
     Log_print("netsio: read to emu: %02X", (unsigned)*b);
+#endif
     return 0;
 }
 
@@ -438,14 +441,14 @@ static void *fujinet_rx_thread(void *arg) {
                     if (ack_type == 0) {
                         Log_print("netsio: recv: sync %u NAK, dropping", resp_sync);
                     } else if (ack_type == 1) {
-                        Log_print("netsio: recv: sync %u ACK byte=0x%02X",
-                                  resp_sync, ack_byte);
+                        netsio_next_write_size = write_size;
+                        Log_print("netsio: recv: sync %u ACK byte=0x%02X  write_size=0x%04X",
+                                  resp_sync, ack_byte, write_size);
                         enqueue_to_emulator(&ack_byte, 1);
                     } else {
                         Log_print("netsio: recv: sync %u unknown ack_type %u",
                                   resp_sync, ack_type);
                     }
-                    netsio_next_write_size = write_size;
                 }
                 netsio_sync_wait = 0; /* continue emulation */
                 break;

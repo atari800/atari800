@@ -260,6 +260,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 #endif
 		if ((POKEY_SKCTL & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
+		else if (netsio_enabled && (POKEY_SKCTL & 0x70) == 0x70) /* TODO: proper way to enable modem */
+			NetSIO_PutByte(byte);
+
 		/* check if cassette 2-tone mode has been enabled */
 		if ((POKEY_SKCTL & 0x08) == 0x00) {
 			/* intelligent device */
@@ -499,6 +502,17 @@ void POKEY_Scanline(void)
 				printf("SERIO: SERIN Interrupt missed, bytevalue %02x\n", POKEY_SERIN);
 			}
 #endif
+		}
+	}
+	/* Check NetSIO for pending Rx bytes */
+	if (netsio_enabled && POKEY_DELAYED_SERIN_IRQ == 0) {
+		int avail = netsio_available();
+		if (avail > 0) {
+			 /* TODO make various SIO speeds working, at least 19200 ;-) */
+			if (avail == 1)
+				POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL * 2 + 4;
+			else
+			 	POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + 2;
 		}
 	}
 
