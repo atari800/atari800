@@ -326,6 +326,22 @@ int netsio_recv_byte(uint8_t *b) {
     return 0;
 }
 
+/* Send netsio COLD reset 0xFF */
+int netsio_cold_reset(void) {
+    uint8_t pkt = 0xFF;
+    Log_print("netsio: cold reset");
+    send_to_fujinet(&pkt, 1);
+    return 0;
+}
+
+/* Send netsio WARM reset 0xFE */
+int netsio_warm_reset(void) {
+    uint8_t pkt = 0xFE;
+    Log_print("netsio: warm reset");
+    send_to_fujinet(&pkt, 1);
+    return 0;
+}
+
 /* Send a test command frame to fujinet-pc */
 void netsio_test_cmd(void)
 {

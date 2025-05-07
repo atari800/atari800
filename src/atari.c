@@ -241,6 +241,8 @@ void Atari800_Warmstart(void)
 #ifdef __PLUS
 	HandleResetEvent();
 #endif
+	if (netsio_enabled)
+		netsio_warm_reset();
 }
 
 void Atari800_Coldstart(void)
@@ -273,6 +275,8 @@ void Atari800_Coldstart(void)
 		BIT3_Reset();
 	}
 #endif
+	if(netsio_enabled)
+		netsio_cold_reset();
 }
 
 int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
@@ -605,13 +609,13 @@ int Atari800_Initialise(int *argc, char *argv[])
 				return 1;
 			}
 
-			/* Wait for Fujinet before continuing */
+			/* Wait for Fujinet before continuing
 			Log_print("Waiting for FujiNet-PC...");
 			while (!netsio_enabled)
 			{
 				sleep(1);
 			}
-			Log_print("FujiNet connected!");
+			Log_print("FujiNet connected!"); */
 		}
 /* NETSIO */
 		else {

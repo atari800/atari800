@@ -82,6 +82,8 @@ int netsio_cmd_off_sync(void);
 void netsio_toggle_cmd(int v);
 void netsio_wait_for_sync(void);
 int netsio_available(void);
+int netsio_cold_reset(void);
+int netsio_warm_reset(void);
 
 void netsio_test_cmd(void);
 
