@@ -21,7 +21,11 @@
 #include "netsio.h"
 #include "log.h"
 #include "pia.h" /* For toggling PROC & INT */
-#include "SDL/SDL.h" /* For SDL_Delay() */
+#if defined(__APPLE__) && defined(__MACH__)
+#include "SDL.h" /* For SDL_Delay() on macOS */
+#else
+#include "SDL/SDL.h" /* For SDL_Delay() on Linux */
+#endif
 
 /* Flag to know when netsio is enabled */
 volatile int netsio_enabled = 0;
