@@ -98,25 +98,50 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
         Log_print("netsio: can't send_to_fujinet, no address");
         return;
     }
+    
+    /*
+     * PLATFORM SPECIFIC: BSD Socket API Difference
+     * macOS/BSD: Requires exact address structure size for socket operations
+     * Linux: More forgiving, accepts larger-than-necessary address length
+     *
+     * Using the correct size for IPv4 addresses ensures compatibility with both Linux and macOS
+     */
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+    
+    /*
+     * PLATFORM SPECIFIC: Socket flags handling
+     * MSG_NOSIGNAL is defined but not supported on macOS (will cause EINVAL)
+     * Linux uses MSG_NOSIGNAL to prevent SIGPIPE when the connection is closed
+     * 
+     * On macOS, SIGPIPE is typically handled using the SO_NOSIGPIPE socket option
+     * instead, but we're just avoiding the flag entirely for simplicity
+     */
+    int flags = 0;
+#if defined(MSG_NOSIGNAL) && !defined(__APPLE__)
+    /* Only use MSG_NOSIGNAL on Linux and other platforms that support it */
+    flags |= MSG_NOSIGNAL;
+#endif
 
     n = sendto(
         sockfd,
-        pkt, len, 0,
+        pkt, len, flags,
         (struct sockaddr *)&fujinet_addr,
-        fujinet_addr_len
+        addr_len
     );
     if (n < 0) {
         if (errno == EINTR) {
             /* transient, try once more */
             n = sendto(
                 sockfd,
-                pkt, len, 0,
+                pkt, len, flags,
                 (struct sockaddr *)&fujinet_addr,
-                fujinet_addr_len
+                addr_len
             );
         }
         if (n < 0) {
-            perror("netsio: sendto FujiNet");
+            char errmsg[256];
+            snprintf(errmsg, sizeof(errmsg), "netsio: sendto FujiNet failed with errno %d: %s", errno, strerror(errno));
+            Log_print("%s", errmsg);
             return;
         }
     } else if ((size_t)n != len) {
@@ -187,21 +212,37 @@ int netsio_init(uint16_t port) {
         perror("netsio: socket");
         return -1;
     }
+    /* Fill in the structure with port number, any IP */
     memset(&addr, 0, sizeof(addr));
+    
+    /*
+     * PLATFORM SPECIFIC: macOS/BSD Socket API Difference
+     * BSD sockets (including macOS) require sin_len field to be set
+     * Linux ignores this field since it doesn't exist in the Linux socket API
+     */
+#ifdef __APPLE__
+    addr.sin_len = sizeof(addr); /* Only needed on macOS/BSD systems */
+#endif
+    
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    /*
-    if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("netsio: connect");
-        close(sockfd);
-        return -1;
-    }*/
+    
+    /* 
+     * Enable broadcast on the socket - required on all platforms
+     * This is needed for sending broadcast packets to FujiNet
+     * Works the same way on both Linux and macOS
+     */
+    int broadcast = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        perror("netsio setsockopt SO_BROADCAST");
+    }
 
     /* Bind to the socket on requested port */
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    perror("netsio bind");
-    close(sockfd);
+        perror("netsio bind");
+        close(sockfd);
+        return -1;
     }
 
     /* spawn receiver thread */
@@ -366,7 +407,28 @@ static void *fujinet_rx_thread(void *arg) {
     uint8_t packet[65536];
 
     for (;;) {
+        /* 
+         * Always initialize with full sockaddr_storage size for receiving
+         * This works on both Linux and macOS - we need full size for first connect
+         */
         fujinet_addr_len = sizeof(fujinet_addr);
+        
+        /*
+         * PLATFORM SPECIFIC: BSD Socket API Difference
+         * macOS/BSD: The sin_len field must be set to the size of the address structure
+         * Linux: Does not have or use the sin_len field
+         *
+         * If we've already established communication and know it's IPv4, we set the
+         * appropriate length in the sin_len field to ensure proper socket operation on macOS.
+         */
+#ifdef __APPLE__
+        if (fujinet_addr.ss_family == AF_INET) {
+            /* Only on macOS/BSD: Set sin_len for existing IPv4 connection */
+            struct sockaddr_in *addr_in = (struct sockaddr_in *)&fujinet_addr;
+            addr_in->sin_len = sizeof(struct sockaddr_in);
+        }
+#endif
+        
         ssize_t n = recvfrom(sockfd,
                              buf, sizeof(buf),
                              0,
@@ -377,6 +439,12 @@ static void *fujinet_rx_thread(void *arg) {
             continue;
         }
         fujinet_known = 1;
+        
+        /* Update the address length to the correct size for future sends */
+        if (fujinet_addr.ss_family == AF_INET) {
+            /* For IPv4, use sizeof sockaddr_in */
+            fujinet_addr_len = sizeof(struct sockaddr_in);
+        }
 
         /* Every packet must be at least one byte (the command) */
         if (n < 1) {
