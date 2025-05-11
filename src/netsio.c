@@ -459,7 +459,7 @@ static void *fujinet_rx_thread(void *arg) {
         if (n <= 0)
         {
 #ifdef DEBUG
-            Log_prints("netsio: recv");
+            Log_print("netsio: recv");
 #endif
             continue;
         }
