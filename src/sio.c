@@ -48,8 +48,9 @@
 #ifndef BASIC
 #include "statesav.h"
 #endif
-/* NETSIO */
+#ifdef NETSIO
 #include "netsio.h"
+#endif /* NETSIO */
 
 #undef DEBUG_PRO
 #undef DEBUG_VAPI
@@ -1498,13 +1499,16 @@ void SIO_SwitchCommandFrame(int onoff)
 {
 	if (onoff)
 	{				/* Enabled */
+#ifdef NETSIO
 		if (netsio_enabled)
 			netsio_cmd_on();
-		if (TransferStatus != SIO_NoFrame) {
+#endif /* NETSIO */
+		if (TransferStatus != SIO_NoFrame) 
+#ifdef NETSIO
 			/* With NetSIO we do not track end of read frame, SIO_ReadFrame is last status */
 			if (netsio_enabled && TransferStatus != SIO_ReadFrame)
+#endif /* NETSIO */
 				Log_print("Unexpected command frame at state %x.", TransferStatus);
-		}
 		CommandIndex = 0;
 		DataIndex = 0;
 		ExpectedBytes = 5;
@@ -1512,24 +1516,32 @@ void SIO_SwitchCommandFrame(int onoff)
 	}
 	else
 	{
+#ifdef NETSIO
 		if (netsio_enabled)
 		{
-			if (CommandIndex < ExpectedBytes) {
+			if (CommandIndex < ExpectedBytes)
+			{
+#ifdef DEBUG
 				Log_print("Short command frame: %d bytes", CommandIndex);
+#endif
 				/* a) Send short CF ...
 				if (CommandIndex > 0)
 					netsio_send_block(CommandFrame, CommandIndex);
 				*/
 				/* b) Skip sending short/invalid CF */
 				TransferStatus = SIO_NoFrame;
-			} else {
+			}
+			else
+			{
 				netsio_cmd_off_sync();
 				netsio_wait_for_sync(); /* Wait for sync response (ACK/NAK/NONE) */
 				/* POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL * 8;*/
 				TransferStatus = SIO_StatusRead; /* Receive ACK/NAK in SIO_GetByte */
 			}
 		}
-		else if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
+		else
+#endif /* NETSIO */		
+		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
 			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
 				Log_print("Command frame %02x unfinished.", TransferStatus);
@@ -1561,7 +1573,7 @@ static UBYTE WriteSectorBack(void)
 	}
 }
 
-#define NETSIO_WRITE_CHUNK_SIZE 65
+#ifdef NETSIO
 void NetSIO_PutByte(int byte)
 {
 #ifdef DEBUG2
@@ -1570,23 +1582,30 @@ void NetSIO_PutByte(int byte)
 	switch (TransferStatus) {
 	case SIO_CommandFrame:
 		/* Transmitting Command Frame bytes */
-		if (CommandIndex < ExpectedBytes) {
+		if (CommandIndex < ExpectedBytes) 
+		{
 			CommandFrame[CommandIndex++] = byte; /* Collect CF bytes into buffer */
-			if (CommandIndex == ExpectedBytes) {
+			if (CommandIndex == ExpectedBytes)
+			{
 				netsio_send_block(CommandFrame, ExpectedBytes); /* Send CF buffer */
 			}
 		}
-		else {
+		else
+		{
+#ifdef DEBUG
 			Log_print("Long Command Frame: %d bytes", CommandIndex);
+#endif
 			netsio_send_byte(byte); /* Send extra byte */
 		}
 		break;
 	case SIO_WriteFrame:
 		/* Transmitting Data Frame (SIO Write command) */
-		if (DataIndex < ExpectedBytes) {
+		if (DataIndex < ExpectedBytes)
+		{
 			/* TODO: bleh grh sending multiple data blocks - make it better */
 			DataBuffer[DataIndex++] = byte;  /* Collect data bytes into buffer */
-			if (DataIndex == ExpectedBytes) {
+			if (DataIndex == ExpectedBytes)
+			{
 				if ((DataIndex-1) % NETSIO_WRITE_CHUNK_SIZE > 0)
 					 /* Send data buffer */
 					netsio_send_block(DataBuffer + NETSIO_WRITE_CHUNK_SIZE * ((DataIndex-1) / NETSIO_WRITE_CHUNK_SIZE), (DataIndex-1) % NETSIO_WRITE_CHUNK_SIZE);
@@ -1596,13 +1615,17 @@ void NetSIO_PutByte(int byte)
 				POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL * 8;
 				DataIndex = 0;
 				TransferStatus = SIO_FinalStatus; /* Receive ACK+COMPLETE/NAK in SIO_GetByte */
-			} else {
-				if (DataIndex % NETSIO_WRITE_CHUNK_SIZE == 0) {
+			}
+			else
+			{
+				if (DataIndex % NETSIO_WRITE_CHUNK_SIZE == 0)
+				{
 					netsio_send_block(DataBuffer + NETSIO_WRITE_CHUNK_SIZE * ((DataIndex-1) / NETSIO_WRITE_CHUNK_SIZE), NETSIO_WRITE_CHUNK_SIZE); /* Send data buffer */
 				}
 			}
 		}
-		else {
+		else
+		{
 			Log_print("Invalid data frame!");
 		}
 		break;
@@ -1612,16 +1635,18 @@ void NetSIO_PutByte(int byte)
 		break;
 	}
 }
+#endif /* NETSIO */
 
 /* Put a byte that comes out of POKEY. So get it here... */
 void SIO_PutByte(int byte)
 {
+#ifdef NETSIO
 	if (netsio_enabled)
 	{
 		NetSIO_PutByte(byte);
 		return;
 	}
-
+#endif /* NETSIO */
 	switch (TransferStatus) {
 	case SIO_CommandFrame:
 		if (CommandIndex < ExpectedBytes) {
@@ -1681,49 +1706,76 @@ void SIO_PutByte(int byte)
 #endif
 }
 
+#ifdef NETSIO
 int NetSIO_GetByte(void)
 {
 	UBYTE b;
 	int ts = TransferStatus;
 
-	if (netsio_recv_byte(&b) < 0) {
+	if (netsio_recv_byte(&b) < 0)
+	{
+#ifdef DEBUG
 		Log_print("NetSIO_GetByte: recv error");
+#endif
 		b = 0xFF;
 	}
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
-		if (b == 'A') { /* ACK received */
-			if (netsio_next_write_size > 0) {
+		if (b == 'A')
+		{ /* ACK received */
+			if (netsio_next_write_size > 0)
+			{
 				TransferStatus = SIO_WriteFrame;
 				ExpectedBytes = netsio_next_write_size;
 				DataIndex = 0;
 			}
-			else {
+			else
+			{
 				TransferStatus = SIO_ReadFrame;
 			}
-		} else if (b == 'N') { /* NAK received */
+		}
+		else if (b == 'N')
+		{ /* NAK received */
+#ifdef DEBUG
 			Log_print("NetSIO_GetByte: NAK received");
+#endif
 			TransferStatus = SIO_NoFrame;
-		} else {
+		}
+		else
+		{
+#ifdef DEBUG
 			Log_print("NetSIO_GetByte: unexpected byte %02x", b);
+#endif
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
 	case SIO_ReadFrame:
 		break;
 	case SIO_FinalStatus: /* After SIO_WriteFrame */
-		if (++DataIndex == 1) {
-			if (b == 'A') { /* ACK received */
+		if (++DataIndex == 1)
+		{
+			if (b == 'A') /* ACK received */
+			{
 				/* Wait for C/E */
-			} else if (b == 'N') { /* NAK received */
+			}
+			else if (b == 'N') /* NAK received */
+			{
+#ifdef DEBUG
 				Log_print("NetSIO_GetByte: NAK received");
-				TransferStatus = SIO_NoFrame;
-			} else {
-				Log_print("NetSIO_GetByte: unexpected byte %02x", b);
+#endif
 				TransferStatus = SIO_NoFrame;
 			}
-		} else {
+			else
+			{
+#ifdef DEBUG
+				Log_print("NetSIO_GetByte: unexpected byte %02x", b);
+#endif
+				TransferStatus = SIO_NoFrame;
+			}
+		}
+		else
+		{
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1737,16 +1789,17 @@ int NetSIO_GetByte(void)
 
 	return (int)b;
 }
+#endif /* NETSIO */
 
 /* Get a byte from the floppy to the pokey. */
 int SIO_GetByte(void)
 {
 	int byte = 0;
 
+#ifdef NETSIO
 	if (netsio_enabled)
-	{
 		return NetSIO_GetByte();
-	}
+#endif /* NETSIO */
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:

@@ -76,7 +76,6 @@ atari800_SOURCES = \
 	log.c log.h \
 	memory.c memory.h \
 	monitor.c monitor.h \
-	netsio.c netsio.h \
 	pbi.c pbi.h \
 	pia.c pia.h \
 	pokey.c pokey.h \
@@ -240,6 +239,9 @@ atari800_SOURCES += pbi_bb.c pbi_bb.h
 endif
 if WANT_PBI_MIO_OR_BB
 atari800_SOURCES += pbi_scsi.c pbi_scsi.h
+endif
+if WANT_NETSIO
+atari800_SOURCES += netsio.c netsio.h
 endif
 if WANT_PBI_XLD
 if WITH_SOUND

@@ -2,6 +2,8 @@
 #ifndef NETSIO_H
 #define NETSIO_H
 
+extern volatile int netsio_enabled;
+
 #include <stdint.h>
 #include <pthread.h>
 
@@ -33,6 +35,8 @@
 #define NETSIO_WARM_RESET         0xFE
 #define NETSIO_COLD_RESET         0xFF
 
+#define NETSIO_WRITE_CHUNK_SIZE 65
+
 /* FIFO buffer depth */
 #define NETSIO_FIFO_SIZE 4096
 
@@ -44,18 +48,14 @@ typedef struct NetSIOMsg {
     double tstamp;
 } NetSIOMsg;
 
-extern volatile int netsio_enabled;
 extern uint8_t netsio_sync_num;
 extern volatile int netsio_sync_wait;
 extern int netsio_cmd_state;
 extern volatile int netsio_next_write_size;
 
-/* FIFO pipes:
-* fds0: FujiNet->emulator
-* fds1: emulator->FujiNet
+/* FIFO pipes: fds0: FujiNet->emulator
 */
 extern int fds0[2];
-extern int fds1[2];
 
 /* Initialize NetSIO subsystem, connecting to FujiNet-PC at host:port. */
 /* Returns 0 on success, non-zero on error. */

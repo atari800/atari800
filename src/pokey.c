@@ -49,7 +49,9 @@
 #include "log.h"
 #include "input.h"
 #include "pbi.h"
+#ifdef NETSIO
 #include "netsio.h"
+#endif
 
 #ifdef POKEYREC
 #include "pokeyrec.h"
@@ -260,8 +262,10 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 #endif
 		if ((POKEY_SKCTL & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
+#ifdef NETSIO
 		else if (netsio_enabled && (POKEY_SKCTL & 0x70) == 0x70) /* TODO: proper way to enable modem */
 			NetSIO_PutByte(byte);
+#endif
 
 		/* check if cassette 2-tone mode has been enabled */
 		if ((POKEY_SKCTL & 0x08) == 0x00) {
@@ -504,6 +508,7 @@ void POKEY_Scanline(void)
 #endif
 		}
 	}
+#ifdef NETSIO
 	/* Check NetSIO for pending Rx bytes */
 	if (netsio_enabled && POKEY_DELAYED_SERIN_IRQ == 0) {
 		int avail = netsio_available();
@@ -515,6 +520,7 @@ void POKEY_Scanline(void)
 			 	POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + 2;
 		}
 	}
+#endif /* NETSIO */
 
 	if (POKEY_DELAYED_SEROUT_IRQ > 0) {
 		if (--POKEY_DELAYED_SEROUT_IRQ == 0) {

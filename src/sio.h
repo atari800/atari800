@@ -35,7 +35,9 @@ void SIO_Handler(void);
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length);
 void SIO_SwitchCommandFrame(int onoff);
+#ifdef NETSIO
 void NetSIO_PutByte(int byte);
+#endif /* NETSIO */
 void SIO_PutByte(int byte);
 int SIO_GetByte(void);
 int SIO_Initialise(int *argc, char *argv[]);
