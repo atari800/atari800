@@ -916,10 +916,15 @@ AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
 dnl NetSIO / FujiNet support (only on Linux or MacOS)
     A8_OPTION(netsio,no,
-              [Support NetSIO Protocol I/O interface (FujiNet) (default=OFF)],
-              NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
-              )
+            [Support NetSIO Protocol I/O interface (FujiNet) (default=OFF)],
+            NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
+            )
 AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
+if [[ "$a8_host" = "win" ]]; then
+    AC_CHECK_HEADERS([windows.h winsock2.h],,WANT_NETSIO=no)
+else
+    AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,WANT_NETSIO=no)
+fi
 
 dnl Select/detect sound interface.
 
