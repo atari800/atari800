@@ -914,6 +914,13 @@ A8_OPTION(pbi_bb,yes,
      )
 AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
+dnl NetSIO / FujiNet support (only on Linux or MacOS)
+    A8_OPTION(netsio,no,
+              [Support NetSIO Protocol I/O interface (FujiNet) (default=OFF)],
+              NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
+              )
+AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
+
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
@@ -1406,6 +1413,7 @@ echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
 echo "Using Pokey registers recording?......: $WANT_POKEYREC"
+echo "Using NetSIO/FujiNet emulation?.......: $WANT_NETSIO"
 echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
