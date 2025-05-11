@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: install depends
-      run: sudo apt-get install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev
+      run: sudo apt-get install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev libreadline-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
