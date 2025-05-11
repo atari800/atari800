@@ -209,10 +209,6 @@ int netsio_init(uint16_t port) {
 #endif
         return -1;
     }
-    /* fds0[0] = emulator reads here (FujiNet->emu)
-    fds0[1] = netsio_rx_thread writes here */
-    /* fds1[0] = netsio_tx_thread reads here
-    fds1[1] = emulator writes here (emu->FujiNet) */
 
     /* connect socket to FujiNet */
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
