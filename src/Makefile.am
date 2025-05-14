@@ -240,6 +240,9 @@ endif
 if WANT_PBI_MIO_OR_BB
 atari800_SOURCES += pbi_scsi.c pbi_scsi.h
 endif
+if WANT_NETSIO
+atari800_SOURCES += netsio.c netsio.h
+endif
 if WANT_PBI_XLD
 if WITH_SOUND
 atari800_SOURCES += pbi_xld.c pbi_xld.h
