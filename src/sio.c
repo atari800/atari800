@@ -174,11 +174,13 @@ char SIO_status[256];
 #define SIO_FormatFrame     (0x06)
 static UBYTE CommandFrame[6];
 static int CommandIndex = 0;
-/*static UBYTE DataBuffer[256 + 3];*/
 static UBYTE DataBuffer[65535 + 3]; /* large buffer for FujiNet */
 static int DataIndex = 0;
 static int TransferStatus = SIO_NoFrame;
 static int ExpectedBytes = 0;
+#ifdef NETSIO
+int NetSIO_GetByte(void);
+#endif
 
 int ignore_header_writeprotect = FALSE;
 
@@ -1712,13 +1714,18 @@ int NetSIO_GetByte(void)
 	UBYTE b;
 	int ts = TransferStatus;
 
-	if (netsio_recv_byte(&b) < 0)
+	if(netsio_available() > 0)
 	{
+		if (netsio_recv_byte(&b) < 0)
+		{
 #ifdef DEBUG
-		Log_print("NetSIO_GetByte: recv error");
+			Log_print("NetSIO_GetByte: recv error");
 #endif
-		b = 0xFF;
+			b = 0xFF;
+		}
 	}
+	else
+		b = 0xFF;
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
