@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #include "netsio.h"
 #include "log.h"
 #include "pia.h" /* For toggling PROC & INT */
@@ -25,6 +26,10 @@
 #else
 #include "SDL/SDL.h" /* For SDL_Delay() on Linux */
 #endif
+
+static char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len);
+static void send_byte_to_fujinet(uint8_t data_byte);
+static void send_block_to_fujinet(const uint8_t *block, size_t len);
 
 /* Flag to know when netsio is enabled */
 volatile int netsio_enabled = 0;
@@ -55,9 +60,10 @@ char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len) {
     /* each byte takes "XX " == 3 chars, +1 for trailing NUL */
     size_t needed = len * 3 + 1;
     char *s = malloc(needed);
+    char *p;
     size_t i = 0;
     if (!s) return NULL;
-    char *p = s;
+    p = s;
     for (i = 0; i < len; i++)
     {
         sprintf(p, "%02X ", buf[offset + i]);
@@ -92,7 +98,13 @@ static void enqueue_to_emulator(const uint8_t *pkt, size_t len) {
 /* send a packet to FujiNet socket */
 static void send_to_fujinet(const uint8_t *pkt, size_t len) {
     ssize_t n;
-
+    socklen_t addr_len;
+    int flags = 0;
+#ifdef DEBUG2
+    size_t buf_size = len * 3 + 1;
+    char *hexdump = malloc(buf_size);
+    size_t pos = 0, i = 0;
+#endif
     /* if we never received a ping from FujiNet or we have no address to reply to */
     if (!fujinet_known || fujinet_addr.ss_family != AF_INET)
     {
@@ -105,13 +117,12 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
     /*
      * Using the correct size for IPv4 addresses ensures compatibility with both Linux and macOS
      */
-    socklen_t addr_len = sizeof(struct sockaddr_in);
+    addr_len = sizeof(struct sockaddr_in);
     
     /*
      * On macOS, SIGPIPE is typically handled using the SO_NOSIGPIPE socket option
      * instead, but we're just avoiding the flag entirely for simplicity
      */
-    int flags = 0;
 #if defined(MSG_NOSIGNAL) && !defined(__APPLE__)
     /* Only use MSG_NOSIGNAL on Linux and other platforms that support it */
     flags |= MSG_NOSIGNAL;
@@ -137,7 +148,6 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
         }
         if (n < 0)
         {
-            char errmsg[256];
 #ifdef DEBUG
             Log_print("netsio: sendto fn failed: %d", errno);
 #endif
@@ -154,10 +164,6 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
 
 #ifdef DEBUG2
     /* build a hex string: each byte "XX " */
-    size_t buf_size = len * 3 + 1;
-    char hexdump[buf_size];
-    size_t pos = 0;
-    size_t i = 0;
     for (i = 0; i < len; i++) {
         /* snprintf returns number of chars (excluding trailing NUL) */
         int written = snprintf(&hexdump[pos], buf_size - pos, "%02X ", pkt[i]);
@@ -168,12 +174,13 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
     }
     hexdump[pos] = '\0';
     Log_print("netsio: send: %zu bytes → %s", len, hexdump);
+    free(hexdump);
 #endif
 }
 
 
 /* Send a single byte as a DATA_BYTE packet */
-void send_byte_to_fujinet(uint8_t data_byte) {
+static void send_byte_to_fujinet(uint8_t data_byte) {
     uint8_t packet[2];
     packet[0] = NETSIO_DATA_BYTE;
     packet[1] = data_byte;
@@ -181,10 +188,10 @@ void send_byte_to_fujinet(uint8_t data_byte) {
 }
 
 /* Send up to 512 bytes as a DATA_BLOCK packet */
-void send_block_to_fujinet(const uint8_t *block, size_t len) {
-    if (len == 0 || len > 512) return;  /* sanity check */
-
+static void send_block_to_fujinet(const uint8_t *block, size_t len) {
     uint8_t packet[512 + 2];
+
+    if (len == 0 || len > 512) return;  /* sanity check */
     packet[0] = NETSIO_DATA_BLOCK;
     memcpy(&packet[1], block, len);
     /* Pad the end with a junk byte or FN-PC won't accept the packet */
@@ -199,7 +206,8 @@ void send_block_to_fujinet(const uint8_t *block, size_t len) {
 */
 int netsio_init(uint16_t port) {
     struct sockaddr_in addr;
-    pthread_t rx_thread, tx_thread;
+    pthread_t rx_thread;
+    int broadcast = 1;
 
     /* create emulator <-> netsio FIFOs */
     if (pipe(fds0) < 0)
@@ -209,6 +217,8 @@ int netsio_init(uint16_t port) {
 #endif
         return -1;
     }
+
+    /* fcntl(fds0[0], F_SETFL, O_NONBLOCK); */
 
     /* connect socket to FujiNet */
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -238,7 +248,6 @@ int netsio_init(uint16_t port) {
      * This is needed for sending broadcast packets to FujiNet
      * Works the same way on both Linux and macOS
      */
-    int broadcast = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
     {
 #ifdef DEBUG
@@ -280,7 +289,10 @@ void netsio_wait_for_sync(void)
 #endif
         SDL_Delay(5);
         if (ticker > 7)
+        {
+            netsio_sync_wait = 0;
             break;
+        }
         ticker++;
     }
 }
@@ -304,11 +316,12 @@ int netsio_available(void) {
 /* COMMAND ON */
 int netsio_cmd_on(void)
 {
+    uint8_t p;
+    p = NETSIO_COMMAND_ON;
 #ifdef DEBUG
     Log_print("netsio: CMD ON");
 #endif
     netsio_cmd_state = 1;
-    uint8_t p = NETSIO_COMMAND_ON;
     send_to_fujinet(&p, 1);
     return 0;
 }
@@ -316,10 +329,11 @@ int netsio_cmd_on(void)
 /* COMMAND OFF */
 int netsio_cmd_off(void)
 {
+    uint8_t p;
+    p = NETSIO_COMMAND_OFF;
 #ifdef DEBUG
     Log_print("netsio: CMD OFF");
 #endif
-    uint8_t p = NETSIO_COMMAND_OFF;
     send_to_fujinet(&p, 1);
     return 0;
 }
@@ -327,12 +341,14 @@ int netsio_cmd_off(void)
 /* COMMAND OFF with SYNC */
 int netsio_cmd_off_sync(void)
 {
+    uint8_t p[2];
+    p[0] = NETSIO_COMMAND_OFF_SYNC;
+    netsio_sync_num++;
+    p[1] = netsio_sync_num;
 #ifdef DEBUG
     Log_print("netsio: CMD OFF SYNC");
 #endif
-    netsio_sync_num++;
-    uint8_t p[2] = { NETSIO_COMMAND_OFF_SYNC, netsio_sync_num };
-    send_to_fujinet(&p, sizeof(p));
+    send_to_fujinet(p, sizeof(p));
     netsio_sync_wait = 1; /* pause emulation until we hear back or timeout */
     return 0;
 }
@@ -348,11 +364,13 @@ void netsio_toggle_cmd(int v)
 
 /* The emulator calls this to send a data byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
-    uint8_t pkt[2] = { NETSIO_DATA_BYTE, b };
+    uint8_t pkt[2];
+    pkt[0] = NETSIO_DATA_BYTE;
+    pkt[1] = b;
 #ifdef DEBUG
     Log_print("netsio: send byte: %02X", b);
 #endif
-    send_to_fujinet(&pkt, 2);
+    send_to_fujinet(pkt, 2);
     return 0;
 }
 
@@ -362,17 +380,21 @@ int netsio_send_block(const uint8_t *block, ssize_t len) {
 #ifdef DEBUG
     Log_print("netsio: send block, %i bytes:\n  %s", len, buf_to_hex(block, 0, len));
 #endif
+    return 0;
 }
 
 /* DATA BYTE with SYNC */
 int netsio_send_byte_sync(uint8_t b)
 {
+    uint8_t p[3];
+    p[0] = NETSIO_DATA_BYTE_SYNC;
+    p[1] = b;
     netsio_sync_num++;
+    p[2] = netsio_sync_num;
 #ifdef DEBUG
     Log_print("netsio: send byte: 0x%02X sync: %d", b, netsio_sync_num);
 #endif
-    uint8_t p[3] = { NETSIO_DATA_BYTE_SYNC, b, netsio_sync_num};
-    send_to_fujinet(&p, sizeof(p));
+    send_to_fujinet(p, sizeof(p));
     netsio_sync_wait = 1; /* pause emulation until we hear back or timeout s*/
     return 0;
 }
@@ -429,6 +451,8 @@ void netsio_test_cmd(void)
 static void *fujinet_rx_thread(void *arg) {
     uint8_t buf[4096];
     uint8_t packet[65536];
+    uint8_t cmd;
+    ssize_t n;
 
     for (;;)
     {
@@ -450,7 +474,7 @@ static void *fujinet_rx_thread(void *arg) {
         }
 #endif
         
-        ssize_t n = recvfrom(sockfd,
+        n = recvfrom(sockfd,
                              buf, sizeof(buf),
                              0,
                              (struct sockaddr *)&fujinet_addr,
@@ -480,7 +504,7 @@ static void *fujinet_rx_thread(void *arg) {
             continue;
         }
 
-        uint8_t cmd = buf[0];
+        cmd = buf[0];
 
         switch (cmd)
         {
@@ -524,6 +548,7 @@ static void *fujinet_rx_thread(void *arg) {
 
             case NETSIO_CREDIT_STATUS:
             {
+                uint8_t reply[2];
                 /* packet should be 2 bytes long */
                 if (n < 2)
                 {
@@ -531,7 +556,8 @@ static void *fujinet_rx_thread(void *arg) {
                     Log_print("netsio: recv: CREDIT_STATUS packet too short (%zd)", n);
 #endif
                 }
-                uint8_t reply[2] = { NETSIO_CREDIT_UPDATE, 3 };
+                reply[0] = NETSIO_CREDIT_UPDATE;
+                reply[1] = 3;
                 send_to_fujinet(reply, sizeof(reply));
 #ifdef DEBUG
                 Log_print("netsio: recv: credit status & response");
@@ -542,6 +568,7 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_SPEED_CHANGE:
             {
                 /* packet: [cmd][baud32le] */
+                uint32_t baud;
                 if (n < 5)
                 {
 #ifdef DEBUG
@@ -549,10 +576,10 @@ static void *fujinet_rx_thread(void *arg) {
 #endif
                     break;
                 }
-                uint32_t baud = buf[1]
-                                | (uint32_t)buf[2] << 8
-                                | (uint32_t)buf[3] << 16
-                                | (uint32_t)buf[4] << 24;
+                baud  = (uint32_t)buf[1];
+                baud |= (uint32_t)buf[2] <<  8;
+                baud |= (uint32_t)buf[3] << 16;
+                baud |= (uint32_t)buf[4] << 24;
 #ifdef DEBUG
                 Log_print("netsio: recv: requested baud rate %u", baud);
 #endif
@@ -564,6 +591,8 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_SYNC_RESPONSE:
             {
                 /* packet: [cmd][sync#][ack_type][ack_byte][write_lo][write_hi] */
+                uint8_t resp_sync, ack_type, ack_byte, write_size;
+
                 if (n < 6)
                 {
 #ifdef DEBUG
@@ -571,10 +600,10 @@ static void *fujinet_rx_thread(void *arg) {
 #endif
                     break;
                 }
-                uint8_t  resp_sync  = buf[1];
-                uint8_t  ack_type   = buf[2];
-                uint8_t  ack_byte   = buf[3];
-                uint16_t write_size = buf[4] | (uint16_t)buf[5] << 8;
+                resp_sync  = buf[1];
+                ack_type   = buf[2];
+                ack_byte   = buf[3];
+                write_size = buf[4] | (uint16_t)buf[5] << 8;
 
                 if (resp_sync != netsio_sync_num)
                 {
@@ -632,6 +661,7 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_DATA_BYTE:
             {
                 /* packet: [cmd][data] */
+                uint8_t data;
                 if (n < 2)
                 {
 #ifdef DEBUG
@@ -639,7 +669,7 @@ static void *fujinet_rx_thread(void *arg) {
 #endif
                     break;
                 }
-                uint8_t data = buf[1];
+                data = buf[1];
 #ifdef DEBUG
                 Log_print("netsio: recv: data byte: 0x%02X", data);
 #endif
@@ -650,6 +680,7 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_DATA_BLOCK:
             {
                 /* packet: [cmd][payload...] */
+                size_t payload_len;
                 if (n < 2)
                 {
 #ifdef DEBUG
@@ -658,7 +689,7 @@ static void *fujinet_rx_thread(void *arg) {
                     break;
                 }
                 /* payload length is everything after the command byte */
-                size_t payload_len = n - 1;
+                payload_len = n - 1;
 #ifdef DEBUG
                 Log_print("netsio: recv: data block %zu bytes:\n  %s", payload_len, buf_to_hex(buf, 1, payload_len));
 #endif
