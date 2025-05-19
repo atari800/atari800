@@ -56,16 +56,23 @@ Notes on building using MSYS2
 1. Install MSYS2 itself:
   - Based on:
     https://www.msys2.org/
-    https://github.com/msys2/msys2/wiki/MSYS2-installation
-  a) Get the MSYS2 installer package from https://www.msys2.org/ . Choose the
-     one that matches your Windows architecture (i686 or x86_64). The
-     instructions below is tailored towards MSYS2 release dated 20180531, which
+    https://www.msys2.org/wiki/MSYS2-installation/
+  a) Get the MSYS2 installer package from https://www.msys2.org/ . The
+     instructions below is tailored towards MSYS2 release dated 20250221, which
      was the latest at the time of this writing.
   b) Run the installer to install the environment.
-     - Note: MSYS2 provides 3 Start menu shortcuts to the MSYS shell:
+     - Note: MSYS2 provides 5 Start menu shortcuts to the MSYS shell:
      "MSYS2 MSYS" - use this and only this shell to install or remove packages.
-     "MSYS2 MinGW 32-bit" - use this shell to build 32-bit programs.
-     "MSYS2 MinGW 64-bit" - use this shell to build 64-bit programs.
+     "MSYS2 CLANG64" - use this shell to build 64-bit programs with clang
+                       compiler and UCRT64 runtime.
+     "MSYS2 CLANGARM64" - use this shell to build 64-bit programs for ARM CPU
+                          with clang compiler and UCRT64 runtime.
+     "MSYS2 UCRT64" - use this shell to build 64-bit programs with gcc
+                      compiler and UCRT64 runtime.
+     "MSYS2 MinGW64" - use this shell to build 64-bit programs with gcc
+                       compiler and MSVCRT runtime.
+     See https://www.msys2.org/docs/environments/ for more detailed
+     description.
   c) If not selected at the end of installer, run "MSYS2 MSYS" shell (from Start
      menu).
   d) Update the environment using pacman -Syuu. Run it multiple times until no
@@ -82,33 +89,23 @@ Notes on building using MSYS2
   b) If you want to regenerate the configure script, install the following
      packages:
      - autoconf
+     - automake
      - perl
   c) To build Atari800, install:
      - make
-     To build the 32-bit binary, install:
-     - mingw-w64-i686-gcc
-     - mingw-w64-i686-SDL
-     - mingw-w64-i686-readline
-     - mingw-w64-i686-libpng
-     To build the 64-bit binary, install:
-     - mingw-w64-x86_64-gcc
-     - mingw-w64-x86_64-SDL
-     - mingw-w64-x86_64-readline
-     - mingw-w64-x86_64-libpng
+     - mingw-w64-ucrt-x86_64-gcc
+     - mingw-w64-ucrt-x86_64-SDL
+     - mingw-w64-ucrt-x86_64-readline
+     - mingw-w64-ucrt-x86_64-libpng
 
 3. Build Atari800:
-  a) Start the "MSYS2 MinGW 32-bit" shell to build the 32-bit binary, or the
-     "MSYS2 MinGW 64-bit" shell to build the 64-bit binary.
+  a) Start the "MSYS2 UCRT64" shell to build the 64-bit binary.
   b) Follow the common build procedure as described in DOC/INSTALL, section
      "Building the Emulator for SDL".
-  c) The executable requires the following DLLs - copy them from mingw32/bin or
-     mingw64/bin (depending on which binary you have built) to the same
-     directory as atari800.exe:
+  c) The executable requires the following DLLs - copy them from ucrt64/bin
+     to the same directory as atari800.exe:
      - libpng16-16.dll
-     - libreadline7.dll
+     - libreadline8.dll
      - libtermcap-0.dll
      - SDL.dll
      - zlib1.dll
-     For the 32-bit binary also copy:
-     - libgcc_s_dw2-1.dll
-     - libwinpthread-1.dll
