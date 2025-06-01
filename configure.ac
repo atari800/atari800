@@ -188,15 +188,15 @@ if [[ "$a8_target" = "android" ]]; then
 	AC_SUBST(NDK_BUILD)
 fi
 if [[ "$a8_host" = "falcon" ]]; then
-	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
-	LDFLAGS="-m68020-60"
-	SUPPORTS_RDEVICE=no
+    CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
+    LDFLAGS="-m68020-60"
+    SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
 fi
 if [[ "$a8_host" = "firebee" ]]; then
-	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
-	LDFLAGS="-mcpu=5475"
-	SUPPORTS_RDEVICE=no
+    FLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
+    LDFLAGS="-mcpu=5475"
+    SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
@@ -354,7 +354,8 @@ AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 if [[ "$a8_host" = "win" ]]; then
-    AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
+    SUPPORTS_NETSIO=no
+    AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no)
 else
     AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
 fi
@@ -919,10 +920,10 @@ AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
 if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
 dnl NetSIO / FujiNet support (only on Linux or MacOS)
-A8_OPTION(netsio,no,
-        [Support NetSIO Protocol I/O interface (FujiNet) (default=OFF)],
-        NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
-        )
+A8_OPTION(netsio,yes,
+       [Support NetSIO Protocol I/O interface (FujiNet) (default=ON)],
+       NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
+       )
 AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
 fi
 
@@ -1418,7 +1419,6 @@ echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
 echo "Using Pokey registers recording?......: $WANT_POKEYREC"
-
 if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
     echo "Using NetSIO/FujiNet emulation?.......: $WANT_NETSIO"
 fi
