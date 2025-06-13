@@ -49,6 +49,9 @@
 #include "log.h"
 #include "input.h"
 #include "pbi.h"
+#ifdef NETSIO
+#include "netsio.h"
+#endif
 
 #ifdef POKEYREC
 #include "pokeyrec.h"
@@ -259,6 +262,17 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 #endif
 		if ((POKEY_SKCTL & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
+#ifdef NETSIO
+		/* TODO: proper way to enable modem
+		 * When testing various FujiNet provided peripherals, I've noticed modem was not working.
+		 * Quick fix was to test (POKEY_SKCTL & 0x70) == 0x70 instead of calling more complex POKEY_siocheck().
+		 * Modem started to work (tested Ice-T with CP/M, BobTerm). However, I'm not sure how to test POKEY
+		 * registers for only valid serial port output modes.
+		 */
+		else if (netsio_enabled && (POKEY_SKCTL & 0x70) == 0x70)
+			NetSIO_PutByte(byte);
+#endif
+
 		/* check if cassette 2-tone mode has been enabled */
 		if ((POKEY_SKCTL & 0x08) == 0x00) {
 			/* intelligent device */
@@ -500,6 +514,22 @@ void POKEY_Scanline(void)
 #endif
 		}
 	}
+#ifdef NETSIO
+	/* Check NetSIO for pending Rx bytes */
+	if (netsio_enabled && POKEY_DELAYED_SERIN_IRQ == 0) {
+		int avail = netsio_available();
+		if (avail > 0) {
+			/* TODO make various SIO speeds working
+			 * currently the POKEY_DELAYED_SERIN_IRQ is set to the same values ignoring the actual speed
+			 * and forcing baud rate to 19200
+			 */
+			if (avail == 1)
+				POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL * 2 + 4;
+			else
+			 	POKEY_DELAYED_SERIN_IRQ = SIO_SERIN_INTERVAL + 2;
+		}
+	}
+#endif /* NETSIO */
 
 	if (POKEY_DELAYED_SEROUT_IRQ > 0) {
 		if (--POKEY_DELAYED_SEROUT_IRQ == 0) {

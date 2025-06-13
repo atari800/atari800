@@ -147,6 +147,9 @@
 #ifdef SDL
 #include "sdl/init.h"
 #endif
+#ifdef NETSIO
+#include "netsio.h"
+#endif /* NETSIO */
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
@@ -238,6 +241,10 @@ void Atari800_Warmstart(void)
 #ifdef __PLUS
 	HandleResetEvent();
 #endif
+#ifdef NETSIO
+	if (netsio_enabled)
+		netsio_warm_reset();
+#endif /* NETSIO */
 }
 
 void Atari800_Coldstart(void)
@@ -270,6 +277,10 @@ void Atari800_Coldstart(void)
 		BIT3_Reset();
 	}
 #endif
+#ifdef NETSIO
+	if(netsio_enabled)
+		netsio_cold_reset();
+#endif /* NETSIO */
 }
 
 int Atari800_LoadImage(const char *filename, UBYTE *buffer, int nbytes)
@@ -593,6 +604,16 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-turbo") == 0) {
 			Atari800_turbo = TRUE;
 		}
+#ifdef NETSIO
+		else if (strcmp(argv[i], "-netsio") == 0) {
+			/* Disable patched SIO for all devices */
+			ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
+			if (netsio_init(9997) < 0)
+			{
+				Log_print("netsio: init failed");
+			}
+		}
+#endif /* NETSIO */
 		else {
 			/* parameters that take additional argument follow here */
 			int i_a = (i + 1 < *argc);		/* is argument available? */
@@ -720,6 +741,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-no-mapram       Disable MapRAM");
 #ifdef R_IO_DEVICE
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
+#endif
+#ifdef NETSIO
+					Log_print("\t-netsio          Enable NetSIO emulation (for FujiNet-PC support)");
 #endif
 #ifdef STEREO_SOUND
 					Log_print("\t-stereo          Turn on emulation of two POKEYs");
