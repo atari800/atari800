@@ -82,6 +82,9 @@ WANT_IDE="yes"
 WANT_POKEYREC="yes"
 SUPPORTS_RDEVICE="yes"
 SUPPORTS_NETSIO="yes"
+WANT_NETSIO="yes"
+
+AM_CONDITIONAL([WANT_NETSIO], [test "x$WANT_NETSIO" = "xyes"])
 
 dnl Set a8_host...
 
@@ -192,12 +195,14 @@ if [[ "$a8_host" = "falcon" ]]; then
     LDFLAGS="-m68020-60"
     SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
+    WANT_NETSIO=no
 fi
 if [[ "$a8_host" = "firebee" ]]; then
     FLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
     LDFLAGS="-mcpu=5475"
     SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
+    WANT_NETSIO=no
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
     with_readline=no
@@ -355,6 +360,7 @@ SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 if [[ "$a8_host" = "win" ]]; then
     SUPPORTS_NETSIO=no
+    WANT_NETSIO=no
     AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no)
 else
     AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
@@ -925,6 +931,12 @@ A8_OPTION(netsio,yes,
        NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
        )
 AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
+fi
+
+if test "x$WANT_NETSIO" = "xyes"; then
+    AC_DEFINE([NETSIO], [1], [Define to enable NetSIO (FujiNet) support])
+    CFLAGS="$CFLAGS -DNETSIO"
+    AC_SUBST([CFLAGS])
 fi
 
 dnl Select/detect sound interface.

@@ -5,6 +5,7 @@
 * queues complete packets to emulator
 *
 */
+#ifdef NETSIO
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -707,3 +708,4 @@ static void *fujinet_rx_thread(void *arg) {
     }
     return NULL;
 }
+#endif /* NETSIO */
