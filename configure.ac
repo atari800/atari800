@@ -1422,7 +1422,6 @@ echo "Using Pokey registers recording?......: $WANT_POKEYREC"
 if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
     echo "Using NetSIO/FujiNet emulation?.......: $WANT_NETSIO"
 fi
-
 echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
