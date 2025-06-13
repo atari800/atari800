@@ -742,6 +742,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef R_IO_DEVICE
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
+#ifdef NETSIO
+					Log_print("\t-netsio          Enable NetSIO emulation (for FujiNet-PC support)");
+#endif
 #ifdef STEREO_SOUND
 					Log_print("\t-stereo          Turn on emulation of two POKEYs");
 					Log_print("\t-nostereo        Turn off emulation of two POKEYs");

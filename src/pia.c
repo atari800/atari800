@@ -111,28 +111,25 @@ static void set_CB2(int value)
 	PIA_CB2 = value;
 }
     
-/* ----- PROCEED (CA1) and INTERRUPT (CB1) input pin handling ----- */
-/* Update PROCEED pin (CA1) */
-static void set_CA1(int value)
+/* Update PROCEED pin (CA1), for potential future use */
+/*static void set_CA1(int value)
 {
     if (PIA_CA1 != value) {
-        /* CA1 transition: set flag and update IRQ */
         PIA_PACTL |= 0x01;
         update_PIA_IRQ();
     }
     PIA_CA1 = value;
-}
+}*/
 
-/* Update INTERRUPT pin (CB1) */
-static void set_CB1(int value)
+/* Update INTERRUPT pin (CB1), for potential future use */
+/*static void set_CB1(int value)
 {
     if (PIA_CB1 != value) {
-        /* CB1 transition: set flag and update IRQ */
         PIA_PBCTL |= 0x01;
         update_PIA_IRQ();
     }
     PIA_CB1 = value;
-}
+}*/
 
 void update_PIA_IRQ(void)
 {
