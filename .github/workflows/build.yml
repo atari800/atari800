@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: install depends
-      run: sudo apt-get install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev libreadline-dev
+      run: sudo apt update && sudo apt install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev libreadline-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
@@ -47,3 +47,48 @@ jobs:
        name: atari800-macos-arm64
        path: src/atari800
 
+  build-windows-msys2:
+    name: Build on Windows MSYS2
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            base-devel
+            mingw-w64-x86_64-toolchain
+            autoconf
+            automake
+            libtool
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-sdl12-compat
+            mingw-w64-x86_64-readline
+            mingw-w64-x86_64-libpng
+
+      - name: Run autoreconf
+        run: autoreconf -fiv
+
+      - name: Configure project
+        run: ./configure
+
+      - name: Build project
+        run: make -j$(nproc)
+
+      - name: Verify build
+        run: |
+          if [ ! -f src/atari800.exe ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          echo "Build succeeded"
