@@ -1,9 +1,8 @@
 /*
 * netsio.c - NetSIO interface for FujiNet-PC <-> Atari800 Emulator
 *
-* Uses two threads:
-*  - fujinet_rx_thread: receive from FujiNet-PC, respond to pings/alives, queue complete packets to emulator
-*  - emu_tx_thread: receive from emulator FIFO, queue complete packets to FujiNet-PC
+* fujinet_rx_thread receives from FujiNet-PC, responds to pings/alives,
+* queues complete packets to emulator
 *
 */
 #include <stdio.h>
@@ -18,17 +17,15 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <time.h>
 #include "netsio.h"
 #include "log.h"
 #include "pia.h" /* For toggling PROC & INT */
-#if defined(__APPLE__) && defined(__MACH__)
-#include "SDL.h" /* For SDL_Delay() on macOS */
-#else
-#include "SDL/SDL.h" /* For SDL_Delay() on Linux */
-#endif
 
+
+#ifdef DEBUG
 static char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len);
-static void send_byte_to_fujinet(uint8_t data_byte);
+#endif /* DEBUG */
 static void send_block_to_fujinet(const uint8_t *block, size_t len);
 
 /* Flag to know when netsio is enabled */
@@ -52,10 +49,21 @@ static int sockfd = -1;
 static struct sockaddr_storage fujinet_addr;
 static socklen_t fujinet_addr_len = sizeof(fujinet_addr);
 
-/* Thread declarations */
+/* Thread declaration */
 static void *fujinet_rx_thread(void *arg);
-static void *emu_tx_thread(void *arg);
 
+static void millisleep(unsigned int ms)
+{
+    struct timespec req, rem;
+    req.tv_sec  = ms / 1000;
+    req.tv_nsec = (long)(ms % 1000) * 1000000L;
+
+    while (nanosleep(&req, &rem) == -1 && errno == EINTR) {
+        req = rem;
+    }
+}
+
+#ifdef DEBUG
 char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len) {
     /* each byte takes "XX " == 3 chars, +1 for trailing NUL */
     size_t needed = len * 3 + 1;
@@ -75,6 +83,7 @@ char *buf_to_hex(const uint8_t *buf, size_t offset, size_t len) {
         *p = '\0';
     return s;
 }
+#endif
 
 /* write data to emulator FIFO (fujinet_rx_thread) */
 static void enqueue_to_emulator(const uint8_t *pkt, size_t len) {
@@ -178,15 +187,6 @@ static void send_to_fujinet(const uint8_t *pkt, size_t len) {
 #endif
 }
 
-
-/* Send a single byte as a DATA_BYTE packet */
-static void send_byte_to_fujinet(uint8_t data_byte) {
-    uint8_t packet[2];
-    packet[0] = NETSIO_DATA_BYTE;
-    packet[1] = data_byte;
-    send_to_fujinet(packet, sizeof(packet));
-}
-
 /* Send up to 512 bytes as a DATA_BLOCK packet */
 static void send_block_to_fujinet(const uint8_t *block, size_t len) {
     uint8_t packet[512 + 2];
@@ -287,7 +287,7 @@ void netsio_wait_for_sync(void)
 #ifdef DEBUG
         Log_print("netsio: waiting for sync response - %d", ticker);
 #endif
-        SDL_Delay(5);
+        millisleep(5);
         if (ticker > 7)
         {
             netsio_sync_wait = 0;
@@ -450,7 +450,6 @@ void netsio_test_cmd(void)
 /* Thread: receive from FujiNet socket (one packet == one command) */
 static void *fujinet_rx_thread(void *arg) {
     uint8_t buf[4096];
-    uint8_t packet[65536];
     uint8_t cmd;
     ssize_t n;
 
@@ -583,7 +582,6 @@ static void *fujinet_rx_thread(void *arg) {
 #ifdef DEBUG
                 Log_print("netsio: recv: requested baud rate %u", baud);
 #endif
-                /* TODO: apply baud */
                 send_to_fujinet(buf, 5); /* echo back */
                 break;
             }

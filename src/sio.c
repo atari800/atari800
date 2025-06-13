@@ -1712,7 +1712,6 @@ void SIO_PutByte(int byte)
 int NetSIO_GetByte(void)
 {
 	UBYTE b;
-	int ts = TransferStatus;
 
 	if(netsio_available() > 0)
 	{
