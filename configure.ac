@@ -81,6 +81,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 WANT_IDE="yes"
 WANT_POKEYREC="yes"
 SUPPORTS_RDEVICE="yes"
+SUPPORTS_NETSIO="yes"
 
 dnl Set a8_host...
 
@@ -187,14 +188,16 @@ if [[ "$a8_target" = "android" ]]; then
 	AC_SUBST(NDK_BUILD)
 fi
 if [[ "$a8_host" = "falcon" ]]; then
-	CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
-	LDFLAGS="-m68020-60"
-	SUPPORTS_RDEVICE=no
+    CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
+    LDFLAGS="-m68020-60"
+    SUPPORTS_RDEVICE=no
+    SUPPORTS_NETSIO=no
 fi
 if [[ "$a8_host" = "firebee" ]]; then
-	CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
-	LDFLAGS="-mcpu=5475"
-	SUPPORTS_RDEVICE=no
+    FLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
+    LDFLAGS="-mcpu=5475"
+    SUPPORTS_RDEVICE=no
+    SUPPORTS_NETSIO=no
 fi
 if [[ "$a8_target" = "libatari800" ]]; then
     with_readline=no
@@ -351,9 +354,10 @@ AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 if [[ "$a8_host" = "win" ]]; then
+    SUPPORTS_NETSIO=no
     AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no)
 else
-    AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no)
+    AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
 fi
 
 
@@ -622,7 +626,7 @@ else
     fi
 fi
 if [[ "$a8_host" != "win" -a "$a8_target" != "android" ]]; then
-    AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no)
+    AC_CHECK_FUNCS([gethostbyaddr gethostbyname inet_ntoa socket],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
 fi
 
 dnl Select/detect video interface.
@@ -913,6 +917,21 @@ A8_OPTION(pbi_bb,yes,
       PBI_BB,[Define to emulate the Black Box.]
      )
 AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
+
+if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
+dnl NetSIO / FujiNet support (only on Linux or MacOS)
+A8_OPTION(netsio,yes,
+       [Support NetSIO Protocol I/O interface (FujiNet) (default=ON)],
+       NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
+       )
+fi
+AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
+
+if test "x$WANT_NETSIO" = "xyes"; then
+    AC_DEFINE([NETSIO], [1], [Define to enable NetSIO (FujiNet) support])
+    CFLAGS="$CFLAGS -DNETSIO"
+    AC_SUBST([CFLAGS])
+fi
 
 dnl Select/detect sound interface.
 
@@ -1406,6 +1425,9 @@ echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"
 echo "Using IDE emulation?..................: $WANT_IDE"
 echo "Using Pokey registers recording?......: $WANT_POKEYREC"
+if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
+    echo "Using NetSIO/FujiNet emulation?.......: $WANT_NETSIO"
+fi
 echo "Interface for sound...................: $with_sound"
 if [[ "$with_sound" != no ]]; then
     echo "    Using nonlinear mixing?...........: $WANT_NONLINEAR_MIXING"
