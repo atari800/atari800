@@ -94,6 +94,7 @@ unsigned int VIDEOMODE_dest_offset_left;
 unsigned int VIDEOMODE_dest_offset_top;
 unsigned int VIDEOMODE_dest_width;
 unsigned int VIDEOMODE_dest_height;
+double VIDEOMODE_dest_scale_factor = 1.0;
 
 /* To have square pixels in NTSC, the screen should have a pixel clock of
    12+3/11 MHz (actually half of that, because Atari displays non-interlaced
@@ -371,7 +372,7 @@ static void UpdateCustomStretch(void)
 /* Computes VIDEOMODE_dest_width/height based on various parameters. */
 static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolution_t const *screen_res,
                              VIDEOMODE_MODE_t display_mode, unsigned int out_w, unsigned int out_h,
-                             double *mult_w, double *mult_h, int rotate)
+                             double *mult_w, double *mult_h, int rotate, double scale)
 {
 	double asp_ratio;
 	/* asp_ratio = <Atari pixel aspect ratio>/<host pixel aspect ratio>.
@@ -453,11 +454,11 @@ static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolu
 				*mult_w = imult_h * asp_ratio;
 			}
 			*mult_h = imult_h;
-			
+
 		}
 	}
-	VIDEOMODE_dest_width = *mult_w * out_w;
-	VIDEOMODE_dest_height = *mult_h * out_h;
+	VIDEOMODE_dest_width = *mult_w * out_w * scale;
+	VIDEOMODE_dest_height = *mult_h * out_h * scale;
 }
 
 static void CropVideoArea(VIDEOMODE_resolution_t const *screen_res, unsigned int *out_w, unsigned int *out_h, double mult_w, double mult_h)
@@ -541,9 +542,14 @@ static int UpdateVideoFullscreen(void)
 
 	GetOutArea(&out_w, &out_h, display_mode);
 	UpdateCustomStretch();
-	ComputeVideoArea(&res, res_for_mode, display_mode, out_w, out_h, &mult_w, &mult_h, rotate);
+	ComputeVideoArea(&res, res_for_mode, display_mode, out_w, out_h, &mult_w, &mult_h, rotate, 1);
 	CropVideoArea(&res, &out_w, &out_h, mult_w, mult_h);
+#if SDL2
 	SetVideoMode(&res, display_mode, out_w, out_h, FALSE, rotate);
+	ComputeVideoArea(&res, res_for_mode, display_mode, out_w, out_h, &mult_w, &mult_h, rotate, VIDEOMODE_dest_scale_factor);
+#else
+	SetVideoMode(&res, display_mode, out_w, out_h, FALSE, rotate);
+#endif
 	return TRUE;
 }
 
@@ -569,7 +575,7 @@ static int UpdateVideoWindowed(int window_resized)
 
 	GetOutArea(&out_w, &out_h, display_mode);
 	UpdateCustomStretch();
-	ComputeVideoArea(&res, &desk_res, display_mode, out_w, out_h, &mult_w, &mult_h, rotate);
+	ComputeVideoArea(&res, &desk_res, display_mode, out_w, out_h, &mult_w, &mult_h, rotate, 1);
 	if (window_resized || maximised)
 		/* If the window was user-resized we don't allow it to grow, only shrink. */
 		max_res = &res;
@@ -582,6 +588,10 @@ static int UpdateVideoWindowed(int window_resized)
 		res.height = VIDEOMODE_dest_height;
 	}
 	SetVideoMode(&res, display_mode, out_w, out_h, TRUE, rotate);
+
+	ComputeVideoArea(&res, &desk_res, display_mode, out_w, out_h, &mult_w, &mult_h, rotate, VIDEOMODE_dest_scale_factor);
+	/*TODO:
+	  CropVideoArea(max_res, &out_w, &out_h, mult_w, mult_h);*/
 	return TRUE;
 }
 
@@ -760,6 +770,14 @@ int VIDEOMODE_ToggleKeepAspect(void)
 	return VIDEOMODE_SetKeepAspect((VIDEOMODE_keep_aspect + 1) % VIDEOMODE_KEEP_ASPECT_SIZE);
 }
 
+int VIDEOMODE_GetKeepAspect(void) {
+	return VIDEOMODE_keep_aspect;
+}
+
+double VIDEOMODE_GetPixelAspectRatio(VIDEOMODE_MODE_t display_mode) {
+	return display_modes[display_mode].asp_ratio;
+}
+
 #if SUPPORTS_ROTATE_VIDEOMODE
 int VIDEOMODE_SetRotate90(int value)
 {
@@ -912,7 +930,7 @@ int VIDEOMODE_ReadConfig(char *option, char *ptr)
 	else if (strcmp(option, "VIDEOMODE_WINDOWED") == 0)
 		return (VIDEOMODE_windowed = Util_sscanbool(ptr)) != -1;
 	else if (strcmp(option, "VIDEOMODE_HORIZONTAL_AREA") == 0) {
-		
+
 		int i = CFG_MatchTextParameter(ptr, horizontal_area_cfg_strings, VIDEOMODE_HORIZONTAL_SIZE);
 		if (i < 0) {
 			VIDEOMODE_horizontal_area = VIDEOMODE_HORIZONTAL_CUSTOM;
@@ -1184,7 +1202,7 @@ static int CompareResolutions(const void *res1, const void *res2)
 static void RemoveDuplicateResolutions(void)
 {
 	unsigned int i, j;
-	
+
 	for (i = 0, j = 1; j < resolutions_size; ++j) {
 		if (CompareResolutions(&resolutions[i], &resolutions[j]) != 0) {
 			++i;
