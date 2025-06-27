@@ -156,10 +156,10 @@ int AFILE_DetectFileType(const char *filename)
 	/* BOOT_TAPE is a raw file containing a program booted from a tape */
 	if ((header[1] << 7) == file_length)
 		return AFILE_BOOT_TAPE;
-	if ((file_length & 0x7f) == 0)
-		return AFILE_XFD;
 	if (IMG_TAPE_FileSupported(header))
 		return AFILE_CAS;
+	if ((file_length & 0x7f) == 0)
+		return AFILE_XFD;
 	return AFILE_ERROR;
 }
 
