@@ -179,11 +179,12 @@ IMG_TAPE_t *IMG_TAPE_Open(char const *filename, int *writable, char const **desc
 			skip = 0;
 		else
 			skip -= CASSETTE_DESCRIPTION_MAX - 1;
-		if (fread(img->description, 1, length - skip, img->file) < (length - skip)) {
-			fclose(img->file);
-			free(img);
-			return NULL;
-		}
+		if (length > 0)
+			if (fread(img->description, 1, length - skip, img->file) < (length - skip)) {
+				fclose(img->file);
+				free(img);
+				return NULL;
+			}
 		img->description[length - skip] = '\0';
 		fseek(img->file, skip, SEEK_CUR);
 
