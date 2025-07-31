@@ -125,7 +125,7 @@ static struct stick_dev {
 #define minjoy 10000			/* real joystick tolerancy */
 
 /* keyboard */
-static Uint8 *kbhits;
+const static Uint8 *kbhits;
 
 #ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
 static struct stick_dev *osk_stick = NULL;
