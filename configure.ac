@@ -666,7 +666,7 @@ fi
 dnl Select/detect video interface.
 
 AC_ARG_WITH([video],
-    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|sdl2|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | sdl2 | javanvm)
@@ -995,7 +995,7 @@ fi
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
+    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|sdl2|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | dossb | oss | falcon | sdl | sdl2 | javanvm)
