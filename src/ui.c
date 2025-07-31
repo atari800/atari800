@@ -1524,7 +1524,7 @@ static void TapeSliderLabel(char *label, int value, void *user_data)
 	if (value >= CASSETTE_GetSize())
 		sprintf(label, "End");
 	else
-		snprintf(label, 10, "%u", (unsigned int)value + 1);
+		snprintf(label, 11, "%u", (unsigned int)value + 1);
 }
 
 static void TapeManagement(void)
