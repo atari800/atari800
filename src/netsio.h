@@ -6,6 +6,7 @@ extern volatile int netsio_enabled;
 
 #include <stdint.h>
 #include <pthread.h>
+#include <sys/types.h>
 
 /* NetSIO Commands */
 #define NETSIO_DATA_BYTE          0x01
