@@ -1865,24 +1865,23 @@ void SDL_INPUT_Restart(void)
 #if SDL2
 
 int Atari_POT(int pot) {
-	int max = 228;
+	int MAX = 228;
 	int joy = pot / 2;
 	if (joy >= MAX_JOYSTICKS) {
-		return max;
+		return MAX;
 	}
 	struct stick_dev* s = &stick_devs[joy];
 	if (s->sdl_joy == NULL) {
-		return max;
+		return MAX;
 	}
 
-	//TODO - configurable range and axes?
-// 	int val = SDL_JoystickGetAxis(s->sdl_joy, s->real_config.axes + (pot & 1 ? 1 : 0));
-// 	val += 32768;
-// 	val *= 89; // smaller range for Arkanoid
-// 	val /= 65535;
-// printf("pot: %d - %d\n", pot, max-val);
-// 	return max - val;
-	return max;
+	int val = SDL_JoystickGetAxis(s->sdl_joy, s->real_config.axes + (pot & 1 ? 3 : 2));
+	val += 32768;
+	val *= 255;
+	val /= 65535;
+	val = MAX - val;
+	if (val < 1) val = 1;
+	return val;
 }
 
 static int joy_axes_zone_no_diagonals[] = {
