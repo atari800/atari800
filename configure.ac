@@ -987,6 +987,7 @@ fi
 AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
 
 if test "x$WANT_NETSIO" = "xyes"; then
+    AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([pthread library not found])])
     AC_DEFINE([NETSIO], [1], [Define to enable NetSIO (FujiNet) support])
     CFLAGS="$CFLAGS -DNETSIO"
     AC_SUBST([CFLAGS])
