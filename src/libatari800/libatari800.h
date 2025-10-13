@@ -306,4 +306,14 @@ void libatari800_restore_state(emulator_state_t *state);
 
 void libatari800_exit();
 
+/* Disk management functions */
+int libatari800_mount_disk(int drive_num, const char *filename, int read_only);
+void libatari800_unmount_disk(int drive_num);
+void libatari800_disable_drive(int drive_num);
+void libatari800_set_disk_activity_callback(void (*callback)(int drive, int operation));
+
+/* SIO patch control functions */
+int libatari800_get_sio_patch_enabled(void);
+int libatari800_set_sio_patch_enabled(int enabled);
+
 #endif /* LIBATARI800_H_ */
