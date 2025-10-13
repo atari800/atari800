@@ -74,6 +74,11 @@ static int image_type[SIO_MAX_DRIVES];
 #define IMAGE_TYPE_ATR  1
 #define IMAGE_TYPE_PRO  2
 #define IMAGE_TYPE_VAPI 3
+
+#ifdef LIBATARI800
+extern void (*disk_activity_callback)(int drive, int operation);
+#endif
+
 static FILE *disk[SIO_MAX_DRIVES] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 static int sectorcount[SIO_MAX_DRIVES];
 static int sectorsize[SIO_MAX_DRIVES];
@@ -665,6 +670,12 @@ int SIO_ReadSector(int unit, int sector, UBYTE *buffer)
 	SIO_last_op = SIO_LAST_READ;
 	SIO_last_op_time = 1;
 	SIO_last_drive = unit + 1;
+#ifdef LIBATARI800
+	/* Call disk activity callback for real-time LED updates */
+	if (disk_activity_callback) {
+		disk_activity_callback(SIO_last_drive, SIO_LAST_READ);
+	}
+#endif
 	/* FIXME: what sector size did the user expect? */
 	size = SeekSector(unit, sector);
 	if (image_type[unit] == IMAGE_TYPE_PRO) {
@@ -842,7 +853,13 @@ int SIO_WriteSector(int unit, int sector, const UBYTE *buffer)
 	SIO_last_op = SIO_LAST_WRITE;
 	SIO_last_op_time = 1;
 	SIO_last_drive = unit + 1;
-#ifdef VAPI_WRITE_ENABLE 	
+#ifdef LIBATARI800
+	/* Call disk activity callback for real-time LED updates */
+	if (disk_activity_callback) {
+		disk_activity_callback(SIO_last_drive, SIO_LAST_WRITE);
+	}
+#endif
+#ifdef VAPI_WRITE_ENABLE
  	if (image_type[unit] == IMAGE_TYPE_VAPI) {
 		vapi_additional_info_t *info;
 		vapi_sec_info_t *secinfo;
@@ -1402,6 +1419,12 @@ static UBYTE Command_Frame(void)
 		SIO_last_op = SIO_LAST_WRITE;
 		SIO_last_op_time = 10;
 		SIO_last_drive = unit + 1;
+#ifdef LIBATARI800
+		/* Call disk activity callback for real-time LED updates */
+		if (disk_activity_callback) {
+			disk_activity_callback(SIO_last_drive, SIO_LAST_WRITE);
+		}
+#endif
 		return 'A';
 	case 0x52:				/* Read */
 	case 0xD2:				/* xf551 hispeed */
@@ -1439,6 +1462,12 @@ static UBYTE Command_Frame(void)
 		SIO_last_op = SIO_LAST_READ;
 		SIO_last_op_time = 10;
 		SIO_last_drive = unit + 1;
+#ifdef LIBATARI800
+		/* Call disk activity callback for real-time LED updates */
+		if (disk_activity_callback) {
+			disk_activity_callback(SIO_last_drive, SIO_LAST_READ);
+		}
+#endif
 		return 'A';
 	case 0x53:				/* Status */
 	case 0xD3:				/* xf551 hispeed */

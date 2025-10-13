@@ -29,7 +29,10 @@
 #include <string.h>
 
 /* Atari800 includes */
+#include "libatari800.h"
 #include "atari.h"
+#include "../sio.h"
+#include "../esc.h"
 #include "akey.h"
 #include "afile.h"
 #include "../input.h"
@@ -488,6 +491,55 @@ void libatari800_restore_state(emulator_state_t *state)
  */
 void libatari800_exit() {
 	Atari800_Exit(0);
+}
+
+/* Disk activity callback function pointer */
+void (*disk_activity_callback)(int drive, int operation) = NULL;
+
+/* Disk management functions */
+int libatari800_mount_disk(int drive_num, const char *filename, int read_only)
+{
+	if (drive_num < 1 || drive_num > 8 || filename == NULL)
+		return FALSE;
+
+	/* Use SIO_Mount with read_only flag properly mapped */
+	if (SIO_Mount(drive_num, filename, read_only ? TRUE : FALSE))
+		return TRUE;
+
+	return FALSE;
+}
+
+void libatari800_unmount_disk(int drive_num)
+{
+	if (drive_num < 1 || drive_num > 8)
+		return;
+
+	SIO_Dismount(drive_num);
+}
+
+void libatari800_disable_drive(int drive_num)
+{
+	if (drive_num < 1 || drive_num > 8)
+		return;
+
+	SIO_DisableDrive(drive_num);
+}
+
+void libatari800_set_disk_activity_callback(void (*callback)(int drive, int operation))
+{
+	disk_activity_callback = callback;
+}
+
+int libatari800_get_sio_patch_enabled(void)
+{
+	return ESC_enable_sio_patch;
+}
+
+int libatari800_set_sio_patch_enabled(int enabled)
+{
+	int prev = ESC_enable_sio_patch;
+	ESC_enable_sio_patch = enabled;
+	return prev;
 }
 
 /*
