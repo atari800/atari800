@@ -2534,7 +2534,11 @@ static void CrtGlowSliderLabel(char *label, int value, void *user_data) {
 static void show_hide_crt_options(UI_tMenuItem menu_array[]) {
 	// hide/show options that require hardware renderer (and shaders)
 	for (int index = 19; index <= 21; ++index) {
+#if HAVE_OPENGL
 		FindMenuItem(menu_array, index)->flags = !SDL_VIDEO_opengl ? UI_ITEM_HIDDEN : UI_ITEM_SUBMENU;
+#else
+		FindMenuItem(menu_array, index)->flags = UI_ITEM_HIDDEN;
+#endif
 	}
 }
 #endif
