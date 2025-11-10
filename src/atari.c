@@ -609,13 +609,28 @@ int Atari800_Initialise(int *argc, char *argv[])
 		else if (strcmp(argv[i], "-netsio") == 0) {
 			/* Disable patched SIO for all devices */
 			ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
-			if (netsio_init(9997) < 0)
-			{
+			/* Optional UDP port argument (default 9997). */
+			unsigned int port = 9997;
+			if (i + 1 < *argc && argv[i + 1][0] != '-') {
+				int p = Util_sscandec(argv[i + 1]);
+				if (p >= 1 && p <= 65535) {
+					port = (unsigned int) p;
+					++i; /* consume the port argument */
+				}
+				else {
+					Log_print("Invalid netsio port '%s', using default 9997", argv[i + 1]);
+					++i; /* consume the invalid argument to avoid confusing other parsers */
+				}
+			}
+
+			if (netsio_init((uint16_t)port) < 0) {
 				Log_print("netsio: init failed");
+			} else {
+				Log_print("netsio initialized with port %d", port);
 			}
 		}
 #endif /* NETSIO */
-		else {
+			else {
 			/* parameters that take additional argument follow here */
 			int i_a = (i + 1 < *argc);		/* is argument available? */
 			int a_m = FALSE;			/* error, argument missing! */
@@ -744,7 +759,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-rdevice [<dev>] Enable R: emulation (using serial device <dev>)");
 #endif
 #ifdef NETSIO
-					Log_print("\t-netsio          Enable NetSIO emulation (for FujiNet-PC support)");
+					Log_print("\t-netsio [port]   Enable NetSIO emulation (for FujiNet-PC support). Optional UDP port, default 9997");
 #endif
 #ifdef STEREO_SOUND
 					Log_print("\t-stereo          Turn on emulation of two POKEYs");
