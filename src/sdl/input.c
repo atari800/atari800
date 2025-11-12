@@ -642,7 +642,7 @@ int PLATFORM_Keyboard(void)
 	static int resize_w, resize_h;
 #endif /* HAVE_WINDOWS_H */
 
-#if !defined(SDL12_COMPAT_HEADERS) /*|| SDL_VERSIONNUM >= 1270*/
+#if !defined(SDL12_COMPAT_HEADERS) || SDL_VERSIONNUM >= 1270
 	/* Very ugly fix for SDL CAPSLOCK brokenness.  This will let the user
 	 * press CAPSLOCK and get a brief keypress on the Atari but it is not
 	 * possible to emulate holding down CAPSLOCK for longer periods with
