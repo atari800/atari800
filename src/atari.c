@@ -607,10 +607,10 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 #ifdef NETSIO
 		else if (strcmp(argv[i], "-netsio") == 0) {
-			/* Disable patched SIO for all devices */
-			ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
 			/* Optional UDP port argument (default 9997). */
 			unsigned int port = 9997;
+			/* Disable patched SIO for all devices */
+			ESC_enable_sio_patch = Devices_enable_h_patch = Devices_enable_p_patch = Devices_enable_r_patch = FALSE;
 			if (i + 1 < *argc && argv[i + 1][0] != '-') {
 				int p = Util_sscandec(argv[i + 1]);
 				if (p >= 1 && p <= 65535) {
