@@ -194,7 +194,7 @@ if [[ "$a8_host" = "falcon" ]]; then
     SUPPORTS_NETSIO=no
 fi
 if [[ "$a8_host" = "firebee" ]]; then
-    FLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
+    CFLAGS="-mcpu=5475 -O2 -fomit-frame-pointer -Wall"
     LDFLAGS="-mcpu=5475"
     SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
