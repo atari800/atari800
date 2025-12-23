@@ -1235,7 +1235,7 @@ static void CartManagement(void)
 					break;
 				}
 
-				cart.type = UI_SelectCartType(kb);
+				cart.type = UI_SelectCartType(cart.size);
 				if (cart.type == CARTRIDGE_NONE) {
 					free(cart.image);
 					break;
@@ -1246,7 +1246,7 @@ static void CartManagement(void)
 					break;
 				}
 
-				error = CARTRIDGE_WriteImage(cart_filename, cart.type, cart.image, kb << 10, FALSE, -1);
+				error = CARTRIDGE_WriteImage(cart_filename, cart.type, cart.image, cart.size << 10, FALSE, -1);
 				free(cart.image);
 				if (error)
 					CantSave(cart_filename);

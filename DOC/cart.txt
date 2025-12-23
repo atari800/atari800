@@ -115,8 +115,8 @@ Currently supported cartridge types:
 | 81 | 800/XL/XE |   64 | MDDOS cartridge                               | x |
 | 82 | 800/XL/XE |   32 | COS32 cartridge                               | x |
 | 83 | 800/XL/XE | 1024 | SIC+ 1024 KB cartridge                        | x |
-| 84 | 800/XL/XE | 1024 | Corina 1M+8K EEPROM                           | x |
-| 85 | 800/XL/XE |  512 | Corina 512K + 512K SRAM + 8K EEPROM           | x |
+| 84 | 800/XL/XE | 1032 | Corina 1M+8K EEPROM                           | x |
+| 85 | 800/XL/XE |  520 | Corina 512K + 512K SRAM + 8K EEPROM           | x |
 | 86 | 800/XL/XE |    8 | XE Multicart (8KB)                            | x |
 | 87 | 800/XL/XE |   16 | XE Multicart (16KB)                           | x |
 | 88 | 800/XL/XE |   32 | XE Multicart (32KB)                           | x |
