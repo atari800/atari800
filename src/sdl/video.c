@@ -104,7 +104,10 @@ static int user_video_driver = FALSE;
 void SDL_VIDEO_UpdatePaletteLookup(VIDEOMODE_MODE_t mode, int bpp_32)
 {
 #ifdef PAL_BLENDING
-	if (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
+	/* was: if (mode == VIDEOMODE_MODE_PAL_HIGH) */
+	if (mode == VIDEOMODE_MODE_PAL_HIGH)
+		PAL_BLENDING_UpdateLookupHigh();
+	else if (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 		PAL_BLENDING_UpdateLookup();
 	else
 #endif /* PAL_BLENDING */

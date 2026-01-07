@@ -952,6 +952,12 @@ else
               [Support UTF-8 for printing ATASCII characters in the monitor (default=ON)],
               MONITOR_UTF8,[Define to use UTF-8 in the monitor.]
              )
+
+    A8_OPTION(monitorwindow,no,
+              [Use separate SDL window for monitor instead of stdin/stdout (default=OFF)],
+              MONITOR_WINDOW,[Define to use separate SDL window for monitor.]
+             )
+    AM_CONDITIONAL([WANT_MONITOR_WINDOW], test "$WANT_MONITOR_WINDOW" = "yes")
 fi
 
 if [[ "$WANT_EVENT_RECORDING" != "no" ]]; then
@@ -1494,6 +1500,7 @@ echo "Using TRACE monitor command?..........: $WANT_MONITOR_TRACE"
 echo "Using readline support in monitor?....: $with_readline"
 echo "Using UTF-8 support in monitor?.......: $WANT_MONITOR_UTF8"
 echo "Using ANSI color support in monitor?..: $WANT_MONITOR_ANSI"
+echo "Using SDL window for monitor?.........: $WANT_MONITOR_WINDOW"
 echo "Using event recording?................: $WANT_EVENT_RECORDING"
 echo "Using MIO emulation?..................: $WANT_PBI_MIO"
 echo "Using Black Box emulation?............: $WANT_PBI_BB"

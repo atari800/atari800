@@ -160,12 +160,19 @@ static void DisplayBIT3(GLvoid *dest);
 #endif
 #ifdef PAL_BLENDING
 static void DisplayPalBlending(GLvoid *dest);
+static void DisplayPalHigh(GLvoid *dest);
+static void DisplayPalHighBlur(GLvoid *dest);
 #endif /* PAL_BLENDING */
+static void SetGlDisplayList(void);
+static void ApplyScreenFilteringForMode(VIDEOMODE_MODE_t mode);
 
 static void (* blit_funcs[VIDEOMODE_MODE_SIZE])(GLvoid *) = {
 	&DisplayNormal
 #if NTSC_FILTER
 	,&DisplayNTSCEmu
+#endif
+#ifdef PAL_BLENDING
+	,&DisplayPalHigh
 #endif
 #ifdef XEP80_EMULATION
 	,&DisplayXEP80
@@ -429,6 +436,16 @@ static void SetSubpixelShifts(void)
 		screen_hshift = 0.5 / hmult;
 	else
 		screen_hshift = 0.0;
+}
+
+static void ApplyScreenFilteringForMode(VIDEOMODE_MODE_t mode)
+{
+	GLint filtering = SDL_VIDEO_GL_filtering ? GL_LINEAR : GL_NEAREST;
+	gl.BindTexture(GL_TEXTURE_2D, textures[0]);
+	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
+	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
+	SetSubpixelShifts();
+	SetGlDisplayList();
 }
 
 /* Sets up the GL Display List that creates a textured rectangle of the main
@@ -780,9 +797,9 @@ static const GLushort indices[] =
 
 static void SDL_set_up_uvs(void) {
 	float min_u	= 0.0f;
-	float max_u	= (float)VIDEOMODE_custom_horizontal_area / TEX_WIDTH;
+	float max_u	= (float)VIDEOMODE_actual_width / TEX_WIDTH;
 	float min_v	= 0.0f;
-	float max_v	= (float)VIDEOMODE_custom_vertical_area / TEX_HEIGHT;
+	float max_v	= (float)VIDEOMODE_src_height / TEX_HEIGHT;
 	const GLfloat uvs[] = {
 		min_u, min_v,
 		max_u, min_v,
@@ -1018,6 +1035,18 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 #endif /* PAL_BLENDING */
 			blit_funcs[0] = &DisplayNormal;
 	}
+#ifdef PAL_BLENDING
+	else if (mode == VIDEOMODE_MODE_PAL_HIGH) {
+		/* was: blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = &DisplayPalHigh */
+		if (ARTIFACT_mode == ARTIFACT_PAL_HIGH_BLUR)
+			blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = &DisplayPalHighBlur;
+		else
+			blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = &DisplayPalHigh;
+	}
+#endif
+#ifdef PAL_BLENDING
+	ApplyScreenFilteringForMode(mode);
+#endif
 
 #if SDL2
 	gl.Viewport(0, 0, screen_width, screen_height);
@@ -1064,6 +1093,38 @@ static void DisplayPalBlending(GLvoid *dest)
 		else
 			pitch = VIDEOMODE_actual_width / 2;
 		PAL_BLENDING_Blit16((ULONG*)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHigh(GLvoid *dest)
+{
+	Uint8 *screen = (Uint8 *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	PAL_BLENDING_UpdateLookupHigh();
+	if (bpp_32)
+		PAL_BLENDING_BlitHigh32((ULONG *)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	else {
+		int pitch;
+		if (VIDEOMODE_actual_width & 0x01)
+			pitch = VIDEOMODE_actual_width / 2 + 1;
+		else
+			pitch = VIDEOMODE_actual_width / 2;
+		PAL_BLENDING_BlitHigh16((ULONG *)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHighBlur(GLvoid *dest)
+{
+	Uint8 *screen = (Uint8 *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	PAL_BLENDING_UpdateLookupHigh();
+	if (bpp_32)
+		PAL_BLENDING_BlitHighBlur32((ULONG *)dest, screen, VIDEOMODE_actual_width, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	else {
+		int pitch;
+		if (VIDEOMODE_actual_width & 0x01)
+			pitch = VIDEOMODE_actual_width / 2 + 1;
+		else
+			pitch = VIDEOMODE_actual_width / 2;
+		PAL_BLENDING_BlitHighBlur16((ULONG *)dest, screen, pitch, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
 	}
 }
 #endif /* PAL_BLENDING */
@@ -1173,11 +1234,12 @@ void SDL_VIDEO_GL_DisplayScreen(void)
 
 	gl.BindVertexArray(vaos[0]);
 	float sx = 1.0f, sy = 1.0f;
-	float vw = VIDEOMODE_custom_horizontal_area;
+	float vw_aspect = VIDEOMODE_custom_horizontal_area;
+	float vw_shader = vw_aspect;
 	float vh = VIDEOMODE_custom_vertical_area;
 	// Screen aspect ratio adjustment
 	float a = (float)screen_width / screen_height;
-	float a0 = currently_rotated ? vh / vw : vw / vh;
+	float a0 = currently_rotated ? vh / vw_aspect : vw_aspect / vh;
 	if (a > a0) {
 		sx = a0 / a;
 	}
@@ -1187,7 +1249,7 @@ void SDL_VIDEO_GL_DisplayScreen(void)
 
 	int keep = VIDEOMODE_GetKeepAspect();
 	if (keep == VIDEOMODE_KEEP_ASPECT_REAL) {
-		float ar = VIDEOMODE_GetPixelAspectRatio(VIDEOMODE_MODE_NORMAL);
+		float ar = VIDEOMODE_GetPixelAspectRatio(SDL_VIDEO_current_display_mode);
 		if (ar > 1.0) {
 			sy /= ar;
 		}
@@ -1195,12 +1257,17 @@ void SDL_VIDEO_GL_DisplayScreen(void)
 			sx *= ar;
 		}
 	}
+#ifdef PAL_BLENDING
+	if (SDL_VIDEO_current_display_mode == VIDEOMODE_MODE_PAL_HIGH) {
+		vw_shader *= 2.0f;
+	}
+#endif
 
 	float proj[4][4];
 	SetOrtho(proj, sx * zoom_factor, sy * zoom_factor, currently_rotated ? 90 : 0);
 
 	gl.UniformMatrix4fv(sh_vp_matrix, 1, GL_FALSE, &proj[0][0]);
-	gl.Uniform2f(sh_resolution, vw, vh);
+	gl.Uniform2f(sh_resolution, vw_shader, vh);
 
 	float scanlinesFactor = SDL_VIDEO_interpolate_scanlines ? SDL_VIDEO_scanlines_percentage / 100.0f : 0.0f;
 	gl.Uniform1f(sh_scanlines, scanlinesFactor);
@@ -1363,6 +1430,7 @@ void SDL_VIDEO_GL_SetPixelFormat(int value)
 		}
 		UpdatePaletteLookup(SDL_VIDEO_current_display_mode);
 		InitGlTextures();
+		ApplyScreenFilteringForMode(SDL_VIDEO_current_display_mode);
 		CleanDisplayTexture();
 	}
 	else
@@ -1379,12 +1447,7 @@ void SDL_VIDEO_GL_SetFiltering(int value)
 {
 	SDL_VIDEO_GL_filtering = value;
 	if (SDL_VIDEO_screen != NULL && (SDL_VIDEO_screen->flags & SDL_OpenGL_FLAG) == SDL_OpenGL_FLAG) {
-		GLint filtering = value ? GL_LINEAR : GL_NEAREST;
-		gl.BindTexture(GL_TEXTURE_2D, textures[0]);
-		gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
-		gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
-		SetSubpixelShifts();
-		SetGlDisplayList();
+		ApplyScreenFilteringForMode(SDL_VIDEO_current_display_mode);
 	}
 }
 

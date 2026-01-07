@@ -41,6 +41,9 @@
 #include "log.h"
 #include "monitor.h"
 #include "platform.h"
+#ifdef MONITOR_WINDOW
+#include "monitor_window.h"
+#endif
 #ifdef SOUND
 #include "../pokeysnd.h"
 #include "../sound.h"
@@ -111,6 +114,12 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	    || !SDL_INPUT_Initialise(argc, argv))
 		return FALSE;
 
+#ifdef MONITOR_WINDOW
+	if (!SDL_MONITOR_WINDOW_Init()) {
+		Log_print("Failed to initialize monitor window");
+	}
+#endif
+
 	return TRUE;
 }
 
@@ -133,6 +142,10 @@ int PLATFORM_Exit(int run_monitor)
 			return 1;
 		}
 	}
+
+#ifdef MONITOR_WINDOW
+	SDL_MONITOR_WINDOW_Exit();
+#endif
 
 	SDL_VIDEO_Exit();
 	Log_flushlog();

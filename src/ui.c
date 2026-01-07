@@ -3175,6 +3175,9 @@ static void DisplaySettings(void)
 #endif
 #if PAL_BLENDING
 		UI_MENU_ACTION(ARTIFACT_PAL_BLEND, "accurate PAL blending"),
+		/* was: "PAL high artifacting" */
+		UI_MENU_ACTION(ARTIFACT_PAL_HIGH, "high PAL artifacting"),
+		UI_MENU_ACTION(ARTIFACT_PAL_HIGH_BLUR, "high PAL blurred"),
 #endif /* PAL_BLENDING */
 		UI_MENU_END
 	};
@@ -3335,6 +3338,10 @@ static void DisplaySettings(void)
 #endif /* NO_SIMPLE_PAL_BLENDING */
 #ifdef PAL_BLENDING
 			artif_menu_array[ARTIFACT_PAL_BLEND].flags =
+				Atari800_tv_mode == Atari800_TV_PAL ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+			artif_menu_array[ARTIFACT_PAL_HIGH].flags =
+				Atari800_tv_mode == Atari800_TV_PAL ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
+			artif_menu_array[ARTIFACT_PAL_HIGH_BLUR].flags =
 				Atari800_tv_mode == Atari800_TV_PAL ? UI_ITEM_ACTION : UI_ITEM_HIDDEN;
 #endif /* PAL_BLENDING */
 			option2 = UI_driver->fSelect(NULL, UI_SELECT_POPUP, ARTIFACT_mode, artif_menu_array, NULL);

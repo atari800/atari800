@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -60,6 +61,10 @@
 #include <readline/history.h>
 #endif
 
+#ifdef MONITOR_WINDOW
+#include "sdl/monitor_window.h"
+#endif
+
 #ifdef __PLUS
 
 #include <stdarg.h>
@@ -89,6 +94,27 @@ void monitor_printf(const char *format, ...)
 #define PLUS_EXIT_MONITOR Misc_FreeMonitorConsole(mon_output, mon_input)
 
 #else /* __PLUS */
+
+#ifdef MONITOR_WINDOW
+/* When using monitor window, redirect printf to SDL window */
+#include <stdarg.h>
+
+void monitor_printf(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	char buffer[4096];
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+	SDL_MONITOR_WINDOW_Printf("%s", buffer);
+}
+
+#define printf            monitor_printf
+#define puts(s)           SDL_MONITOR_WINDOW_Printf("%s\n", s)
+#define putchar(c)        do { char _c = (c); SDL_MONITOR_WINDOW_Printf("%c", _c); } while(0)
+#define perror(filename)  printf("%s: %s\n", filename, strerror(errno))
+
+#endif /* MONITOR_WINDOW */
 
 #define PLUS_EXIT_MONITOR
 
@@ -703,6 +729,13 @@ const UBYTE MONITOR_optype6502[256] = {
 
 static void safe_gets(char *buffer, size_t size, char const *prompt)
 {
+#ifdef MONITOR_WINDOW
+	/* Use SDL monitor window for input/output */
+	if (SDL_MONITOR_WINDOW_GetLine(prompt, buffer, size) == NULL)
+		buffer[0] = 0;
+	Util_chomp(buffer);
+#else
+	/* Use stdin/stdout or readline */
 #ifdef HAVE_FFLUSH
 	fflush(stdout);
 #endif
@@ -724,6 +757,7 @@ static void safe_gets(char *buffer, size_t size, char const *prompt)
 		buffer[0] = 0;
 #endif
 	Util_chomp(buffer);
+#endif /* MONITOR_WINDOW */
 }
 
 static int pager(void)
@@ -3780,6 +3814,11 @@ int MONITOR_Run(void)
 #ifdef __PLUS
 	if (!Misc_AllocMonitorConsole(&mon_output, &mon_input))
 		return TRUE;
+#endif
+
+#ifdef MONITOR_WINDOW
+	/* Show monitor window */
+	SDL_MONITOR_WINDOW_Show(1);
 #endif
 
 #ifdef MONITOR_READLINE

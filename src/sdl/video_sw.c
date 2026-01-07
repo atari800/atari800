@@ -78,12 +78,19 @@ static void DisplayBIT3(void);
 #ifdef PAL_BLENDING
 static void DisplayPalBlending(void);
 static void DisplayPalBlendingScaled(void);
+static void DisplayPalHigh(void);
+static void DisplayPalHighScaled(void);
+static void DisplayPalHighBlur(void);
+static void DisplayPalHighBlurScaled(void);
 #endif /* PAL_BLENDING */
 
 static void (*blit_funcs[VIDEOMODE_MODE_SIZE])(void) = {
 	&DisplayWithoutScaling
 #ifdef NTSC_FILTER
 	,&DisplayNTSCEmu
+#endif
+#ifdef PAL_BLENDING
+	,&DisplayPalHigh
 #endif
 #ifdef XEP80_EMULATION
 	,&DisplayXEP80
@@ -293,6 +300,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		  || mode == VIDEOMODE_MODE_NTSC_FILTER
 #endif
 #ifdef PAL_BLENDING
+		  || mode == VIDEOMODE_MODE_PAL_HIGH
 		  || (mode == VIDEOMODE_MODE_NORMAL && ARTIFACT_mode == ARTIFACT_PAL_BLEND)
 #endif /* PAL_BLENDING */
 		 ) && SDL_VIDEO_SW_bpp != 16 && SDL_VIDEO_SW_bpp != 32)) {
@@ -336,11 +344,25 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 		else
 			blit_funcs[0] = &DisplayWithScaling;
 	}
+#ifdef PAL_BLENDING
+	else if (mode == VIDEOMODE_MODE_PAL_HIGH) {
+		int native_scale = VIDEOMODE_src_width * 2 == VIDEOMODE_dest_width && VIDEOMODE_src_height == VIDEOMODE_dest_height;
+		/* was: blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = &DisplayPalHigh/DisplayPalHighScaled */
+		if (ARTIFACT_mode == ARTIFACT_PAL_HIGH_BLUR)
+			blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = native_scale ? &DisplayPalHighBlur : &DisplayPalHighBlurScaled;
+		else
+			blit_funcs[VIDEOMODE_MODE_PAL_HIGH] = native_scale ? &DisplayPalHigh : &DisplayPalHighScaled;
+	}
+#endif
 }
 
 int SDL_VIDEO_SW_SupportsVideomode(VIDEOMODE_MODE_t mode, int stretch, int rotate90)
 {
-	if (mode == VIDEOMODE_MODE_NORMAL) {
+	if (mode == VIDEOMODE_MODE_NORMAL
+#ifdef PAL_BLENDING
+	    || mode == VIDEOMODE_MODE_PAL_HIGH
+#endif
+	) {
 		/* Normal mode doesn't support stretching together with rotation. */
 		return !(stretch && rotate90);
 	} else
@@ -909,6 +931,70 @@ static void DisplayPalBlendingScaled(void)
 	case 32:
 		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
 		PAL_BLENDING_BlitScaled32((ULONG*)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHigh(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	UBYTE *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint8 *pixels = (Uint8 *)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	case 16:
+		pixels += VIDEOMODE_dest_offset_left * 2;
+		PAL_BLENDING_BlitHigh16((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	default:
+		pixels += VIDEOMODE_dest_offset_left * 4;
+		PAL_BLENDING_BlitHigh32((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHighBlur(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	UBYTE *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint8 *pixels = (Uint8 *)SDL_VIDEO_screen->pixels + SDL_VIDEO_screen->pitch * VIDEOMODE_dest_offset_top;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	case 16:
+		pixels += VIDEOMODE_dest_offset_left * 2;
+		PAL_BLENDING_BlitHighBlur16((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	default:
+		pixels += VIDEOMODE_dest_offset_left * 4;
+		PAL_BLENDING_BlitHighBlur32((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHighScaled(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	Uint8 *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint32 *pixels = (Uint32 *)SDL_VIDEO_screen->pixels;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	case 16:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+		PAL_BLENDING_BlitHighScaled16((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	case 32:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+		PAL_BLENDING_BlitHighScaled32((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+	}
+}
+
+static void DisplayPalHighBlurScaled(void)
+{
+	int pitch4 = SDL_VIDEO_screen->pitch / 4;
+	Uint8 *screen = (UBYTE *)Screen_atari + Screen_WIDTH * VIDEOMODE_src_offset_top + VIDEOMODE_src_offset_left;
+	Uint32 *pixels = (Uint32 *)SDL_VIDEO_screen->pixels;
+	switch (SDL_VIDEO_screen->format->BitsPerPixel) {
+	case 16:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left / 2;
+		PAL_BLENDING_BlitHighBlurScaled16((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
+		break;
+	case 32:
+		pixels += pitch4 * VIDEOMODE_dest_offset_top + VIDEOMODE_dest_offset_left;
+		PAL_BLENDING_BlitHighBlurScaled32((ULONG *)pixels, screen, pitch4, VIDEOMODE_src_width, VIDEOMODE_src_height, VIDEOMODE_dest_width, VIDEOMODE_dest_height, VIDEOMODE_src_offset_top % 2);
 	}
 }
 #endif /* PAL_BLENDING */

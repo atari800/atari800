@@ -55,7 +55,9 @@ static char const * const mode_cfg_strings[ARTIFACT_SIZE] = {
 	"PAL-SIMPLE",
 #endif /* NO_SIMPLE_PAL_BLENDING */
 #ifdef PAL_BLENDING
-	"PAL-BLEND"
+	"PAL-BLEND",
+	"PAL-HIGH",
+	"PAL-HIGH-BLUR"
 #endif /* PAL_BLENDING */
 };
 
@@ -77,7 +79,11 @@ static void UpdateMode(ARTIFACT_t old_mode, int reinit)
 #ifdef PAL_BLENDING
 	/* If PAL blending was enabled/disabled, video mode needs update. */
 	if (ARTIFACT_mode == ARTIFACT_PAL_BLEND ||
-	    old_mode == ARTIFACT_PAL_BLEND)
+	    ARTIFACT_mode == ARTIFACT_PAL_HIGH ||
+	    ARTIFACT_mode == ARTIFACT_PAL_HIGH_BLUR ||
+	    old_mode == ARTIFACT_PAL_BLEND ||
+	    old_mode == ARTIFACT_PAL_HIGH ||
+	    old_mode == ARTIFACT_PAL_HIGH_BLUR)
 		need_reinit = TRUE;
 #endif /* PAL_BLENDING */
 #ifndef NO_SIMPLE_PAL_BLENDING
@@ -206,7 +212,7 @@ int ARTIFACT_Initialise(int *argc, char *argv[])
 						"|pal-simple"
 #endif
 #ifdef PAL_BLENDING
-						"|pal-blend"
+						"|pal-blend|pal-high"
 #endif
 				);
 				Log_print("\t                 Select video artifacts for PAL");

@@ -56,7 +56,9 @@
 #define COLUMN_80 0
 #endif
 
-#if NTSC_FILTER
+#if defined(PAL_BLENDING)
+#define VIDEOMODE_MODE_LASTWITHHUD VIDEOMODE_MODE_PAL_HIGH
+#elif NTSC_FILTER
 #define VIDEOMODE_MODE_LASTWITHHUD VIDEOMODE_MODE_NTSC_FILTER
 #else
 #define VIDEOMODE_MODE_LASTWITHHUD VIDEOMODE_MODE_NORMAL
@@ -164,12 +166,19 @@ static unsigned int ReturnSame(unsigned int value);
 static unsigned int UpscaleWidthNtsc(unsigned int w);
 static unsigned int DownscaleWidthNtsc(unsigned int w);
 #endif
+#ifdef PAL_BLENDING
+static unsigned int UpscaleWidthPalHigh(unsigned int w);
+static unsigned int DownscaleWidthPalHigh(unsigned int w);
+#endif
 
 /* TODO determine pixel aspect ratio for 80 column cards. */
 static display_mode_t display_modes[VIDEOMODE_MODE_SIZE] = {
 	{ 320, 200, Screen_WIDTH, Screen_HEIGHT, 1, 1, 1.0, &ReturnSame, &ReturnSame }
 #if NTSC_FILTER
 	, { 640, 400, Screen_WIDTH, Screen_HEIGHT, 1, 2, 0.5, &UpscaleWidthNtsc, &DownscaleWidthNtsc, }
+#endif
+#ifdef PAL_BLENDING
+	, { 640, 200, Screen_WIDTH, Screen_HEIGHT, 1, 1, 0.5, &UpscaleWidthPalHigh, &DownscaleWidthPalHigh }
 #endif
 #ifdef XEP80_EMULATION
 	, { XEP80_SCRN_WIDTH, 400, XEP80_SCRN_WIDTH, XEP80_MAX_SCRN_HEIGHT, 2, 2, 0.5, &ReturnSame, &ReturnSame }
@@ -243,6 +252,11 @@ static VIDEOMODE_MODE_t CurrentDisplayMode(void)
 	if (ARTIFACT_mode == ARTIFACT_NTSC_FULL)
 		return VIDEOMODE_MODE_NTSC_FILTER;
 #endif
+#ifdef PAL_BLENDING
+	/* was: if (ARTIFACT_mode == ARTIFACT_PAL_HIGH) */
+	if (ARTIFACT_mode == ARTIFACT_PAL_HIGH || ARTIFACT_mode == ARTIFACT_PAL_HIGH_BLUR)
+		return VIDEOMODE_MODE_PAL_HIGH;
+#endif
 	return VIDEOMODE_MODE_NORMAL;
 }
 
@@ -291,6 +305,18 @@ static unsigned int DownscaleWidthNtsc(unsigned int w)
 	return ATARI_NTSC_IN_WIDTH(w);
 }
 #endif /* NTSC_FILTER */
+
+#ifdef PAL_BLENDING
+static unsigned int UpscaleWidthPalHigh(unsigned int w)
+{
+	return w * 2;
+}
+
+static unsigned int DownscaleWidthPalHigh(unsigned int w)
+{
+	return w / 2;
+}
+#endif /* PAL_BLENDING */
 
 /* Switches RES's width and height. */
 static void RotateResolution(VIDEOMODE_resolution_t *res)
@@ -387,6 +413,11 @@ static void ComputeVideoArea(VIDEOMODE_resolution_t const *res, VIDEOMODE_resolu
 	}
 	else
 		asp_ratio = 1.0 / display_modes[display_mode].h_mult;
+
+#ifdef PAL_BLENDING
+	if (display_mode == VIDEOMODE_MODE_PAL_HIGH)
+		asp_ratio *= 0.5;
+#endif
 
 	if (!PLATFORM_SupportsVideomode(display_mode, TRUE, rotate)) {
 		*mult_w = 1.0;
@@ -882,6 +913,9 @@ int VIDEOMODE_SetHostAspectString(char const *s)
 static void UpdateTvSystemSettings(void)
 {
 	display_modes[VIDEOMODE_MODE_NORMAL].asp_ratio = Atari800_tv_mode == Atari800_TV_PAL ? pixel_aspect_ratio_pal : pixel_aspect_ratio_ntsc;
+#ifdef PAL_BLENDING
+	display_modes[VIDEOMODE_MODE_PAL_HIGH].asp_ratio = Atari800_tv_mode == Atari800_TV_PAL ? pixel_aspect_ratio_pal : pixel_aspect_ratio_ntsc;
+#endif
 }
 
 void VIDEOMODE_SetVideoSystem(int mode)

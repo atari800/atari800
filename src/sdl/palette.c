@@ -36,6 +36,9 @@ SDL_PALETTE_tab_t const SDL_PALETTE_tab[VIDEOMODE_MODE_SIZE] = {
 #if NTSC_FILTER
 	,{ Colours_table, 256 } /* NTSC filter */
 #endif
+#ifdef PAL_BLENDING
+	,{ Colours_table, 256 } /* PAL high artifacting */
+#endif
 #ifdef XEP80_EMULATION
 	,{ Colours_table, 256 } /* XEP80 also uses the standard palette */
 #endif

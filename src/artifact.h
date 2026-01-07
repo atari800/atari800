@@ -17,6 +17,8 @@ typedef enum ARTIFACT_t {
 #endif /* NO_SIMPLE_PAL_BLENDING */
 #ifdef PAL_BLENDING
 	ARTIFACT_PAL_BLEND,  /* Accurate PAL blending */
+	ARTIFACT_PAL_HIGH,   /* PAL high artifacting */
+	ARTIFACT_PAL_HIGH_BLUR, /* PAL high artifacting (blurred) */
 #endif /* PAL_BLENDING */
 	ARTIFACT_SIZE
 } ARTIFACT_t;
