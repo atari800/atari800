@@ -31,6 +31,9 @@
 #include "pia.h"
 #include "sio.h"
 #include "pokey.h"
+#ifdef NETSIO
+#include "netsio.h"
+#endif
 #ifdef XEP80_EMULATION
 #include "xep80.h"
 #endif
@@ -97,6 +100,14 @@ static void set_CA2(int value)
 	if (PIA_CA2 != value) {
 		/* The motor status has changed */
 		CASSETTE_TapeMotor(!value);
+#ifdef NETSIO
+		if (netsio_enabled) {
+			if (value == 0)
+				netsio_motor_on();
+			else
+				netsio_motor_off();
+		}
+#endif
 	}
 	PIA_CA2 = value;
 }

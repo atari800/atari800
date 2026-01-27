@@ -362,6 +362,30 @@ void netsio_toggle_cmd(int v)
         netsio_cmd_on();
 }
 
+/* MOTOR ON */
+int netsio_motor_on(void)
+{
+    uint8_t p;
+    p = NETSIO_MOTOR_ON;
+#ifdef DEBUG
+    Log_print("netsio: MOTOR ON");
+#endif
+    send_to_fujinet(&p, 1);
+    return 0;
+}
+
+/* MOTOR OFF */
+int netsio_motor_off(void)
+{
+    uint8_t p;
+    p = NETSIO_MOTOR_OFF;
+#ifdef DEBUG
+    Log_print("netsio: MOTOR OFF");
+#endif
+    send_to_fujinet(&p, 1);
+    return 0;
+}
+
 /* The emulator calls this to send a data byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
     uint8_t pkt[2];
