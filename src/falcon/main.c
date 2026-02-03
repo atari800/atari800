@@ -475,7 +475,7 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 		/* create new graphics mode {336|384}x240 in 256 colors */
 		reprogram_VIDEL = TRUE;
 	} else {
-		short work_in[16], work_out[272];
+		short work_in[16], work_out[273];
 
 		/* GEM init */
 		gl_app_id = appl_init();
