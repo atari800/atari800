@@ -30,6 +30,8 @@ static void send_block_to_fujinet(const uint8_t *block, size_t len);
 
 /* Flag to know when netsio is enabled */
 volatile int netsio_enabled = 0;
+/* Flag to track if NetSIO has been initialized (prevents re-initialization) */
+static int netsio_initialized = 0;
 /* Holds sync to fujinet-pc incremented number */
 uint8_t netsio_sync_num = 0;
 /* if we have heard from fujinet-pc or not */
@@ -209,6 +211,14 @@ int netsio_init(uint16_t port) {
     pthread_t rx_thread;
     int broadcast = 1;
 
+    /* Skip re-initialization if already initialized (during emulator restarts) */
+    if (netsio_initialized) {
+#ifdef DEBUG
+        Log_print("netsio: already initialized, skipping re-initialization");
+#endif
+        return 0;
+    }
+
     /* create emulator <-> netsio FIFOs */
     if (pipe(fds0) < 0)
     {
@@ -255,6 +265,25 @@ int netsio_init(uint16_t port) {
 #endif
     }
 
+    /* Enable SO_REUSEADDR to allow binding even if the port is in TIME_WAIT state */
+    int reuse = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+    {
+#ifdef DEBUG
+        Log_print("netsio setsockopt SO_REUSEADDR failed");
+#endif
+    }
+
+    /* On macOS/BSD, SO_REUSEPORT is required to allow multiple processes to receive on same port */
+#ifdef SO_REUSEPORT
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) < 0)
+    {
+#ifdef DEBUG
+        Log_print("netsio setsockopt SO_REUSEPORT failed");
+#endif
+    }
+#endif
+
     /* Bind to the socket on requested port */
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
@@ -274,6 +303,12 @@ int netsio_init(uint16_t port) {
         return -1;
     }
     pthread_detach(rx_thread);
+
+    /* Mark as initialized to prevent re-initialization */
+    netsio_initialized = 1;
+#ifdef DEBUG
+    Log_print("netsio: initialization complete");
+#endif
 
     return 0;
 }
@@ -730,4 +765,56 @@ static void *fujinet_rx_thread(void *arg) {
         }
     }
     return NULL;
+}
+
+/* Shutdown NetSIO subsystem and clean up resources */
+void netsio_shutdown(void) {
+#ifdef DEBUG
+    Log_print("netsio: shutting down...");
+#endif
+
+    /* Send disconnect notification to FujiNet-PC (if connected) */
+    if (netsio_enabled) {
+        uint8_t pkt = NETSIO_DEVICE_DISCONNECTED;
+        send_to_fujinet(&pkt, 1);
+#ifdef DEBUG
+        Log_print("netsio: sent disconnect notification");
+#endif
+    }
+
+    /* Close UDP socket - this will cause fujinet_rx_thread's recvfrom() to fail and exit */
+    if (sockfd >= 0) {
+#ifdef DEBUG
+        Log_print("netsio: closing socket %d", sockfd);
+#endif
+        close(sockfd);
+        sockfd = -1;
+    }
+
+    /* Close FIFO pipes */
+    if (fds0[0] >= 0) {
+        close(fds0[0]);
+        fds0[0] = -1;
+    }
+    if (fds0[1] >= 0) {
+        close(fds0[1]);
+        fds0[1] = -1;
+    }
+
+    /* Reset global state variables */
+    netsio_enabled = 0;
+    netsio_initialized = 0;  /* Allow re-initialization after shutdown */
+    netsio_sync_num = 0;
+    fujinet_known = 0;
+    netsio_sync_wait = 0;
+    netsio_cmd_state = 0;
+    netsio_next_write_size = 0;
+
+    /* Clear address info */
+    memset(&fujinet_addr, 0, sizeof(fujinet_addr));
+    fujinet_addr_len = sizeof(fujinet_addr);
+
+#ifdef DEBUG
+    Log_print("netsio: shutdown complete");
+#endif
 }
