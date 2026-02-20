@@ -240,6 +240,7 @@ int netsio_init(uint16_t port) {
     struct sockaddr_in addr;
     pthread_t rx_thread;
     int broadcast = 1;
+    int reuse = 1;
 
     /* Skip re-initialization if already initialized (during emulator restarts) */
     if (netsio_initialized) {
@@ -296,7 +297,6 @@ int netsio_init(uint16_t port) {
     }
 
     /* Enable SO_REUSEADDR to allow binding even if the port is in TIME_WAIT state */
-    int reuse = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
     {
 #ifdef DEBUG
