@@ -149,6 +149,9 @@
 #endif
 #ifdef NETSIO
 #include "netsio.h"
+
+#define NETSIO_STARTUP_WAIT_TIMEOUT_MS 5000
+#define NETSIO_STARTUP_WAIT_POLL_MS 10
 #endif /* NETSIO */
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
@@ -626,7 +629,17 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (netsio_init((uint16_t)port) < 0) {
 				Log_print("netsio: init failed");
 			} else {
+				int waited_ms = 0;
 				Log_print("netsio initialized with port %d", port);
+				while (!netsio_enabled && waited_ms < NETSIO_STARTUP_WAIT_TIMEOUT_MS) {
+					Util_sleep((double)NETSIO_STARTUP_WAIT_POLL_MS / 1000.0);
+					waited_ms += NETSIO_STARTUP_WAIT_POLL_MS;
+				}
+				if (netsio_enabled)
+					Log_print("netsio connected after %d ms", waited_ms);
+				else
+					Log_print("netsio not connected after %d ms, continuing startup",
+					          NETSIO_STARTUP_WAIT_TIMEOUT_MS);
 			}
 		}
 #endif /* NETSIO */

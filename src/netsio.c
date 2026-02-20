@@ -42,6 +42,12 @@ volatile int netsio_sync_wait = 0;
 int netsio_cmd_state = 0;
 /* data frame size for SIO write commands */
 volatile int netsio_next_write_size = 0;
+/* Netstream gate state */
+static volatile int netsio_netstream_pending_enable = 0;
+static volatile int netsio_netstream_fuji_enabled = 0;
+static volatile int netsio_netstream_motor_on = 0;
+static volatile int netsio_netstream_pokey_ok = 0;
+static volatile int netsio_netstream_is_active = 0;
 
 /* PIA Pin buffered states for synchronous emulator polling */
 volatile int netsio_ca1_state = 1;
@@ -57,6 +63,26 @@ static socklen_t fujinet_addr_len = sizeof(fujinet_addr);
 
 /* Thread declaration */
 static void *fujinet_rx_thread(void *arg);
+
+static void netsio_netstream_recalc(void)
+{
+    int active = 0;
+    if (netsio_enabled
+     && netsio_netstream_fuji_enabled
+     && netsio_netstream_motor_on
+     && netsio_netstream_pokey_ok)
+        active = 1;
+    if (active != netsio_netstream_is_active) {
+        netsio_netstream_is_active = active;
+#ifdef DEBUG
+        Log_print("netsio: netstream %s (fuji=%d motor=%d pokey=%d)",
+            active ? "enter" : "exit",
+            netsio_netstream_fuji_enabled,
+            netsio_netstream_motor_on,
+            netsio_netstream_pokey_ok);
+#endif
+    }
+}
 
 static void millisleep(unsigned int ms)
 {
@@ -434,6 +460,63 @@ int netsio_motor_off(void)
     return 0;
 }
 
+void netsio_netstream_set_motor(int motor_on)
+{
+    netsio_netstream_motor_on = motor_on ? 1 : 0;
+    if (netsio_enabled) {
+        if (motor_on)
+            netsio_motor_on();
+        else
+            netsio_motor_off();
+    }
+    netsio_netstream_recalc();
+}
+
+void netsio_netstream_note_command_frame(const uint8_t *cmd, size_t len)
+{
+    if (len >= 2 && cmd != NULL && cmd[0] == 0x70 && cmd[1] == 0xF0) {
+        netsio_netstream_pending_enable = 1;
+#ifdef DEBUG
+        Log_print("netsio: netstream pending enable (cf 70/F0)");
+#endif
+    }
+}
+
+void netsio_netstream_note_status_byte(uint8_t status)
+{
+    if (!netsio_netstream_pending_enable)
+        return;
+    netsio_netstream_pending_enable = 0;
+    netsio_netstream_fuji_enabled = (status == 'A') ? 1 : 0;
+#ifdef DEBUG
+    Log_print("netsio: netstream enable %s (status=%02X)",
+        netsio_netstream_fuji_enabled ? "accepted" : "rejected",
+        status);
+#endif
+    netsio_netstream_recalc();
+}
+
+void netsio_netstream_clear_pending(void)
+{
+    netsio_netstream_pending_enable = 0;
+}
+
+void netsio_netstream_update_pokey(uint8_t skctl, uint8_t audctl, uint8_t audf3, uint8_t audf4)
+{
+    uint8_t mode = skctl & 0x70;
+    (void)audf3;
+    (void)audf4;
+    netsio_netstream_pokey_ok =
+        ((audctl & 0x28) == 0x28)
+        && (mode == 0x00 || mode == 0x10 || mode == 0x30 || mode == 0x40);
+    netsio_netstream_recalc();
+}
+
+int netsio_netstream_active(void)
+{
+    return netsio_netstream_is_active;
+}
+
 /* The emulator calls this to send a data byte out to FujiNet */
 int netsio_send_byte(uint8_t b) {
     uint8_t pkt[2];
@@ -496,6 +579,9 @@ int netsio_cold_reset(void) {
 #ifdef DEBUG
     Log_print("netsio: cold reset");
 #endif
+    netsio_netstream_pending_enable = 0;
+    netsio_netstream_fuji_enabled = 0;
+    netsio_netstream_recalc();
     send_to_fujinet(&pkt, 1);
     return 0;
 }
@@ -506,6 +592,9 @@ int netsio_warm_reset(void) {
 #ifdef DEBUG
     Log_print("netsio: warm reset");
 #endif
+    netsio_netstream_pending_enable = 0;
+    netsio_netstream_fuji_enabled = 0;
+    netsio_netstream_recalc();
     send_to_fujinet(&pkt, 1);
     return 0;
 }
@@ -595,6 +684,7 @@ static void *fujinet_rx_thread(void *arg) {
                 Log_print("netsio: recv: device connected");
 #endif
                 netsio_enabled = 1;
+                netsio_netstream_recalc();
                 break;
             }
 
@@ -604,6 +694,9 @@ static void *fujinet_rx_thread(void *arg) {
                 Log_print("netsio: recv: device disconnected");
 #endif
                 netsio_enabled = 0;
+                netsio_netstream_pending_enable = 0;
+                netsio_netstream_fuji_enabled = 0;
+                netsio_netstream_is_active = 0;
                 break;
             }
             
@@ -826,6 +919,11 @@ void netsio_shutdown(void) {
     netsio_sync_wait = 0;
     netsio_cmd_state = 0;
     netsio_next_write_size = 0;
+    netsio_netstream_pending_enable = 0;
+    netsio_netstream_fuji_enabled = 0;
+    netsio_netstream_motor_on = 0;
+    netsio_netstream_pokey_ok = 0;
+    netsio_netstream_is_active = 0;
 
     /* Clear address info */
     memset(&fujinet_addr, 0, sizeof(fujinet_addr));

@@ -101,12 +101,7 @@ static void set_CA2(int value)
 		/* The motor status has changed */
 		CASSETTE_TapeMotor(!value);
 #ifdef NETSIO
-		if (netsio_enabled) {
-			if (value == 0)
-				netsio_motor_on();
-			else
-				netsio_motor_off();
-		}
+		netsio_netstream_set_motor(value == 0);
 #endif
 	}
 	PIA_CA2 = value;

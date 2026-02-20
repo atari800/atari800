@@ -91,4 +91,12 @@ int netsio_warm_reset(void);
 
 void netsio_test_cmd(void);
 
+/* Netstream state gates (Fuji $70/$F0 + MOTOR + POKEY config). */
+void netsio_netstream_set_motor(int motor_on);
+void netsio_netstream_note_command_frame(const uint8_t *cmd, size_t len);
+void netsio_netstream_note_status_byte(uint8_t status);
+void netsio_netstream_clear_pending(void);
+void netsio_netstream_update_pokey(uint8_t skctl, uint8_t audctl, uint8_t audf3, uint8_t audf4);
+int netsio_netstream_active(void);
+
 #endif /* NETSIO_H */

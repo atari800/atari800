@@ -217,6 +217,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 
 		Update_Counter((1 << POKEY_CHAN1) | (1 << POKEY_CHAN2) | (1 << POKEY_CHAN3) | (1 << POKEY_CHAN4));
 		POKEYSND_Update(POKEY_OFFSET_AUDCTL, byte, 0, SOUND_GAIN);
+#ifdef NETSIO
+		netsio_netstream_update_pokey(POKEY_SKCTL, POKEY_AUDCTL[0], POKEY_AUDF[POKEY_CHAN3], POKEY_AUDF[POKEY_CHAN4]);
+#endif
 		break;
 	case POKEY_OFFSET_AUDF1:
 		POKEY_AUDF[POKEY_CHAN1] = byte;
@@ -232,11 +235,17 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		POKEY_AUDF[POKEY_CHAN3] = byte;
 		Update_Counter((POKEY_AUDCTL[0] & POKEY_CH3_CH4) ? ((1 << POKEY_CHAN4) | (1 << POKEY_CHAN3)) : (1 << POKEY_CHAN3));
 		POKEYSND_Update(POKEY_OFFSET_AUDF3, byte, 0, SOUND_GAIN);
+#ifdef NETSIO
+		netsio_netstream_update_pokey(POKEY_SKCTL, POKEY_AUDCTL[0], POKEY_AUDF[POKEY_CHAN3], POKEY_AUDF[POKEY_CHAN4]);
+#endif
 		break;
 	case POKEY_OFFSET_AUDF4:
 		POKEY_AUDF[POKEY_CHAN4] = byte;
 		Update_Counter(1 << POKEY_CHAN4);
 		POKEYSND_Update(POKEY_OFFSET_AUDF4, byte, 0, SOUND_GAIN);
+#ifdef NETSIO
+		netsio_netstream_update_pokey(POKEY_SKCTL, POKEY_AUDCTL[0], POKEY_AUDF[POKEY_CHAN3], POKEY_AUDF[POKEY_CHAN4]);
+#endif
 		break;
 	case POKEY_OFFSET_IRQEN:
 		POKEY_IRQEN = byte;
@@ -259,6 +268,12 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case POKEY_OFFSET_SEROUT:
 #ifdef VOICEBOX
 		VOICEBOX_SEROUTPutByte(byte);
+#endif
+/* Netstream raw serial path: only active after Fuji enable + MOTOR + matching POKEY setup. */
+#ifdef NETSIO
+		if (netsio_enabled && netsio_netstream_active())
+			NetSIO_PutByte(byte);
+		else
 #endif
 		if ((POKEY_SKCTL & 0x70) == 0x20 && POKEY_siocheck())
 			SIO_PutByte(byte);
@@ -311,6 +326,9 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 #endif
 		POKEY_SKCTL = byte;
 		POKEYSND_Update(POKEY_OFFSET_SKCTL, byte, 0, SOUND_GAIN);
+#ifdef NETSIO
+		netsio_netstream_update_pokey(POKEY_SKCTL, POKEY_AUDCTL[0], POKEY_AUDF[POKEY_CHAN3], POKEY_AUDF[POKEY_CHAN4]);
+#endif
 		if (byte & 4)
 			pot_scanline = 228;	/* fast pot mode - return results immediately */
 		if ((byte & 0x03) == 0) {
@@ -392,6 +410,9 @@ int POKEY_Initialise(int *argc, char *argv[])
 	POKEY_IRQEN = 0x00;
 	POKEY_SKSTAT = 0xef;
 	POKEY_SKCTL = 0x00;
+#ifdef NETSIO
+	netsio_netstream_update_pokey(POKEY_SKCTL, 0, 0, 0);
+#endif
 
 	for (i = 0; i < (POKEY_MAXPOKEYS * 4); i++) {
 		POKEY_AUDC[i] = 0;

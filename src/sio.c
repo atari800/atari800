@@ -1528,6 +1528,15 @@ static UBYTE Command_Frame(void)
 /* Enable/disable the command frame */
 void SIO_SwitchCommandFrame(int onoff)
 {
+#ifdef NETSIO
+	if (netsio_enabled && netsio_netstream_active()) {
+		CommandIndex = 0;
+		DataIndex = 0;
+		ExpectedBytes = 0;
+		TransferStatus = SIO_NoFrame;
+		return;
+	}
+#endif /* NETSIO */
 	if (onoff)
 	{				/* Enabled */
 #ifdef NETSIO
@@ -1555,6 +1564,7 @@ void SIO_SwitchCommandFrame(int onoff)
 #ifdef DEBUG
 				Log_print("Short command frame: %d bytes", CommandIndex);
 #endif
+				netsio_netstream_clear_pending();
 				/* a) Send short CF ...
 				if (CommandIndex > 0)
 					netsio_send_block(CommandFrame, CommandIndex);
@@ -1618,6 +1628,7 @@ void NetSIO_PutByte(int byte)
 			CommandFrame[CommandIndex++] = byte; /* Collect CF bytes into buffer */
 			if (CommandIndex == ExpectedBytes)
 			{
+				netsio_netstream_note_command_frame(CommandFrame, ExpectedBytes);
 				netsio_send_block(CommandFrame, ExpectedBytes); /* Send CF buffer */
 			}
 		}
@@ -1757,6 +1768,7 @@ int NetSIO_GetByte(void)
 
 	switch (TransferStatus) {
 	case SIO_StatusRead:
+		netsio_netstream_note_status_byte((uint8_t)b);
 		if (b == 'A')
 		{ /* ACK received */
 			if (netsio_next_write_size > 0)
