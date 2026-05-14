@@ -1322,6 +1322,17 @@ int PLATFORM_Keyboard(void)
 
 	/* Handle CTRL-0 to CTRL-9 and other control characters */
 	if (key_control) {
+		if (lastuni == 0 && lastkey >= SDLK_a && lastkey <= SDLK_z)
+			lastuni = lastkey - SDLK_a + 1;
+		/* lastuni is set 0 only in SDL2 even when Ctrl key
+		   is pressed along with another key but we know that
+		   the control key is currently down so we set lastuni
+		   to the ASCII equivalent for control code (1-26)
+		   only for alpha keys so that they can be handled
+		   properly below.
+		   in SDL1.2, lastuni is set properly already, so it
+		   will have a non-zero value.
+		*/
 		switch(lastuni) {
 		case '.':
 			return AKEY_FULLSTOP|shiftctrl;
