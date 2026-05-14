@@ -1683,7 +1683,7 @@ void NetSIO_PutByte(int byte)
 void SIO_PutByte(int byte)
 {
 #ifdef NETSIO
-	if (netsio_enabled)
+	if (netsio_enabled && !BINLOAD_start_binloading)
 	{
 		NetSIO_PutByte(byte);
 		return;
@@ -1844,7 +1844,7 @@ int SIO_GetByte(void)
 	int byte = 0;
 
 #ifdef NETSIO
-	if (netsio_enabled)
+	if (netsio_enabled && !BINLOAD_start_binloading)
 		return NetSIO_GetByte();
 #endif /* NETSIO */
 
