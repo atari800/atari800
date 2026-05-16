@@ -132,10 +132,15 @@ static void PrepareVoiceData(int nextPhoneme, int nextIntonation)
 	/* length of samples to produce*/
 	dwCount = time_to_samples(PhonemeData[nextPhoneme].iLengthms);
 
+	if ( AdditionalSamples > 0 ) {
+		int srcLength = PhonemeData[votraxsc01_locals.actPhoneme].iLength[votraxsc01_locals.actIntonation];
+		if (AdditionalSamples > srcLength)
+			AdditionalSamples = srcLength;
+	}
 	votraxsc01_locals.iSamplesInBuffer = dwCount+AdditionalSamples;
 
-	if ( AdditionalSamples )
-		memcpy(votraxsc01_locals.lpBuffer, PhonemeData[votraxsc01_locals.actPhoneme].lpStart[votraxsc01_locals.actIntonation], AdditionalSamples*sizeof(SWORD));
+	if ( AdditionalSamples > 0 )
+		memcpy(votraxsc01_locals.lpBuffer, PhonemeData[votraxsc01_locals.actPhoneme].lpStart[votraxsc01_locals.actIntonation], (size_t)AdditionalSamples*sizeof(SWORD));
 
 	lpHelp = votraxsc01_locals.lpBuffer + AdditionalSamples;
 
