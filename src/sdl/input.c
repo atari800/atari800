@@ -599,6 +599,7 @@ static struct INPUT_joystick_button* JoyButtonPress(SDL_JoystickID id, int butto
 
 static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
 static int lastuni = 0;
+static int previous_caps_state = -1;
 
 #if HAVE_WINDOWS_H
 /* On Windows 7 rapidly changing the window size invokes a bug in SDL
@@ -666,7 +667,8 @@ int PLATFORM_Keyboard(void)
 				|| (event.key.keysym.sym == SDLK_LSHIFT)
 				|| (event.key.keysym.sym == SDLK_RSHIFT)
 				|| (event.key.keysym.sym == SDLK_LCTRL)
-				|| (event.key.keysym.sym == SDLK_RCTRL))
+				|| (event.key.keysym.sym == SDLK_RCTRL)
+			        || (event.key.keysym.sym == SDLK_CAPSLOCK))
 				break;
 
 			lastkey = event.key.keysym.sym;
@@ -687,7 +689,8 @@ int PLATFORM_Keyboard(void)
 				|| (event.key.keysym.sym == SDLK_LSHIFT)
 				|| (event.key.keysym.sym == SDLK_RSHIFT)
 				|| (event.key.keysym.sym == SDLK_LCTRL)
-				|| (event.key.keysym.sym == SDLK_RCTRL))
+				|| (event.key.keysym.sym == SDLK_RCTRL)
+			        || (event.key.keysym.sym == SDLK_CAPSLOCK))
 				break;
 
 			lastkey = event.key.keysym.sym;
@@ -1102,6 +1105,18 @@ int PLATFORM_Keyboard(void)
 		/* Special case: 5200's START is mapped to console START */
 		if (Atari800_machine_type == Atari800_MACHINE_5200 && !UI_is_active)
 			return AKEY_5200_START;
+	}
+
+	/* CAPSLOCK Handling via Modifier State Sync */
+	{
+	  int current_caps_state = (SDL_GetModState() & KMOD_CAPS) != 0;
+	  if (previous_caps_state == -1) {
+	    previous_caps_state = current_caps_state;
+	  }
+	  else if (current_caps_state != previous_caps_state) {
+	    previous_caps_state = current_caps_state;
+	    return AKEY_CAPSTOGGLE | shiftctrl;
+	  }
 	}
 
 	if (key_pressed == 0)
