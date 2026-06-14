@@ -50,12 +50,14 @@ import android.R.style;
 import android.widget.ScrollView;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
+import android.provider.Settings;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.app.ActionBar;
 import android.view.Window;
 import android.view.WindowManager;
 import android.os.Build;
+import android.os.Environment;
 import android.view.View;
 
 
@@ -73,6 +75,8 @@ public final class MainActivity extends Activity
 	private static final int DLG_CHANGES = 2;
 	private static final int DLG_BRWSCONFRM = 3;
 	private static final int DLG_SELCARTTYPE = 4;
+	private static final int DLG_STORAGE_PERM = 5;
+	private static final int REQ_MANAGE_STORAGE = 3;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -218,14 +222,19 @@ public final class MainActivity extends Activity
 	}
 
 	private void bootupMsgs() {
+		Log.d(TAG, "bootupMsgs: start");
+		Log.d(TAG, "bootupMsgs: rompath=" + _settings.get(false, "rompath"));
 		// Migrate aspect from 0 to 3 (old XML default was 0, a bug)
 		String aspectVal = _settings.get(false, "aspect");
+		Log.d(TAG, "bootupMsgs: aspect=" + aspectVal);
 		if ("0".equals(aspectVal)) {
+			Log.d(TAG, "bootupMsgs: migrating aspect 0->3");
 			_settings.putString("aspect", "3");
 			_settings.fetchApplySettings();
 		}
 
 		String instver = _settings.get(false, "version");
+		Log.d(TAG, "bootupMsgs: version=" + instver);
 		if (instver == null || instver.equals("false")) {
 			_bootupconfig = true;
 			pauseEmulation(true);
@@ -238,6 +247,17 @@ public final class MainActivity extends Activity
 			pauseEmulation(true);
 			showDialog(DLG_CHANGES);
 			return;
+		}
+
+		/* Check for MANAGE_EXTERNAL_STORAGE if ROM path is set */
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			String rp = _settings.get(false, "rompath");
+			if (rp != null && !rp.equals("false") && !Environment.isExternalStorageManager()) {
+				_bootupconfig = true;
+				pauseEmulation(true);
+				showDialog(DLG_STORAGE_PERM);
+				return;
+			}
 		}
 		Toast.makeText(this,
 					   _aBar.isReal() ? R.string.actionbarhelptoast : R.string.noactionbarhelptoast,
@@ -304,8 +324,13 @@ public final class MainActivity extends Activity
 							@Override
 							public void onClick(DialogInterface d, int i) {
 								dismissDialog(DLG_PATHSETUP);
-								startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH,
-										null, MainActivity.this, FileSelector.class), ACTIVITY_FSEL);
+								if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+									startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+										.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
+								} else {
+									startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH,
+											null, MainActivity.this, FileSelector.class), ACTIVITY_FSEL);
+								}
 							}
 							})
 						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -427,6 +452,29 @@ public final class MainActivity extends Activity
 							public void onClick(DialogInterface d, int i) {
 								pauseEmulation(false);
 								removeDialog(DLG_SELCARTTYPE);
+							}
+							})
+						.create();
+			break;
+
+				case DLG_STORAGE_PERM:
+			d = new AlertDialog.Builder(this)
+						.setTitle("Storage permission required")
+						.setMessage("To access ROM files, grant \"All files access\" permission.")
+						.setCancelable(false)
+						.setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+								intent.setData(Uri.parse("package:" + getPackageName()));
+								startActivityForResult(intent, REQ_MANAGE_STORAGE);
+							}
+							})
+						.setNegativeButton("Skip", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								_bootupconfig = false;
+								pauseEmulation(false);
 							}
 							})
 						.create();
@@ -567,31 +615,53 @@ public final class MainActivity extends Activity
 
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
+		Log.d(TAG, "onActivityResult: reqc=" + reqc + " resc=" + resc + " data=" + data);
 		_aBar.hide(this);
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
-			if (data == null) {
-				_bootupconfig = false;
-				pauseEmulation(false);
-				break;
-			}
-			if (data.getAction().equals(ACTION_SET_ROMPATH)) {
+			if (data != null && data.getAction() != null && data.getAction().equals(ACTION_SET_ROMPATH)) {
 				if (resc == RESULT_OK) {
 					String p = data.getData().getPath();
+					Log.d(TAG, "onActivityResult FSEL: rompath=" + p);
 					_settings.putString("rompath", p);
 					_settings.simulateChanged("rompath");
+				} else {
+					Log.d(TAG, "onActivityResult FSEL: SET_ROMPATH cancelled");
 				}
 				_bootupconfig = false;
 				pauseEmulation(false);
 				break;
 			}
 
-			if (resc != RESULT_OK) {
+			/* Handle ACTION_OPEN_DOCUMENT_TREE result (SAF directory picker) */
+			if (data != null && data.getData() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				String uriStr = data.getData().toString();
+				Log.d(TAG, "onActivityResult FSEL: SAF tree uri=" + uriStr);
+				/* Convert content:// URI to real path: primary:foo -> /storage/emulated/0/foo */
+				if (uriStr.startsWith("content://")) {
+					String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
+					String decoded = Uri.decode(encoded);
+					if (decoded.startsWith("primary:")) {
+						String p = "/storage/emulated/0/" + decoded.substring("primary:".length());
+						Log.d(TAG, "onActivityResult FSEL: SAF rompath=" + p);
+						_settings.putString("rompath", p);
+						_settings.simulateChanged("rompath");
+						_bootupconfig = false;
+						pauseEmulation(false);
+						break;
+					}
+				}
+			}
+
+			if (resc != RESULT_OK || data == null) {
+				_bootupconfig = false;
+				pauseEmulation(false);
 				break;
 			}
 
 			_curDiskFname = data.getData().getPath();
+			Log.d(TAG, "onActivityResult FSEL: disk=" + _curDiskFname + " action=" + data.getAction());
 			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
 				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
 				if (r == -2)
@@ -605,6 +675,13 @@ public final class MainActivity extends Activity
 			break;
 		case ACTIVITY_PREFS:
 			_settings.fetchApplySettings();
+			break;
+		case REQ_MANAGE_STORAGE:
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+				_settings.fetchApplySettings();
+				pauseEmulation(false);
+			}
+			_bootupconfig = false;
 			break;
 		}
 	}
@@ -697,6 +774,11 @@ public final class MainActivity extends Activity
 				throw new ClassCastException(); }}};
 				_newvalues.put(n,  v);
 			}
+			String rp = _newvalues.get(PreferenceName.rompath);
+			if (rp != null)
+				Log.d(TAG, "Settings.fetch: rompath=" + rp);
+			else
+				Log.d(TAG, "Settings.fetch: rompath=null");
 		}
 
 		private void apply() {
@@ -783,12 +865,15 @@ public final class MainActivity extends Activity
 
 			NativePrefKbd( Boolean.parseBoolean(_newvalues.get(PreferenceName.a800fns)) );
 
-			if (changed(PreferenceName.rompath))
+			if (changed(PreferenceName.rompath)) {
+				Log.d(TAG, "Settings.apply: rompath changed, new=" + _newvalues.get(PreferenceName.rompath) + " old=" + _values.get(PreferenceName.rompath));
 				if (!NativeSetROMPath(_newvalues.get(PreferenceName.rompath)))
 					Toast.makeText(_context, R.string.rompatherror, Toast.LENGTH_LONG).show();
+			}
 		}
 
 		public void simulateChanged(String key) {
+			Log.d(TAG, "Settings.simulateChanged: key=" + key);
 			for (PreferenceName n: PreferenceName.values())
 				_newvalues.put(n, _values.get(n));
 			_values.put(PreferenceName.valueOf(key), null);

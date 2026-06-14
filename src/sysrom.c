@@ -319,12 +319,16 @@ int SYSROM_FindInDir(char const *directory, int only_if_not_set)
 		}
 		fclose(file);
 
+		Log_print("FindInDir: checking %s (len=%d crc=%08x)", entry->d_name, len, crc);
+
 		/* Match ROM image by CRC. */
 		for (id = 0; id < SYSROM_LOADABLE_SIZE; ++id) {
 			if ((!only_if_not_set || SYSROM_roms[id].unset)
 			    && SYSROM_roms[id].size == len
 			    && SYSROM_roms[id].crc32 != CRC_NULL && SYSROM_roms[id].crc32 == crc) {
+				Log_print("FindInDir: CRC match id=%d filename=%s", id, full_filename);
 				strcpy(SYSROM_roms[id].filename, full_filename);
+				SYSROM_roms[id].data = NULL; /* Discard preloaded Altirra data so file is read */
 				ClearUnsetFlag(id);
 				matched_crc = TRUE;
 				break;
@@ -341,8 +345,12 @@ int SYSROM_FindInDir(char const *directory, int only_if_not_set)
 
 			id = MatchByName(entry->d_name, len, only_if_not_set);
 			if (id >= 0){
+				Log_print("FindInDir: name match id=%d filename=%s", id, full_filename);
 				strcpy(SYSROM_roms[id].filename, full_filename);
+				SYSROM_roms[id].data = NULL; /* Discard preloaded Altirra data so file is read */
 				ClearUnsetFlag(id);
+			} else {
+				Log_print("FindInDir: no match for %s", entry->d_name);
 			}
 		}
 	}

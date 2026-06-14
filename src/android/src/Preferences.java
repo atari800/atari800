@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.IOException;
 
 import android.preference.PreferenceActivity;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.util.Log;
@@ -80,12 +81,18 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			findPreference(pref).setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
 				public boolean onPreferenceClick(Preference p) {
-					String val = _sp.getString(pref, null);
-					Uri u = (val == null) ? null : Uri.fromFile(new File(val));
-					startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH, u,
-										   Preferences.this, FileSelector.class),
-										   pref.equals("rompath") ? ACTIVITY_FSEL_ROMPATH :
-																	ACTIVITY_FSEL_STATEPATH);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+							.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+							pref.equals("rompath") ? ACTIVITY_FSEL_ROMPATH : ACTIVITY_FSEL_STATEPATH);
+					} else {
+						String val = _sp.getString(pref, null);
+						Uri u = (val == null) ? null : Uri.fromFile(new File(val));
+						startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH, u,
+											   Preferences.this, FileSelector.class),
+											   pref.equals("rompath") ? ACTIVITY_FSEL_ROMPATH :
+																		ACTIVITY_FSEL_STATEPATH);
+					}
 					return true;
 				}
 			});
@@ -226,15 +233,47 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
 		String pref = "rompath";
-		if (resc != RESULT_OK)	return;
+		Log.d(TAG, "onActivityResult: reqc=" + reqc + " resc=" + resc + " data=" + data);
+		if (resc != RESULT_OK || data == null || data.getData() == null) {
+			Log.d(TAG, "onActivityResult: early return, resc=" + resc + " data=" + data + " uri=" + (data != null ? data.getData() : null));
+			return;
+		}
+		String path = null;
+
+		/* Convert SAF content:// URI to real path */
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			String uriStr = data.getData().toString();
+			Log.d(TAG, "onActivityResult: SAF uriStr=" + uriStr);
+			if (uriStr.startsWith("content://")) {
+				String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
+				String decoded = Uri.decode(encoded);
+				Log.d(TAG, "onActivityResult: SAF encoded=" + encoded + " decoded=" + decoded);
+				if (decoded.startsWith("primary:")) {
+					path = "/storage/emulated/0/" + decoded.substring("primary:".length());
+					Log.d(TAG, "onActivityResult: SAF path=" + path);
+				} else {
+					Log.d(TAG, "onActivityResult: SAF decoded doesn't start with primary");
+				}
+			} else {
+				Log.d(TAG, "onActivityResult: URI doesn't start with content://, using raw path");
+			}
+		}
+
+		/* Fallback to direct path from URI */
+		if (path == null) {
+			path = data.getData().getPath();
+			Log.d(TAG, "onActivityResult: fallback path=" + path);
+		}
+
 		switch (reqc) {
 		case ACTIVITY_FSEL_STATEPATH:
 			pref = "statepath";
 			enableStateSave();
 			// fallthrough
 		case ACTIVITY_FSEL_ROMPATH:
+			Log.d(TAG, "onActivityResult: saving " + pref + "=" + path);
 			SharedPreferences.Editor e = _sp.edit();
-			e.putString(pref, data.getData().getPath());
+			e.putString(pref, path);
 			e.commit();
 			break;
 		}

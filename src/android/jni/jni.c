@@ -528,11 +528,18 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 	jboolean ret = JNI_FALSE;
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
+	Log_print("NativeSetROMPath: searching %s", utf);
 	SYSROM_FindInDir(utf, FALSE);
-    Log_print("sysrom %s %d", utf, SYSROM_FindInDir(utf, FALSE));
+	Log_print("NativeSetROMPath: after first search");
 	ret |= chdir(utf);
-    Log_print("sysrom %s %d", utf, SYSROM_FindInDir(utf, FALSE));
-	ret |= Atari800_InitialiseMachine();
+	Log_print("NativeSetROMPath: after chdir, ret=%d", ret);
+	SYSROM_FindInDir(utf, FALSE);
+	Log_print("NativeSetROMPath: after second search");
+	{
+		int have_roms = Atari800_InitialiseMachine();
+		Log_print("NativeSetROMPath: Atari800_InitialiseMachine returned %d", have_roms);
+		ret |= have_roms;
+	}
 	(*env)->ReleaseStringUTFChars(env, path, utf);
 
 	return ret;
