@@ -21,8 +21,12 @@
 /src/android/jni/Android.mk
 /src/android/libs
 /src/android/local.properties
+/src/android/build
+/src/android/.gradle
+/src/android/.idea
 /src/android/obj
 /src/android/proguard-project.txt
+/src/android/.cxx
 /src/atari800
 /src/config.h
 /src/config.h.in
@@ -32,6 +36,7 @@
 /src/Makefile
 /src/Makefile.in
 /src/stamp-h1
+/src/autom4te.cache
 /tools/cart
 /tools/Makefile
 /tools/Makefile.in
