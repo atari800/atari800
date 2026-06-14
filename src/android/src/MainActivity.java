@@ -643,12 +643,15 @@ public final class MainActivity extends Activity
 				break;
 			}
 
-			/* Handle ACTION_OPEN_DOCUMENT_TREE result (SAF directory picker) */
+			/* Handle SAF ACTION_OPEN_DOCUMENT_TREE result (directory picker from Settings → ROM path) */
 			if (data != null && data.getData() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				String uriStr = data.getData().toString();
-				Log.d(TAG, "onActivityResult FSEL: SAF tree uri=" + uriStr);
-				/* Convert content:// URI to real path: primary:foo -> /storage/emulated/0/foo */
-				if (uriStr.startsWith("content://")) {
+				Log.d(TAG, "onActivityResult FSEL: SAF uri=" + uriStr);
+				/* Only treat /tree/ URIs as ROM path selection (ACTION_OPEN_DOCUMENT_TREE).
+				   /document/ URIs come from ACTION_OPEN_DOCUMENT (Open File) and are handled below. */
+				if (uriStr.startsWith("content://") && uriStr.contains("/tree/")) {
+					Log.d(TAG, "onActivityResult FSEL: SAF tree uri detected, treating as ROM path");
+					/* Convert content:// URI to real path: primary:foo -> /storage/emulated/0/foo */
 					String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
 					String decoded = Uri.decode(encoded);
 					if (decoded.startsWith("primary:")) {
@@ -672,11 +675,13 @@ public final class MainActivity extends Activity
 			/* Handle SAF ACTION_OPEN_DOCUMENT result (content URI) */
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
 			    && data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
+				Log.d(TAG, "onActivityResult FSEL: content URI, action=" + data.getAction() + " scheme=" + data.getData().getScheme() + " uri=" + data.getData());
 				String copyPath = copyContentUriToCache(data.getData());
 				if (copyPath != null) {
 					_curDiskFname = copyPath;
 					Log.d(TAG, "onActivityResult FSEL: SAF disk=" + _curDiskFname);
 					int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
+					Log.d(TAG, "onActivityResult FSEL: NativeRunAtariProgram returned " + r);
 					if (r == -2)
 						showDialog(DLG_SELCARTTYPE);
 					else
@@ -684,14 +689,19 @@ public final class MainActivity extends Activity
 											_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
 									   Toast.LENGTH_SHORT)
 							 .show();
+				} else {
+					Log.d(TAG, "onActivityResult FSEL: copyContentUriToCache returned null");
 				}
 				break;
 			}
 
+			/* Fallback: FileSelector on pre-KitKat returns file:// URI with ACTION_INSERT_REBOOT */
+			Log.d(TAG, "onActivityResult FSEL: fallback path, scheme=" + (data != null && data.getData() != null ? data.getData().getScheme() : "null") + " action=" + (data != null ? data.getAction() : "null"));
 			_curDiskFname = data.getData().getPath();
 			Log.d(TAG, "onActivityResult FSEL: disk=" + _curDiskFname + " action=" + data.getAction());
-			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
+			if (data.getAction() != null && data.getAction().equals(ACTION_INSERT_REBOOT)) {
 				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
+				Log.d(TAG, "onActivityResult FSEL: NativeRunAtariProgram fallback returned " + r);
 				if (r == -2)
 					showDialog(DLG_SELCARTTYPE);
 				else
@@ -993,6 +1003,10 @@ public final class MainActivity extends Activity
 
 	private String copyContentUriToCache(Uri uri) {
 		try {
+			String scheme = uri.getScheme();
+			String uriStr = uri.toString();
+			String lastSeg = uri.getLastPathSegment();
+			Log.d(TAG, "copyContentUriToCache: uri=" + uriStr + " scheme=" + scheme + " lastSeg=" + lastSeg);
 			InputStream in = getContentResolver().openInputStream(uri);
 			if (in == null) {
 				Log.d(TAG, "copyContentUriToCache: null input stream");
@@ -1000,9 +1014,16 @@ public final class MainActivity extends Activity
 			}
 			String fname = uri.getLastPathSegment();
 			if (fname == null) fname = "temp";
-			/* Clean up the filename from URI encoding like primary%3Afile.atr -> file.atr */
+			/* Decode URL encoding: primary%3ADownload%2Fgame.atr -> primary:Download/game.atr */
+			fname = Uri.decode(fname);
+			Log.d(TAG, "copyContentUriToCache: decoded fname=" + fname);
+			/* Strip volume prefix like "primary:" */
 			int colonIdx = fname.lastIndexOf(':');
 			if (colonIdx >= 0) fname = fname.substring(colonIdx + 1);
+			Log.d(TAG, "copyContentUriToCache: after strip prefix fname=" + fname);
+			/* Replace any remaining path separators to avoid nested dir creation */
+			fname = fname.replace('/', '_').replace('\\', '_');
+			Log.d(TAG, "copyContentUriToCache: sanitized fname=" + fname);
 			File outFile = new File(getCacheDir(), fname);
 			FileOutputStream out = new FileOutputStream(outFile);
 			byte[] buf = new byte[65536];
@@ -1011,10 +1032,11 @@ public final class MainActivity extends Activity
 				out.write(buf, 0, n);
 			in.close();
 			out.close();
-			Log.d(TAG, "copyContentUriToCache: " + outFile.getAbsolutePath());
+			Log.d(TAG, "copyContentUriToCache: success -> " + outFile.getAbsolutePath());
 			return outFile.getAbsolutePath();
 		} catch (Exception e) {
 			Log.d(TAG, "copyContentUriToCache: error " + e.getMessage());
+			e.printStackTrace();
 			return null;
 		}
 	}

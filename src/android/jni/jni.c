@@ -207,7 +207,9 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 	}
 
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
+	Log_print("NativeRunAtariProgram: img=%s drv=%d reboot=%d", img_utf, drv, reboot);
 	r = AFILE_OpenFile(img_utf, reboot, drv, FALSE);
+	Log_print("NativeRunAtariProgram: AFILE_OpenFile returned %d", r);
 	if ((r & 0xFF) == AFILE_ROM && (r >> 8) != 0) {
 		kb = r >> 8;
 		scls = (*env)->FindClass(env, "java/lang/String");
