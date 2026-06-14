@@ -396,6 +396,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		protected IconArrayAdapter doInBackground(File... files) {
 			IconArrayAdapter flst = new IconArrayAdapter(FileSelector.this, R.layout.file_selector_row);
 			File dir = files[0];
+			Log.d(TAG, "listDir: " + dir.getAbsolutePath() + " readable=" + dir.canRead() + " exists=" + dir.exists());
 			if (!dir.toString().equals("/"))
 				flst.add("../");
 
@@ -407,7 +408,11 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 					return file.isDirectory() || (l > 3 && EXTENSIONS.contains(f.substring(l - 3)));
 				}
 			});
-			if (lst == null)	return flst;
+			Log.d(TAG, "listDir: listFiles returned " + (lst == null ? "null" : lst.length + " files"));
+			if (lst == null) {
+				Log.d(TAG, "listDir: listFiles is null, likely scoped storage restriction");
+				return flst;
+			}
 
 			for (File f: lst) {
 				if (f.isDirectory())

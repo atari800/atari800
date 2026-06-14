@@ -62,13 +62,14 @@ struct consolekey_overlay_state
 	enum   con_key hitkey;
 	int    statecnt;
 	int    resetcnt;
+	int    resetcnt_grace;
 	int    hotlen;
 
 	#define COVL_MAX_OPACITY 0.5f
 	#define COVL_HOLD_TIME   150
 
-	#define RESET_SOFT 30
-	#define RESET_HARD 60
+	#define RESET_SOFT 10
+	#define RESET_HARD 30
 };
 
 extern struct joy_overlay_state AndroidInput_JoyOvl;

@@ -27,6 +27,8 @@ package name.nick.jubanka.colleen;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.File;
+import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.EnumMap;
 
@@ -249,10 +251,10 @@ public final class MainActivity extends Activity
 			return;
 		}
 
-		/* Check for MANAGE_EXTERNAL_STORAGE if ROM path is set */
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+		/* Android 11+ needs MANAGE_EXTERNAL_STORAGE for native code to access ROM files */
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
 			String rp = _settings.get(false, "rompath");
-			if (rp != null && !rp.equals("false") && !Environment.isExternalStorageManager()) {
+			if (rp != null && !rp.equals("false")) {
 				_bootupconfig = true;
 				pauseEmulation(true);
 				showDialog(DLG_STORAGE_PERM);
@@ -597,8 +599,15 @@ public final class MainActivity extends Activity
 			return true;
 		}
 		if (id == R.id.menu_open) {
-			startActivityForResult(new Intent(FileSelector.ACTION_OPEN_FILE, null, this, FileSelector.class),
-								   ACTIVITY_FSEL);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+				startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+					.addCategory(Intent.CATEGORY_OPENABLE)
+					.setType("*/*")
+					.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
+			} else {
+				startActivityForResult(new Intent(FileSelector.ACTION_OPEN_FILE, null, this, FileSelector.class),
+									   ACTIVITY_FSEL);
+			}
 			return true;
 		}
 		if (id == R.id.menu_nextdisk) {
@@ -660,6 +669,25 @@ public final class MainActivity extends Activity
 				break;
 			}
 
+			/* Handle SAF ACTION_OPEN_DOCUMENT result (content URI) */
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
+			    && data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
+				String copyPath = copyContentUriToCache(data.getData());
+				if (copyPath != null) {
+					_curDiskFname = copyPath;
+					Log.d(TAG, "onActivityResult FSEL: SAF disk=" + _curDiskFname);
+					int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
+					if (r == -2)
+						showDialog(DLG_SELCARTTYPE);
+					else
+						Toast.makeText(this, String.format(getString(r < 0 ? R.string.errorboot : R.string.diskboot),
+											_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
+									   Toast.LENGTH_SHORT)
+							 .show();
+				}
+				break;
+			}
+
 			_curDiskFname = data.getData().getPath();
 			Log.d(TAG, "onActivityResult FSEL: disk=" + _curDiskFname + " action=" + data.getAction());
 			if (data.getAction().equals(ACTION_INSERT_REBOOT)) {
@@ -674,6 +702,17 @@ public final class MainActivity extends Activity
 			}
 			break;
 		case ACTIVITY_PREFS:
+			/* On Android 11+, check if user set a ROM path but hasn't granted storage access */
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+				SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+				String rp = sp.getString("rompath", null);
+				if (rp != null && !rp.equals("false")) {
+					_bootupconfig = true;
+					pauseEmulation(true);
+					showDialog(DLG_STORAGE_PERM);
+					break;
+				}
+			}
 			_settings.fetchApplySettings();
 			break;
 		case REQ_MANAGE_STORAGE:
@@ -951,6 +990,35 @@ public final class MainActivity extends Activity
 			return _values;
 		}
 	}
+
+	private String copyContentUriToCache(Uri uri) {
+		try {
+			InputStream in = getContentResolver().openInputStream(uri);
+			if (in == null) {
+				Log.d(TAG, "copyContentUriToCache: null input stream");
+				return null;
+			}
+			String fname = uri.getLastPathSegment();
+			if (fname == null) fname = "temp";
+			/* Clean up the filename from URI encoding like primary%3Afile.atr -> file.atr */
+			int colonIdx = fname.lastIndexOf(':');
+			if (colonIdx >= 0) fname = fname.substring(colonIdx + 1);
+			File outFile = new File(getCacheDir(), fname);
+			FileOutputStream out = new FileOutputStream(outFile);
+			byte[] buf = new byte[65536];
+			int n;
+			while ((n = in.read(buf)) >= 0)
+				out.write(buf, 0, n);
+			in.close();
+			out.close();
+			Log.d(TAG, "copyContentUriToCache: " + outFile.getAbsolutePath());
+			return outFile.getAbsolutePath();
+		} catch (Exception e) {
+			Log.d(TAG, "copyContentUriToCache: error " + e.getMessage());
+			return null;
+		}
+	}
+
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,
 											 int frameskip, boolean collisions, int crophoriz, int cropvert, int portpad, int covlhold);
 	private static native boolean NativePrefMachine(int machine, boolean ntsc);

@@ -480,15 +480,26 @@ void Update_Overlays(void)
 		;
 	}
 	if (c->hitkey == CONK_RESET) {
+		c->resetcnt_grace = 0;
+		Log_print("RESET: hitkey=CONK_RESET resetcnt=%d", c->resetcnt);
 		if (c->resetcnt >= RESET_HARD) {
+			Log_print("RESET: triggering COLDSTART");
 			Atari800_Coldstart();
 		} else if (c->resetcnt >= RESET_SOFT) {
+			Log_print("RESET: triggering WARMSTART");
 			Atari800_Warmstart();
 			CPU_cim_encountered = FALSE;
 		}
 		c->resetcnt++;
 	} else {
-		c->resetcnt = 0;
+		if (c->resetcnt > 0 && c->resetcnt_grace < 5) {
+			/* Touch jitter tolerance: don't reset immediately */
+			c->resetcnt_grace++;
+			Log_print("RESET: hitkey=%d resetcnt=%d grace=%d (jitter guard)", c->hitkey, c->resetcnt, c->resetcnt_grace);
+		} else if (c->resetcnt > 0) {
+			Log_print("RESET: hitkey=%d resetcnt=%d (resetting after grace)", c->hitkey, c->resetcnt);
+			c->resetcnt = 0;
+		}
 	}
 }
 
