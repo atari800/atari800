@@ -47,7 +47,6 @@ import android.widget.Toast;
 import android.content.res.Resources;
 import android.preference.CheckBoxPreference;
 
-
 @SuppressWarnings("deprecation")
 public final class Preferences extends PreferenceActivity implements Preference.OnPreferenceChangeListener
 {
@@ -55,7 +54,6 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire",
 												"actiona", "actionb", "actionc" };
 	private static final String PD_RESNAME = "pd2012";
-	private static final int ACTIVITY_FSEL_STATEPATH = 2;
 	private static final int ACTIVITY_IMPORT_ROMS = 4;
 	private static final int DLG_ABOUT = 1;
 	private static final int DLG_RESET = 2;
@@ -92,18 +90,6 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			}
 		});
 
-		for (final String pref: new String[] {"statepath"}) {
-			findPreference(pref).setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference p) {
-					startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-						.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
-						ACTIVITY_FSEL_STATEPATH);
-					return true;
-				}
-			});
-		}
-
 		findPreference("about").setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
 			public boolean onPreferenceClick(Preference p) {
@@ -129,9 +115,40 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			}
 		});
 
-		if (_sp.getString("statepath", null) != null)
-			enableStateSave();
 		findPreference("savestate").setOnPreferenceChangeListener(this);
+		findPreference("loadstate").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			@Override
+			public boolean onPreferenceClick(Preference p) {
+				File savesDir = getDir("saves", MODE_PRIVATE);
+				final String[] files = savesDir.list(new java.io.FilenameFilter() {
+					@Override
+					public boolean accept(File dir, String name) {
+						return name.endsWith(".a8s");
+					}
+				});
+				if (files == null || files.length == 0) {
+					Toast.makeText(Preferences.this, R.string.loadstatenone, Toast.LENGTH_SHORT).show();
+					return true;
+				}
+				new AlertDialog.Builder(Preferences.this)
+					.setTitle(R.string.loadstatedlg)
+					.setItems(files, new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface d, int which) {
+							String path = new File(savesDir, files[which]).getAbsolutePath();
+							if (NativeLoadState(path))
+								Toast.makeText(Preferences.this,
+									String.format(getString(R.string.loadstateok), files[which]),
+									Toast.LENGTH_SHORT).show();
+							else
+								Toast.makeText(Preferences.this, R.string.loadstateerror,
+									Toast.LENGTH_SHORT).show();
+						}
+					})
+					.show();
+				return true;
+			}
+		});
 
 		if (_sp.getBoolean("a800fns", false) == true)
 			findPreference("a800fns").setSummary(getString(R.string.pref_a800fns_sum_ena));
@@ -175,19 +192,8 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		findPreference("forceAT").setEnabled(NativeOSLSound() || ((CheckBoxPreference) findPreference("forceAT")).isChecked());
 	}
 
-	private void enableStateSave() {
-		Preference p = findPreference("savestate");
-		p.setEnabled(true);
-		p.setSummary(getString(R.string.pref_savestate_sum_ena));
-	}
-
 	private boolean saveState(boolean force) {
-		String path = _sp.getString("statepath", null);
-		if (path == null) {
-			Log.d(TAG, "state save path is null");
-			Toast.makeText(this, R.string.savestateerror, Toast.LENGTH_LONG).show();
-			return true;
-		}
+		String path = getDir("saves", MODE_PRIVATE).getAbsolutePath();
 
 		if (!force && new File(path, _svstfname).exists())
 			return false;
@@ -244,17 +250,6 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		}
 
 		switch (reqc) {
-		case ACTIVITY_FSEL_STATEPATH:
-		{
-			if (data.getData() == null) return;
-			String path = data.getData().getPath();
-			Log.d(TAG, "onActivityResult: statepath=" + path);
-			SharedPreferences.Editor e = _sp.edit();
-			e.putString("statepath", path);
-			e.commit();
-			enableStateSave();
-			break;
-		}
 		case ACTIVITY_IMPORT_ROMS:
 		{
 			File romsDir = getDir("roms", MODE_PRIVATE);
@@ -356,8 +351,8 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		return d;
 	}
 
-
 	private native boolean NativeSaveState(String fname);
+	private native boolean NativeLoadState(String fname);
 	private native boolean NativeBootPD(byte data[], int len);
 	private native boolean NativeOSLSound();
 }

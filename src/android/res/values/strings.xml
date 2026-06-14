@@ -281,11 +281,14 @@
 	<string name="pref_paddle">Paddle Mode</string>
 	<string name="pref_paddle_sum">Enable paddle emulation instead of joystick</string>
 	<string name="pref_savestate">Save Current State</string>
-	<string name="pref_savestate_sum_dis">Disabled! Set a state save path first!</string>
 	<string name="pref_savestate_sum_ena">Save current machine state</string>
 	<string name="pref_savestate_msg">Enter the file name:</string>
-	<string name="pref_statepath">State Save Path</string>
-	<string name="pref_statepath_sum">Where atari states will be saved</string>
+	<string name="pref_loadstate">Load State</string>
+	<string name="pref_loadstate_sum">Load a previously saved machine state</string>
+	<string name="loadstatedlg">Select a save state to load</string>
+	<string name="loadstateok">Loaded state from %s</string>
+	<string name="loadstateerror">Error: Cannot load state</string>
+	<string name="loadstatenone">No saved states found</string>
 	<string name="pref_plandef">Touchscreen Mode</string>
 	<string name="pref_plandef_sum">A Koala Pad-like input mode for games like Planetary Defense</string>
 	<string name="pref_browser">Allow Web Browser</string>

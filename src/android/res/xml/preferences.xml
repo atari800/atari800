@@ -86,13 +86,13 @@
 			android:title="@string/pref_importroms"
 			android:summary="@string/pref_importroms_sum"/>
 		<Preference
-			android:key="statepath"
-			android:title="@string/pref_statepath"
-			android:summary="@string/pref_statepath_sum"/>
+			android:key="loadstate"
+			android:title="@string/pref_loadstate"
+			android:summary="@string/pref_loadstate_sum"/>
 		<EditTextPreference
 			android:key="savestate"
 			android:title="@string/pref_savestate"
-			android:summary="@string/pref_savestate_sum_dis"
+			android:summary="@string/pref_savestate_sum_ena"
 			android:dialogMessage="@string/pref_savestate_msg"
 			android:positiveButtonText="@string/save"
 			android:negativeButtonText="@string/cancel"
@@ -100,7 +100,7 @@
 			android:maxLines="1"
 			android:inputType="textNoSuggestions"
 			android:imeOptions="actionDone"
-			android:enabled="false"/>
+			android:enabled="true"/>
 		<CheckBoxPreference
 			android:key="basic"
 			android:title="@string/pref_basic"

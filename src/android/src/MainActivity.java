@@ -84,6 +84,7 @@ public final class MainActivity extends Activity
 	private boolean _bootupconfig = false;
 	private String _cartTypes[][] = null;
 	private static File _romsDir = null;
+	static File _savesDir = null;
 
 	public static class ActionBarNull {
 		public ActionBarNull(Activity a)					{};
@@ -198,6 +199,7 @@ public final class MainActivity extends Activity
 		_settings = new Settings(PreferenceManager.getDefaultSharedPreferences(this), this, obj);
 		_pkgversion = getPInfo().versionName;
 		_romsDir = getDir("roms", MODE_PRIVATE);
+		_savesDir = getDir("saves", MODE_PRIVATE);
 
 		if (!_initialized) {
 			_settings.putBoolean("plandef", false);
