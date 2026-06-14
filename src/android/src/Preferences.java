@@ -26,17 +26,18 @@ package name.nick.jubanka.colleen;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import android.preference.PreferenceActivity;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.util.Log;
 import android.content.SharedPreferences;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.net.Uri;
 import android.content.Intent;
+import android.net.Uri;
 import android.app.AlertDialog;
 import android.webkit.WebView;
 import android.app.Dialog;
@@ -54,8 +55,8 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire",
 												"actiona", "actionb", "actionc" };
 	private static final String PD_RESNAME = "pd2012";
-	private static final int ACTIVITY_FSEL_ROMPATH = 1;
 	private static final int ACTIVITY_FSEL_STATEPATH = 2;
+	private static final int ACTIVITY_IMPORT_ROMS = 4;
 	private static final int DLG_ABOUT = 1;
 	private static final int DLG_RESET = 2;
 	private static final int DLG_OVRWR = 3;
@@ -77,22 +78,27 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			kp.updateSum();
 		}
 
-		for (final String pref: new String[] {"rompath", "statepath"}) {
+		/* Import ROM BIOS: open SAF file picker with multi-select */
+		findPreference("importroms").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			@Override
+			public boolean onPreferenceClick(Preference p) {
+				startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+					.addCategory(Intent.CATEGORY_OPENABLE)
+					.setType("*/*")
+					.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+					.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+					ACTIVITY_IMPORT_ROMS);
+				return true;
+			}
+		});
+
+		for (final String pref: new String[] {"statepath"}) {
 			findPreference(pref).setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
 				public boolean onPreferenceClick(Preference p) {
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-						startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-							.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
-							pref.equals("rompath") ? ACTIVITY_FSEL_ROMPATH : ACTIVITY_FSEL_STATEPATH);
-					} else {
-						String val = _sp.getString(pref, null);
-						Uri u = (val == null) ? null : Uri.fromFile(new File(val));
-						startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH, u,
-											   Preferences.this, FileSelector.class),
-											   pref.equals("rompath") ? ACTIVITY_FSEL_ROMPATH :
-																		ACTIVITY_FSEL_STATEPATH);
-					}
+					startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+						.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+						ACTIVITY_FSEL_STATEPATH);
 					return true;
 				}
 			});
@@ -232,50 +238,66 @@ public final class Preferences extends PreferenceActivity implements Preference.
 
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
-		String pref = "rompath";
 		Log.d(TAG, "onActivityResult: reqc=" + reqc + " resc=" + resc + " data=" + data);
-		if (resc != RESULT_OK || data == null || data.getData() == null) {
-			Log.d(TAG, "onActivityResult: early return, resc=" + resc + " data=" + data + " uri=" + (data != null ? data.getData() : null));
+		if (resc != RESULT_OK || data == null) {
 			return;
-		}
-		String path = null;
-
-		/* Convert SAF content:// URI to real path */
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			String uriStr = data.getData().toString();
-			Log.d(TAG, "onActivityResult: SAF uriStr=" + uriStr);
-			if (uriStr.startsWith("content://")) {
-				String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
-				String decoded = Uri.decode(encoded);
-				Log.d(TAG, "onActivityResult: SAF encoded=" + encoded + " decoded=" + decoded);
-				if (decoded.startsWith("primary:")) {
-					path = "/storage/emulated/0/" + decoded.substring("primary:".length());
-					Log.d(TAG, "onActivityResult: SAF path=" + path);
-				} else {
-					Log.d(TAG, "onActivityResult: SAF decoded doesn't start with primary");
-				}
-			} else {
-				Log.d(TAG, "onActivityResult: URI doesn't start with content://, using raw path");
-			}
-		}
-
-		/* Fallback to direct path from URI */
-		if (path == null) {
-			path = data.getData().getPath();
-			Log.d(TAG, "onActivityResult: fallback path=" + path);
 		}
 
 		switch (reqc) {
 		case ACTIVITY_FSEL_STATEPATH:
-			pref = "statepath";
-			enableStateSave();
-			// fallthrough
-		case ACTIVITY_FSEL_ROMPATH:
-			Log.d(TAG, "onActivityResult: saving " + pref + "=" + path);
+		{
+			if (data.getData() == null) return;
+			String path = data.getData().getPath();
+			Log.d(TAG, "onActivityResult: statepath=" + path);
 			SharedPreferences.Editor e = _sp.edit();
-			e.putString(pref, path);
+			e.putString("statepath", path);
 			e.commit();
+			enableStateSave();
 			break;
+		}
+		case ACTIVITY_IMPORT_ROMS:
+		{
+			File romsDir = getDir("roms", MODE_PRIVATE);
+			ArrayList<Uri> uris = new ArrayList<Uri>();
+			if (data.getData() != null)
+				uris.add(data.getData());
+			if (data.getClipData() != null) {
+				for (int i = 0; i < data.getClipData().getItemCount(); i++)
+					uris.add(data.getClipData().getItemAt(i).getUri());
+			}
+			int count = 0;
+			for (Uri uri : uris) {
+				try {
+					InputStream in = getContentResolver().openInputStream(uri);
+					if (in == null) continue;
+					String fname = uri.getLastPathSegment();
+					if (fname == null) fname = "rom_" + count;
+					fname = Uri.decode(fname);
+					int colonIdx = fname.lastIndexOf(':');
+					if (colonIdx >= 0) fname = fname.substring(colonIdx + 1);
+					fname = fname.replace('/', '_').replace('\\', '_');
+					File outFile = new File(romsDir, fname);
+					FileOutputStream out = new FileOutputStream(outFile);
+					byte[] buf = new byte[65536];
+					int n;
+					while ((n = in.read(buf)) >= 0)
+						out.write(buf, 0, n);
+					in.close();
+					out.close();
+					count++;
+				} catch (Exception e) {
+					Log.d(TAG, "Import ROM error: " + e.getMessage());
+				}
+			}
+			if (count > 0) {
+				String rp = romsDir.getAbsolutePath();
+				SharedPreferences.Editor e = _sp.edit();
+				e.putString("rompath", rp);
+				e.commit();
+				Toast.makeText(this, String.format("Imported %d ROM file(s)", count), Toast.LENGTH_SHORT).show();
+			}
+			break;
+		}
 		}
 	}
 

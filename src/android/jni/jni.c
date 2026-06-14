@@ -129,24 +129,6 @@ static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 	return (*env)->NewStringUTF(env, Atari800_TITLE);
 }
 
-static jobjectArray JNICALL NativeGetDrvFnames(JNIEnv *env, jobject this)
-{
-	jobjectArray arr;
-	int i;
-	char tmp[FILENAME_MAX + 3], fname[FILENAME_MAX];
-	jstring str;
-
-	arr = (*env)->NewObjectArray(env, 4, (*env)->FindClass(env, "java/lang/String"), NULL);
-	for (i = 0; i < 4; i++) {
-		Util_splitpath(SIO_filename[i], NULL, fname);
-		sprintf(tmp, "D%d:%s", i + 1, fname);
-		str = (*env)->NewStringUTF(env, tmp);
-		(*env)->SetObjectArrayElement(env, arr, i, str);
-		(*env)->DeleteLocalRef(env, str);
-	}
-
-	return arr;
-}
 
 static void JNICALL NativeUnmountAll(JNIEnv *env, jobject this)
 {
@@ -154,28 +136,6 @@ static void JNICALL NativeUnmountAll(JNIEnv *env, jobject this)
 
 	for (i = 1; i <= 4; i++)
 		SIO_DisableDrive(i);
-}
-
-static jboolean JNICALL NativeIsDisk(JNIEnv *env, jobject this, jstring img)
-{
-	const char *img_utf = NULL;
-	int type;
-
-	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
-	type = AFILE_DetectFileType(img_utf);
-	(*env)->ReleaseStringUTFChars(env, img, img_utf);
-	switch (type) {
-	case AFILE_ATR:
-	case AFILE_ATX:
-	case AFILE_XFD:
-	case AFILE_ATR_GZ:
-	case AFILE_XFD_GZ:
-	case AFILE_DCM:
-	case AFILE_PRO:
-		return JNI_TRUE;
-	default:
-		return JNI_FALSE;
-	}
 }
 
 static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname)
@@ -529,12 +489,8 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 
 	utf = (*env)->GetStringUTFChars(env, path, NULL);
 	SYSROM_FindInDir(utf, FALSE);
-	ret |= chdir(utf);
 	SYSROM_FindInDir(utf, FALSE);
-	{
-		int have_roms = Atari800_InitialiseMachine();
-		ret |= have_roms;
-	}
+	ret = Atari800_InitialiseMachine();
 	(*env)->ReleaseStringUTFChars(env, path, utf);
 
 	return ret;
@@ -597,7 +553,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 }
 
 
-jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
+	jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	JNINativeMethod main_methods[] = {
 		{ "NativeExit",				"()V",								NativeExit			  },
@@ -634,12 +590,6 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 		{ "NativeGetOverlays",		"()V",								NativeGetOverlays	  },
 		{ "NativeResize",			"(II)V",							NativeResize		  },
 	};
-	JNINativeMethod fsel_methods[] = {
-		{ "NativeIsDisk",			"(Ljava/lang/String;)Z",			NativeIsDisk		  },
-		{ "NativeRunAtariProgram",	"(Ljava/lang/String;II)I",			NativeRunAtariProgram },
-		{ "NativeGetDrvFnames",		"()[Ljava/lang/String;",			NativeGetDrvFnames	  },
-		{ "NativeUnmountAll",		"()V",								NativeUnmountAll	  },
-	};
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
 		{ "NativeBootPD",			"([BI)Z",							NativeBootPD		  },
@@ -659,8 +609,6 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 	(*env)->RegisterNatives(env, cls, snd_methods, sizeof(snd_methods)/sizeof(JNINativeMethod));
 	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/A800Renderer");
 	(*env)->RegisterNatives(env, cls, render_methods, sizeof(render_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/FileSelector");
-	(*env)->RegisterNatives(env, cls, fsel_methods, sizeof(fsel_methods)/sizeof(JNINativeMethod));
 	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/Preferences");
 	(*env)->RegisterNatives(env, cls, pref_methods, sizeof(pref_methods)/sizeof(JNINativeMethod));
 

@@ -52,23 +52,17 @@ import android.R.style;
 import android.widget.ScrollView;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
-import android.provider.Settings;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.app.ActionBar;
 import android.view.Window;
 import android.view.WindowManager;
 import android.os.Build;
-import android.os.Environment;
 import android.view.View;
 
 
 public final class MainActivity extends Activity
 {
-	public static final String ACTION_INSERT_REBOOT = "name.nick.jubanka.colleen.FileSelector.INSERTREBOOT";
-	public static final String ACTION_INSERT_ONLY   = "name.nick.jubanka.colleen.FileSelector.INSERTONLY";
-	public static final String ACTION_SET_ROMPATH   = "name.nick.jubanka.colleen.FileSelector.SETROMPATH";
-
 	private static final String TAG = "MainActivity";
 	private static final int ACTIVITY_FSEL = 1;
 	private static final int ACTIVITY_PREFS = 2;
@@ -77,8 +71,6 @@ public final class MainActivity extends Activity
 	private static final int DLG_CHANGES = 2;
 	private static final int DLG_BRWSCONFRM = 3;
 	private static final int DLG_SELCARTTYPE = 4;
-	private static final int DLG_STORAGE_PERM = 5;
-	private static final int REQ_MANAGE_STORAGE = 3;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -91,6 +83,7 @@ public final class MainActivity extends Activity
 	private Settings _settings = null;
 	private boolean _bootupconfig = false;
 	private String _cartTypes[][] = null;
+	private static File _romsDir = null;
 
 	public static class ActionBarNull {
 		public ActionBarNull(Activity a)					{};
@@ -204,6 +197,7 @@ public final class MainActivity extends Activity
 		Object obj = getLastNonConfigurationInstance();
 		_settings = new Settings(PreferenceManager.getDefaultSharedPreferences(this), this, obj);
 		_pkgversion = getPInfo().versionName;
+		_romsDir = getDir("roms", MODE_PRIVATE);
 
 		if (!_initialized) {
 			_settings.putBoolean("plandef", false);
@@ -244,17 +238,6 @@ public final class MainActivity extends Activity
 			pauseEmulation(true);
 			showDialog(DLG_CHANGES);
 			return;
-		}
-
-		/* Android 11+ needs MANAGE_EXTERNAL_STORAGE for native code to access ROM files */
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-			String rp = _settings.get(false, "rompath");
-			if (rp != null && !rp.equals("false")) {
-				_bootupconfig = true;
-				pauseEmulation(true);
-				showDialog(DLG_STORAGE_PERM);
-				return;
-			}
 		}
 		Toast.makeText(this,
 					   _aBar.isReal() ? R.string.actionbarhelptoast : R.string.noactionbarhelptoast,
@@ -321,13 +304,11 @@ public final class MainActivity extends Activity
 							@Override
 							public void onClick(DialogInterface d, int i) {
 								dismissDialog(DLG_PATHSETUP);
-								if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-									startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-										.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
-								} else {
-									startActivityForResult(new Intent(FileSelector.ACTION_OPEN_PATH,
-											null, MainActivity.this, FileSelector.class), ACTIVITY_FSEL);
-								}
+								String rp = _romsDir.getAbsolutePath();
+								_settings.putString("rompath", rp);
+								_settings.simulateChanged("rompath");
+								_bootupconfig = false;
+								pauseEmulation(false);
 							}
 							})
 						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -454,29 +435,6 @@ public final class MainActivity extends Activity
 						.create();
 			break;
 
-				case DLG_STORAGE_PERM:
-			d = new AlertDialog.Builder(this)
-						.setTitle("Storage permission required")
-						.setMessage("To access ROM files, grant \"All files access\" permission.")
-						.setCancelable(false)
-						.setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface d, int i) {
-								Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-								intent.setData(Uri.parse("package:" + getPackageName()));
-								startActivityForResult(intent, REQ_MANAGE_STORAGE);
-							}
-							})
-						.setNegativeButton("Skip", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface d, int i) {
-								_bootupconfig = false;
-								pauseEmulation(false);
-							}
-							})
-						.create();
-			break;
-
 		default:
 			d = null;
 		}
@@ -594,15 +552,10 @@ public final class MainActivity extends Activity
 			return true;
 		}
 		if (id == R.id.menu_open) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-				startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
-					.addCategory(Intent.CATEGORY_OPENABLE)
-					.setType("*/*")
-					.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
-			} else {
-				startActivityForResult(new Intent(FileSelector.ACTION_OPEN_FILE, null, this, FileSelector.class),
-									   ACTIVITY_FSEL);
-			}
+			startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+				.addCategory(Intent.CATEGORY_OPENABLE)
+				.setType("*/*")
+				.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
 			return true;
 		}
 		if (id == R.id.menu_nextdisk) {
@@ -623,43 +576,10 @@ public final class MainActivity extends Activity
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
-			if (data != null && data.getAction() != null && data.getAction().equals(ACTION_SET_ROMPATH)) {
-				if (resc == RESULT_OK) {
-					String p = data.getData().getPath();
-					_settings.putString("rompath", p);
-					_settings.simulateChanged("rompath");
-				}
-				_bootupconfig = false;
-				pauseEmulation(false);
-				break;
-			}
-
-			/* Handle SAF ACTION_OPEN_DOCUMENT_TREE result (directory picker from Settings → ROM path) */
-			if (data != null && data.getData() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				String uriStr = data.getData().toString();
-				if (uriStr.startsWith("content://") && uriStr.contains("/tree/")) {
-					String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
-					String decoded = Uri.decode(encoded);
-					if (decoded.startsWith("primary:")) {
-						String p = "/storage/emulated/0/" + decoded.substring("primary:".length());
-						_settings.putString("rompath", p);
-						_settings.simulateChanged("rompath");
-						_bootupconfig = false;
-						pauseEmulation(false);
-						break;
-					}
-				}
-			}
-
-			if (resc != RESULT_OK || data == null) {
-				_bootupconfig = false;
-				pauseEmulation(false);
-				break;
-			}
-
 			/* Handle SAF ACTION_OPEN_DOCUMENT result (content URI) */
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
-			    && data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
+			if (resc == RESULT_OK && data != null
+				&& Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
+				&& data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
 				String copyPath = copyContentUriToCache(data.getData());
 				if (copyPath != null) {
 					_curDiskFname = copyPath;
@@ -674,40 +594,12 @@ public final class MainActivity extends Activity
 				}
 				break;
 			}
-
-			/* Fallback: FileSelector on pre-KitKat returns file:// URI with ACTION_INSERT_REBOOT */
-			_curDiskFname = data.getData().getPath();
-			if (data.getAction() != null && data.getAction().equals(ACTION_INSERT_REBOOT)) {
-				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
-				if (r == -2)
-					showDialog(DLG_SELCARTTYPE);
-				else
-					Toast.makeText(this, String.format(getString(r < 0 ? R.string.errorboot : R.string.diskboot),
-										_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
-								   Toast.LENGTH_SHORT)
-						 .show();
-			}
-			break;
-		case ACTIVITY_PREFS:
-			/* On Android 11+, check if user set a ROM path but hasn't granted storage access */
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-				SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-				String rp = sp.getString("rompath", null);
-				if (rp != null && !rp.equals("false")) {
-					_bootupconfig = true;
-					pauseEmulation(true);
-					showDialog(DLG_STORAGE_PERM);
-					break;
-				}
-			}
-			_settings.fetchApplySettings();
-			break;
-		case REQ_MANAGE_STORAGE:
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
-				_settings.fetchApplySettings();
-				pauseEmulation(false);
-			}
 			_bootupconfig = false;
+			pauseEmulation(false);
+			break;
+
+		case ACTIVITY_PREFS:
+			_settings.fetchApplySettings();
 			break;
 		}
 	}
@@ -887,7 +779,10 @@ public final class MainActivity extends Activity
 			NativePrefKbd( Boolean.parseBoolean(_newvalues.get(PreferenceName.a800fns)) );
 
 			if (changed(PreferenceName.rompath)) {
-				if (!NativeSetROMPath(_newvalues.get(PreferenceName.rompath)))
+				String rp = _newvalues.get(PreferenceName.rompath);
+				if (rp == null || rp.equals("false"))
+					rp = _romsDir.getAbsolutePath();
+				if (!NativeSetROMPath(rp))
 					Toast.makeText(_context, R.string.rompatherror, Toast.LENGTH_LONG).show();
 			}
 		}

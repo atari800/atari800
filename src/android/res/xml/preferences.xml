@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
 		xmlns:android="http://schemas.android.com/apk/res/android"
-		xmlns:jub="http://schemas.android.com/apk/res/name.nick.jubanka.colleen">
+		xmlns:jub="http://schemas.android.com/apk/res-auto">
 
 	<PreferenceCategory android:title="@string/preftitle_graphics">
 		<CheckBoxPreference
@@ -82,9 +82,9 @@
 			android:entryValues="@array/machine_values"
 			android:defaultValue="7"/>
 		<Preference
-			android:key="rompath"
-			android:title="@string/pref_rompath"
-			android:summary="@string/pref_rompath_sum"/>
+			android:key="importroms"
+			android:title="@string/pref_importroms"
+			android:summary="@string/pref_importroms_sum"/>
 		<Preference
 			android:key="statepath"
 			android:title="@string/pref_statepath"

@@ -5,9 +5,6 @@
     <string name="menu_softkbd">Keyboard</string>
     <string name="menu_open">Open</string>
     <string name="menu_nextdisk">Next Side</string>
-    <string name="fsel_openfile">Open File:</string>
-    <string name="fsel_opendir">Open Dir:</string>
-    <string name="fselmenu_search">Search</string>
     <string name="warning">Warning</string>
     <string name="mountnodisk">File %s is not a disk image.\nContinue?</string>
     <string name="yes">Yes</string>
@@ -57,9 +54,8 @@
 								original Atari system ROM images. It has free replacement system ROMs
 								built in, but some Atari programs might fail to run with them. For best
 								compatibility, configure the emulator to use original Atari ROMs.<br><br>
-								<p>Touch <b>OK</b> to use the file selector to point to the folder containing
-								the system ROMs.<br>
-								You can always set the folder later, by selecting <b>Atari ROM Path</b>
+								<p>Touch <b>OK</b> to use the app\'s internal directory for ROM storage.<br>
+								You can import ROM files later by selecting <b>Import ROM BIOS</b>
 								in Preferences.<br><br>
 								Try the
 								<a href="http://atari800.github.io/download.html">Atari800 site</a>
@@ -260,8 +256,8 @@
 	<string name="pref_resetactions_sum">Clear current action mappings</string>
 	<string name="pref_mixbufsize">Sound Buffer Size</string>
 	<string name="pref_mixbufsize_sum">Lower for lower latency, higher to get rid of clicks</string>
-	<string name="pref_rompath">Atari ROM Path</string>
-	<string name="pref_rompath_sum">Set directory containing the ROM images</string>
+	<string name="pref_importroms">Import ROM BIOS</string>
+	<string name="pref_importroms_sum">Copy ROM BIOS files from storage to internal directory</string>
 	<string name="pref_about">About</string>
 	<string name="pref_about_sum">Colleen credits</string>
 	<string name="pref_help">Help</string>
