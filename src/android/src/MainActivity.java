@@ -224,19 +224,14 @@ public final class MainActivity extends Activity
 	}
 
 	private void bootupMsgs() {
-		Log.d(TAG, "bootupMsgs: start");
-		Log.d(TAG, "bootupMsgs: rompath=" + _settings.get(false, "rompath"));
 		// Migrate aspect from 0 to 3 (old XML default was 0, a bug)
 		String aspectVal = _settings.get(false, "aspect");
-		Log.d(TAG, "bootupMsgs: aspect=" + aspectVal);
 		if ("0".equals(aspectVal)) {
-			Log.d(TAG, "bootupMsgs: migrating aspect 0->3");
 			_settings.putString("aspect", "3");
 			_settings.fetchApplySettings();
 		}
 
 		String instver = _settings.get(false, "version");
-		Log.d(TAG, "bootupMsgs: version=" + instver);
 		if (instver == null || instver.equals("false")) {
 			_bootupconfig = true;
 			pauseEmulation(true);
@@ -624,7 +619,6 @@ public final class MainActivity extends Activity
 
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
-		Log.d(TAG, "onActivityResult: reqc=" + reqc + " resc=" + resc + " data=" + data);
 		_aBar.hide(this);
 
 		switch (reqc) {
@@ -632,11 +626,8 @@ public final class MainActivity extends Activity
 			if (data != null && data.getAction() != null && data.getAction().equals(ACTION_SET_ROMPATH)) {
 				if (resc == RESULT_OK) {
 					String p = data.getData().getPath();
-					Log.d(TAG, "onActivityResult FSEL: rompath=" + p);
 					_settings.putString("rompath", p);
 					_settings.simulateChanged("rompath");
-				} else {
-					Log.d(TAG, "onActivityResult FSEL: SET_ROMPATH cancelled");
 				}
 				_bootupconfig = false;
 				pauseEmulation(false);
@@ -646,17 +637,11 @@ public final class MainActivity extends Activity
 			/* Handle SAF ACTION_OPEN_DOCUMENT_TREE result (directory picker from Settings → ROM path) */
 			if (data != null && data.getData() != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 				String uriStr = data.getData().toString();
-				Log.d(TAG, "onActivityResult FSEL: SAF uri=" + uriStr);
-				/* Only treat /tree/ URIs as ROM path selection (ACTION_OPEN_DOCUMENT_TREE).
-				   /document/ URIs come from ACTION_OPEN_DOCUMENT (Open File) and are handled below. */
 				if (uriStr.startsWith("content://") && uriStr.contains("/tree/")) {
-					Log.d(TAG, "onActivityResult FSEL: SAF tree uri detected, treating as ROM path");
-					/* Convert content:// URI to real path: primary:foo -> /storage/emulated/0/foo */
 					String encoded = uriStr.substring(uriStr.lastIndexOf('/') + 1);
 					String decoded = Uri.decode(encoded);
 					if (decoded.startsWith("primary:")) {
 						String p = "/storage/emulated/0/" + decoded.substring("primary:".length());
-						Log.d(TAG, "onActivityResult FSEL: SAF rompath=" + p);
 						_settings.putString("rompath", p);
 						_settings.simulateChanged("rompath");
 						_bootupconfig = false;
@@ -675,13 +660,10 @@ public final class MainActivity extends Activity
 			/* Handle SAF ACTION_OPEN_DOCUMENT result (content URI) */
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
 			    && data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
-				Log.d(TAG, "onActivityResult FSEL: content URI, action=" + data.getAction() + " scheme=" + data.getData().getScheme() + " uri=" + data.getData());
 				String copyPath = copyContentUriToCache(data.getData());
 				if (copyPath != null) {
 					_curDiskFname = copyPath;
-					Log.d(TAG, "onActivityResult FSEL: SAF disk=" + _curDiskFname);
 					int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
-					Log.d(TAG, "onActivityResult FSEL: NativeRunAtariProgram returned " + r);
 					if (r == -2)
 						showDialog(DLG_SELCARTTYPE);
 					else
@@ -689,19 +671,14 @@ public final class MainActivity extends Activity
 											_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
 									   Toast.LENGTH_SHORT)
 							 .show();
-				} else {
-					Log.d(TAG, "onActivityResult FSEL: copyContentUriToCache returned null");
 				}
 				break;
 			}
 
 			/* Fallback: FileSelector on pre-KitKat returns file:// URI with ACTION_INSERT_REBOOT */
-			Log.d(TAG, "onActivityResult FSEL: fallback path, scheme=" + (data != null && data.getData() != null ? data.getData().getScheme() : "null") + " action=" + (data != null ? data.getAction() : "null"));
 			_curDiskFname = data.getData().getPath();
-			Log.d(TAG, "onActivityResult FSEL: disk=" + _curDiskFname + " action=" + data.getAction());
 			if (data.getAction() != null && data.getAction().equals(ACTION_INSERT_REBOOT)) {
 				int r = NativeRunAtariProgram(_curDiskFname, 1, 1);
-				Log.d(TAG, "onActivityResult FSEL: NativeRunAtariProgram fallback returned " + r);
 				if (r == -2)
 					showDialog(DLG_SELCARTTYPE);
 				else
@@ -823,11 +800,6 @@ public final class MainActivity extends Activity
 				throw new ClassCastException(); }}};
 				_newvalues.put(n,  v);
 			}
-			String rp = _newvalues.get(PreferenceName.rompath);
-			if (rp != null)
-				Log.d(TAG, "Settings.fetch: rompath=" + rp);
-			else
-				Log.d(TAG, "Settings.fetch: rompath=null");
 		}
 
 		private void apply() {
@@ -915,14 +887,12 @@ public final class MainActivity extends Activity
 			NativePrefKbd( Boolean.parseBoolean(_newvalues.get(PreferenceName.a800fns)) );
 
 			if (changed(PreferenceName.rompath)) {
-				Log.d(TAG, "Settings.apply: rompath changed, new=" + _newvalues.get(PreferenceName.rompath) + " old=" + _values.get(PreferenceName.rompath));
 				if (!NativeSetROMPath(_newvalues.get(PreferenceName.rompath)))
 					Toast.makeText(_context, R.string.rompatherror, Toast.LENGTH_LONG).show();
 			}
 		}
 
 		public void simulateChanged(String key) {
-			Log.d(TAG, "Settings.simulateChanged: key=" + key);
 			for (PreferenceName n: PreferenceName.values())
 				_newvalues.put(n, _values.get(n));
 			_values.put(PreferenceName.valueOf(key), null);
@@ -1003,27 +973,19 @@ public final class MainActivity extends Activity
 
 	private String copyContentUriToCache(Uri uri) {
 		try {
-			String scheme = uri.getScheme();
-			String uriStr = uri.toString();
-			String lastSeg = uri.getLastPathSegment();
-			Log.d(TAG, "copyContentUriToCache: uri=" + uriStr + " scheme=" + scheme + " lastSeg=" + lastSeg);
 			InputStream in = getContentResolver().openInputStream(uri);
 			if (in == null) {
-				Log.d(TAG, "copyContentUriToCache: null input stream");
 				return null;
 			}
 			String fname = uri.getLastPathSegment();
 			if (fname == null) fname = "temp";
 			/* Decode URL encoding: primary%3ADownload%2Fgame.atr -> primary:Download/game.atr */
 			fname = Uri.decode(fname);
-			Log.d(TAG, "copyContentUriToCache: decoded fname=" + fname);
 			/* Strip volume prefix like "primary:" */
 			int colonIdx = fname.lastIndexOf(':');
 			if (colonIdx >= 0) fname = fname.substring(colonIdx + 1);
-			Log.d(TAG, "copyContentUriToCache: after strip prefix fname=" + fname);
 			/* Replace any remaining path separators to avoid nested dir creation */
 			fname = fname.replace('/', '_').replace('\\', '_');
-			Log.d(TAG, "copyContentUriToCache: sanitized fname=" + fname);
 			File outFile = new File(getCacheDir(), fname);
 			FileOutputStream out = new FileOutputStream(outFile);
 			byte[] buf = new byte[65536];
@@ -1032,11 +994,8 @@ public final class MainActivity extends Activity
 				out.write(buf, 0, n);
 			in.close();
 			out.close();
-			Log.d(TAG, "copyContentUriToCache: success -> " + outFile.getAbsolutePath());
 			return outFile.getAbsolutePath();
 		} catch (Exception e) {
-			Log.d(TAG, "copyContentUriToCache: error " + e.getMessage());
-			e.printStackTrace();
 			return null;
 		}
 	}
