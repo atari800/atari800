@@ -120,30 +120,30 @@ public final class MainActivity extends Activity
 				(v.getSystemUiVisibility() & View.STATUS_BAR_HIDDEN) == View.STATUS_BAR_HIDDEN )
 			   	return;
 
-			if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.JELLY_BEAN) {
-				a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-				a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-			}
-			if (v != null) {
-				int flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN 	|
-							View.SYSTEM_UI_FLAG_LAYOUT_STABLE 		|
-							View.SYSTEM_UI_FLAG_FULLSCREEN			|
-							View.STATUS_BAR_HIDDEN;
-				if (p == true)
-					flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
-				v.setSystemUiVisibility(flags);
-			}
-			ab.hide();
-			((MainActivity) a).pauseEmulation(false);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+			a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+			a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 		}
+		if (v != null) {
+			int flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN 	|
+						View.SYSTEM_UI_FLAG_LAYOUT_STABLE 		|
+						View.SYSTEM_UI_FLAG_FULLSCREEN			|
+						View.STATUS_BAR_HIDDEN;
+			if (p == true)
+				flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
+			v.setSystemUiVisibility(flags);
+		}
+		ab.hide();
+		((MainActivity) a).pauseEmulation(false);
+	}
 
-		@Override
-		public void show(Activity a) {
-			ActionBar ab = a.getActionBar();
-			if (ab.isShowing())		return;
+	@Override
+	public void show(Activity a) {
+		ActionBar ab = a.getActionBar();
+		if (ab.isShowing())		return;
 
-			((MainActivity) a).pauseEmulation(true);
-			if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.JELLY_BEAN) {
+		((MainActivity) a).pauseEmulation(true);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
 				a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 				a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 			}
@@ -180,7 +180,7 @@ public final class MainActivity extends Activity
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB)
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			_aBar = new ActionBarHelp(this);
 		else
 			_aBar = new ActionBarNull(this);
@@ -218,6 +218,13 @@ public final class MainActivity extends Activity
 	}
 
 	private void bootupMsgs() {
+		// Migrate aspect from 0 to 3 (old XML default was 0, a bug)
+		String aspectVal = _settings.get(false, "aspect");
+		if ("0".equals(aspectVal)) {
+			_settings.putString("aspect", "3");
+			_settings.fetchApplySettings();
+		}
+
 		String instver = _settings.get(false, "version");
 		if (instver == null || instver.equals("false")) {
 			_bootupconfig = true;
@@ -531,28 +538,31 @@ public final class MainActivity extends Activity
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case R.id.menu_quit:
+		int id = item.getItemId();
+		if (id == R.id.menu_quit) {
 			finish();
 			return true;
-		case R.id.menu_softkbd:
+		}
+		if (id == R.id.menu_softkbd) {
 			_imng.showSoftInput(_view, InputMethodManager.SHOW_FORCED);
 			_aBar.hide(this, false);
 			return true;
-		case R.id.menu_open:
+		}
+		if (id == R.id.menu_open) {
 			startActivityForResult(new Intent(FileSelector.ACTION_OPEN_FILE, null, this, FileSelector.class),
 								   ACTIVITY_FSEL);
 			return true;
-		case R.id.menu_nextdisk:
+		}
+		if (id == R.id.menu_nextdisk) {
 			insertNextDisk();
 			_aBar.hide(this);
 			return true;
-		case R.id.menu_preferences:
+		}
+		if (id == R.id.menu_preferences) {
 			startActivityForResult(new Intent(this, Preferences.class), ACTIVITY_PREFS);
 			return true;
-		default:
-			return super.onOptionsItemSelected(item);
 		}
+		return super.onOptionsItemSelected(item);
 	}
 
 	@Override
@@ -561,6 +571,11 @@ public final class MainActivity extends Activity
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
+			if (data == null) {
+				_bootupconfig = false;
+				pauseEmulation(false);
+				break;
+			}
 			if (data.getAction().equals(ACTION_SET_ROMPATH)) {
 				if (resc == RESULT_OK) {
 					String p = data.getData().getPath();

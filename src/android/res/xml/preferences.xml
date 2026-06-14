@@ -15,7 +15,7 @@
 			android:summary="@string/pref_aspect_sum"
 			android:entries="@array/aspect"
 			android:entryValues="@array/aspect_values"
-			android:defaultValue="0"/>
+			android:defaultValue="3"/>
 		<CheckBoxPreference
 			android:key="bilinear"
 			android:title="@string/pref_bilinear"

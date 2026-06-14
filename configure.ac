@@ -170,22 +170,11 @@ if [[ "$a8_target" = "rpi" ]]; then
     LDFLAGS="$LDFLAGS -Wl,--unresolved-symbols=ignore-in-shared-libs -L${RPI_SDK}/lib"
 fi
 if [[ "$a8_target" = "android" ]]; then
-	CC="arm-linux-androideabi-gcc"
-	CPP="arm-linux-androideabi-cpp"
 	AC_NO_EXECUTABLES
-	CPPFLAGS="$CPPFLAGS -I$ANDROID_NDK_ROOT/platforms/android-9/arch-arm/usr/include/"
 	WANT_IDE=no
 	with_readline=no
 	WANT_EVENT_RECORDING=no
 	AC_DEFINE(HAVE_GETTIMEOFDAY,1)
-
-	# Take care of the ndk-build script name difference on Windows version of Android NDK.
-	if [[ "$build_os" = "cygwin" -o "$build_os" = "mingw32" ]]; then
-		NDK_BUILD=ndk-build.cmd
-	else
-		NDK_BUILD=ndk-build
-	fi
-	AC_SUBST(NDK_BUILD)
 fi
 if [[ "$a8_host" = "falcon" ]]; then
     CFLAGS="-m68020-60 -O2 -fomit-frame-pointer -Wall"
@@ -1452,9 +1441,6 @@ DOC/Makefile
 src/Makefile
 tools/Makefile
 ])
-if [[ "$a8_target" = "android" ]]; then
-	AC_CONFIG_FILES(src/android/jni/Android.mk)
-fi
 AC_OUTPUT
 
 

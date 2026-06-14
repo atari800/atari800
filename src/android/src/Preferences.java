@@ -46,6 +46,7 @@ import android.content.res.Resources;
 import android.preference.CheckBoxPreference;
 
 
+@SuppressWarnings("deprecation")
 public final class Preferences extends PreferenceActivity implements Preference.OnPreferenceChangeListener
 {
 	private static final String TAG = "Preferences";

@@ -23,126 +23,57 @@ and MinGW.
 
 2. The Java JDK.
 
-The latest Java 8 release at the time of this writing, ie. 8u271, is known to
-work correctly:
+Version 17 or later is recommended:
 
-https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html
+https://adoptium.net/
 
-Java versions newer than 8 will not work.
+3. The Android SDK (command-line tools).
 
-Note for Linux users: the OpenJDK 8 package, as available in e.g.
-Ubuntu under the name "openjdk-8-jdk", is a good choice.
+Install the Android command-line tools (cmdline-tools) from:
 
-3. Apache Ant:
+https://developer.android.com/studio#command-line-tools-only
 
-https://ant.apache.org/bindownload.cgi
+Then use sdkmanager to install required packages:
 
-4. The Android SDK.
+# sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmake;3.22.1"
 
-Atari800 requires tools that have since been removed from the newest version of
-the Android SDK (specifically, "android update project" is no longer available).
-Until Atari800 gets updated, you will have to use an older version, which
-unfortunately is no longer downloadable from the Android Developers' website.
-The necessary parts of the SDK, though, can be obtained through direct download
-links. Here's how to get them:
+4. The Android NDK.
 
-a) Get Android SDK Tools not newer that v. 25.2.5, through a direct
-download link. As of May 2018 the functioning links are in the form of:
+Install the NDK via sdkmanager:
 
-http://dl-ssl.google.com/android/repository/tools_r25.2.5-<host>.zip
+# sdkmanager "ndk;27.0.12077973"
 
-where <host> shall be replaced with one of:
+Or download it manually from:
 
-* windows - for Windows 32/64-bit
-* macosx - for MacOS X
-* linux - for Linux 64-bit
-
-b) Create a directory for the SDK, e.g. /path/to/android-sdk. Unzip the
-downloaded SDK there - it should create a subdirectory named tools/.
-
-c) Set the JAVA_HOME environment variable to point to the root directory of your
-JDK installation, e.g.:
-
-# export JAVA_HOME='C:\Java\jdk1.8.0_172'
-
-d) Navigate to the SDK's tools/bin/ directory, e.g.:
-
-# cd /path/to/android-sdk/tools/bin
-
-e) Run sdkmanager to install SDK Platform Tools, SDK Build Tools and platform
-version 20:
-
-# ./sdkmanager "platform-tools" "build-tools;27.0.3" "platforms;android-20"
-
-Note: On Windows the tool is called sdkmanager.bat isntead of sdkmanager.
-
-5. The Android NDK
-
-Again, Atari800 has not been adapted to the latest changes in the NDK, so you
-need to use a version not later than r15c. Get it from:
-
-https://developer.android.com/ndk/downloads/older_releases
-
-and unzip the archive to a directory, e.g. /path/to/android-ndk-r15c.
-
-6. Assorted libraries
-
-The old Android NDK might require some old libraries that are no longer
-installed by default on modern Linux distributions. For example, it requires:
-libncurses5
+https://developer.android.com/ndk/downloads
 
 II. Setting up the environment
 ------------------------------
 
-1. Set the ANDROID_NDK_ROOT environment variable to point to the root directory
-of the NDK that you unzipped earlier, e.g.:
+1. Set the ANDROID_HOME environment variable to point to the SDK root, e.g.:
 
-# export ANDROID_NDK_ROOT='/path/to/android-ndk-r15c'
+# export ANDROID_HOME=/path/to/android-sdk
 
-Note for Windows: Since the Windows NDK is built without Cygwin awareness, the
-path in ANDROID_NDK_ROOT should be set using windows notation, e.g.:
+2. Set the JAVA_HOME environment variable to point to your JDK, e.g.:
 
-# export ANDROID_NDK_ROOT='C:\path\to\android-ndk-r15c'
+# export JAVA_HOME=/path/to/jdk-17
 
-Also, make sure the NDK is accessible by normal Windows methods (i.e. no
-symlinks in Cygwin).
+3. Add the Android SDK tools to PATH:
 
-2. Set the JAVA_HOME environment variable to point to the root directory of your
-JDK installation, e.g.:
-
-# export JAVA_HOME='C:\Java\jdk1.8.0_172'
-
-3. Make sure that ant is accessible in PATH. If not, add it:
-
-# export PATH="/path/to/apache-ant-1.10.9/bin:$PATH"
-
-4. Add the NDK root, gcc and android tools paths to PATH, e.g.:
-
-# export PATH="/path/to/android-ndk-r15c:/path/to/android-ndk-r15c/toolchains/arm-linux-androideabi-4.9/prebuilt/<build-os>/bin:/path/to/android-sdk/tools:/path/to/android-sdk/platform-tools:$PATH"
-
-(Replace <build-os> above with the directory that matches your build environment, e.g. linux-x86_64, windows-x86_64, ...)
+# export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
 III. Compiling
 --------------
 
 1. Unpack the source tarball of Atari800.
 
-2. Go to the atari800 directory and update the Android project files:
-
-# android update project --path src/android --name colleen --target "android-20"
-
-Note: On Windows the tool is called android.bat isntead of android.
-
-2. If the configure scrips is missing, create it:
+2. If the configure script is missing, create it:
 
 # ./autogen.sh
 
-3. Configure the build. Generally you should enable exactly the features listed
-below:
+3. Configure the build:
 
-# ./configure --target=android --disable-monitorbreak --enable-pagedattrib --enable-seriosound --disable-crashmenu --disable-monitorasm --disable-monitorhints --without-readline --enable-clipsound --disable-riodevice
-
-Enabling or disabling other reatures is not guaranteed to build correctly.
+# ./configure --target=android
 
 4. Build the APK package:
 
@@ -150,7 +81,14 @@ Enabling or disabling other reatures is not guaranteed to build correctly.
 
 After a while, the APK package should appear in:
 
-src/android/bin/colleen-debug.apk
+src/android/build/outputs/apk/debug/colleen-debug.apk
+
+To build a release APK suitable for distribution:
+
+# cd src/android && ./gradlew assembleRelease
+
+You will need to configure signing in src/android/build.gradle.kts or supply
+keystore properties via the command line.
 
 Cheers,
 Kostas

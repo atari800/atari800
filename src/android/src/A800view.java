@@ -106,7 +106,7 @@ public final class A800view extends GLSurfaceView
 
 		_keymap = KeyCharacterMap.load(KeyCharacterMap.BUILT_IN_KEYBOARD);
 
-		if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.ECLAIR)
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ECLAIR)
 			_touchHandler = new SingleTouch();
 		else
 			_touchHandler = new MultiTouch();
@@ -124,7 +124,7 @@ public final class A800view extends GLSurfaceView
 	public boolean onTouchEvent(final MotionEvent ev) {
 		int ret = _touchHandler.onTouchEvent(ev);
 
-		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			MainActivity m = (MainActivity) getContext();
 			if (ret == 2)
 				m._aBar.show(m);

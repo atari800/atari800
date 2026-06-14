@@ -32,6 +32,8 @@
 
 #include "pokeysnd.h"
 #include "log.h"
+#include "sound.h"
+#include "util.h"
 
 static int at_sixteenbit = 0;
 static int snd_bufsizems = 0;
@@ -380,4 +382,44 @@ void Sound_Continue(void)
 	Log_print("OSL resuming sound");
 	if (! osl_playif)	return;
 	(*osl_playif)->SetPlayState(osl_playif, SL_PLAYSTATE_PLAYING);
+}
+
+Sound_setup_t Sound_desired = { 44100, 2, 1, 0 };
+Sound_setup_t Sound_out;
+int Sound_enabled = 1;
+unsigned int Sound_latency = 20;
+
+int Sound_Setup(void)
+{
+	Sound_enabled = TRUE;
+	Sound_out = Sound_desired;
+	Sound_out.buffer_ms = (unsigned int)(Sound_out.buffer_frames * 1000.0f / Sound_out.freq + 0.5f);
+	POKEYSND_Init(POKEYSND_FREQ_17_EXACT, Sound_out.freq, Sound_out.channels, Sound_out.sample_size == 2 ? POKEYSND_BIT16 : 0);
+	return TRUE;
+}
+
+int Sound_ReadConfig(char *option, char *ptr)
+{
+	return FALSE;
+}
+
+void Sound_WriteConfig(FILE *fp)
+{
+}
+
+void Sound_SetLatency(unsigned int latency)
+{
+	Sound_latency = latency;
+}
+
+double Sound_AdjustSpeed(void)
+{
+	return 1.0;
+}
+
+unsigned int Sound_NextPow2(unsigned int num)
+{
+	unsigned int result = 1;
+	while (result < num) result <<= 1;
+	return result;
 }

@@ -140,7 +140,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 		public void reset(ListActivity a) {
 			a.getListView().clearTextFilter();
 			if (_msrch != null)
-				if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 					_msrch.collapseActionView();
 				else
 					((SearchView) _msrch.getActionView()).setIconified(true);
@@ -151,7 +151,7 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		if (Integer.parseInt(Build.VERSION.SDK) >= Build.VERSION_CODES.HONEYCOMB)
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
 			_srchView = new SearchHelp();
 		else
 			_srchView = new SearchNull();
@@ -212,16 +212,14 @@ public final class FileSelector extends ListActivity implements AdapterView.OnIt
 
 	@Override
 	public void onClick(View v) {
-		switch (v.getId()) {
-		case R.id.fsel_ok:
+		int id = v.getId();
+		if (id == R.id.fsel_ok) {
 			setResult(Activity.RESULT_OK, new Intent(MainActivity.ACTION_SET_ROMPATH,
 						Uri.fromFile(_curdir)));
 			finish();
-			break;
-		case R.id.fsel_cancel:
+		} else if (id == R.id.fsel_cancel) {
 			setResult(Activity.RESULT_CANCELED, new Intent(MainActivity.ACTION_SET_ROMPATH));
 			finish();
-			break;
 		}
 	}
 

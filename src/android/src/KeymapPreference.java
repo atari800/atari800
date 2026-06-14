@@ -49,6 +49,7 @@ import static android.view.KeyEvent.*;
 import static name.nick.jubanka.colleen.A800view.*;
 
 
+@SuppressWarnings("deprecation")
 public final class KeymapPreference extends DialogPreference
 {
 	private static final String TAG = "KeyPreference";

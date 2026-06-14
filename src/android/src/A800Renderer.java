@@ -33,7 +33,6 @@ import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Region;
 import android.util.Log;
 import android.widget.Toast;
 import android.content.Context;
@@ -101,17 +100,22 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 
 		// Joystick area
 		r = new RectF(0, 0, 63, 63);
-		can.clipRect(0, 0, 64, 64, Region.Op.REPLACE);
+		can.save();
+		can.clipRect(0, 0, 64, 64);
 		can.drawRoundRect(r, 6, 6, fill);
 		can.drawRoundRect(r, 6, 6, stroke);
+		can.restore();
 
 		// Fire/Joy point
 		r = new RectF(67, 3, 77, 13);
-		can.clipRect(64, 0, 79, 15, Region.Op.REPLACE);
+		can.save();
+		can.clipRect(64, 0, 79, 15);
 		can.drawOval(r, fill);
+		can.restore();
 
 		// El texto
-		can.clipRect(64, 16, 128, 64, Region.Op.REPLACE);
+		can.save();
+		can.clipRect(64, 16, 128, 64);
 		Paint t = new Paint(Paint.ANTI_ALIAS_FLAG);
 		t.setColor(0xFF001976);
 		t.setTextSize(10);
@@ -121,6 +125,7 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 		can.drawText("OPTION", 65, 44, t);
 		can.drawText("RESET", 65, 54, t);
 		can.drawText("HELP", 65, 64, t);
+		can.restore();
 
 		bmp.getPixels(_pix, 0, OVL_TEXW, 0, 0, OVL_TEXW, OVL_TEXH);
 		bmp.recycle();

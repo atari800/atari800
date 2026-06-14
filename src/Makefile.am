@@ -344,8 +344,7 @@ $(TARGET_BASE_NAME).jar: $(TARGET_BASE_NAME).class $(TARGET_BASE_NAME)$(RUNTIME)
 
 # Allow parallel execution in sub-make with '+'
 android:
-	+ $(NDK_BUILD) -C android
-	ant -f android/build.xml debug
+	cd android && ./gradlew assembleDebug
 .PHONY: android
 
 CLEANFILES = *.o *.a *.class .manifest $(TARGET) $(TARGET_BASE_NAME).jar $(TARGET_BASE_NAME)_runtime.java core *.bak *~
@@ -355,10 +354,10 @@ CLEANFILES += falcon/*.o falcon/*.bak falcon/*~
 CLEANFILES += sdl/*.o sdl/*.bak sdl/*~
 CLEANFILES += javanvm/*.o javanvm/*.bak javanvm/*~
 CLEANFILES += atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
-CLEANFILES += android/libs android/obj android/bin android/gen
+CLEANFILES += android/build android/.gradle
 CLEANFILES += libatari800/*.o libatari800/*.bak libatari800/*~
 
-DISTCLEANFILES = Makefile configure config.log config.status config.h android/jni/Android.mk
+DISTCLEANFILES = Makefile configure config.log config.status config.h
 DISTCLEANFILES += autom4te.cache
 
 install-data-local:
@@ -383,9 +382,14 @@ EXTRA_DIST += wince
 EXTRA_DIST += amiga
 EXTRA_DIST += \
 	android/AndroidManifest.xml \
-	android/build.xml \
-	android/project.properties \
-	android/jni/Android.mk.in \
+	android/CMakeLists.txt \
+	android/build.gradle.kts \
+	android/settings.gradle.kts \
+	android/gradle.properties \
+	android/gradlew \
+	android/gradlew.bat \
+	android/gradle/wrapper/gradle-wrapper.jar \
+	android/gradle/wrapper/gradle-wrapper.properties \
 	android/jni/Application.mk \
 	android/jni/keys.inc \
 	android/jni/androidinput.c android/jni/androidinput.h \

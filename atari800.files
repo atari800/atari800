@@ -163,8 +163,10 @@ src/amiga/support.c
 src/amiga/support.h
 src/amiga/unixfunc.c
 src/android/AndroidManifest.xml
-src/android/build.xml
-src/android/jni/Android.mk.in
+src/android/CMakeLists.txt
+src/android/build.gradle.kts
+src/android/settings.gradle.kts
+src/android/gradle.properties
 src/android/jni/Application.mk
 src/android/jni/androidinput.c
 src/android/jni/androidinput.h

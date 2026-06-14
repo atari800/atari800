@@ -36,6 +36,7 @@ import android.content.DialogInterface;
 import android.util.Log;
 
 
+@SuppressWarnings("deprecation")
 public final class SliderPreference extends DialogPreference implements SeekBar.OnSeekBarChangeListener
 {
 	private int _min, _max, _def;
