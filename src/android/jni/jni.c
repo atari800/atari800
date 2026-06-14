@@ -150,6 +150,18 @@ static jboolean JNICALL NativeSaveState(JNIEnv *env, jobject this, jstring fname
 	return ret;
 }
 
+static jboolean JNICALL NativeLoadState(JNIEnv *env, jobject this, jstring fname)
+{
+	const char *fname_utf = NULL;
+	int ret;
+
+	fname_utf = (*env)->GetStringUTFChars(env, fname, NULL);
+	ret = StateSav_ReadAtariState(fname_utf, "rb");
+	Log_print("Loaded state %s with return %d", fname_utf, ret);
+	(*env)->ReleaseStringUTFChars(env, fname, fname_utf);
+	return ret;
+}
+
 static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 												  jstring img, jint drv, jint reboot)
 {
@@ -592,6 +604,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	};
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
+		{ "NativeLoadState",		"(Ljava/lang/String;)Z",			NativeLoadState		  },
 		{ "NativeBootPD",			"([BI)Z",							NativeBootPD		  },
 		{ "NativeOSLSound",			"()Z",								NativeOSLSound		  },
 	};
