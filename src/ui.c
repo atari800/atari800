@@ -3709,131 +3709,63 @@ static void JoystickButtonsConfiguration(SDL_INPUT_RealJSConfig_t* js_config) {
 
 #endif /* SDL2 */
 
-static void RealJoystickConfiguration(void)
+/* Configure real joystick settings for a single Atari port (hat,
+   axes, diagonals, buttons). Called per-port from ControllerConfiguration
+   details submenu. */
+static void RealJoystickConfiguration(int port)
 {
 	char title[40];
 	int option = 0;
-	int i;
-	SDL_INPUT_RealJSConfig_t *js_config;
+	SDL_INPUT_RealJSConfig_t *js_config = SDL_INPUT_GetRealJSConfig(port);
 #if SDL2
 	static UI_tMenuItem real_js_menu_array[] = {
-		UI_MENU_LABEL("Joystick 1"),
 		UI_MENU_CHECK(0, " Use hat/D-Pad:"),
 		UI_MENU_ACTION(1, " Analog axes:"),
 		UI_MENU_ACTION(2, " Diagonals zone:"),
 		UI_MENU_ACTION(3, " Configure buttons"),
-		UI_MENU_LABEL("Joystick 2"),
-		UI_MENU_CHECK(4, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(5, " Analog axes:"),
-		UI_MENU_ACTION(6, " Diagonals zone:"),
-		UI_MENU_ACTION(7, " Configure buttons"),
-		UI_MENU_LABEL("Joystick 3"),
-		UI_MENU_CHECK(8, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(9, " Analog axes:"),
-		UI_MENU_ACTION(10, " Diagonals zone:"),
-		UI_MENU_ACTION(11, " Configure buttons"),
-		UI_MENU_LABEL("Joystick 4"),
-		UI_MENU_CHECK(12, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(13, " Analog axes:"),
-		UI_MENU_ACTION(14, " Diagonals zone:"),
-		UI_MENU_ACTION(15, " Configure buttons"),
 		UI_MENU_END
 	};
 
-	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+	snprintf(title, sizeof(title), "Joystick %d configuration", port + 1);
 
 	for (;;) {
-		/*Set the CHECK items*/
-		for (i = 0; i < 4; i++) {
-			int opt = i * 4;
-			SDL_INPUT_RealJSConfig_t* cfg = SDL_INPUT_GetRealJSConfig(i);
-			SetItemChecked(real_js_menu_array, opt++, cfg->use_hat);
-		
-			FindMenuItem(real_js_menu_array, opt++)->suffix = cfg->axes == 0 ? "1&2" : "3&4";
-
-			FindMenuItem(real_js_menu_array, opt)->suffix =
-				cfg->diagonal_zones == JoystickNarrowDiagonalsZone ?
-					"Narrow" : (cfg->diagonal_zones == JoystickWideDiagonalsZone ?  "Wide" : "None");
-		}
+		SetItemChecked(real_js_menu_array, 0, js_config->use_hat);
+		FindMenuItem(real_js_menu_array, 1)->suffix = js_config->axes == 0 ? "1&2" : "3&4";
+		FindMenuItem(real_js_menu_array, 2)->suffix =
+			js_config->diagonal_zones == JoystickNarrowDiagonalsZone ?
+				"Narrow" : (js_config->diagonal_zones == JoystickWideDiagonalsZone ? "Wide" : "None");
 
 		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
-
 		if (option < 0) break;
 
-		js_config = SDL_INPUT_GetRealJSConfig(option / 4);
 		switch (option) {
-			case 0:
-			case 4:
-			case 8:
-			case 12:
-				js_config->use_hat = !js_config->use_hat;
-				break;
-			case 1:
-			case 5:
-			case 9:
-			case 13:
-				js_config->axes = js_config->axes ? 0 : 2;
-				break;
-			case 2:
-			case 6:
-			case 10:
-			case 14:
-				js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
-				break;
-			case 3:
-			case 7:
-			case 11:
-			case 15:
-				// configure buttons
-				JoystickButtonsConfiguration(js_config);
-				break;
-			default:
-				break;
+		case 0:
+			js_config->use_hat = !js_config->use_hat;
+			break;
+		case 1:
+			js_config->axes = js_config->axes ? 0 : 2;
+			break;
+		case 2:
+			js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
+			break;
+		case 3:
+			JoystickButtonsConfiguration(js_config);
+			break;
 		}
 	}
 #else
 	static UI_tMenuItem real_js_menu_array[] = {
-		UI_MENU_LABEL("Joystick 1"),
 		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
-		UI_MENU_LABEL("Joystick 2"),
-		UI_MENU_CHECK(1, "Use hat/D-PAD:"),
-		UI_MENU_LABEL("Joystick 3"),
-		UI_MENU_CHECK(2, "Use hat/D-PAD:"),
-		UI_MENU_LABEL("Joystick 4"),
-		UI_MENU_CHECK(3, "Use hat/D-PAD:"),
 		UI_MENU_END
 	};
 
-	snprintf(title, sizeof (title), "Configuration of Real Joysticks");
+	snprintf(title, sizeof(title), "Joystick %d configuration", port + 1);
 
 	for (;;) {
-		/*Set the CHECK items*/
-		for (i = 0; i < 4; i++) {
-			SetItemChecked(real_js_menu_array, i, SDL_INPUT_GetRealJSConfig(i)->use_hat);
-		}
-
+		SetItemChecked(real_js_menu_array, 0, js_config->use_hat);
 		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
-
 		if (option < 0) break;
-
-		switch (option) {
-			case 0:
-				js_config = SDL_INPUT_GetRealJSConfig(0);
-				js_config->use_hat = !js_config->use_hat;
-				break;
-			case 1:
-				js_config = SDL_INPUT_GetRealJSConfig(1);
-				js_config->use_hat = !js_config->use_hat;
-				break;
-			case 2:
-				js_config = SDL_INPUT_GetRealJSConfig(2);
-				js_config->use_hat = !js_config->use_hat;
-				break;
-			case 3:
-				js_config = SDL_INPUT_GetRealJSConfig(3);
-				js_config->use_hat = !js_config->use_hat;
-				break;
-		}
+		js_config->use_hat = !js_config->use_hat;
 	}
 #endif /* SDL2 */
 }
@@ -3873,11 +3805,14 @@ static void ControllerConfiguration(void)
 		UI_MENU_SUBMENU_SUFFIX(4, "Mouse speed:", mouse_speed_status),
 #endif
 #ifdef GUI_SDL
-		UI_MENU_CHECK(5, "Enable keyboard joystick 1:"),
-		UI_MENU_SUBMENU(6, "Define layout of keyboard joystick 1"),
-		UI_MENU_CHECK(7, "Enable keyboard joystick 2:"),
-		UI_MENU_SUBMENU(8, "Define layout of keyboard joystick 2"),
-		UI_MENU_SUBMENU(9, "Configure real joysticks"),
+		UI_MENU_SUBMENU(5, "Joystick 1:"),
+		UI_MENU_SUBMENU(6, "  configure details"),
+		UI_MENU_SUBMENU(7, "Joystick 2:"),
+		UI_MENU_SUBMENU(8, "  configure details"),
+		UI_MENU_SUBMENU(9, "Joystick 3:"),
+		UI_MENU_SUBMENU(10, "  configure details"),
+		UI_MENU_SUBMENU(11, "Joystick 4:"),
+		UI_MENU_SUBMENU(12, "  configure details"),
 #endif
 		UI_MENU_END
 	};
@@ -3902,8 +3837,41 @@ static void ControllerConfiguration(void)
 		mouse_speed_status[0] = (char) ('0' + INPUT_mouse_speed);
 #endif
 #ifdef GUI_SDL
-		SetItemChecked(menu_array, 5, PLATFORM_IsKbdJoystickEnabled(0));
-		SetItemChecked(menu_array, 7, PLATFORM_IsKbdJoystickEnabled(1));
+		{
+			{
+				static char port_suffix[4][64];
+				int p;
+				/* Update menu suffix for each joystick port to show current mode */
+				for (p = 0; p < 4; p++) {
+					int mode = SDL_INPUT_GetPortMode(p);
+					int param = SDL_INPUT_GetPortParam(p);
+					switch (mode) {
+					case JOY_MODE_NONE:
+						menu_array[5 + p * 2].suffix = "None";
+						break;
+					case JOY_MODE_KBD0:
+						menu_array[5 + p * 2].suffix = "Keyboard 1";
+						break;
+					case JOY_MODE_KBD1:
+						menu_array[5 + p * 2].suffix = "Keyboard 2";
+						break;
+					case JOY_MODE_PARALLEL:
+						snprintf(port_suffix[p], sizeof(port_suffix[p]), "Parallel port %d", param + 1);
+						menu_array[5 + p * 2].suffix = port_suffix[p];
+						break;
+					case JOY_MODE_HOST_JOY: {
+						const char *jname = SDL_INPUT_GetHostJoystickName(param);
+						snprintf(port_suffix[p], sizeof(port_suffix[p]), "Host: %s", jname ? jname : "?");
+						menu_array[5 + p * 2].suffix = port_suffix[p];
+						break;
+					}
+					default:
+						menu_array[5 + p * 2].suffix = "None";
+						break;
+					}
+				}
+			}
+		}
 #endif
 		option = UI_driver->fSelect("Controller Configuration", 0, option, menu_array, NULL);
 		switch (option) {
@@ -3951,20 +3919,67 @@ static void ControllerConfiguration(void)
 			break;
 #endif
 #ifdef GUI_SDL
-		case 5:
-			PLATFORM_ToggleKbdJoystickEnabled(0);
+		case 5: case 7: case 9: case 11: {
+			/* Build a dynamic popup menu of available input sources for one port.
+			   Uses disjoint retval ranges to avoid ambiguity:
+			   JOY_MODE_NONE/KBD0/KBD1 direct, PARALLEL_BASE..HOSTJOY_BASE-1 for
+			   parallel ports, HOSTJOY_BASE+ for host joysticks. */
+			int port = (option - 5) / 2;
+			int sel;
+#define PARALLEL_BASE 0x100
+#define HOSTJOY_BASE  0x200
+			char host_label[16][48];
+			char lpt_label[2][32];
+			UI_tMenuItem mode_menu[17];
+			int n_modes = 0;
+			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_NONE, "None", "", NULL };
+			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_KBD0, "Keyboard 1", "", NULL };
+			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_KBD1, "Keyboard 2", "", NULL };
+#ifdef __linux__
+			{
+				int lpt;
+				for (lpt = 0; lpt < SDL_INPUT_GetNumLPTJoysticks() && lpt < 2; lpt++) {
+					snprintf(lpt_label[lpt], sizeof(lpt_label[lpt]), "Parallel port %d", lpt + 1);
+					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, PARALLEL_BASE + lpt, lpt_label[lpt], "", NULL };
+				}
+			}
+#endif
+			{
+				int j;
+				for (j = 0; j < SDL_INPUT_GetNumHostJoysticks() && j < 16; j++) {
+					const char *jname = SDL_INPUT_GetHostJoystickName(j);
+					snprintf(host_label[j], sizeof(host_label[j]), "Host: %s", jname ? jname : "?");
+					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, HOSTJOY_BASE + j, host_label[j], "", NULL };
+				}
+			}
+			memset(&mode_menu[n_modes], 0, sizeof(UI_tMenuItem));
+			mode_menu[n_modes].flags = UI_ITEM_END;
+			sel = UI_driver->fSelect(NULL, UI_SELECT_POPUP, 0, mode_menu, NULL);
+			if (sel >= 0) {
+				if (sel == JOY_MODE_NONE)
+					SDL_INPUT_SetPortMode(port, JOY_MODE_NONE, 0);
+				else if (sel == JOY_MODE_KBD0)
+					SDL_INPUT_SetPortMode(port, JOY_MODE_KBD0, 0);
+				else if (sel == JOY_MODE_KBD1)
+					SDL_INPUT_SetPortMode(port, JOY_MODE_KBD1, 0);
+				else if (sel >= PARALLEL_BASE && sel < HOSTJOY_BASE)
+					SDL_INPUT_SetPortMode(port, JOY_MODE_PARALLEL, sel - PARALLEL_BASE);
+				else if (sel >= HOSTJOY_BASE)
+					SDL_INPUT_SetPortMode(port, JOY_MODE_HOST_JOY, sel - HOSTJOY_BASE);
+			}
 			break;
-		case 6:
-			KeyboardJoystickConfiguration(0);
+		}
+		case 6: case 8: case 10: case 12: {
+			int port = (option - 6) / 2;
+			int mode = SDL_INPUT_GetPortMode(port);
+			if (mode == JOY_MODE_KBD0)
+				KeyboardJoystickConfiguration(0);
+			else if (mode == JOY_MODE_KBD1)
+				KeyboardJoystickConfiguration(1);
+			else if (mode == JOY_MODE_HOST_JOY)
+				RealJoystickConfiguration(port);
 			break;
-		case 7:
-			PLATFORM_ToggleKbdJoystickEnabled(1);
-			break;
-		case 8:
-			KeyboardJoystickConfiguration(1);
-			break;
-		case 9: RealJoystickConfiguration();
-			break;
+		}
 #endif
 		default:
 			return;
