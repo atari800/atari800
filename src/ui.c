@@ -3915,12 +3915,12 @@ static void ControllerConfiguration(void)
 						menu_array[5 + p * 2].suffix = port_suffix[p];
 						break;
 				case JOY_MODE_HOST_JOY: {
-					const char *jname = SDL_INPUT_GetHostJoystickName(param);
+					const char *jname = SDL_INPUT_GetHostJoystickDisplayName(param);
 					menu_array[5 + p * 2].suffix = jname ? jname : "?";
 					break;
 				}
 				case JOY_MODE_PADDLE: {
-					const char *jname = SDL_INPUT_GetHostJoystickName(param);
+					const char *jname = SDL_INPUT_GetHostJoystickDisplayName(param);
 					menu_array[5 + p * 2].suffix = jname ? jname : "?";
 					break;
 				}
@@ -4005,7 +4005,7 @@ static void ControllerConfiguration(void)
 			{
 				int j;
 				for (j = 0; j < SDL_INPUT_GetNumHostJoysticks() && j < 16; j++) {
-					const char *jname = SDL_INPUT_GetHostJoystickName(j);
+					const char *jname = SDL_INPUT_GetHostJoystickDisplayName(j);
 					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, HOSTJOY_BASE + j, NULL, (char *)(jname ? jname : "?"), NULL };
 				}
 			}

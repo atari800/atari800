@@ -55,6 +55,7 @@ SDL_INPUT_RealJSConfig_t* SDL_INPUT_GetRealJSConfig(int joyIndex);
 
 int SDL_INPUT_GetNumHostJoysticks(void);
 const char *SDL_INPUT_GetHostJoystickName(int index);
+const char *SDL_INPUT_GetHostJoystickDisplayName(int index);
 int SDL_INPUT_GetNumLPTJoysticks(void);
 int SDL_INPUT_GetPortMode(int port);
 int SDL_INPUT_GetPortParam(int port);

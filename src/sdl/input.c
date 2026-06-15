@@ -80,6 +80,7 @@ static int joy_port_mode[4] = {JOY_MODE_NONE, JOY_MODE_NONE, JOY_MODE_NONE, JOY_
 static int joy_port_param[4] = {0, 0, 0, 0};
 static char joy_port_name[4][256] = {{0}};
 static int joy_port_has_name[4] = {0};
+static int joy_port_slot[4] = {0};
 static int paddle_pot_axis[4][2] = {{2,3},{2,3},{2,3},{2,3}};
 static int paddle_fire_btn[4][2] = {{4,5},{4,5},{4,5},{4,5}};
 static int kbd_layout_active[2] = {1, 0};
@@ -440,6 +441,29 @@ const char *SDL_INPUT_GetHostJoystickName(int index) {
 	return NULL;
 }
 
+/* Return display name with slot suffix when multiple joysticks share the same name */
+const char *SDL_INPUT_GetHostJoystickDisplayName(int index) {
+	const char *name = SDL_INPUT_GetHostJoystickName(index);
+	if (!name) return "?";
+	int count = 0;
+	int slot = 0;
+	int i;
+	for (i = 0; i < n_host_joys; i++) {
+		const char *n = SDL_INPUT_GetHostJoystickName(i);
+		if (n && strcmp(n, name) == 0) {
+			if (i == index) slot = count;
+			count++;
+		}
+	}
+	if (count <= 1) return name;
+	static char display_names[MAX_HOST_JOYSTICKS][48];
+	if (index >= 0 && index < MAX_HOST_JOYSTICKS) {
+		snprintf(display_names[index], sizeof(display_names[index]), "%s #%d", name, slot + 1);
+		return display_names[index];
+	}
+	return name;
+}
+
 /* Return current input source mode for Atari joystick port */
 int SDL_INPUT_GetPortMode(int port) {
 	if (port >= 0 && port < MAX_JOYSTICKS)
@@ -467,10 +491,17 @@ void SDL_INPUT_SetPortMode(int port, int mode, int param) {
 			if (name) {
 				Util_strlcpy(joy_port_name[port], name, sizeof(joy_port_name[port]));
 				joy_port_has_name[port] = 1;
+				int slot = 0;
+				for (int i = 0; i < n_host_joys && i < param; i++) {
+					const char *n = SDL_INPUT_GetHostJoystickName(i);
+					if (n && strcmp(n, name) == 0) slot++;
+				}
+				joy_port_slot[port] = slot;
 			}
 		} else {
 			joy_port_name[port][0] = '\0';
 			joy_port_has_name[port] = 0;
+			joy_port_slot[port] = 0;
 		}
 		apply_port_mapping();
 	}
@@ -516,6 +547,10 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		joy_port_has_name[0] = 1;
 		return TRUE;
 	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_0_SLOT") == 0) {
+		joy_port_slot[0] = Util_sscandec(parameters);
+		return TRUE;
+	}
 	else if (strcmp(option, KEY_SDL"JOY_PORT_1_MODE") == 0) {
 		joy_port_mode[1] = Util_sscandec(parameters);
 		return TRUE;
@@ -527,6 +562,10 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 	else if (strcmp(option, KEY_SDL"JOY_PORT_1_NAME") == 0) {
 		Util_strlcpy(joy_port_name[1], parameters, sizeof(joy_port_name[1]));
 		joy_port_has_name[1] = 1;
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_1_SLOT") == 0) {
+		joy_port_slot[1] = Util_sscandec(parameters);
 		return TRUE;
 	}
 	else if (strcmp(option, KEY_SDL"JOY_PORT_2_MODE") == 0) {
@@ -542,6 +581,10 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		joy_port_has_name[2] = 1;
 		return TRUE;
 	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_2_SLOT") == 0) {
+		joy_port_slot[2] = Util_sscandec(parameters);
+		return TRUE;
+	}
 	else if (strcmp(option, KEY_SDL"JOY_PORT_3_MODE") == 0) {
 		joy_port_mode[3] = Util_sscandec(parameters);
 		return TRUE;
@@ -553,6 +596,10 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 	else if (strcmp(option, KEY_SDL"JOY_PORT_3_NAME") == 0) {
 		Util_strlcpy(joy_port_name[3], parameters, sizeof(joy_port_name[3]));
 		joy_port_has_name[3] = 1;
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_3_SLOT") == 0) {
+		joy_port_slot[3] = Util_sscandec(parameters);
 		return TRUE;
 	}
 	else if (strcmp(option, KEY_SDL"JOY_PORT_0_PADDLE_AXES") == 0) {
@@ -691,8 +738,10 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 	for (i = 0; i < MAX_JOYSTICKS; i++) {
 		fprintf(fp, KEY_SDL"JOY_PORT_%d_MODE=%d\n", i, joy_port_mode[i]);
 		fprintf(fp, KEY_SDL"JOY_PORT_%d_PARAM=%d\n", i, joy_port_param[i]);
-		if ((joy_port_mode[i] == JOY_MODE_HOST_JOY || joy_port_mode[i] == JOY_MODE_PADDLE) && joy_port_has_name[i] && joy_port_name[i][0])
+		if ((joy_port_mode[i] == JOY_MODE_HOST_JOY || joy_port_mode[i] == JOY_MODE_PADDLE) && joy_port_has_name[i] && joy_port_name[i][0]) {
 			fprintf(fp, KEY_SDL"JOY_PORT_%d_NAME=%s\n", i, joy_port_name[i]);
+			fprintf(fp, KEY_SDL"JOY_PORT_%d_SLOT=%d\n", i, joy_port_slot[i]);
+		}
 		if (joy_port_mode[i] == JOY_MODE_PADDLE) {
 			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_AXES=%d,%d\n", i, paddle_pot_axis[i][0], paddle_pot_axis[i][1]);
 			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_BUTTONS=%d,%d\n", i, paddle_fire_btn[i][0], paddle_fire_btn[i][1]);
@@ -2036,12 +2085,16 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 			for (p = 0; p < MAX_JOYSTICKS; p++) {
 				if ((joy_port_mode[p] == JOY_MODE_HOST_JOY || joy_port_mode[p] == JOY_MODE_PADDLE) && joy_port_has_name[p] && joy_port_name[p][0]) {
 					int found = -1;
+					int slot_count = 0;
 					int j;
 					for (j = 0; j < n_host_joys; j++) {
 						const char *jname = SDL_INPUT_GetHostJoystickName(j);
 						if (jname && strcmp(jname, joy_port_name[p]) == 0) {
-							found = j;
-							break;
+							if (slot_count == joy_port_slot[p]) {
+								found = j;
+								break;
+							}
+							slot_count++;
 						}
 					}
 					if (found >= 0)
