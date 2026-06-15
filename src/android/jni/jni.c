@@ -470,6 +470,8 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	if (anchor) {
 		AndroidInput_JoyOvl.joyarea.l = anchorx;
 		AndroidInput_JoyOvl.joyarea.t = anchory;
+		AndroidInput_JoyOvl.anchor_saved_x = anchorx;
+		AndroidInput_JoyOvl.anchor_saved_y = anchory;
 	}
 	Android_Paddle = paddle;
 	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;

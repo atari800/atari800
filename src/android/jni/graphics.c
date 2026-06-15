@@ -211,6 +211,8 @@ int Android_InitGraphics(void)
 	conkey_shadow[7] = r->t - COVL_SHADOW_OFF;
 
 	/* Scale joystick overlays */
+	if (AndroidInput_JoyOvl.anchor)
+		AndroidInput_JoyOvl.joyarea.t = AndroidInput_JoyOvl.anchor_saved_y;
 	Joyovl_Scale();
 	Joy_Reposition();
 
@@ -246,7 +248,6 @@ int Android_InitGraphics(void)
 		screenrect.h = Android_ScreenH;
 		screenclear = FALSE;
 	}
-
 	/* Initialize palette */
 	Android_PaletteUpdate();
 

@@ -27,6 +27,7 @@ struct joy_overlay_state
 	float  areaopacityset;
 	int    areaopacityfrm;
 	int    anchor;
+	int    anchor_saved_x, anchor_saved_y;
 	float  deadarea;
 	float  gracearea;
 
