@@ -80,6 +80,8 @@ static int joy_port_mode[4] = {JOY_MODE_NONE, JOY_MODE_NONE, JOY_MODE_NONE, JOY_
 static int joy_port_param[4] = {0, 0, 0, 0};
 static char joy_port_name[4][256] = {{0}};
 static int joy_port_has_name[4] = {0};
+static int paddle_pot_axis[4][2] = {{2,3},{2,3},{2,3},{2,3}};
+static int paddle_fire_btn[4][2] = {{4,5},{4,5},{4,5},{4,5}};
 static int kbd_layout_active[2] = {1, 0};
 
 static SDL_Joystick *host_joys[MAX_HOST_JOYSTICKS];
@@ -238,7 +240,8 @@ static void apply_port_mapping(void) {
 			break;
 		}
 #endif
-		case JOY_MODE_HOST_JOY: {
+		case JOY_MODE_HOST_JOY:
+		case JOY_MODE_PADDLE: {
 			int idx = joy_port_param[i];
 			if (idx >= 0 && idx < n_host_joys && host_joys[idx] != NULL) {
 				s->sdl_joy = host_joys[idx];
@@ -373,6 +376,10 @@ static void reset_real_js_configs(void)
 			}
 		}
 #endif
+		paddle_pot_axis[i][0] = 2;
+		paddle_pot_axis[i][1] = 3;
+		paddle_fire_btn[i][0] = 4;
+		paddle_fire_btn[i][1] = 5;
     }
 }
 
@@ -455,7 +462,7 @@ void SDL_INPUT_SetPortMode(int port, int mode, int param) {
 	if (port >= 0 && port < MAX_JOYSTICKS) {
 		joy_port_mode[port] = mode;
 		joy_port_param[port] = param;
-		if (mode == JOY_MODE_HOST_JOY) {
+		if (mode == JOY_MODE_HOST_JOY || mode == JOY_MODE_PADDLE) {
 			const char *name = SDL_INPUT_GetHostJoystickName(param);
 			if (name) {
 				Util_strlcpy(joy_port_name[port], name, sizeof(joy_port_name[port]));
@@ -467,6 +474,22 @@ void SDL_INPUT_SetPortMode(int port, int mode, int param) {
 		}
 		apply_port_mapping();
 	}
+}
+
+void SDL_INPUT_SetPortPaddleConfig(int port, int potA, int potB, int btnA, int btnB) {
+	if (port >= 0 && port < MAX_JOYSTICKS) {
+		paddle_pot_axis[port][0] = potA;
+		paddle_pot_axis[port][1] = potB;
+		paddle_fire_btn[port][0] = btnA;
+		paddle_fire_btn[port][1] = btnB;
+	}
+}
+
+void SDL_INPUT_GetPortPaddleConfig(int port, int *potA, int *potB, int *btnA, int *btnB) {
+	if (potA) *potA = paddle_pot_axis[port][0];
+	if (potB) *potB = paddle_pot_axis[port][1];
+	if (btnA) *btnA = paddle_fire_btn[port][0];
+	if (btnB) *btnB = paddle_fire_btn[port][1];
 }
 
 /* For getting sdl key map out of the config...
@@ -530,6 +553,38 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 	else if (strcmp(option, KEY_SDL"JOY_PORT_3_NAME") == 0) {
 		Util_strlcpy(joy_port_name[3], parameters, sizeof(joy_port_name[3]));
 		joy_port_has_name[3] = 1;
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_0_PADDLE_AXES") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_pot_axis[0][0], &paddle_pot_axis[0][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_0_PADDLE_BUTTONS") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_fire_btn[0][0], &paddle_fire_btn[0][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_1_PADDLE_AXES") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_pot_axis[1][0], &paddle_pot_axis[1][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_1_PADDLE_BUTTONS") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_fire_btn[1][0], &paddle_fire_btn[1][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_2_PADDLE_AXES") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_pot_axis[2][0], &paddle_pot_axis[2][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_2_PADDLE_BUTTONS") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_fire_btn[2][0], &paddle_fire_btn[2][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_3_PADDLE_AXES") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_pot_axis[3][0], &paddle_pot_axis[3][1]);
+		return TRUE;
+	}
+	else if (strcmp(option, KEY_SDL"JOY_PORT_3_PADDLE_BUTTONS") == 0) {
+		sscanf(parameters, "%d,%d", &paddle_fire_btn[3][0], &paddle_fire_btn[3][1]);
 		return TRUE;
 	}
 	/* backward compat: old enable keys map to port mode */
@@ -636,8 +691,12 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 	for (i = 0; i < MAX_JOYSTICKS; i++) {
 		fprintf(fp, KEY_SDL"JOY_PORT_%d_MODE=%d\n", i, joy_port_mode[i]);
 		fprintf(fp, KEY_SDL"JOY_PORT_%d_PARAM=%d\n", i, joy_port_param[i]);
-		if (joy_port_mode[i] == JOY_MODE_HOST_JOY && joy_port_has_name[i] && joy_port_name[i][0])
+		if ((joy_port_mode[i] == JOY_MODE_HOST_JOY || joy_port_mode[i] == JOY_MODE_PADDLE) && joy_port_has_name[i] && joy_port_name[i][0])
 			fprintf(fp, KEY_SDL"JOY_PORT_%d_NAME=%s\n", i, joy_port_name[i]);
+		if (joy_port_mode[i] == JOY_MODE_PADDLE) {
+			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_AXES=%d,%d\n", i, paddle_pot_axis[i][0], paddle_pot_axis[i][1]);
+			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_BUTTONS=%d,%d\n", i, paddle_fire_btn[i][0], paddle_fire_btn[i][1]);
+		}
 	}
 	fprintf(fp, KEY_SDL"JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
 	fprintf(fp, KEY_SDL"JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
@@ -1975,7 +2034,7 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 		{
 			int p;
 			for (p = 0; p < MAX_JOYSTICKS; p++) {
-				if (joy_port_mode[p] == JOY_MODE_HOST_JOY && joy_port_has_name[p] && joy_port_name[p][0]) {
+				if ((joy_port_mode[p] == JOY_MODE_HOST_JOY || joy_port_mode[p] == JOY_MODE_PADDLE) && joy_port_has_name[p] && joy_port_name[p][0]) {
 					int found = -1;
 					int j;
 					for (j = 0; j < n_host_joys; j++) {
@@ -2058,8 +2117,15 @@ int Atari_POT(int pot) {
 	if (s->sdl_joy == NULL) {
 		return MAX;
 	}
+	int axis;
+	if (Atari800_machine_type == Atari800_MACHINE_5200)
+		return MAX;
+	else if (joy_port_mode[joy] != JOY_MODE_PADDLE)
+		return MAX;
+	else
+		axis = paddle_pot_axis[joy][pot & 1];
 
-	int val = SDL_JoystickGetAxis(s->sdl_joy, s->real_config.axes + (pot & 1 ? 3 : 2));
+	int val = SDL_JoystickGetAxis(s->sdl_joy, axis);
 	val += 32768;
 	val *= 255;
 	val /= 65535;
@@ -2196,6 +2262,17 @@ static int single_stick_port(int num) {
 		return port;
 	}
 	s = &stick_devs[num];
+/* is this required or is it handled at another level?
+	if (joy_port_mode[num] == JOY_MODE_PADDLE) {
+		if (s->sdl_joy != NULL) {
+			if (SDL_JoystickGetButton(s->sdl_joy, paddle_fire_btn[num][0]))
+				port &= ~0x04;
+			if (SDL_JoystickGetButton(s->sdl_joy, paddle_fire_btn[num][1]))
+				port &= ~0x08;
+		}
+		return port;
+	}
+*/
 	if (s->kbd != NULL) {
 		int i;
 		for (i = 0; i < 4; i++) {
@@ -2247,6 +2324,11 @@ int PLATFORM_TRIG(int num)
 		return trig;
 	}
 	s = &stick_devs[num];
+/* is this required or is it handled somewhere else?
+	if (joy_port_mode[num] == JOY_MODE_PADDLE) {
+		return trig;
+	}
+*/
 	if (s->kbd != NULL) {
 		trig &= !get_key_state(kbhits, s->kbd[4]);
 	}

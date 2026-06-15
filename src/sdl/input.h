@@ -51,6 +51,7 @@ SDL_INPUT_RealJSConfig_t* SDL_INPUT_GetRealJSConfig(int joyIndex);
 #define JOY_MODE_KBD1        2
 #define JOY_MODE_PARALLEL    3
 #define JOY_MODE_HOST_JOY    4
+#define JOY_MODE_PADDLE      5
 
 int SDL_INPUT_GetNumHostJoysticks(void);
 const char *SDL_INPUT_GetHostJoystickName(int index);
@@ -58,5 +59,7 @@ int SDL_INPUT_GetNumLPTJoysticks(void);
 int SDL_INPUT_GetPortMode(int port);
 int SDL_INPUT_GetPortParam(int port);
 void SDL_INPUT_SetPortMode(int port, int mode, int param);
+void SDL_INPUT_SetPortPaddleConfig(int port, int potA, int potB, int btnA, int btnB);
+void SDL_INPUT_GetPortPaddleConfig(int port, int *potA, int *potB, int *btnA, int *btnB);
 
 #endif /* SDL_INPUT_H_ */

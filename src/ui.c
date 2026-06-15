@@ -3712,60 +3712,115 @@ static void JoystickButtonsConfiguration(SDL_INPUT_RealJSConfig_t* js_config) {
 /* Configure real joystick settings for a single Atari port (hat,
    axes, diagonals, buttons). Called per-port from ControllerConfiguration
    details submenu. */
-static void RealJoystickConfiguration(int port)
+static void PortConfiguration(int port)
 {
 	char title[40];
 	int option = 0;
+	int mode = SDL_INPUT_GetPortMode(port);
+	int is_paddle = (mode == JOY_MODE_PADDLE);
 	SDL_INPUT_RealJSConfig_t *js_config = SDL_INPUT_GetRealJSConfig(port);
+	int potA, potB, btnA, btnB;
+	SDL_INPUT_GetPortPaddleConfig(port, &potA, &potB, &btnA, &btnB);
 #if SDL2
-	static UI_tMenuItem real_js_menu_array[] = {
-		UI_MENU_CHECK(0, " Use hat/D-Pad:"),
-		UI_MENU_ACTION(1, " Analog axes:"),
-		UI_MENU_ACTION(2, " Diagonals zone:"),
-		UI_MENU_ACTION(3, " Configure buttons"),
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_ACTION(0, " Mode:"),
+		UI_MENU_CHECK(1, " Use hat/D-Pad:"),
+		UI_MENU_ACTION(2, " Analog axes:"),
+		UI_MENU_ACTION(3, " Paddle A axis:"),
+		UI_MENU_ACTION(4, " Paddle B axis:"),
+		UI_MENU_ACTION(5, " Paddle A fire:"),
+		UI_MENU_ACTION(6, " Paddle B fire:"),
+		UI_MENU_ACTION(7, " Diagonals zone:"),
+		UI_MENU_ACTION(8, " Configure buttons"),
 		UI_MENU_END
 	};
 
-	snprintf(title, sizeof(title), "Joystick %d configuration", port + 1);
+	snprintf(title, sizeof(title), "Port %d configuration", port + 1);
 
 	for (;;) {
-		SetItemChecked(real_js_menu_array, 0, js_config->use_hat);
-		FindMenuItem(real_js_menu_array, 1)->suffix = js_config->axes == 0 ? "1&2" : "3&4";
-		FindMenuItem(real_js_menu_array, 2)->suffix =
+		menu_array[0].suffix = is_paddle ? "Paddle" : "Joystick";
+		SetItemChecked(menu_array, 1, js_config->use_hat);
+		FindMenuItem(menu_array, 2)->suffix = js_config->axes == 0 ? "1&2" : "3&4";
+		{
+			static char suf[4][8];
+			snprintf(suf[0], sizeof(suf[0]), "%d", potA);
+			snprintf(suf[1], sizeof(suf[1]), "%d", potB);
+			snprintf(suf[2], sizeof(suf[2]), "%d", btnA);
+			snprintf(suf[3], sizeof(suf[3]), "%d", btnB);
+			menu_array[3].suffix = suf[0];
+			menu_array[4].suffix = suf[1];
+			menu_array[5].suffix = suf[2];
+			menu_array[6].suffix = suf[3];
+		}
+		FindMenuItem(menu_array, 7)->suffix =
 			js_config->diagonal_zones == JoystickNarrowDiagonalsZone ?
 				"Narrow" : (js_config->diagonal_zones == JoystickWideDiagonalsZone ? "Wide" : "None");
-
-		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+		menu_array[1].flags = (menu_array[1].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_HIDDEN : UI_ITEM_CHECK);
+		menu_array[2].flags = (menu_array[2].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_HIDDEN : UI_ITEM_ACTION);
+		menu_array[3].flags = (menu_array[3].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_ACTION : UI_ITEM_HIDDEN);
+		menu_array[4].flags = (menu_array[4].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_ACTION : UI_ITEM_HIDDEN);
+		menu_array[5].flags = (menu_array[5].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_ACTION : UI_ITEM_HIDDEN);
+		menu_array[6].flags = (menu_array[6].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_ACTION : UI_ITEM_HIDDEN);
+		menu_array[7].flags = (menu_array[7].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_HIDDEN : UI_ITEM_ACTION);
+		option = UI_driver->fSelect(title, 0, option, menu_array, NULL);
 		if (option < 0) break;
 
 		switch (option) {
 		case 0:
-			js_config->use_hat = !js_config->use_hat;
+			SDL_INPUT_SetPortMode(port, is_paddle ? JOY_MODE_HOST_JOY : JOY_MODE_PADDLE, SDL_INPUT_GetPortParam(port));
+			is_paddle = !is_paddle;
 			break;
-		case 1:
-			js_config->axes = js_config->axes ? 0 : 2;
-			break;
-		case 2:
-			js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3;
-			break;
-		case 3:
-			JoystickButtonsConfiguration(js_config);
-			break;
+		case 1: js_config->use_hat = !js_config->use_hat; break;
+		case 2: js_config->axes = js_config->axes ? 0 : 2; break;
+		case 3: potA = (potA + 1) % 8; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 4: potB = (potB + 1) % 8; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 5: btnA = (btnA + 1) % 16; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 6: btnB = (btnB + 1) % 16; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 7: js_config->diagonal_zones = (js_config->diagonal_zones + 1) % 3; break;
+		case 8: JoystickButtonsConfiguration(js_config); break;
 		}
 	}
 #else
-	static UI_tMenuItem real_js_menu_array[] = {
-		UI_MENU_CHECK(0, "Use hat/D-PAD:"),
+	static UI_tMenuItem menu_array[] = {
+		UI_MENU_ACTION(0, " Mode:"),
+		UI_MENU_CHECK(1, "Use hat/D-PAD:"),
+		UI_MENU_ACTION(2, " Paddle A axis:"),
+		UI_MENU_ACTION(3, " Paddle B axis:"),
+		UI_MENU_ACTION(4, " Paddle A fire:"),
+		UI_MENU_ACTION(5, " Paddle B fire:"),
 		UI_MENU_END
 	};
 
-	snprintf(title, sizeof(title), "Joystick %d configuration", port + 1);
+	snprintf(title, sizeof(title), "Port %d configuration", port + 1);
 
 	for (;;) {
-		SetItemChecked(real_js_menu_array, 0, js_config->use_hat);
-		option = UI_driver->fSelect(title, 0, option, real_js_menu_array, NULL);
+		menu_array[0].suffix = is_paddle ? "Paddle" : "Joystick";
+		SetItemChecked(menu_array, 1, js_config->use_hat);
+		{
+			static char suf[4][8];
+			snprintf(suf[0], sizeof(suf[0]), "%d", potA);
+			snprintf(suf[1], sizeof(suf[1]), "%d", potB);
+			snprintf(suf[2], sizeof(suf[2]), "%d", btnA);
+			snprintf(suf[3], sizeof(suf[3]), "%d", btnB);
+			menu_array[2].suffix = suf[0];
+			menu_array[3].suffix = suf[1];
+			menu_array[4].suffix = suf[2];
+			menu_array[5].suffix = suf[3];
+		}
+		menu_array[1].flags = (menu_array[1].flags & ~UI_ITEM_TYPE) | (is_paddle ? UI_ITEM_HIDDEN : UI_ITEM_CHECK);
+		option = UI_driver->fSelect(title, 0, option, menu_array, NULL);
 		if (option < 0) break;
-		js_config->use_hat = !js_config->use_hat;
+		switch (option) {
+		case 0:
+			SDL_INPUT_SetPortMode(port, is_paddle ? JOY_MODE_HOST_JOY : JOY_MODE_PADDLE, SDL_INPUT_GetPortParam(port));
+			is_paddle = !is_paddle;
+			break;
+		case 1: js_config->use_hat = !js_config->use_hat; break;
+		case 2: potA = (potA + 1) % 8; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 3: potB = (potB + 1) % 8; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 4: btnA = (btnA + 1) % 16; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		case 5: btnB = (btnB + 1) % 16; SDL_INPUT_SetPortPaddleConfig(port, potA, potB, btnA, btnB); break;
+		}
 	}
 #endif /* SDL2 */
 }
@@ -3805,13 +3860,13 @@ static void ControllerConfiguration(void)
 		UI_MENU_SUBMENU_SUFFIX(4, "Mouse speed:", mouse_speed_status),
 #endif
 #ifdef GUI_SDL
-		UI_MENU_SUBMENU(5, "Joystick 1:"),
+		UI_MENU_SUBMENU(5, "Port 1:"),
 		UI_MENU_SUBMENU(6, "  configure details"),
-		UI_MENU_SUBMENU(7, "Joystick 2:"),
+		UI_MENU_SUBMENU(7, "Port 2:"),
 		UI_MENU_SUBMENU(8, "  configure details"),
-		UI_MENU_SUBMENU(9, "Joystick 3:"),
+		UI_MENU_SUBMENU(9, "Port 3:"),
 		UI_MENU_SUBMENU(10, "  configure details"),
-		UI_MENU_SUBMENU(11, "Joystick 4:"),
+		UI_MENU_SUBMENU(11, "Port 4:"),
 		UI_MENU_SUBMENU(12, "  configure details"),
 #endif
 		UI_MENU_END
@@ -3859,13 +3914,17 @@ static void ControllerConfiguration(void)
 						snprintf(port_suffix[p], sizeof(port_suffix[p]), "Parallel port %d", param + 1);
 						menu_array[5 + p * 2].suffix = port_suffix[p];
 						break;
-					case JOY_MODE_HOST_JOY: {
-						const char *jname = SDL_INPUT_GetHostJoystickName(param);
-						snprintf(port_suffix[p], sizeof(port_suffix[p]), "Host: %s", jname ? jname : "?");
-						menu_array[5 + p * 2].suffix = port_suffix[p];
-						break;
-					}
-					default:
+				case JOY_MODE_HOST_JOY: {
+					const char *jname = SDL_INPUT_GetHostJoystickName(param);
+					menu_array[5 + p * 2].suffix = jname ? jname : "?";
+					break;
+				}
+				case JOY_MODE_PADDLE: {
+					const char *jname = SDL_INPUT_GetHostJoystickName(param);
+					menu_array[5 + p * 2].suffix = jname ? jname : "?";
+					break;
+				}
+				default:
 						menu_array[5 + p * 2].suffix = "None";
 						break;
 					}
@@ -3928,9 +3987,8 @@ static void ControllerConfiguration(void)
 			int sel;
 #define PARALLEL_BASE 0x100
 #define HOSTJOY_BASE  0x200
-			char host_label[16][48];
 			char lpt_label[2][32];
-			UI_tMenuItem mode_menu[17];
+			UI_tMenuItem mode_menu[32];
 			int n_modes = 0;
 			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_NONE, "None", "", NULL };
 			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_KBD0, "Keyboard 1", "", NULL };
@@ -3948,8 +4006,7 @@ static void ControllerConfiguration(void)
 				int j;
 				for (j = 0; j < SDL_INPUT_GetNumHostJoysticks() && j < 16; j++) {
 					const char *jname = SDL_INPUT_GetHostJoystickName(j);
-					snprintf(host_label[j], sizeof(host_label[j]), "Host: %s", jname ? jname : "?");
-					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, HOSTJOY_BASE + j, host_label[j], "", NULL };
+					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, HOSTJOY_BASE + j, NULL, (char *)(jname ? jname : "?"), NULL };
 				}
 			}
 			memset(&mode_menu[n_modes], 0, sizeof(UI_tMenuItem));
@@ -3976,8 +4033,8 @@ static void ControllerConfiguration(void)
 				KeyboardJoystickConfiguration(0);
 			else if (mode == JOY_MODE_KBD1)
 				KeyboardJoystickConfiguration(1);
-			else if (mode == JOY_MODE_HOST_JOY)
-				RealJoystickConfiguration(port);
+			else if (mode == JOY_MODE_HOST_JOY || mode == JOY_MODE_PADDLE)
+				PortConfiguration(port);
 			break;
 		}
 #endif
