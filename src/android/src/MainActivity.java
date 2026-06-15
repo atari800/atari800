@@ -107,9 +107,9 @@ public final class MainActivity extends Activity
 		topBar.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 
 		ImageButton btnOpen = new ImageButton(this);
-		btnOpen.setImageResource(R.drawable.ic_menu_archive);
+		btnOpen.setImageResource(R.drawable.ic_folder_open);
 		btnOpen.setBackgroundColor(0x00000000);
-		btnOpen.setPadding(8, 4, 8, 4);
+		btnOpen.setPadding(28, 4, 28, 4);
 		btnOpen.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -121,9 +121,9 @@ public final class MainActivity extends Activity
 		topBar.addView(btnOpen);
 
 		ImageButton btnKbd = new ImageButton(this);
-		btnKbd.setImageResource(R.drawable.keyboard);
+		btnKbd.setImageResource(R.drawable.ic_keyboard);
 		btnKbd.setBackgroundColor(0x00000000);
-		btnKbd.setPadding(8, 4, 8, 4);
+		btnKbd.setPadding(28, 4, 28, 4);
 		btnKbd.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -133,9 +133,9 @@ public final class MainActivity extends Activity
 		topBar.addView(btnKbd);
 
 		ImageButton btnPrefs = new ImageButton(this);
-		btnPrefs.setImageResource(R.drawable.ic_menu_preferences);
+		btnPrefs.setImageResource(R.drawable.ic_settings);
 		btnPrefs.setBackgroundColor(0x00000000);
-		btnPrefs.setPadding(8, 4, 8, 4);
+		btnPrefs.setPadding(28, 4, 28, 4);
 		btnPrefs.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
