@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import android.app.Activity;
 import android.preference.PreferenceActivity;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -103,6 +104,15 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			public boolean onPreferenceClick(Preference p) {
 				startActivity(new Intent(Intent.ACTION_VIEW,
 							  Uri.parse("http://pocketatari.atari.org/android/index.html#manual")));
+				return true;
+			}
+		});
+
+		findPreference("quit").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			@Override
+			public boolean onPreferenceClick(Preference p) {
+				setResult(Activity.RESULT_FIRST_USER);
+				finish();
 				return true;
 			}
 		});

@@ -332,6 +332,10 @@
 			android:key="help"
 			android:title="@string/pref_help"
 			android:summary="@string/pref_help_sum"/>
+		<Preference
+			android:key="quit"
+			android:title="@string/pref_quit"
+			android:summary="@string/pref_quit_sum"/>
 	</PreferenceCategory>
 
 		<!--

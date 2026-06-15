@@ -34,9 +34,6 @@ import java.util.EnumMap;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MenuInflater;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.content.Intent;
@@ -54,11 +51,13 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
-import android.app.ActionBar;
-import android.view.Window;
-import android.view.WindowManager;
 import android.os.Build;
+import android.view.WindowManager;
 import android.view.View;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 
 public final class MainActivity extends Activity
@@ -74,7 +73,6 @@ public final class MainActivity extends Activity
 
 	public static String _pkgversion;
 	public static String _coreversion;
-	public ActionBarNull _aBar = null;
 	private static boolean _initialized = false;
 	private static String _curDiskFname = null;
 	private A800view _view = null;
@@ -86,91 +84,6 @@ public final class MainActivity extends Activity
 	private static File _romsDir = null;
 	static File _savesDir = null;
 
-	public static class ActionBarNull {
-		public ActionBarNull(Activity a)					{};
-		public void hide(Activity a)						{};
-		public void hide(Activity a, boolean p)				{};
-		public void hide(Activity a, boolean p, boolean f)	{};
-		public void show(Activity a) 						{};
-		public boolean isShowing(Activity a)				{ return false; }
-		public boolean isReal()								{ return false; }
-		public void init(Activity a) 						{};
-	}
-
-	public static final class ActionBarHelp extends ActionBarNull {
-		public ActionBarHelp(Activity a) {
-			super(a);
-		}
-
-		@Override
-		public void hide(Activity a) {
-			hide(a, true);
-		}
-
-		@Override
-		public void hide(Activity a, boolean p) {
-			hide(a, p, false);
-		}
-
-		@Override
-		public void hide(Activity a, boolean p, boolean f) {
-			ActionBar ab = a.getActionBar();
-			View v = ((MainActivity) a)._view;
-			if ( !f && !ab.isShowing() &&
-				(v.getSystemUiVisibility() & View.STATUS_BAR_HIDDEN) == View.STATUS_BAR_HIDDEN )
-			   	return;
-
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-			a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-			a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-		}
-		if (v != null) {
-			int flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN 	|
-						View.SYSTEM_UI_FLAG_LAYOUT_STABLE 		|
-						View.SYSTEM_UI_FLAG_FULLSCREEN			|
-						View.STATUS_BAR_HIDDEN;
-			if (p == true)
-				flags |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
-			v.setSystemUiVisibility(flags);
-		}
-		ab.hide();
-		((MainActivity) a).pauseEmulation(false);
-	}
-
-	@Override
-	public void show(Activity a) {
-		ActionBar ab = a.getActionBar();
-		if (ab.isShowing())		return;
-
-		((MainActivity) a).pauseEmulation(true);
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-				a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-				a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-			}
-			View v = ((MainActivity) a)._view;
-			if (v != null) v.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-												   View.SYSTEM_UI_FLAG_LAYOUT_STABLE	 |
-												   View.STATUS_BAR_VISIBLE);
-			ab.show();
-		}
-
-		@Override
-		public boolean isShowing(Activity a) {
-			return a.getActionBar().isShowing();
-		}
-
-		@Override
-		public boolean isReal() {
-			return true;
-		}
-
-		@Override
-		public void init(Activity a) {
-			a.getActionBar().setBackgroundDrawable(a.getResources().getDrawable(R.drawable.actionbar_bg));
-		}
-	}
-
-
 	static {
 		System.loadLibrary("atari800");
 		_coreversion = NativeInit();
@@ -180,17 +93,71 @@ public final class MainActivity extends Activity
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-			_aBar = new ActionBarHelp(this);
-		else
-			_aBar = new ActionBarNull(this);
-
 		_view = new A800view(this);
-		setContentView(_view);
+
+		FrameLayout root = new FrameLayout(this);
+
+		root.addView(_view, new FrameLayout.LayoutParams(
+			FrameLayout.LayoutParams.MATCH_PARENT,
+			FrameLayout.LayoutParams.MATCH_PARENT));
+
+		LinearLayout topBar = new LinearLayout(this);
+		topBar.setOrientation(LinearLayout.HORIZONTAL);
+		topBar.setBackgroundColor(0x00000000);
+		topBar.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+
+		ImageButton btnOpen = new ImageButton(this);
+		btnOpen.setImageResource(R.drawable.ic_menu_archive);
+		btnOpen.setBackgroundColor(0x00000000);
+		btnOpen.setPadding(8, 4, 8, 4);
+		btnOpen.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+					.addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+					.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
+			}
+		});
+		topBar.addView(btnOpen);
+
+		ImageButton btnKbd = new ImageButton(this);
+		btnKbd.setImageResource(R.drawable.keyboard);
+		btnKbd.setBackgroundColor(0x00000000);
+		btnKbd.setPadding(8, 4, 8, 4);
+		btnKbd.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				_imng.showSoftInput(_view, InputMethodManager.SHOW_FORCED);
+			}
+		});
+		topBar.addView(btnKbd);
+
+		ImageButton btnPrefs = new ImageButton(this);
+		btnPrefs.setImageResource(R.drawable.ic_menu_preferences);
+		btnPrefs.setBackgroundColor(0x00000000);
+		btnPrefs.setPadding(8, 4, 8, 4);
+		btnPrefs.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startActivityForResult(new Intent(MainActivity.this, Preferences.class), ACTIVITY_PREFS);
+			}
+		});
+		topBar.addView(btnPrefs);
+
+		root.addView(topBar, new FrameLayout.LayoutParams(
+			FrameLayout.LayoutParams.WRAP_CONTENT,
+			FrameLayout.LayoutParams.WRAP_CONTENT,
+			Gravity.LEFT | Gravity.TOP));
+
+		setContentView(root);
 		_view.setKeepScreenOn(true);
 
-		_aBar.init(this);
-		_aBar.hide(this);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+				View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+				View.SYSTEM_UI_FLAG_FULLSCREEN |
+				View.STATUS_BAR_HIDDEN);
 
 		_imng = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
@@ -241,9 +208,7 @@ public final class MainActivity extends Activity
 			showDialog(DLG_CHANGES);
 			return;
 		}
-		Toast.makeText(this,
-					   _aBar.isReal() ? R.string.actionbarhelptoast : R.string.noactionbarhelptoast,
-					   Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, R.string.noactionbarhelptoast, Toast.LENGTH_SHORT).show();
 	}
 
 	public void message(int msg) {
@@ -350,9 +315,7 @@ public final class MainActivity extends Activity
 								_bootupconfig = false;
 								pauseEmulation(false);
 								dismissDialog(DLG_CHANGES);
-								Toast.makeText(MainActivity.this, _aBar.isReal() ?
-														R.string.actionbarhelptoast :
-														R.string.noactionbarhelptoast,
+								Toast.makeText(MainActivity.this, R.string.noactionbarhelptoast,
 											   Toast.LENGTH_SHORT).show();
 							}
 							})
@@ -503,7 +466,12 @@ public final class MainActivity extends Activity
 
 	@Override
 	public void onResume() {
-		_aBar.hide(this, true, true);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+				View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+				View.SYSTEM_UI_FLAG_FULLSCREEN |
+				View.STATUS_BAR_HIDDEN);
 		pauseEmulation(false);
 		super.onResume();
 	}
@@ -519,62 +487,8 @@ public final class MainActivity extends Activity
 		}
 	}
 
-	// Menu stuff
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inf = getMenuInflater();
-		inf.inflate(R.menu.menu, menu);
-		return true;
-	}
-
-	@Override
-	public void onOptionsMenuClosed(Menu m) {
-		_aBar.hide(this);
-		pauseEmulation(false);
-	}
-
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-		if (!_aBar.isReal())
-			pauseEmulation(true);	// menu is always shown on > honeycomb
-		_imng.hideSoftInputFromWindow(_view.getWindowToken(), 0);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		int id = item.getItemId();
-		if (id == R.id.menu_quit) {
-			finish();
-			return true;
-		}
-		if (id == R.id.menu_softkbd) {
-			_imng.showSoftInput(_view, InputMethodManager.SHOW_FORCED);
-			_aBar.hide(this, false);
-			return true;
-		}
-		if (id == R.id.menu_open) {
-			startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
-				.addCategory(Intent.CATEGORY_OPENABLE)
-				.setType("*/*")
-				.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), ACTIVITY_FSEL);
-			return true;
-		}
-		if (id == R.id.menu_nextdisk) {
-			insertNextDisk();
-			_aBar.hide(this);
-			return true;
-		}
-		if (id == R.id.menu_preferences) {
-			startActivityForResult(new Intent(this, Preferences.class), ACTIVITY_PREFS);
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
-
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
-		_aBar.hide(this);
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
@@ -601,6 +515,10 @@ public final class MainActivity extends Activity
 			break;
 
 		case ACTIVITY_PREFS:
+			if (resc == RESULT_FIRST_USER) {
+				finish();
+				break;
+			}
 			_settings.fetchApplySettings();
 			break;
 		}

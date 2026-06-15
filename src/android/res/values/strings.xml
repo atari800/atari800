@@ -149,8 +149,6 @@
 	<string name="confirmurl">The current Atari program is requesting browser access to the
 							  following URL:\n%s\nAllow access?</string>
 	<string name="browserreqdenied">Denied Atari program browser request (malformed URL)</string>
-	<string name="actionbarhelptoast">Touch near the top of the screen for menu\nTouch
-								 top-right for console keys</string>
 	<string name="noactionbarhelptoast">Touch top-right for console keys</string>
 	<string name="selectcarttype">Select cartridge type</string>
 	<string name="pdbooterror">Cannot prepare Planetary Defense 2012 for boot :-(</string>
@@ -262,6 +260,8 @@
 	<string name="pref_about_sum">Colleen credits</string>
 	<string name="pref_help">Help</string>
 	<string name="pref_help_sum">Android port instructions</string>
+	<string name="pref_quit">Quit</string>
+	<string name="pref_quit_sum">Exit the emulator</string>
 	<string name="pref_anchor">Anchor Joystick</string>
 	<string name="pref_anchor_sum">Fix on-screen joystick to current position</string>
 	<string name="pref_joygrace">Joystick Grace Area</string>

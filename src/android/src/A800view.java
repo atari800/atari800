@@ -124,13 +124,6 @@ public final class A800view extends GLSurfaceView
 	public boolean onTouchEvent(final MotionEvent ev) {
 		int ret = _touchHandler.onTouchEvent(ev);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			MainActivity m = (MainActivity) getContext();
-			if (ret == 2)
-				m._aBar.show(m);
-			else if (ret == 1)
-				m._aBar.hide(m);
-		}
 		return true;
 	}
 
@@ -229,9 +222,7 @@ public final class A800view extends GLSurfaceView
 			if (_toastquit.getView().getWindowVisibility() == View.VISIBLE) {
 				_toastquit.cancel();
 				m.finish();
-			} else if (m._aBar.isShowing(m))
-				m._aBar.hide(m);
-			else
+			} else
 				_toastquit.show();
 			return true;
 		}
