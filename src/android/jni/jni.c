@@ -53,6 +53,8 @@
 
 #define PD2012_FNAME "PD2012.com"
 
+static int Android_CovlHoldPref = 2;
+
 /* exports/imports */
 int *ovl_texpix;
 int ovl_texw;
@@ -104,6 +106,7 @@ static void JNICALL NativeResize(JNIEnv *env, jobject this, jint w, jint h)
 	Android_ScreenW = w;
 	Android_ScreenH = h;
 	Android_SplitCalc();
+	Android_CovlHold = (Android_ScreenW < Android_ScreenH) ? 0 : Android_CovlHoldPref;
 	Android_InitGraphics();
 }
 
@@ -347,7 +350,7 @@ static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolea
 	Screen_visible_y1 = SCREEN_HEIGHT - Android_CropScreen[1];
 	Screen_visible_y2 = Screen_visible_y1 + cropvert;
 	Android_PortPad = portpad;
-	Android_CovlHold = covlhold;
+	Android_CovlHoldPref = covlhold;
 }
 
 static jboolean JNICALL NativePrefMachine(JNIEnv *env, jobject this, int nummac, jboolean ntsc)
