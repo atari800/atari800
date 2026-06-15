@@ -257,12 +257,6 @@ static void apply_port_mapping(void) {
 	}
 }
 
-int PLATFORM_IsKbdJoystickEnabled(int num) {
-	if (num >= 0 && num < 2)
-		return kbd_layout_active[num];
-	return FALSE;
-}
-
 /*Set real joystick to use hat instead of axis*/
 static int set_real_js_use_hat(int joyIndex, const char* parm)
 {

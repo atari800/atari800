@@ -66,8 +66,6 @@ void curses_display_line(int anticmode, const UBYTE *screendata);
 
 #ifdef GUI_SDL
 /* used in UI to show how the keyboard joystick is mapped */
-int PLATFORM_IsKbdJoystickEnabled(int num);
-void PLATFORM_ToggleKbdJoystickEnabled(int num);
 int PLATFORM_GetRawKey(void);
 #endif /* GUI_SDL */
 
