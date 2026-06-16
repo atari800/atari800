@@ -212,6 +212,16 @@ int Android_InitGraphics(void)
 	conkey_shadow[6] = r->l - COVL_SHADOW_OFF;
 	conkey_shadow[7] = r->t - COVL_SHADOW_OFF;
 
+	/* Force console keys visible in portrait if previously hidden */
+	if (Android_ScreenW < Android_ScreenH) {
+		if (AndroidInput_ConOvl.ovl_visible == COVL_HIDDEN || AndroidInput_ConOvl.ovl_visible == COVL_FADEOUT) {
+			AndroidInput_ConOvl.ovl_visible = COVL_READY;
+			AndroidInput_ConOvl.opacity = COVL_MAX_OPACITY;
+			AndroidInput_ConOvl.statecnt = COVL_HOLD_TIME << 1;
+			AndroidInput_ConOvl.hitkey = CONK_NOKEY;
+		}
+	}
+
 	/* Scale joystick overlays */
 	if (AndroidInput_JoyOvl.anchor)
 		AndroidInput_JoyOvl.joyarea.t = AndroidInput_JoyOvl.anchor_saved_y;
