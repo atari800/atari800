@@ -109,7 +109,7 @@ public final class MainActivity extends Activity
 		ImageButton btnOpen = new ImageButton(this);
 		btnOpen.setImageResource(R.drawable.ic_folder_open);
 		btnOpen.setBackgroundColor(0x00000000);
-		btnOpen.setPadding(28, 4, 28, 4);
+		btnOpen.setPadding(24, 4, 24, 4);
 		btnOpen.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -123,7 +123,7 @@ public final class MainActivity extends Activity
 		ImageButton btnKbd = new ImageButton(this);
 		btnKbd.setImageResource(R.drawable.ic_keyboard);
 		btnKbd.setBackgroundColor(0x00000000);
-		btnKbd.setPadding(28, 4, 28, 4);
+		btnKbd.setPadding(24, 4, 24, 4);
 		btnKbd.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -135,7 +135,7 @@ public final class MainActivity extends Activity
 		ImageButton btnPrefs = new ImageButton(this);
 		btnPrefs.setImageResource(R.drawable.ic_settings);
 		btnPrefs.setBackgroundColor(0x00000000);
-		btnPrefs.setPadding(28, 4, 28, 4);
+		btnPrefs.setPadding(24, 4, 24, 4);
 		btnPrefs.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
