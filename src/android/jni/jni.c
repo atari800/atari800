@@ -620,15 +620,15 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	if ((*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2))
 		return JNI_ERR;
 
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/MainActivity");
+	cls = (*env)->FindClass(env, "cz/pstehlik/colleen/MainActivity");
 	(*env)->RegisterNatives(env, cls, main_methods, sizeof(main_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/A800view");
+	cls = (*env)->FindClass(env, "cz/pstehlik/colleen/A800view");
 	(*env)->RegisterNatives(env, cls, view_methods, sizeof(view_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/AudioThread");
+	cls = (*env)->FindClass(env, "cz/pstehlik/colleen/AudioThread");
 	(*env)->RegisterNatives(env, cls, snd_methods, sizeof(snd_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/A800Renderer");
+	cls = (*env)->FindClass(env, "cz/pstehlik/colleen/A800Renderer");
 	(*env)->RegisterNatives(env, cls, render_methods, sizeof(render_methods)/sizeof(JNINativeMethod));
-	cls = (*env)->FindClass(env, "name/nick/jubanka/colleen/Preferences");
+	cls = (*env)->FindClass(env, "cz/pstehlik/colleen/Preferences");
 	(*env)->RegisterNatives(env, cls, pref_methods, sizeof(pref_methods)/sizeof(JNINativeMethod));
 
 	return JNI_VERSION_1_2;

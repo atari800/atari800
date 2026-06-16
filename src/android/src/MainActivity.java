@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-package name.nick.jubanka.colleen;
+package cz.pstehlik.colleen;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -425,7 +425,7 @@ public final class MainActivity extends Activity
 	private PackageInfo getPInfo() {
 		PackageInfo p;
 		try {
-			p = getPackageManager().getPackageInfo("name.nick.jubanka.colleen", 0);
+			p = getPackageManager().getPackageInfo("cz.pstehlik.colleen", 0);
 		} catch (Exception e) {
 			Log.d(TAG, "Package not found");
 			p = null;

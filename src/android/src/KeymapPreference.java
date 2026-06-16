@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-package name.nick.jubanka.colleen;
+package cz.pstehlik.colleen;
 
 import android.preference.DialogPreference;
 import android.content.Context;
@@ -46,7 +46,7 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import static android.view.KeyEvent.*;
-import static name.nick.jubanka.colleen.A800view.*;
+import static cz.pstehlik.colleen.A800view.*;
 
 
 @SuppressWarnings("deprecation")

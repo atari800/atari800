@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "name.nick.jubanka.colleen"
+    namespace = "cz.pstehlik.colleen"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "name.nick.jubanka.colleen"
+        applicationId = "cz.pstehlik.colleen"
         minSdk = 21
         targetSdk = 34
         versionCode = 301
