@@ -53,6 +53,7 @@ import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.os.Build;
 import android.view.WindowManager;
+import android.view.WindowInsets;
 import android.view.View;
 import android.view.Gravity;
 import android.widget.FrameLayout;
@@ -154,10 +155,18 @@ public final class MainActivity extends Activity
 
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-				View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-				View.SYSTEM_UI_FLAG_FULLSCREEN |
+		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
 				View.STATUS_BAR_HIDDEN);
+
+		root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+			@Override
+			public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+				int topInset = insets.getSystemWindowInsetTop();
+				topBar.setPadding(0, topInset, 0, 0);
+				NativeSetTopInset(topInset);
+				return insets;
+			}
+		});
 
 		_imng = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
@@ -468,9 +477,7 @@ public final class MainActivity extends Activity
 	public void onResume() {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-				View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-				View.SYSTEM_UI_FLAG_FULLSCREEN |
+		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
 				View.STATUS_BAR_HIDDEN);
 		pauseEmulation(false);
 		super.onResume();
@@ -832,4 +839,5 @@ public final class MainActivity extends Activity
 	private static native String NativeGetJoypos();
 	private static native String NativeGetURL();
 	private static native void NativeClearDevB();
+	private static native void NativeSetTopInset(int topInset);
 }

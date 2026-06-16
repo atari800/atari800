@@ -1,5 +1,4 @@
 <resources>
-    <style name="MainTheme" parent="@android:style/Theme.Holo">
-		<item name="android:windowActionBarOverlay">true</item>
+    <style name="MainTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
     </style>
 </resources>

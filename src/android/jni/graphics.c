@@ -52,6 +52,7 @@ int Android_ScreenH = 0;
 int Android_Aspect;
 int Android_CropScreen[] = {0, SCREEN_HEIGHT, SCANLINE_LEN, -SCREEN_HEIGHT};
 int Android_PortPad;
+int Android_TopInset;
 int Android_CovlHold;
 float Android_DisplayDensity = 1.0f;
 static struct RECT screenrect;
@@ -177,7 +178,7 @@ int Android_InitGraphics(void)
 	for (i = 0; i < CONK_VERT_MAX; i += 2) {
 		/* translate */
 		conkey_vrt[i    ] += tmp;
-		conkey_vrt[i + 1] += (4 + ((Android_ScreenW < Android_ScreenH) ? Android_PortPad : 0));
+		conkey_vrt[i + 1] += (4 + ((Android_ScreenW < Android_ScreenH) ? (Android_PortPad + Android_TopInset) : 0));
 	}
 
 	/* Determine location of console keys' labels. */
@@ -251,7 +252,7 @@ int Android_InitGraphics(void)
 		tmp = (h - screenrect.b + 1) / 2;
 		if (tmp < 0)
 			tmp = 0;
-		tmp = (Android_ScreenH - h) + tmp - ((Android_ScreenW < Android_ScreenH) ? Android_PortPad : 0);
+		tmp = (Android_ScreenH - h) + tmp - ((Android_ScreenW < Android_ScreenH) ? (Android_PortPad + Android_TopInset) : 0);
 		screenrect.t += tmp;
 		screenclear = TRUE;
 	} else {

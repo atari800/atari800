@@ -115,6 +115,11 @@ static void JNICALL NativeClearDevB(JNIEnv *env, jobject this)
 	memset(devb_url, 0, sizeof(devb_url));
 }
 
+static void JNICALL NativeSetTopInset(JNIEnv *env, jobject this, jint topInset)
+{
+	Android_TopInset = topInset;
+}
+
 static jstring JNICALL NativeInit(JNIEnv *env, jobject this)
 {
 	int ac = 1;
@@ -566,6 +571,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 		{ "NativeGetURL",			"()Ljava/lang/String;",				NativeGetURL		  },
 		{ "NativeClearDevB",		"()V",								NativeClearDevB		  },
 		{ "NativeBootCartType",		"(I)V",								NativeBootCartType	  },
+		{ "NativeSetTopInset",		"(I)V",								NativeSetTopInset	  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
