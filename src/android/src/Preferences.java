@@ -54,7 +54,6 @@ public final class Preferences extends PreferenceActivity implements Preference.
 	private static final String TAG = "Preferences";
 	private static final String[] PREF_KEYS = { "up", "down", "left", "right", "fire",
 												"actiona", "actionb", "actionc" };
-	private static final String PD_RESNAME = "pd2012";
 	private static final int ACTIVITY_IMPORT_ROMS = 4;
 	private static final int DLG_ABOUT = 1;
 	private static final int DLG_RESET = 2;
@@ -163,41 +162,6 @@ public final class Preferences extends PreferenceActivity implements Preference.
 		if (_sp.getBoolean("a800fns", false) == true)
 			findPreference("a800fns").setSummary(getString(R.string.pref_a800fns_sum_ena));
 		findPreference("a800fns").setOnPreferenceChangeListener(this);
-
-		Preference p = findPreference("launchpd");
-		if (p != null) {
-			p.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference p) {
-					Resources res = Preferences.this.getResources();
-					int id = res.getIdentifier(PD_RESNAME, "raw", Preferences.this.getPackageName());
-					if (id != 0) {
-						InputStream is = res.openRawResource(id);
-						byte pddata[];
-						try {
-							pddata = new byte[is.available()];
-							is.read(pddata);
-							is.close();
-						} catch (IOException e) { 
-							Log.d(TAG, "IO exception while reading resouce");
-							return true;
-						}
-						if (! NativeBootPD(pddata, pddata.length))
-							Toast.makeText(Preferences.this, R.string.pdbooterror, Toast.LENGTH_LONG).show();
-						else {
-							((CheckBoxPreference) Preferences.this.findPreference("plandef")).setChecked(true);
-							Toast.makeText(Preferences.this, R.string.pdreminder, Toast.LENGTH_LONG).show();
-							Preferences.this.finish();
-						}
-					} else {
-						Log.d(TAG, "PD2012 resource not found");
-					}
-					return true;
-				}
-			});
-			if (getResources().getIdentifier(PD_RESNAME, "raw", getPackageName()) == 0)
-				p.setEnabled(false);
-		}
 
 		findPreference("forceAT").setEnabled(NativeOSLSound() || ((CheckBoxPreference) findPreference("forceAT")).isChecked());
 	}
@@ -363,6 +327,5 @@ public final class Preferences extends PreferenceActivity implements Preference.
 
 	private native boolean NativeSaveState(String fname);
 	private native boolean NativeLoadState(String fname);
-	private native boolean NativeBootPD(byte data[], int len);
 	private native boolean NativeOSLSound();
 }

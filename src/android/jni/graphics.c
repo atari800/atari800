@@ -276,7 +276,7 @@ void Joyovl_Scale(void)
 		AndroidInput_JoyOvl.joyarea.r = AndroidInput_JoyOvl.joyarea.l + tmp;
 		AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + tmp;
 	} else {
-		if (!Android_PlanetaryDefense) {
+		if (!Android_KoalaPad) {
 			AndroidInput_JoyOvl.joyarea.l = Android_Joyleft ? BORDER_PCT * Android_ScreenW : Android_Split;
 			AndroidInput_JoyOvl.joyarea.r = Android_Joyleft ? Android_Split : (1.0f - BORDER_PCT) * Android_ScreenW;
 			AndroidInput_JoyOvl.joyarea.b = AndroidInput_JoyOvl.joyarea.t + 8 + (tmp >> 3);

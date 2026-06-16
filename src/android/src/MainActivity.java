@@ -169,7 +169,7 @@ public final class MainActivity extends Activity
 		_savesDir = getDir("saves", MODE_PRIVATE);
 
 		if (!_initialized) {
-			_settings.putBoolean("plandef", false);
+			_settings.putBoolean("koalapad", false);
 			_settings.fetchApplySettings();
 			_initialized = true;
 			bootupMsgs();
@@ -585,7 +585,7 @@ public final class MainActivity extends Activity
 			joyopacity, joyrighth, joydeadband, joymidx, sound, mixrate, sound16bit,
 			hqpokey, mixbufsize, version, rompath, anchor, anchorstr, joygrace,
 			crophoriz, cropvert, portpad, covlhold, derotkeys, actiona, actionb, actionc, ntsc,
-			paddle, plandef, browser, forceAT, a800fns
+			paddle, koalapad, browser, forceAT, a800fns
 		};
 		private SharedPreferences _sharedprefs;
 		private Map<PreferenceName, String> _values, _newvalues;
@@ -681,7 +681,7 @@ public final class MainActivity extends Activity
 						   x, y,
 						   Integer.parseInt(_newvalues.get(PreferenceName.joygrace)),
 						   Boolean.parseBoolean(_newvalues.get(PreferenceName.paddle)),
-						   Boolean.parseBoolean(_newvalues.get(PreferenceName.plandef)) );
+						   Boolean.parseBoolean(_newvalues.get(PreferenceName.koalapad)) );
 
 			if ( changed(PreferenceName.mixrate) || changed(PreferenceName.sound16bit) ||
 				 changed(PreferenceName.hqpokey) || changed(PreferenceName.mixbufsize) ||
@@ -824,7 +824,7 @@ public final class MainActivity extends Activity
 												 int fire, int derotkeys, String[] actions);
 	private static native void NativePrefJoy(boolean visible, int size, int opacity, boolean righth,
 											 int deadband, int midx, boolean anchor, int anchorx, int anchory,
-											 int grace, boolean paddle, boolean plandef);
+											 int grace, boolean paddle, boolean koalapad);
 	private static native void NativePrefSound(int mixrate, int mixbufsizems, boolean sound16bit, boolean hqpokey,
 											   boolean disableOSL);
 	private static native void NativePrefKbd(boolean a800fns);

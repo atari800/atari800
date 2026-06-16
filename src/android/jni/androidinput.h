@@ -100,7 +100,7 @@ extern int Android_Split;
 extern int Android_DerotateKeys;
 extern int Android_A800Fns;
 extern int Android_Paddle;
-extern int Android_PlanetaryDefense;
+extern int Android_KoalaPad;
 extern SWORD Android_POTX;
 extern SWORD Android_POTY;
 extern UBYTE Android_ReversePddle;

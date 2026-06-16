@@ -51,8 +51,6 @@
 #include "graphics.h"
 #include "androidinput.h"
 
-#define PD2012_FNAME "PD2012.com"
-
 static int Android_CovlHoldPref = 2;
 
 /* exports/imports */
@@ -449,19 +447,19 @@ static void JNICALL NativePrefSoftjoy(JNIEnv *env, jobject this, jboolean softjo
 	}
 }
 
-static void config_PD(void)
+static void config_KoalaPad(void)
 {
 	INPUT_mouse_mode = INPUT_MOUSE_PAD;
 	Android_Splitpct = 1.0f;
 	AndroidInput_JoyOvl.ovl_visible = FALSE;
-	Android_PlanetaryDefense = TRUE;
+	Android_KoalaPad = TRUE;
 	Android_Paddle = TRUE;
 	Android_ReversePddle = 3;
 }
 
 static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, int size, int opacity,
 								  jboolean righth, int deadband, jboolean midx, int anchor, int anchorx,
-								  int anchory, int grace, jboolean paddle, jboolean plandef)
+								  int anchory, int grace, jboolean paddle, jboolean koalapad)
 {
 	AndroidInput_JoyOvl.ovl_visible = visible;
 	AndroidInput_JoyOvl.areaopacityset = 0.01f * opacity;
@@ -479,10 +477,10 @@ static void JNICALL NativePrefJoy(JNIEnv *env, jobject this, jboolean visible, i
 	}
 	Android_Paddle = paddle;
 	INPUT_mouse_mode = paddle ? INPUT_MOUSE_PAD : INPUT_MOUSE_OFF;
-	Android_PlanetaryDefense = FALSE;
+	Android_KoalaPad = FALSE;
 	Android_ReversePddle = 0;
-	if (plandef)
-		config_PD();
+	if (koalapad)
+		config_KoalaPad();
 
 	Android_SplitCalc();
 	Joyovl_Scale();
@@ -524,27 +522,6 @@ static jstring JNICALL NativeGetJoypos(JNIEnv *env, jobject this)
 static jstring JNICALL NativeGetURL(JNIEnv *env, jobject this)
 {
 	return (*env)->NewStringUTF(env, dev_b_status.url);
-}
-
-static jboolean JNICALL NativeBootPD(JNIEnv *env, jobject this, jobjectArray img, jint sz)
-{
-	FILE *fp;
-	void *src;
-
-	fp = fopen(PD2012_FNAME, "wb");
-	if (!fp) {
-		Log_print("ERROR: Cannot open PD2012 for write");
-		return FALSE;
-	}
-	src = (*env)->GetByteArrayElements(env, img, NULL);
-	fwrite(src, 1, sz, fp);
-	fclose(fp);
-	(*env)->ReleaseByteArrayElements(env, img, src, JNI_ABORT);
-
-	config_PD();
-	NativeUnmountAll(env, this);
-	CARTRIDGE_Remove();
-	return AFILE_OpenFile(PD2012_FNAME, TRUE, 1, FALSE);
 }
 
 static jboolean JNICALL NativeOSLSound(JNIEnv *env, jobject this)
@@ -611,7 +588,6 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },
 		{ "NativeLoadState",		"(Ljava/lang/String;)Z",			NativeLoadState		  },
-		{ "NativeBootPD",			"([BI)Z",							NativeBootPD		  },
 		{ "NativeOSLSound",			"()Z",								NativeOSLSound		  },
 	};
 	JNIEnv *env;

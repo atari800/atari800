@@ -64,7 +64,7 @@ int Android_Split;
 int Android_Paddle = FALSE;
 SWORD Android_POTX = 0;
 SWORD Android_POTY = 0;
-int Android_PlanetaryDefense = FALSE;
+int Android_KoalaPad = FALSE;
 UBYTE Android_ReversePddle = 0;
 
 struct joy_overlay_state AndroidInput_JoyOvl;
@@ -376,7 +376,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 	/* trigger */
 	newtrig = 1;
 	if ( (newtc[PTRTRG].s > 0 && conptr != PTRTRG) ||	/* normal trigger */
-		 (newtc[PTRJOY].s > 0 && conptr != PTRJOY && Android_PlanetaryDefense) ) {
+		 (newtc[PTRJOY].s > 0 && conptr != PTRJOY && Android_KoalaPad) ) {
 		newtrig = 0;
 		jovl->fire.x = newtc[PTRTRG].x;
 		jovl->fire.y = newtc[PTRTRG].y;
