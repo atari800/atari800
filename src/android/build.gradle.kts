@@ -1,15 +1,15 @@
 plugins {
-    id("com.android.application") version "8.2.2"
+    id("com.android.application") version "9.2.1"
 }
 
 android {
     namespace = "cz.pstehlik.colleen"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "cz.pstehlik.colleen"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 400
         versionName = "4.0"
 
