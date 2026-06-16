@@ -37,35 +37,34 @@
 									\nYour machine change has been reverted.</string>
 	<string name="noromfound">Failed to initialize machine. Required ROM not found.</string>
     <string name="pressback">Press \'Back\' once more to exit</string>
-    <string name="welcome">Welcome to Colleen!</string>
+    <string name="welcome">Welcome to the new Colleen!</string>
 	<string name="welcomenote">Hello,\n
 							   \nJust a few tips to get you going:
-							   \n1) Left hand joystick, right hand trigger (or search button).
+							   \n1) Left hand joystick, right hand trigger.
 							   \n2) Tap the top-right corner for console keys.
-							   \n3) On Honeycomb (3.0)+ devices, tap near the screen\'s top for menu.
-							   \n4) On earlier devices, hit \'Menu\' for preferences and more.
-							   \n5) Long-press in the file selector to insert an image and not boot it.
-							   \n6) Use the WiiController or the keyboard for accuracy.\n
-							   \nFirst though, setup the Atari ROM path in the next dialog.\n
-							   \nHave fun! </string>
-    <string name="pathsetup">Atari ROM Path</string>
+							   \n3) Use the WiiController or the keyboard for accuracy.
+							   \n4) Original joysticks work with <a href="https://joy.sophics.cz/dual-joystick-usb-adapter/">DualJoyUSB adapter</a>.
+							   \n5) Open any disk image or exe file directly and have fun.\n
+							   \nFirst consider importing the Atari ROM in the next dialog.\n
+							   \nEnjoy! </string>
+    <string name="pathsetup">Atari ROM Import</string>
 	<string name="pathsetupmsg"><![CDATA[
 								Due to copyright limitations, the emulator cannot be distributed with
 								original Atari system ROM images. It has free replacement system ROMs
 								built in, but some Atari programs might fail to run with them. For best
-								compatibility, configure the emulator to use original Atari ROMs.<br><br>
-								<p>Touch <b>OK</b> to use the app\'s internal directory for ROM storage.<br>
-								You can import ROM files later by selecting <b>Import ROM BIOS</b>
+								compatibility, download original Atari ROMs and import to the emulator.<br><br>
+								<p>
+								You can import ROM files anytime by selecting <b>Import OS ROM</b>
 								in Preferences.<br><br>
 								Try the
 								<a href="http://atari800.github.io/download.html">Atari800 site</a>
 								for the XL ROMs.<br>
 								Valid ROM filenames are:<br>
-								atariosa.rom - OS/A,
-								atariosb.rom - OS/B,
-								atarixl.rom - XL,
-								ataribas.rom - XL Basic,
-								5200.rom - 5200
+								atariosa.rom - OS/A,<br>
+								atariosb.rom - OS/B,<br>
+								atarixl.rom - XL,<br>
+								ataribas.rom - XL Basic,<br>
+								5200.rom - 5200<br>
 								]]></string>
     <string name="loadingdir">Loading directory. Please wait...</string>
     <string name="selectdir">Select directory</string>
@@ -147,8 +146,9 @@
 							]]></string>
 	<string name="changesv4_0"><![CDATA[
 							<i>Changes for version 4.0:</i><br>
+							<br><b>*</b> Upgrade to atari800 core v5.2.0+.
 							<br><b>*</b> Removed MANAGE_EXTERNAL_STORAGE permission requirement
-							<br><b>*</b> ROM BIOS files imported via SAF picker, stored in private app directory
+							<br><b>*</b> OS ROM files imported via SAF picker, stored in private app directory
 							<br><b>*</b> Save states stored in private directory (no SAF directory picker needed)
 							<br><b>*</b> Added Load State feature from Preferences
 							<br><b>*</b> New always-visible transparent menu bar replaces hidden ActionBar
@@ -268,8 +268,8 @@
 	<string name="pref_resetactions_sum">Clear current action mappings</string>
 	<string name="pref_mixbufsize">Sound Buffer Size</string>
 	<string name="pref_mixbufsize_sum">Lower for lower latency, higher to get rid of clicks</string>
-	<string name="pref_importroms">Import ROM BIOS</string>
-	<string name="pref_importroms_sum">Copy ROM BIOS files from storage to internal directory</string>
+	<string name="pref_importroms">Import OS ROM</string>
+	<string name="pref_importroms_sum">Copy OS ROM files from storage to internal directory</string>
 	<string name="pref_about">About</string>
 	<string name="pref_about_sum">Colleen credits</string>
 	<string name="pref_help">Help</string>

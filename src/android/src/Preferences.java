@@ -77,7 +77,7 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			kp.updateSum();
 		}
 
-		/* Import ROM BIOS: open SAF file picker with multi-select */
+		/* Import OS ROM: open SAF file picker with multi-select */
 		findPreference("importroms").setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
 			public boolean onPreferenceClick(Preference p) {
@@ -103,7 +103,7 @@ public final class Preferences extends PreferenceActivity implements Preference.
 			@Override
 			public boolean onPreferenceClick(Preference p) {
 				startActivity(new Intent(Intent.ACTION_VIEW,
-							  Uri.parse("http://pocketatari.atari.org/android/index.html#manual")));
+							  Uri.parse("https://atari800.github.io/Atari800forAndroid.html#manual")));
 				return true;
 			}
 		});
