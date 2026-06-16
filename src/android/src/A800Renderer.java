@@ -48,6 +48,7 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 	private int[] _pix;
 	private Toast _crashtoast;
 	private int _frameret;
+	private float _density = 1.0f;
 	private Handler _handler = null;
 
 	@Override
@@ -60,7 +61,7 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 	@Override
 	public void onSurfaceChanged(GL10 gl, int w, int h) {
 		gl.glViewport(0, 0, w, h);
-		NativeResize(w, h);
+		NativeResize(w, h, _density);
 	}
 
 	@Override
@@ -81,6 +82,10 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 
 	public void setHandler(Handler h) {
 		_handler = h;
+	}
+
+	public void setDensity(float d) {
+		_density = d;
 	}
 
 	private void generateOverlays() {
@@ -134,5 +139,5 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 	// Native function declarations
 	private native void NativeGetOverlays();
 	private native int  NativeRunFrame();
-	private native void NativeResize(int w, int h);
+	private native void NativeResize(int w, int h, float density);
 }

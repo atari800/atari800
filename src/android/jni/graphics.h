@@ -16,6 +16,7 @@ extern int Android_Bilinear;
 extern int Android_CropScreen[];
 extern int Android_PortPad;
 extern int Android_CovlHold;
+extern float Android_DisplayDensity;
 extern float Android_Joyscale;
 
 int  Android_InitGraphics(void);

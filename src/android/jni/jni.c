@@ -100,11 +100,12 @@ static void JNICALL NativeGetOverlays(JNIEnv *env, jobject this)
 	Log_print("Overlays texture initialized: %dx%d", ovl_texw, ovl_texh);
 }
 
-static void JNICALL NativeResize(JNIEnv *env, jobject this, jint w, jint h)
+static void JNICALL NativeResize(JNIEnv *env, jobject this, jint w, jint h, jfloat density)
 {
-	Log_print("Screen resize: %dx%d", w, h);
+	Log_print("Screen resize: %dx%d density=%.2f", w, h, density);
 	Android_ScreenW = w;
 	Android_ScreenH = h;
+	Android_DisplayDensity = density;
 	Android_SplitCalc();
 	Android_CovlHold = (Android_ScreenW < Android_ScreenH) ? 0 : Android_CovlHoldPref;
 	Android_InitGraphics();
@@ -605,7 +606,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	JNINativeMethod render_methods[] = {
 		{ "NativeRunFrame",			"()I",								NativeRunFrame		  },
 		{ "NativeGetOverlays",		"()V",								NativeGetOverlays	  },
-		{ "NativeResize",			"(II)V",							NativeResize		  },
+		{ "NativeResize",			"(IIF)V",							NativeResize		  },
 	};
 	JNINativeMethod pref_methods[] = {
 		{ "NativeSaveState",		"(Ljava/lang/String;)Z",			NativeSaveState		  },

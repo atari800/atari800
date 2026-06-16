@@ -92,6 +92,7 @@ public final class A800view extends GLSurfaceView
 
 		_renderer = new A800Renderer();
 		setRenderer(_renderer);
+		_renderer.setDensity(context.getResources().getDisplayMetrics().density);
 		_renderer.prepareToast(context);
 		_renderer.setHandler(new Handler() {
 			@Override

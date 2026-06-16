@@ -53,6 +53,7 @@ int Android_Aspect;
 int Android_CropScreen[] = {0, SCREEN_HEIGHT, SCANLINE_LEN, -SCREEN_HEIGHT};
 int Android_PortPad;
 int Android_CovlHold;
+float Android_DisplayDensity = 1.0f;
 static struct RECT screenrect;
 static int screenclear;
 int Android_Bilinear;
@@ -165,6 +166,7 @@ int Android_InitGraphics(void)
 		tmp2 = tmp3;
 	if (tmp2 < 2.0f)
 		tmp2 = 2.0f;
+	tmp2 *= (1.0f + (Android_DisplayDensity - 1.0f) * 0.30f);
 	for (i = 0; i < CONK_VERT_MAX; i += 2) {
 		/* generate & scale */
 		conkey_vrt[i    ] = poly[i % 8] * tmp2 +
