@@ -4,7 +4,7 @@ Build instructions for the Android port
 If you are looking for instructions on how to use the Android port, what the
 preferences mean etc. you should check out instead:
 
-http://pocketatari.atari.org/android
+https://atari800.github.io/Atari800forAndroid.html
 
 See also DOC/README.android.
 
@@ -35,7 +35,7 @@ https://developer.android.com/studio#command-line-tools-only
 
 Then use sdkmanager to install required packages:
 
-# sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmake;3.22.1"
+# sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-36" "cmake;3.22.1"
 
 4. The Android NDK.
 
@@ -89,6 +89,3 @@ To build a release APK suitable for distribution:
 
 You will need to configure signing in src/android/build.gradle.kts or supply
 keystore properties via the command line.
-
-Cheers,
-Kostas
