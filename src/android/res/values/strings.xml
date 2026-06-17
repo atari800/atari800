@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Colleen</string>
-    <string name="menu_quit">Quit</string>
-    <string name="menu_softkbd">Keyboard</string>
-    <string name="menu_open">Open</string>
-    <string name="menu_nextdisk">Next Side</string>
     <string name="warning">Warning</string>
-    <string name="mountnodisk">File %s is not a disk image.\nContinue?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="mountdisk">Mount Image to Drive</string>
-    <string name="unmountall">Unmount all drives</string>
     <string name="mountnextdisk">Image %s inserted</string>
     <string name="mountnextdiskerror">Cannot insert image %s</string>
-    <string name="mountinsertdisk">Image %1$s inserted into drive D%2$d:</string>
     <string name="savestateoverwrite">Save state file \'%s\' already exists. OK to overwrite?</string>
     <string name="savestateerror">Error: Cannot save state</string>
     <string name="savestateok">State saved</string>
@@ -27,7 +19,6 @@
     <string name="slower">Slower</string>
     <string name="normal">Normal</string>
     <string name="faster">Faster</string>
-	<string name="menu_preferences">Preferences</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="save">Save</string>
@@ -66,8 +57,6 @@
 								ataribas.rom - XL Basic,<br>
 								5200.rom - 5200<br>
 								]]></string>
-    <string name="loadingdir">Loading directory. Please wait...</string>
-    <string name="selectdir">Select directory</string>
 	<string name="rompatherror">Failed to initialize machine.\n
 							  \nRequired ROM not found or path not accessible.</string>
 	<string name="about">Colleen</string>
@@ -183,7 +172,6 @@
     <string name="pref_bilinear_sum">Filter scaled screen</string>
     <string name="pref_artifact">Artifacting</string>
 	<string name="pref_artifact_sum">Emulate TV artifacts</string>
-	<string name="art_brownblue">Brown/Blue</string>
 	<string name="art_bluebrown1">Blue/Brown 1</string>
 	<string name="art_bluebrown2">Blue/Brown 2</string>
 	<string name="art_gtia">GTIA</string>
@@ -243,8 +231,6 @@
 	<string name="pref_sound16bit_sum">Toggle between 8bit/16bit sound generation</string>
 	<string name="pref_hqpokey">High Quality Sound</string>
 	<string name="pref_hqpokey_sum">Use high quality POKEY emulation</string>
-	<string name="pref_romdir">ROMs directory</string>
-	<string name="pref_romdir_sum">Set directory where Atari ROMs reside</string>
 	<string name="pref_keymapdupmsg">This key is already used for another action.\n\nWould you like to swap
 									 the mapping between these two keys? (\'No\' will keep current
 									 assignments)</string>

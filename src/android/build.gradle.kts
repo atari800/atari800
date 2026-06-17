@@ -10,7 +10,7 @@ android {
         applicationId = "cz.pstehlik.colleen"
         minSdk = 21
         targetSdk = 36
-        versionCode = 400
+        versionCode = 401
         versionName = "4.0"
 
         ndkVersion = "28.2.13676358"
