@@ -68,9 +68,8 @@ public final class MainActivity extends Activity
 	private static final int ACTIVITY_PREFS = 2;
 	private static final int DLG_WELCOME = 0;
 	private static final int DLG_PATHSETUP = 1;
-	private static final int DLG_CHANGES = 2;
-	private static final int DLG_BRWSCONFRM = 3;
-	private static final int DLG_SELCARTTYPE = 4;
+	private static final int DLG_BRWSCONFRM = 2;
+	private static final int DLG_SELCARTTYPE = 3;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -80,7 +79,6 @@ public final class MainActivity extends Activity
 	private AudioThread _audio = null;
 	private InputMethodManager _imng;
 	private Settings _settings = null;
-	private boolean _bootupconfig = false;
 	private String _cartTypes[][] = null;
 	private static File _romsDir = null;
 	static File _savesDir = null;
@@ -196,25 +194,9 @@ public final class MainActivity extends Activity
 	}
 
 	private void bootupMsgs() {
-		// Migrate aspect from 0 to 3 (old XML default was 0, a bug)
-		String aspectVal = _settings.get(false, "aspect");
-		if ("0".equals(aspectVal)) {
-			_settings.putString("aspect", "3");
-			_settings.fetchApplySettings();
-		}
-
 		String instver = _settings.get(false, "version");
 		if (instver == null || instver.equals("false")) {
-			_bootupconfig = true;
-			pauseEmulation(true);
 			showDialog(DLG_WELCOME);
-			return;
-		}
-
-		if (Integer.parseInt(instver) != getPInfo().versionCode) {
-			_bootupconfig = true;
-			pauseEmulation(true);
-			showDialog(DLG_CHANGES);
 			return;
 		}
 		Toast.makeText(this, R.string.noactionbarhelptoast, Toast.LENGTH_SHORT).show();
@@ -256,7 +238,6 @@ public final class MainActivity extends Activity
 							@Override
 							public void onClick(DialogInterface d, int i) {
 								dismissDialog(DLG_WELCOME);
-								_settings.putInt("version", getPInfo().versionCode);
 								showDialog(DLG_PATHSETUP);
 							}
 							})
@@ -283,49 +264,14 @@ public final class MainActivity extends Activity
 								String rp = _romsDir.getAbsolutePath();
 								_settings.putString("rompath", rp);
 								_settings.simulateChanged("rompath");
-								_bootupconfig = false;
 								pauseEmulation(false);
 							}
 							})
 						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface d, int i) {
-								_bootupconfig = false;
 								pauseEmulation(false);
 								dismissDialog(DLG_PATHSETUP);
-							}
-							})
-						.create();
-			break;
-
-		case DLG_CHANGES:
-			t = new TextView(this);
-			int[] vs = getResources().getIntArray(R.array.changes_versions);
-			int instver = getPInfo().versionCode;
-			for (int i = 0; i < vs.length; i++)
-				if (vs[i] == instver) {
-					t.setText(Html.fromHtml(getResources().getStringArray(R.array.changes_strings)[i]));
-					break;
-				}
-			t.setTextAppearance(this, android.R.style.TextAppearance_Small_Inverse);
-			t.setBackgroundResource(android.R.color.background_light);
-			t.setMovementMethod(LinkMovementMethod.getInstance());
-			s = new ScrollView(this);
-			s.addView(t);
-			d = new AlertDialog.Builder(this)
-						.setTitle(R.string.atariupdate)
-						.setView(s)
-						.setInverseBackgroundForced(true)
-						.setCancelable(false)
-						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface d, int i) {
-								_settings.putInt("version", getPInfo().versionCode);
-								_bootupconfig = false;
-								pauseEmulation(false);
-								dismissDialog(DLG_CHANGES);
-								Toast.makeText(MainActivity.this, R.string.noactionbarhelptoast,
-											   Toast.LENGTH_SHORT).show();
 							}
 							})
 						.create();
@@ -457,13 +403,8 @@ public final class MainActivity extends Activity
 	}
 
 	public void pauseEmulation(boolean pause) {
-		if (pause) {
-			if (_audio != null)	_audio.pause(pause);
-			if (_view != null)	_view.pause(pause);
-		} else if (!_bootupconfig) {
-			if (_view != null)	_view.pause(pause);
-			if (_audio != null)	_audio.pause(pause);
-		}
+		if (_audio != null)	_audio.pause(pause);
+		if (_view != null)	_view.pause(pause);
 	}
 
 	@Override
@@ -517,7 +458,6 @@ public final class MainActivity extends Activity
 				}
 				break;
 			}
-			_bootupconfig = false;
 			pauseEmulation(false);
 			break;
 

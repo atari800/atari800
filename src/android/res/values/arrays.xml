@@ -118,20 +118,4 @@
 		<item>3</item>
 	</string-array>
 
-	<string-array name="changes_strings">
-		<item>@string/changesv1_1a</item>
-		<item>@string/changesv1_2</item>
-		<item>@string/changesv1_3</item>
-		<item>@string/changesv2_0</item>
-		<item>@string/changesv3_0</item>
-		<item>@string/changesv4_0</item>
-	</string-array>
-	<integer-array name="changes_versions">
-		<item>3</item>
-		<item>10</item>
-		<item>20</item>
-		<item>200</item>
-		<item>300</item>
-		<item>400</item>
-	</integer-array>
 </resources>
