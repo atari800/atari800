@@ -60,6 +60,10 @@ The SDL version should compile on Unix, Win32, BeOS, etc... It's optimized for
 in XFree86 - please set "Depth=8" in XF86Config to gain maximum speed.
 Includes support for joystick and mouse.
 
+SDL2 is the primary SDL target with full feature support (paddle emulation,
+per-button remapping, analog axis tuning, joystick hotplug). SDL1 builds are
+limited to basic functionality.
+
 All versions supporting bitmapped graphics have a User Interface implemented
 on the emulator's "screen". The User Interface is enter by pressing F1 at any
 time. ESC is used to return to the previous screen.

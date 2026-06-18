@@ -1024,7 +1024,7 @@ Swap joysticks
 .BI \-scale\  n
 Scale width and height by \fIn\fR
 
-.SS SDL Options
+.SS SDL Options (SDL2 recommended)
 
 .TP
 .B \-fullscreen
@@ -1605,7 +1605,7 @@ keypad has been enabled).
 
 Mouse not supported in this version.
 
-.SS SDL
+.SS SDL (SDL2 feature set)
 
 .TP 15
 .B `
@@ -1623,9 +1623,6 @@ Switch fullscreen/windowed display.
 .TP
 .BR LAlt + G
 Switch visible horizontal area. See \fB\-horiz\-area\fR.
-.TP
-.BR LAlt + J
-Swap \fBkeyboard_emulated\fP joysticks
 .TP
 .BR LAlt + M
 Grab mouse (prevents mouse pointer from leaving the window)
@@ -1727,12 +1724,15 @@ Enable/disable output of a 80 column hardware (use with \fB-xep80\fR,
 
 
 .PP
-Apart from standard joysticks (handled by the SDL) up to two keyboard joysticks
-are supported. The keys used for joystick directions and the trigger can be
-freely defined in the config UI (Controller Config -> Define layout).
-Keyboard joystick emulation can be enabled/disabled in the Controller Config.
-By default, joy 0 is enabled and joy 1 is disabled (to not steal normal
-AWDS keys in the emulator).
+Each of the four Atari joystick ports can be independently configured in the
+Controller Configuration UI to use None, Keyboard 1, Keyboard 2, a host
+joystick (SDL), a parallel port joystick, or Paddle mode. The keys used for
+keyboard joystick directions and the trigger can be defined via
+Controller Config -> Define layout.
+.PP
+\fBNote:\fR Paddle mode, per-button remapping, analog axis configuration,
+diagonal zone tuning, and joystick hotplug require SDL2.
+SDL1 builds only support basic hat/axis joystick input.
 
 .SS X11
 

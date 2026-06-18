@@ -1,10 +1,74 @@
 Version 5.3.0 (2024/xx/xx)
 ==========================
 
-Port specific changes:
-----------------------
- * win32 (DirectX) backend removed. It served no real purpose, the last build
-   published was 2.2.1 in 04/2011
+ New features:
+ -------------
+  * SDL2 support — SDL2 is now the primary SDL target. Selected automatically
+    when both SDL1 and SDL2 are available. Includes:
+    - OpenGL shader support and improved rendering
+    - SDL2 controller button configuration (map buttons to actions, D-pad UI)
+    - Correct keyboard handling (CAPS-Lock, control letters, HELP with modifiers)
+  * NetSIO / FujiNet support — network SIO over UDP, enabling connectivity with
+    FujiNet devices. Supports high-speed divisors, PROCEED signal, port sharing
+    (SO_REUSEADDR), and Windows (Winsock2). Configurable port via -netsio_port.
+  * Paddle controller support (SDL2-only):
+    - New JOY_MODE_PADDLE mode on any Atari port
+    - Per-port configurable pot axes and fire buttons
+    - Config keys: JOY_PORT_{0-3}_PADDLE_AXES, JOY_PORT_{0-3}_PADDLE_BUTTONS
+  * Joystick configuration reorganised by Atari port (SDL2):
+    - Each of the four Atari ports can be independently assigned an input source
+      (None, Keyboard 1/2, host joystick, paddle, parallel port)
+    - New config keys: JOY_PORT_{0-3}_{MODE,PARAM,NAME}
+    - Host joysticks opened into a flat pool, assigned by name for persistence
+    - Automatic smart defaults: if host joysticks are detected they are assigned
+      to ports; otherwise port 0 defaults to keyboard
+  * Support for J(atar)Carts & DCart cartridge types
+  * Alternative key mapping for Atari 5200 Bounty Bob Strikes Back!
+  * Turbo speed selection and quick save/load state
+  * libatari800 API extensions: mount_disk(), unmount_disk(), disable_drive(),
+    disk activity callbacks, SIO patch control
+  * Monitor command enhancements: summaries and error codes added
+
+ Changes:
+ --------
+  * Sound system refactored:
+    - VOL_ONLY_SOUND code removed (was unused and poor quality)
+    - SYNCHRONIZED_SOUND and SOUND_THIN_API now forced on
+    - SERIO_SOUND code removed
+  * CPU emulation refactored for readability
+  * Delayed NMI handling implemented per Altirra Hardware Reference Manual
+  * SDL2: Removed -joy-distinct option (no longer needed with per-port assignment)
+  * SDL2: Removed -joyswap / Alt+J swap joysticks shortcut
+  * SDL: window stays open while using the monitor
+  * SDL: joystick subsystem initialized only when needed
+  * Falcon: -interlace parameter removed (use -refresh instead)
+  * Falcon/FireBee: switched to m68k-atari-mintelf-gcc, usound routines
+  * CAS/XFD detection order corrected
+  * Host device letter input validation
+
+ Bug fixes:
+ ---------
+  * Fix ATX handling on command line (bug since 2009, fixes #218)
+  * Fix XF551 Get Status command (SuperDOS 5.1 timeout, fixes #190)
+  * Fix Corina and other size-based BIN file loading (fixes #258)
+  * Fix harmful typo in gtia.c (fixes #163)
+  * Fix zero-length Fuji chunk read in img_tape.c
+  * Fix Falcon/FireBee build
+  * Fix compilation with --without-opengl and --with-sound=no
+  * Fix make clean
+  * Various compiler warning fixes
+
+Platform specific:
+ ------------------
+  * Android: Complete overhaul — renamed to cz.pstehlik.colleen,
+    SAF-based storage (no more FileSelector), Material Design icons,
+    high-DPI console key scaling, auto-rotation, notch/cutout support,
+    state save/load reworked, CMake/Gradle build system.
+  * win32: DirectX/DirectDraw/GDI backend removed (use SDL on Windows).
+  * Windows: NetSIO support via Winsock2 (netsiowin.c).
+  * Falcon/FireBee: keyboard fixes, sound improvements, compiler update.
+  * Dreamcast: redundant sound flag removed.
+  * CI: Windows, macOS 14 arm64, and Ubuntu 20.04 build workflows added.
 
 
 Version 5.2.0 (2023/12/29)

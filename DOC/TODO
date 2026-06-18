@@ -4,7 +4,7 @@ Plans for future versions
 Keyboard and controllers
 ------------------------
 
-* map host joysticks to Atari ports in the emulation core in order to make
+* [DONE] map host joysticks to Atari ports in the emulation core in order to make
   the configuration available in UI and config file
 
 * pass the state of all host keys to the emulation core in order to configure
