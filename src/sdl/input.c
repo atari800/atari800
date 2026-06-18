@@ -698,18 +698,13 @@ void SDL_INPUT_WriteConfig(FILE *fp)
 {
 	int i;
 	for (i = 0; i < MAX_JOYSTICKS; i++) {
+		int s = joy_port_param[i] >= 0 && joy_port_param[i] < MAX_HOST_JOYSTICKS ? host_joy_slot[joy_port_param[i]] : -1;
 		fprintf(fp, KEY_SDL"JOY_PORT_%d_MODE=%d\n", i, joy_port_mode[i]);
-		if ((joy_port_mode[i] == JOY_MODE_HOST_JOY || joy_port_mode[i] == JOY_MODE_PADDLE) && joy_port_has_name[i] && joy_port_name[i][0]) {
-			fprintf(fp, KEY_SDL"JOY_PORT_%d_NAME=%s\n", i, joy_port_name[i]);
-			int s = joy_port_param[i] >= 0 && joy_port_param[i] < MAX_HOST_JOYSTICKS ? host_joy_slot[joy_port_param[i]] : -1;
-			fprintf(fp, KEY_SDL"JOY_PORT_%d_SLOT=%d\n", i, s >= 0 ? s : 0);
-		}
-		if (joy_port_mode[i] == JOY_MODE_PARALLEL)
-			fprintf(fp, KEY_SDL"JOY_PORT_%d_SLOT=%d\n", i, joy_port_param[i]);
-		if (joy_port_mode[i] == JOY_MODE_PADDLE) {
-			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_AXES=%d,%d\n", i, paddle_pot_axis[i][0], paddle_pot_axis[i][1]);
-			fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_BUTTONS=%d,%d\n", i, paddle_fire_btn[i][0], paddle_fire_btn[i][1]);
-		}
+		fprintf(fp, KEY_SDL"JOY_PORT_%d_NAME=%s\n", i, joy_port_name[i]);
+		fprintf(fp, KEY_SDL"JOY_PORT_%d_SLOT=%d\n", i, s >= 0 ? s : 0);
+		fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_AXES=%d,%d\n", i, paddle_pot_axis[i][0], paddle_pot_axis[i][1]);
+		fprintf(fp, KEY_SDL"JOY_PORT_%d_PADDLE_BUTTONS=%d,%d\n", i, paddle_fire_btn[i][0], paddle_fire_btn[i][1]);
+		fprintf(fp, KEY_SDL"JOY_PORT_%d_SLOT=%d\n", i, joy_port_param[i]);
 	}
 	fprintf(fp, KEY_SDL"JOY_0_LEFT=%d\n", KBD_STICK_0_LEFT);
 	fprintf(fp, KEY_SDL"JOY_0_RIGHT=%d\n", KBD_STICK_0_RIGHT);
@@ -2149,29 +2144,31 @@ void SDL_INPUT_Restart(void)
 #if SDL2
 
 int Atari_POT(int pot) {
-	int MAX = 228;
+	int val = 228;
 	int joy = pot / 2;
-	if (joy >= MAX_JOYSTICKS) {
-		return MAX;
-	}
 	struct stick_dev* s = &stick_devs[joy];
-	if (s->sdl_joy == NULL) {
-		return MAX;
-	}
-	int axis;
-	if (Atari800_machine_type == Atari800_MACHINE_5200)
-		return MAX;
-	else if (joy_port_mode[joy] != JOY_MODE_PADDLE)
-		return MAX;
-	else
-		axis = paddle_pot_axis[joy][pot & 1];
 
-	int val = SDL_JoystickGetAxis(s->sdl_joy, axis);
-	val += 32768;
-	val *= 255;
-	val /= 65535;
-	val = MAX - val;
-	if (val < 1) val = 1;
+	if (joy >= MAX_JOYSTICKS) {
+		return val;
+	}
+	if (s->sdl_joy == NULL) {
+		return val;
+	}
+
+	if (Atari800_machine_type == Atari800_MACHINE_5200)
+		return val;
+#ifdef EMULATE_PADDLE
+	else if (joy_port_mode[joy] == JOY_MODE_PADDLE)
+#endif
+	{
+		int axis = paddle_pot_axis[joy][pot & 1];
+		val = SDL_JoystickGetAxis(s->sdl_joy, axis);
+		val += 32768;
+		val *= 255;
+		val /= 65535;
+		val = MAX - val;
+		if (val < 1) val = 1;
+	}
 	return val;
 }
 
@@ -2303,7 +2300,7 @@ static int single_stick_port(int num) {
 		return port;
 	}
 	s = &stick_devs[num];
-/* is this required or is it handled at another level?
+#ifdef EMULATE_PADDLE
 	if (joy_port_mode[num] == JOY_MODE_PADDLE) {
 		if (s->sdl_joy != NULL) {
 			if (SDL_JoystickGetButton(s->sdl_joy, paddle_fire_btn[num][0]))
@@ -2313,7 +2310,7 @@ static int single_stick_port(int num) {
 		}
 		return port;
 	}
-*/
+#endif
 	if (s->kbd != NULL) {
 		int i;
 		for (i = 0; i < 4; i++) {
@@ -2365,11 +2362,11 @@ int PLATFORM_TRIG(int num)
 		return trig;
 	}
 	s = &stick_devs[num];
-/* is this required or is it handled somewhere else?
+#ifdef EMULATE_PADDLE
 	if (joy_port_mode[num] == JOY_MODE_PADDLE) {
 		return trig;
 	}
-*/
+#endif
 	if (s->kbd != NULL) {
 		trig &= !get_key_state(kbhits, s->kbd[4]);
 	}
