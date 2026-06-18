@@ -420,10 +420,12 @@ int SDL_INPUT_GetNumHostJoysticks(void) {
 	return n_host_joys;
 }
 
+#ifdef LPTJOY
 /* Return number of opened parallel port joysticks (Linux LPT only) */
 int SDL_INPUT_GetNumLPTJoysticks(void) {
 	return n_lpt_joys;
 }
+#endif
 
 /* Return display name of host joystick at given index, or NULL */
 const char *SDL_INPUT_GetHostJoystickName(int index) {
