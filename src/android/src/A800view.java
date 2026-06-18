@@ -39,6 +39,7 @@ import android.os.Message;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
+import android.view.InputDevice;
 import static android.view.KeyEvent.*;
 
 
@@ -186,6 +187,26 @@ public final class A800view extends GLSurfaceView
 		}
 	}
 
+	// Joystick/gamepad axis and hat input
+	@Override
+	public boolean onGenericMotionEvent(final MotionEvent ev) {
+		if ((ev.getSource() & InputDevice.SOURCE_CLASS_JOYSTICK) == 0)
+			return false;
+		float hatX = ev.getAxisValue(MotionEvent.AXIS_HAT_X);
+		float hatY = ev.getAxisValue(MotionEvent.AXIS_HAT_Y);
+		float axisX = Math.abs(hatX) > 0.5f ? hatX : ev.getAxisValue(MotionEvent.AXIS_X);
+		float axisY = Math.abs(hatY) > 0.5f ? hatY : ev.getAxisValue(MotionEvent.AXIS_Y);
+		int dir = 0x0f; // INPUT_STICK_CENTRE
+		if (axisX < -0.5f) dir &= ~0x04; // left  (bit 2)
+		if (axisX >  0.5f) dir &= ~0x08; // right (bit 3)
+		if (axisY < -0.5f) dir &= ~0x01; // up    (bit 0)
+		if (axisY >  0.5f) dir &= ~0x02; // down  (bit 1)
+		float trig = Math.max(ev.getAxisValue(MotionEvent.AXIS_LTRIGGER),
+		                      ev.getAxisValue(MotionEvent.AXIS_RTRIGGER));
+		NativeJoystick(dir, trig > 0.5f ? 0 : 1);
+		return true;
+	}
+
 	// Key input
 	@Override
 	public boolean onKeyDown(int kc, final KeyEvent ev) {
@@ -259,6 +280,7 @@ public final class A800view extends GLSurfaceView
 
 	private native static int NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
 	private native void NativeKey(int keycode, int status);
+	private native void NativeJoystick(int dir, int trig);
 
 	public static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>(32);
 	static {
@@ -294,5 +316,6 @@ public final class A800view extends GLSurfaceView
 		XLATKEYS.put(KC_BUTTON_Y,			KEY_BT_Y);
 		XLATKEYS.put(KC_BUTTON_L1,			KEY_BT_L1);
 		XLATKEYS.put(KC_BUTTON_R1,			KEY_BT_R1);
+		XLATKEYS.put(KEYCODE_BUTTON_A,		KEY_FIRE);
 	}
 }

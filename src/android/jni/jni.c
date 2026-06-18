@@ -328,6 +328,11 @@ static int JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s1
 	return Android_TouchEvent(x1, y1, s1, x2, y2, s2);
 }
 
+static void JNICALL NativeJoystick(JNIEnv *env, jobject this, int dir_bits, int trig)
+{
+	Android_JoystickEvent(dir_bits, trig);
+}
+
 
 static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolean bilinear,
 								  int artifact, int frameskip, jboolean collisions, int crophoriz,
@@ -576,6 +581,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
 		{ "NativeKey",				"(II)V",							NativeKey			  },
+		{ "NativeJoystick",			"(II)V",							NativeJoystick		  },
 	};
 	JNINativeMethod snd_methods[] = {
 		{ "NativeSoundInit",		"(I)V",								NativeSoundInit		  },

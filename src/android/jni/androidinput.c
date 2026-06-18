@@ -486,6 +486,12 @@ void Android_KeyEvent(int k, int s)
 	}
 }
 
+void Android_JoystickEvent(int dir_bits, int trig)
+{
+	Android_PortStatus = (Android_PortStatus & 0xFFF0) | (dir_bits & 0x0F);
+	Android_TrigStatus = (Android_TrigStatus & 0xFE) | (trig & 1);
+}
+
 void Input_Initialize(void)
 {
 	int i;
