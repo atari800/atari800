@@ -3595,7 +3595,7 @@ static UI_tMenuItem joy_buttons_menu_array[] = {
 	UI_MENU_END
 };
 static char* joy_button_names[] = {
-	"A", "B", "X", "Y",
+	"A (first button)", "B (second button)", "X (third button)", "Y",
 	"Back", "Guide", "Start",
 	"Left stick", "Right stick",
 	"Left shoulder", "Right shoulder",
