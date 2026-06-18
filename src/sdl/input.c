@@ -2166,7 +2166,7 @@ int Atari_POT(int pot) {
 		val += 32768;
 		val *= 255;
 		val /= 65535;
-		val = MAX - val;
+		val = 228 - val;
 		if (val < 1) val = 1;
 	}
 	return val;
@@ -2382,19 +2382,20 @@ int PLATFORM_TRIG(int num)
 #if SDL2
 		int found_trigger = 0;
 		for (int btn = 0; btn < INPUT_JOYSTICK_MAX_BUTTONS && btn < s->nbuttons; ++btn) {
-			int down = SDL_JoystickGetButton(s->sdl_joy, btn);
-			if (down && s->real_config.buttons[btn].action == JoystickUiAction && s->real_config.buttons[btn].key == AKEY_CONTROLLER_BUTTON_TRIGGER) {
+			if (s->real_config.buttons[btn].action == JoystickUiAction
+			&& s->real_config.buttons[btn].key == AKEY_CONTROLLER_BUTTON_TRIGGER
+			&& SDL_JoystickGetButton(s->sdl_joy, btn)) {
 				trig = 0;
 				found_trigger = 1;
 				break;
 			}
 		}
-		if (!found_trigger) {
-			for (int btn = 0; btn < s->nbuttons; btn++) {
-				if (SDL_JoystickGetButton(s->sdl_joy, btn)) {
-					trig = 0;
-					break;
-				}
+
+		/* fallback to first button if no mapped trigger button is pressed and the joystick
+		   has 5 or fewer buttons (to avoid false positives on gamepads with many buttons) */
+		if (!found_trigger && s->nbuttons <= 5) {
+			if (SDL_JoystickGetButton(s->sdl_joy, 0)) {
+				trig = 0;
 			}
 		}
 #else
