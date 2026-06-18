@@ -14,11 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: install depends
-      run: sudo apt update && sudo apt install -y libsdl1.2-dev libsdl2-dev libmp3lame-dev libreadline-dev
+      run: sudo apt update && sudo apt install -y libsdl2-dev libmp3lame-dev libreadline-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --with-sdl --with-opengl --with-readline --with-mp3=lame --with-sound=sdl --with-video=sdl
+      run: ./configure --with-opengl --with-readline --with-mp3=lame --with-video=sdl2 --with-sound=sdl2
     - name: building
       run: make -j4
     - name: Archive Atari800 binary
@@ -34,11 +34,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: install depends
-      run:  brew install sdl12-compat automake readline
+      run:  brew install sdl2 automake readline
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --with-sdl --with-opengl --with-sound=sdl --with-video=sdl
+      run: ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
     - name: building
       run: make -j4
     - name: Archive Atari800 binary
@@ -72,7 +72,6 @@ jobs:
             automake
             libtool
             mingw-w64-x86_64-SDL2
-            mingw-w64-x86_64-sdl12-compat
             mingw-w64-x86_64-readline
             mingw-w64-x86_64-libpng
 
@@ -80,7 +79,7 @@ jobs:
         run: autoreconf -fiv
 
       - name: Configure project
-        run: ./configure
+        run: ./configure --with-video=sdl2 --with-sound=sdl2
 
       - name: Build project
         run: make -j$(nproc)
