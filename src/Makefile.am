@@ -354,11 +354,13 @@ CLEANFILES += falcon/*.o falcon/*.bak falcon/*~
 CLEANFILES += sdl/*.o sdl/*.bak sdl/*~
 CLEANFILES += javanvm/*.o javanvm/*.bak javanvm/*~
 CLEANFILES += atari_ntsc/*.o atari_ntsc/*.bak atari_ntsc/*~
-CLEANFILES += android/build android/.gradle
 CLEANFILES += libatari800/*.o libatari800/*.bak libatari800/*~
 
 DISTCLEANFILES = Makefile configure config.log config.status config.h
 DISTCLEANFILES += autom4te.cache
+
+clean-local:
+	cd android && rm -rf build .gradle
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(man1dir)
