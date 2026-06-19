@@ -188,10 +188,19 @@ public final class A800view extends GLSurfaceView
 	}
 
 	// Joystick/gamepad axis and hat input
+	private static int portForDevice(int deviceId) {
+		InputDevice d = InputDevice.getDevice(deviceId);
+		if (d == null) return -1;
+		int p = d.getControllerNumber() - 1;
+		return p >= 0 && p < 4 ? p : -1;
+	}
+
 	@Override
 	public boolean onGenericMotionEvent(final MotionEvent ev) {
 		if ((ev.getSource() & InputDevice.SOURCE_CLASS_JOYSTICK) == 0)
 			return false;
+		int port = portForDevice(ev.getDeviceId());
+		if (port < 0) return false;
 		float hatX = ev.getAxisValue(MotionEvent.AXIS_HAT_X);
 		float hatY = ev.getAxisValue(MotionEvent.AXIS_HAT_Y);
 		float axisX = Math.abs(hatX) > 0.5f ? hatX : ev.getAxisValue(MotionEvent.AXIS_X);
@@ -203,19 +212,31 @@ public final class A800view extends GLSurfaceView
 		if (axisY >  0.5f) dir &= ~0x02; // down  (bit 1)
 		float trig = Math.max(ev.getAxisValue(MotionEvent.AXIS_LTRIGGER),
 		                      ev.getAxisValue(MotionEvent.AXIS_RTRIGGER));
-		NativeJoystick(dir, trig > 0.5f ? 0 : 1);
+		NativeJoystick(port, dir, trig > 0.5f ? 0 : 1);
 		return true;
 	}
 
 	// Key input
+	private boolean handleGamepadButton(int kc, KeyEvent ev, int state) {
+		int p = portForDevice(ev.getDeviceId());
+		if (p < 0) return false;
+		int idx = -1;
+		if (kc == KEYCODE_BUTTON_A) idx = 0;
+		else if (kc == KEYCODE_BUTTON_B) idx = 1;
+		else if (kc == KEYCODE_BUTTON_X) idx = 2;
+		if (idx < 0) return false;
+		NativeJoystickFire(p, idx, state);
+		return true;
+	}
+
 	@Override
 	public boolean onKeyDown(int kc, final KeyEvent ev) {
-		return doKey(kc, ev);
+		return handleGamepadButton(kc, ev, 0) || doKey(kc, ev);
 	}
 
 	@Override
 	public boolean onKeyUp(int kc, final KeyEvent ev) {
-		return doKey(kc, ev);
+		return handleGamepadButton(kc, ev, 1) || doKey(kc, ev);
 	}
 
 	@Override
@@ -280,7 +301,8 @@ public final class A800view extends GLSurfaceView
 
 	private native static int NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
 	private native void NativeKey(int keycode, int status);
-	private native void NativeJoystick(int dir, int trig);
+	private native void NativeJoystick(int port, int dir, int trig);
+	private native void NativeJoystickFire(int port, int index, int state);
 
 	public static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>(32);
 	static {

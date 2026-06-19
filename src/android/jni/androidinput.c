@@ -385,7 +385,7 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 
 	/* thread unsafe => "no" problem */
 	if (!Android_Paddle){
-		Android_PortStatus = 0xFFF0 | newjoy;
+		Android_PortStatus = (Android_PortStatus & 0xFFF0) | newjoy;
 		Android_TrigStatus = 0xE | newtrig;
 	} else {
 		POKEY_POT_input[INPUT_mouse_port << 1] = Android_POTX;
@@ -486,10 +486,10 @@ void Android_KeyEvent(int k, int s)
 	}
 }
 
-void Android_JoystickEvent(int dir_bits, int trig)
+void Android_JoystickEvent(int port, int dir_bits, int trig)
 {
-	Android_PortStatus = (Android_PortStatus & 0xFFF0) | (dir_bits & 0x0F);
-	Android_TrigStatus = (Android_TrigStatus & 0xFE) | (trig & 1);
+	Android_PortStatus = (Android_PortStatus & ~(0x0F << (port * 4))) | ((dir_bits & 0x0F) << (port * 4));
+	Android_TrigStatus = (Android_TrigStatus & ~(1 << port)) | ((trig & 1) << port);
 }
 
 void Input_Initialize(void)
