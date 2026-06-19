@@ -1,4 +1,4 @@
-Version 5.3.0 (2024/xx/xx)
+Version 6.0.0 (2026/06/19)
 ==========================
 
  New features:
@@ -63,7 +63,8 @@ Platform specific:
   * Android: Complete overhaul — renamed to cz.pstehlik.colleen,
     SAF-based storage (no more FileSelector), Material Design icons,
     high-DPI console key scaling, auto-rotation, notch/cutout support,
-    state save/load reworked, CMake/Gradle build system.
+    state save/load reworked, CMake/Gradle build system,
+    BT and USB joysticks supported (up to four).
   * win32: DirectX/DirectDraw/GDI backend removed (use SDL on Windows).
   * Windows: NetSIO support via Winsock2 (netsiowin.c).
   * Falcon/FireBee: keyboard fixes, sound improvements, compiler update.

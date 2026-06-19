@@ -21,3 +21,6 @@ Note that Atari800 v5.0.0 was released with build instructions for Pi OS Buster.
 This was an error, because Bullseye had already been released at that time.
 If you wish to build v5.0.0 refer to the files listed above, and not those in the
 distribution file atari800-5.0.0-src.tgz.
+
+Starting with v6.0.0, Atari800 uses SDL2 and the standard build procedure applies
+to all Debian-based systems including Raspberry Pi.

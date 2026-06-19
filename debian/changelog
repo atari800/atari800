@@ -1,3 +1,12 @@
+atari800 (6.0.0) unstable; urgency=medium
+
+  * New upstream version 6.0.0
+  * SDL2 support
+  * Packages released via GitHub, Jun 2026:
+  * https://github.com/atari800/atari800/releases
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Fri, 19 Jun 2026 17:03:52 +0000
+
 atari800 (5.2.0) unstable; urgency=low
 
   * New upstream version 5.2.0

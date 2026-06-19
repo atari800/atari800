@@ -10,7 +10,7 @@ Or
 
 If you wish to compile a specific released version of atari800, obtain the
 source code from the atari800 Github releases area.  Source is available
-in zipped files with names like atari800-5.0.0-src.tgz (where 5.0.0 denotes
+in zipped files with names like atari800-6.0.0-src.tgz (where 6.0.0 denotes
 the version).
 
 Open a terminal on the directory containing your atari800 source files.
@@ -39,7 +39,7 @@ INSTALL SDL DEVELOPMENT FILES
 =============================
 Ensure the SDL development files are installed:
 
-    sudo apt-get install libsdl1.2-dev
+    sudo apt-get install libsdl2-dev
 
 COMPILE
 =======

@@ -11,20 +11,20 @@ Ensure that you have the necessary tools installed:
 
 INSTALL DEPENDENCIES
 ====================
-Check that SDL 1.2 and it's development files are present.  They are not
+Check that SDL 2 and it's development files are present.  They are not
 installed as standard in all Linux distributions.
 
-    sudo apt-get install libsdl1.2debian
-    sudo apt-get install libsdl1.2-dev
+    sudo apt-get install libsdl2-2.0
+    sudo apt-get install libsdl2-dev
 
 OBTAIN SOURCE CODE
 ==================
 Download the latest release of the source code from the Github Releases Area
 (https://github.com/atari800/atari800/releases).  Look for a file with a name
-like 'atari800-5.2.0-src.tgz', where 5.2.0 denotes the version.
+like 'atari800-6.0.0-src.tgz', where 6.0.0 denotes the version.
 
 Unzip the source code.  The contents will go into a directory called
-'atari800-5.2.0' or similar, which will be referred to in these notes as the
+'atari800-6.0.0' or similar, which will be referred to in these notes as the
 'atari800' directory.
 
 Do not obtain the source code by cloning the current atari800 repository
@@ -53,18 +53,16 @@ top of the file should look something like this:
 
 Edit these lines as appropriate.  For example:
 
-    atari800 (5.2.0) unstable; urgency=low
+    atari800 (6.0.0) unstable; urgency=medium
 
-      * New upstream version 5.2.0
-      * Packages released via GitHub, Cliff Hatch, Dec 2023:
+      * New upstream version 6.0.0
+      * SDL2 support
+      * Packages released via GitHub, Jun 2026:
       * https://github.com/atari800/atari800/releases
-      * atari800_5.2.0_amd64.deb
-      * atari800_5.2.0_armhf.deb
-      * atari800_5.2.0_arm64.deb
 
-    -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 30 Dec 2023 17:03:52 +0000
+    -- Antonin Kral <A.Kral@sh.cvut.cz>  Fri, 19 Jun 2026 17:03:52 +0000
 
-The version number '5.2.0' will be used as part of the name of the package
+The version number '6.0.0' will be used as part of the name of the package
 you are going to build.
 
 Label the release 'unstable'.  This does not mean it is actually unstable, just
@@ -109,11 +107,11 @@ the command:
 The dpkg-buildpackage command creates three files and places them in the
 parent of the atari800 directory.  They will have names like these:
 
-    atari800_5.2.0_amd64.buildinfo - Checksums and a list of dependencies
+    atari800_6.0.0_amd64.buildinfo - Checksums and a list of dependencies
                                      in the .deb file.
-    atari800_5.2.0_amd64.changes   - Changelog update and checksums for
+    atari800_6.0.0_amd64.changes   - Changelog update and checksums for
                                      the .deb and .buildinfo files.
-    atari800_5.2.0_amd64.deb       - The .deb package file for release.
+    atari800_6.0.0_amd64.deb       - The .deb package file for release.
 
 'amd64' indicates the architecture of the machine that the build was done on.
 
@@ -133,7 +131,7 @@ or
 
 If these methods don't work on your distribution, use the command:
 
-    sudo dpkg -i atari800_5.2.0_amd64.deb
+    sudo dpkg -i atari800_6.0.0_amd64.deb
 
 TEST
 ====

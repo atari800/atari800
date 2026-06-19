@@ -29,7 +29,7 @@ bld-sdl:
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub src
 	if [ -e Makefile ]; then $(MAKE) clean; fi
 	./configure \
-		 --with-video=sdl --with-sound=sdl
+		 --with-video=sdl2 --with-sound=sdl2
 	$(MAKE)
 
 # Clean up after a build and before building a source package
