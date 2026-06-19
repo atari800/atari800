@@ -184,6 +184,81 @@ static int get_key_state(const Uint8* kbhits, int keycode) {
 	return kbhits[keycode];
 }
 
+/* Convert SDL1 keycode to SDL2 keycode.
+   ASCII printable and common control codes are unchanged.
+   Special keys (arrows, F-keys, modifiers, keypad, etc.) use the
+   SDLK_SCANCODE_MASK-based values from SDL2. */
+#if SDL2
+static int sdl1_to_sdl2_keycode(int ksym)
+{
+	if ((ksym >= 32 && ksym <= 126)
+	 || ksym == '\b' || ksym == '\t' || ksym == '\r' || ksym == '\033' || ksym == '\177')
+		return ksym;
+	switch (ksym) {
+		case 256: return SDLK_KP_0;
+		case 257: return SDLK_KP_1;
+		case 258: return SDLK_KP_2;
+		case 259: return SDLK_KP_3;
+		case 260: return SDLK_KP_4;
+		case 261: return SDLK_KP_5;
+		case 262: return SDLK_KP_6;
+		case 263: return SDLK_KP_7;
+		case 264: return SDLK_KP_8;
+		case 265: return SDLK_KP_9;
+		case 266: return SDLK_KP_PERIOD;
+		case 267: return SDLK_KP_DIVIDE;
+		case 268: return SDLK_KP_MULTIPLY;
+		case 269: return SDLK_KP_MINUS;
+		case 270: return SDLK_KP_PLUS;
+		case 271: return SDLK_KP_ENTER;
+		case 272: return SDLK_KP_EQUALS;
+		case 273: return SDLK_UP;
+		case 274: return SDLK_DOWN;
+		case 275: return SDLK_RIGHT;
+		case 276: return SDLK_LEFT;
+		case 277: return SDLK_INSERT;
+		case 278: return SDLK_HOME;
+		case 279: return SDLK_END;
+		case 280: return SDLK_PAGEUP;
+		case 281: return SDLK_PAGEDOWN;
+		case 282: return SDLK_F1;
+		case 283: return SDLK_F2;
+		case 284: return SDLK_F3;
+		case 285: return SDLK_F4;
+		case 286: return SDLK_F5;
+		case 287: return SDLK_F6;
+		case 288: return SDLK_F7;
+		case 289: return SDLK_F8;
+		case 290: return SDLK_F9;
+		case 291: return SDLK_F10;
+		case 292: return SDLK_F11;
+		case 293: return SDLK_F12;
+		case 294: return SDLK_F13;
+		case 295: return SDLK_F14;
+		case 296: return SDLK_F15;
+		case 300: return SDLK_NUMLOCKCLEAR;
+		case 301: return SDLK_CAPSLOCK;
+		case 302: return SDLK_SCROLLLOCK;
+		case 303: return SDLK_RSHIFT;
+		case 304: return SDLK_LSHIFT;
+		case 305: return SDLK_RCTRL;
+		case 306: return SDLK_LCTRL;
+		case 307: return SDLK_RALT;
+		case 308: return SDLK_LALT;
+		case 311: return SDLK_LGUI;
+		case 312: return SDLK_RGUI;
+		case 315: return SDLK_HELP;
+		case 316: return SDLK_PRINTSCREEN;
+		case 317: return SDLK_SYSREQ;
+		case 318: return SDLK_STOP;
+		case 319: return SDLK_MENU;
+		case 320: return SDLK_POWER;
+		case 322: return SDLK_UNDO;
+		default: return ksym;
+	}
+}
+#endif
+
 /* For better handling of the PLATFORM_Configure-recognition...
    Takes a keySym as integer-string and fills the value
    into the retval referentially.
@@ -513,6 +588,31 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		reset_real_js_configs();
 		was_config_initialized=TRUE;
 	}
+
+#if SDL2
+	/* Accept old SDL1 config keys (SDL_JOY_0_LEFT=276 etc.) and convert
+	   keycode values to SDL2 equivalents.  Rewrites the option prefix to
+	   SDL2_ and recurses to hit the main if-else chain below. */
+	if (strncmp(option, "SDL_", 4) == 0) {
+		char new_opt[256];
+		const char *suffix = option + 4;
+		snprintf(new_opt, sizeof(new_opt), "SDL2_%s", suffix);
+		/* Keys that store a keycode value need numeric conversion. */
+		if (strstr(suffix, "_LEFT") != NULL || strstr(suffix, "_RIGHT") != NULL
+		 || strstr(suffix, "_UP") != NULL || strstr(suffix, "_DOWN") != NULL
+		 || strstr(suffix, "_TRIGGER") != NULL || strstr(suffix, "_KEY") != NULL) {
+			int old_val = Util_sscandec(parameters);
+			if (old_val > 0) {
+				char new_params[32];
+				snprintf(new_params, sizeof(new_params), "%d", sdl1_to_sdl2_keycode(old_val));
+				return SDL_INPUT_ReadConfig(new_opt, new_params);
+			}
+			return FALSE;
+		}
+		/* Non-keycode keys (e.g. JOY_0_ENABLED) pass through unchanged. */
+		return SDL_INPUT_ReadConfig(new_opt, parameters);
+	}
+#endif
 
 	if (strcmp(option, KEY_SDL"JOY_PORT_0_MODE") == 0) {
 		joy_port_mode[0] = Util_sscandec(parameters);
