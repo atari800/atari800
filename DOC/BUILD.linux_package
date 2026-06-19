@@ -83,10 +83,7 @@ The debian rules file 'atari800/debian/rules' contains the following command
 (split over two lines):
 
 	./configure \
-		 --with-video=sdl --with-sound=sdl
-
-You don't need to change this if your are building the stock SDL version.
-Otherwise edit the second line to choose your options
+		 --with-video=sdl2 --with-sound=sdl2
 
 BUILD THE PACKAGE
 =================
@@ -99,10 +96,10 @@ Look out for warning and error messages. Warnings can usually be ignored,
 but you will have to investigate and correct any errors.
 
 If you receive messages about missing dependencies, install them and run
-the command again.  For example if libsdl1.2debian is missing, install it with
+the command again.  For example if libsdl2-2.0 is missing, install it with
 the command:
 
-    sudo apt-get install libsdl1.2debian
+    sudo apt-get install libsdl2-2.0
 
 The dpkg-buildpackage command creates three files and places them in the
 parent of the atari800 directory.  They will have names like these:
