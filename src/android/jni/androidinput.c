@@ -489,6 +489,11 @@ void Android_KeyEvent(int k, int s)
 void Android_JoystickEvent(int port, int dir_bits, int trig)
 {
 	Android_PortStatus = (Android_PortStatus & ~(0x0F << (port * 4))) | ((dir_bits & 0x0F) << (port * 4));
+	Android_JoystickFireEvent(port, 0, trig);
+}
+
+void Android_JoystickFireEvent(int port, int index, int trig)
+{
 	Android_TrigStatus = (Android_TrigStatus & ~(1 << port)) | ((trig & 1) << port);
 }
 

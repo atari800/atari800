@@ -335,7 +335,7 @@ static void JNICALL NativeJoystick(JNIEnv *env, jobject this, int port, int dir_
 
 static void JNICALL NativeJoystickFire(JNIEnv *env, jobject this, int port, int index, int state)
 {
-	Android_JoystickEvent(port, INPUT_STICK_CENTRE, state);
+	Android_JoystickFireEvent(port, index, state);
 }
 
 static void JNICALL NativePrefGfx(JNIEnv *env, jobject this, int aspect, jboolean bilinear,
