@@ -1,10 +1,9 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Atari800
-Comment=Atari Emulator
+Comment=Atari 8-bit Computer and 5200 Console Emulator
 Exec=atari800
 Icon=atari800
 Terminal=false
 Type=Application
-Categories=Game
+Categories=Emulator;Game;
 Keywords=atari800;Atari;Emulator;
