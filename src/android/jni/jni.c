@@ -328,9 +328,9 @@ static int JNICALL NativeTouch(JNIEnv *env, jobject this, int x1, int y1, int s1
 	return Android_TouchEvent(x1, y1, s1, x2, y2, s2);
 }
 
-static void JNICALL NativeJoystick(JNIEnv *env, jobject this, int port, int dir_bits, int trig)
+static void JNICALL NativeJoystickAxes(JNIEnv *env, jobject this, int port, int dir_bits)
 {
-	Android_JoystickEvent(port, dir_bits, trig);
+	Android_JoystickAxesEvent(port, dir_bits);
 }
 
 static void JNICALL NativeJoystickFire(JNIEnv *env, jobject this, int port, int index, int state)
@@ -591,7 +591,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
 		{ "NativeKey",				"(II)V",							NativeKey			  },
-		{ "NativeJoystick",			"(III)V",							NativeJoystick		  },
+		{ "NativeJoystickAxes",		"(II)V",							NativeJoystickAxes	  },
 		{ "NativeJoystickFire",		"(III)V",							NativeJoystickFire	  },
 	};
 	JNINativeMethod snd_methods[] = {

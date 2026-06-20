@@ -87,6 +87,7 @@ public final class A800view extends GLSurfaceView
 	private TouchFactory _touchHandler = null;
 	private Toast _toastquit;
 	private Integer _xkey;
+	private int[] _lastTrigState = {1, 1, 1, 1};
 
 	public A800view(Context context) {
 		super(context);
@@ -210,9 +211,14 @@ public final class A800view extends GLSurfaceView
 		if (axisX >  0.5f) dir &= ~0x08; // right (bit 3)
 		if (axisY < -0.5f) dir &= ~0x01; // up    (bit 0)
 		if (axisY >  0.5f) dir &= ~0x02; // down  (bit 1)
-		float trig = Math.max(ev.getAxisValue(MotionEvent.AXIS_LTRIGGER),
-		                      ev.getAxisValue(MotionEvent.AXIS_RTRIGGER));
-		NativeJoystick(port, dir, trig > 0.5f ? 0 : 1);
+		float ltrigger = ev.getAxisValue(MotionEvent.AXIS_LTRIGGER);
+		float rtrigger = ev.getAxisValue(MotionEvent.AXIS_RTRIGGER);
+		int newTrig = (Math.max(ltrigger, rtrigger) > 0.5f) ? 0 : 1;
+		if (newTrig != _lastTrigState[port]) {
+			_lastTrigState[port] = newTrig;
+			NativeJoystickFire(port, 0, newTrig);
+		}
+		NativeJoystickAxes(port, dir);
 		return true;
 	}
 
@@ -301,7 +307,7 @@ public final class A800view extends GLSurfaceView
 
 	private native static int NativeTouch(int x1, int y1, int s1, int x2, int y2, int s2);
 	private native void NativeKey(int keycode, int status);
-	private native void NativeJoystick(int port, int dir, int trig);
+	private native void NativeJoystickAxes(int port, int dir);
 	private native void NativeJoystickFire(int port, int index, int state);
 
 	public static final SparseArray<Integer> XLATKEYS = new SparseArray<Integer>(32);

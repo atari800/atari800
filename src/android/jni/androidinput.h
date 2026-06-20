@@ -107,7 +107,7 @@ extern UBYTE Android_ReversePddle;
 
 int  Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2);
 void Android_KeyEvent(int k, int s);
-void Android_JoystickEvent(int port, int dir_bits, int trig);
+void Android_JoystickAxesEvent(int port, int dir_bits);
 void Android_JoystickFireEvent(int port, int index, int trig);
 void Input_Initialize(void);
 void Keyboard_Enqueue(int key);
