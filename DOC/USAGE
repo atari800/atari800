@@ -559,7 +559,7 @@ RSUPER     CapsToggle (+Shift = CapsLock)
 
 LAlt+F     Switch fullscreen
 LAlt+G     Switch visible horizontal area. See -horiz-area.
-
+LAlt+J     Open Controller Configuration
 LAlt+M     Grab mouse (prevents mouse pointer from leaving the window)
 
 LAlt+LShift+1     Decrease tint (also called hue)

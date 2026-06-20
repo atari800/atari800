@@ -4356,7 +4356,7 @@ void UI_Run(void)
 		UI_MENU_SUBMENU(UI_MENU_DISPLAY, "Display Settings"),
 #endif
 #ifndef USE_CURSES
-		UI_MENU_SUBMENU(UI_MENU_CONTROLLER, "Controller Configuration"),
+		UI_MENU_SUBMENU_ACCEL(UI_MENU_CONTROLLER, "Controller Configuration", "Alt+J"),
 #endif
 		UI_MENU_SUBMENU(UI_MENU_SETTINGS, "Emulator Configuration"),
 		UI_MENU_FILESEL_ACCEL(UI_MENU_SAVESTATE, "Save State", "Alt+S"),

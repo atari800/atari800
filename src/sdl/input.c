@@ -1195,7 +1195,7 @@ int PLATFORM_Keyboard(void)
 				VIDEOMODE_ToggleHorizontalArea();
 				break;
 			case SDLK_j:
-				key_pressed = 0;
+				UI_alt_function = UI_MENU_CONTROLLER;
 				break;
 			case SDLK_r:
 				UI_alt_function = UI_MENU_RUN;

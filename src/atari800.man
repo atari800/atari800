@@ -1,4 +1,4 @@
-.TH ATARI800 1 "2023-12-29" "Atari800 6.0.0"
+.TH ATARI800 1 "2026-06-20" "Atari800 6.1.0"
 
 .SH NAME
 atari800 \- emulator of Atari 8-bit computers and the 5200 console
@@ -1623,6 +1623,9 @@ Switch fullscreen/windowed display.
 .TP
 .BR LAlt + G
 Switch visible horizontal area. See \fB\-horiz\-area\fR.
+.TP
+.BR LAlt + J
+Open Controller Configuration (joysticks, mice, paddles).
 .TP
 .BR LAlt + M
 Grab mouse (prevents mouse pointer from leaving the window)
