@@ -271,6 +271,11 @@
 			android:summary="@string/pref_koalapad_sum"
 			android:disableDependentsState="true"
 			android:defaultValue="false"/>
+		<CheckBoxPreference
+			android:key="multijoy"
+			android:title="@string/pref_multijoy"
+			android:summary="@string/pref_multijoy_sum"
+			android:defaultValue="false"/>
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/preftitle_sound">

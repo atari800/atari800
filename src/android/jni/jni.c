@@ -512,6 +512,11 @@ static void JNICALL NativePrefKbd(JNIEnv *env, jobject this, jboolean a800fns)
 	Android_A800Fns = a800fns;
 }
 
+static void JNICALL NativePrefMultijoy(JNIEnv *env, jobject this, jboolean enable)
+{
+	INPUT_joy_multijoy = enable;
+}
+
 static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path)
 {
 	const char *utf = NULL;
@@ -574,6 +579,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 		{ "NativePrefJoy",			"(ZIIZIIZIIIZZ)V",					NativePrefJoy		  },
 		{ "NativePrefSound",		"(IIZZZ)V",							NativePrefSound		  },
 		{ "NativePrefKbd",			"(Z)V",								NativePrefKbd		  },
+		{ "NativePrefMultijoy",		"(Z)V",								NativePrefMultijoy	  },
 		{ "NativeSetROMPath",		"(Ljava/lang/String;)Z",			NativeSetROMPath	  },
 		{ "NativeGetJoypos",		"()Ljava/lang/String;",				NativeGetJoypos		  },
 		{ "NativeInit",				"()Ljava/lang/String;",				NativeInit			  },
