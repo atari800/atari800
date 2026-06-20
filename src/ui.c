@@ -2270,8 +2270,7 @@ static void AtariSettings(void)
 		UI_MENU_SUBMENU(13, "System ROM settings"),
 		UI_MENU_SUBMENU(14, "Configure directories"),
 #ifndef DREAMCAST
-		UI_MENU_ACTION(15, "Save configuration file"),
-		UI_MENU_CHECK(16, "Save configuration on exit:"),
+		UI_MENU_CHECK(16, "Auto-save configuration on exit:"),
 #endif
 		UI_MENU_END
 	};
@@ -2341,9 +2340,6 @@ static void AtariSettings(void)
 			ConfigureDirectories();
 			break;
 #ifndef DREAMCAST
-		case 15:
-			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
-			break;
 		case 16:
 			CFG_save_on_exit = !CFG_save_on_exit;
 			break;
@@ -4367,14 +4363,12 @@ void UI_Run(void)
 		UI_MENU_FILESEL_ACCEL(UI_MENU_LOADSTATE, "Load State", "Alt+L"),
 #if SCREENSHOTS
 #ifdef HAVE_LIBPNG
-		UI_MENU_FILESEL_ACCEL(UI_MENU_PCX, "Save Screenshot", "F10"),
-		/* there isn't enough space for "PNG/PCX Interlaced Screenshot Shift+F10" */
-		UI_MENU_FILESEL_ACCEL(UI_MENU_PCXI, "Save Interlaced Screenshot", "Shift+F10"),
+		UI_MENU_FILESEL_ACCEL(UI_MENU_PCX, "Screenshot (+Shift = interlaced)", "F10"),
 #else
-		UI_MENU_FILESEL_ACCEL(UI_MENU_PCX, "PCX Screenshot", "F10"),
-		UI_MENU_FILESEL_ACCEL(UI_MENU_PCXI, "PCX Interlaced Screenshot", "Shift+F10"),
+		UI_MENU_FILESEL_ACCEL(UI_MENU_PCX, "PCX Screenshot (+Shift = interlaced)", "F10"),
 #endif
 #endif
+		UI_MENU_ACTION(UI_MENU_SAVE_CONFIG, "Save Configuration"),
 		UI_MENU_ACTION_ACCEL(UI_MENU_BACK, "Back to Emulated Atari", "Esc"),
 		UI_MENU_ACTION_ACCEL(UI_MENU_RESETW, "Reset (Warm Start)", "F5"),
 		UI_MENU_ACTION_ACCEL(UI_MENU_RESETC, "Reboot (Cold Start)", "Shift+F5"),
@@ -4487,6 +4481,9 @@ void UI_Run(void)
 			break;
 		case UI_MENU_PCXI:
 			Screenshot(TRUE);
+			break;
+		case UI_MENU_SAVE_CONFIG:
+			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
 			break;
 #endif
 #endif

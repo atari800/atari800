@@ -84,7 +84,7 @@ int GetRawKey(void);
 #define UI_MENU_WINDOWS	         20
 #define UI_MENU_QUICKSAVESTATE   21
 #define UI_MENU_QUICKLOADSTATE   22
-
+#define UI_MENU_SAVE_CONFIG      23
 
 #define UI_MENU_VIDEO_RECORDING  24
 
