@@ -1,3 +1,14 @@
+atari800 (6.1.0) unstable; urgency=medium
+
+  * New upstream version 6.1.0
+  * Alt+J opens Controller Configuration directly
+  * Save Configuration File moved to root menu
+  * Screenshot entries consolidated
+  * Packages released via GitHub, Jun 2026:
+  * https://github.com/atari800/atari800/releases
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 20 Jun 2026 17:03:52 +0000
+
 atari800 (6.0.0) unstable; urgency=medium
 
   * New upstream version 6.0.0

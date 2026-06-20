@@ -1,3 +1,16 @@
+Version 6.1.0 (2026/06/20)
+==========================
+
+ New features:
+
+  * Alt+J opens Controller Configuration directly
+  * Save Configuration File moved to root menu
+  * Screenshot entries consolidated (Shift+F10 hint in label)
+
+Platform specific:
+
+  * SDL: Alt+J hotkey added
+
 Version 6.0.0 (2026/06/19)
 ==========================
 

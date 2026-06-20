@@ -1,4 +1,4 @@
-Atari800 emulator version 6.0.0
+Atari800 emulator version 6.1.0
 -------------------------------
 
 This is a free and portable Atari 8-bit computer and 5200 console emulator,
