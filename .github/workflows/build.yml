@@ -31,8 +31,130 @@ jobs:
     - name: Archive Atari800 binary
       uses: actions/upload-artifact@v7
       with:
-       name: atari800-linux-amd64
-       path: src/atari800
+        name: atari800-linux-amd64
+        path: src/atari800
+
+    - name: Build AppImage
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          V=${{ inputs.version }}
+        else
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+        fi
+        echo "VERSION=$V" >> $GITHUB_ENV
+
+        APPDIR="/tmp/Atari800-${V}.AppDir"
+        mkdir -p "$APPDIR/usr/bin" \
+                 "$APPDIR/usr/share/applications" \
+                 "$APPDIR/usr/share/icons/hicolor/128x128/apps" \
+                 "$APPDIR/usr/share/icons/hicolor/scalable/apps"
+
+        cp src/atari800 "$APPDIR/usr/bin/"
+        cp debian/atari800.desktop "$APPDIR/usr/share/applications/"
+        cp data/atari1.png "$APPDIR/usr/share/icons/hicolor/128x128/apps/atari800.png"
+        cp data/atari2.svg "$APPDIR/usr/share/icons/hicolor/scalable/apps/atari800.svg"
+
+        ln -s usr/share/applications/atari800.desktop "$APPDIR/"
+        ln -s usr/share/icons/hicolor/128x128/apps/atari800.png "$APPDIR/atari800.png"
+
+        echo '#!/bin/sh' > "$APPDIR/AppRun"
+        echo 'HERE="$(dirname "$(readlink -f "$0")")"' >> "$APPDIR/AppRun"
+        echo 'exec "$HERE/usr/bin/atari800" "$@"' >> "$APPDIR/AppRun"
+        chmod +x "$APPDIR/AppRun"
+
+        curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" \
+          -o /tmp/linuxdeploy
+        chmod +x /tmp/linuxdeploy
+        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir "$APPDIR" --output appimage
+
+        if [ -f "/tmp/Atari800-x86_64.AppImage" ]; then
+          mv "/tmp/Atari800-x86_64.AppImage" "Atari800-${V}-x86_64.AppImage"
+        else
+          curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
+            -o /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool "$APPDIR" "Atari800-${V}-x86_64.AppImage"
+        fi
+
+    - name: Upload AppImage
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-linux-appimage
+        path: Atari800-*.AppImage
+
+  build-linux-i386:
+    name: Build on Linux i386
+    runs-on: ubuntu-24.04
+    container:
+      image: i386/ubuntu:24.04
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: install depends
+      run: |
+        apt-get update
+        apt-get install -y build-essential autoconf automake libtool \
+          libsdl2-dev libmp3lame-dev libreadline-dev curl ca-certificates
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
+    - name: building
+      run: make -j$(nproc)
+    - name: Build AppImage
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          V=${{ inputs.version }}
+        else
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+        fi
+        echo "VERSION=$V" >> $GITHUB_ENV
+
+        APPDIR="/tmp/Atari800-${V}.AppDir"
+        mkdir -p "$APPDIR/usr/bin" \
+                 "$APPDIR/usr/share/applications" \
+                 "$APPDIR/usr/share/icons/hicolor/128x128/apps" \
+                 "$APPDIR/usr/share/icons/hicolor/scalable/apps"
+
+        cp src/atari800 "$APPDIR/usr/bin/"
+        cp debian/atari800.desktop "$APPDIR/usr/share/applications/"
+        cp data/atari1.png "$APPDIR/usr/share/icons/hicolor/128x128/apps/atari800.png"
+        cp data/atari2.svg "$APPDIR/usr/share/icons/hicolor/scalable/apps/atari800.svg"
+
+        ln -s usr/share/applications/atari800.desktop "$APPDIR/"
+        ln -s usr/share/icons/hicolor/128x128/apps/atari800.png "$APPDIR/atari800.png"
+
+        echo '#!/bin/sh' > "$APPDIR/AppRun"
+        echo 'HERE="$(dirname "$(readlink -f "$0")")"' >> "$APPDIR/AppRun"
+        echo 'exec "$HERE/usr/bin/atari800" "$@"' >> "$APPDIR/AppRun"
+        chmod +x "$APPDIR/AppRun"
+
+        curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage" \
+          -o /tmp/linuxdeploy
+        chmod +x /tmp/linuxdeploy
+        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir "$APPDIR" --output appimage
+
+        APPIMAGE_FILE=$(ls /tmp/Atari800-*.AppImage 2>/dev/null | head -1)
+        if [ -n "$APPIMAGE_FILE" ]; then
+          mv "$APPIMAGE_FILE" "Atari800-${V}-i386.AppImage"
+        else
+          curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i386.AppImage" \
+            -o /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool "$APPDIR" "Atari800-${V}-i386.AppImage"
+        fi
+
+    - name: Upload AppImage
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-linux-i386-appimage
+        path: Atari800-*.AppImage
 
   build-macos:
     name: Build on MacOS M1 (arm64)
