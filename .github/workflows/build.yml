@@ -72,16 +72,29 @@ jobs:
         curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" \
           -o /tmp/linuxdeploy
         chmod +x /tmp/linuxdeploy
-        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir "$APPDIR" --output appimage
+        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir "$APPDIR"
 
-        if [ -f "Atari800-x86_64.AppImage" ]; then
-          mv "Atari800-x86_64.AppImage" "Atari800-${V}-x86_64.AppImage"
-        else
-          curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
-            -o /tmp/appimagetool
-          chmod +x /tmp/appimagetool
-          APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool "$APPDIR" "Atari800-${V}-x86_64.AppImage"
-        fi
+        # Find and bundle any missing transitive dependencies
+        for f in "$APPDIR/usr/bin/atari800" $(find "$APPDIR/usr/lib" -name '*.so*' -type f 2>/dev/null); do
+          ldd "$f" 2>/dev/null | grep -E '=> /' | awk '{print $3}' | while read -r dep; do
+            depname=$(basename "$dep")
+            if [ ! -f "$APPDIR/usr/lib/$depname" ] && [ ! -L "$APPDIR/usr/lib/$depname" ]; then
+              case "$depname" in
+                libc.so.*|libdl.so.*|libm.so.*|libpthread.so.*|librt.so.*|libresolv.so.*|libutil.so.*|libnss*|libnsl.so.*|libcrypt.so.*|ld-linux*)
+                  ;;
+                *)
+                  cp -L "$dep" "$APPDIR/usr/lib/"
+                  echo "Bundled missing dep: $depname"
+                  ;;
+              esac
+            fi
+          done
+        done
+
+        curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
+          -o /tmp/appimagetool
+        chmod +x /tmp/appimagetool
+        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool "$APPDIR" "Atari800-${V}-x86_64.AppImage"
 
     - name: Upload AppImage
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
@@ -148,17 +161,29 @@ jobs:
             curl -sL \"https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-i386.AppImage\" \
               -o /tmp/linuxdeploy
             chmod +x /tmp/linuxdeploy
-            APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir \"\$APPDIR\" --output appimage
+            APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir \"\$APPDIR\"
 
-            APPIMAGE_FILE=\$(ls Atari800-*.AppImage 2>/dev/null | head -1)
-            if [ -n \"\$APPIMAGE_FILE\" ]; then
-              mv \"\$APPIMAGE_FILE\" \"Atari800-\${V}-i386.AppImage\"
-            else
-              curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage\" \
-                -o /tmp/appimagetool
-              chmod +x /tmp/appimagetool
-              APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
-            fi
+            # Find and bundle any missing transitive dependencies
+            for f in \"\$APPDIR/usr/bin/atari800\" \$(find \"\$APPDIR/usr/lib\" -name '*.so*' -type f 2>/dev/null); do
+              ldd \"\$f\" 2>/dev/null | grep -E '=> /' | awk '{print \$3}' | while read -r dep; do
+                depname=\$(basename \"\$dep\")
+                if [ ! -f \"\$APPDIR/usr/lib/\$depname\" ] && [ ! -L \"\$APPDIR/usr/lib/\$depname\" ]; then
+                  case \"\$depname\" in
+                    libc.so.*|libdl.so.*|libm.so.*|libpthread.so.*|librt.so.*|libresolv.so.*|libutil.so.*|libnss*|libnsl.so.*|libcrypt.so.*|ld-linux*)
+                      ;;
+                    *)
+                      cp -L \"\$dep\" \"\$APPDIR/usr/lib/\"
+                      echo \"Bundled missing dep: \$depname\"
+                      ;;
+                  esac
+                fi
+              done
+            done
+
+            curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage\" \
+              -o /tmp/appimagetool
+            chmod +x /tmp/appimagetool
+            APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
           "
 
     - name: Upload AppImage
