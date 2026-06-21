@@ -82,12 +82,13 @@ jobs:
             mingw-w64-x86_64-readline
             mingw-w64-x86_64-libpng
             mingw-w64-x86_64-nsis
+            mingw-w64-x86_64-lame
 
       - name: Run autoreconf
         run: autoreconf -fiv
 
       - name: Configure project
-        run: ./configure --with-video=sdl2 --with-sound=sdl2
+        run: ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
 
       - name: Build project
         run: make -j$(nproc)
@@ -174,12 +175,13 @@ jobs:
             mingw-w64-i686-libpng
             mingw-w64-i686-nsis
             mingw-w64-i686-ntldd
+            mingw-w64-i686-lame
 
       - name: Run autoreconf
         run: autoreconf -fiv
 
       - name: Configure project
-        run: ./configure --with-video=sdl2 --with-sound=sdl2
+        run: ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
 
       - name: Build project
         run: make -j$(nproc)
