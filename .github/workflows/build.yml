@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ "master" ]
+    tags:
+      - 'ATARI800_*_*_*'
   pull_request:
 
 jobs:
@@ -74,6 +76,7 @@ jobs:
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-readline
             mingw-w64-x86_64-libpng
+            mingw-w64-x86_64-nsis
 
       - name: Run autoreconf
         run: autoreconf -fiv
@@ -91,3 +94,42 @@ jobs:
             exit 1
           fi
           echo "Build succeeded"
+
+      - name: Archive plain binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: atari800-windows-msys2
+          path: src/atari800.exe
+
+      - name: Stage files and build installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        shell: msys2 {0}
+        run: |
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+          mkdir -p pkg/act pkg/doc
+          cp src/atari800.exe pkg/
+          ldd src/atari800.exe | grep '\/mingw64\/bin\/' | \
+            awk '{print $3}' | xargs -I{} cp {} pkg/
+          cp README.TXT pkg/
+          cp act/*.act pkg/act/
+          cp COPYING pkg/doc/COPYING.txt
+          cp DOC/INSTALL pkg/doc/INSTALL.txt
+          cp DOC/NEWS pkg/doc/NEWS.txt
+          cp DOC/USAGE pkg/doc/USAGE.txt
+          makensis -DVERSION=$V atari800.nsi
+
+      - name: Verify installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        shell: msys2 {0}
+        run: |
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+          test -f atari800-$V-win64.exe && echo "Installer OK: atari800-$V-win64.exe"
+
+      - name: Archive installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        uses: actions/upload-artifact@v4
+        with:
+          name: atari800-windows-installer
+          path: atari800-*-win64.exe
