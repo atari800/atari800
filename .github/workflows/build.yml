@@ -18,16 +18,14 @@ jobs:
     name: Build on Linux amd64
     runs-on: ubuntu-24.04
     container:
-      image: ubuntu:20.04
+      image: debian:bullseye
 
     steps:
     - uses: actions/checkout@v7
     - name: install depends
       run: |
-        sed -i -E 's/(archive|ports)\.ubuntu\.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
-        sed -i '/^deb /s/ main/ main universe/' /etc/apt/sources.list
         apt-get update
-        apt-get install -y build-essential autoconf automake libtool \
+        apt-get install -y build-essential autoconf automake libtool pkg-config \
           libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev curl ca-certificates
     - name: autogen
       run: ./autogen.sh
@@ -96,16 +94,15 @@ jobs:
     name: Build on Linux i386
     runs-on: ubuntu-24.04
     container:
-      image: i386/ubuntu:20.04
+      image: debian:bullseye
+      options: --platform=linux/386
 
     steps:
     - uses: actions/checkout@v7
     - name: install depends
       run: |
-        sed -i -E 's/(archive|ports)\.ubuntu\.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
-        sed -i '/^deb /s/ main/ main universe/' /etc/apt/sources.list
         apt-get update
-        apt-get install -y build-essential autoconf automake libtool \
+        apt-get install -y build-essential autoconf automake libtool pkg-config \
           libsdl2-dev libmp3lame-dev libreadline-dev curl ca-certificates
     - name: autogen
       run: ./autogen.sh
