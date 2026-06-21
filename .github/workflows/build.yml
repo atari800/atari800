@@ -169,13 +169,89 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: install depends
-      run:  brew install sdl2 automake readline
+      run:  brew install sdl2 automake readline dylibbundler
     - name: autogen
       run: ./autogen.sh
     - name: configure
       run: ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
     - name: building
       run: make -j4
+    - name: Package .dmg
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          V=${{ inputs.version }}
+        else
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+        fi
+        echo "VERSION=$V" >> $GITHUB_ENV
+
+        APP="Atari800.app"
+        mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/lib"
+
+        cp src/atari800 "$APP/Contents/MacOS/"
+
+        dylibbundler -od -b -x "$APP/Contents/MacOS/atari800" \
+          -d "$APP/Contents/lib/" -p @executable_path/../lib/
+
+        mkdir -p Atari800.iconset
+        for size in 16 32 48 128 256 512; do
+          sips -z $size $size data/atari1.png \
+            --out "Atari800.iconset/icon_${size}x${size}.png" >/dev/null 2>&1
+        done
+        sips -z 32 32 data/atari1.png \
+          --out Atari800.iconset/icon_16x16@2x.png >/dev/null 2>&1
+        sips -z 64 64 data/atari1.png \
+          --out Atari800.iconset/icon_32x32@2x.png >/dev/null 2>&1
+        sips -z 256 256 data/atari1.png \
+          --out Atari800.iconset/icon_128x128@2x.png >/dev/null 2>&1
+        sips -z 512 512 data/atari1.png \
+          --out Atari800.iconset/icon_256x256@2x.png >/dev/null 2>&1
+        iconutil -c icns Atari800.iconset
+        cp Atari800.icns "$APP/Contents/Resources/"
+
+        {
+          echo '<?xml version="1.0" encoding="UTF-8"?>'
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"'
+          echo '  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+          echo '<plist version="1.0">'
+          echo '<dict>'
+          echo '  <key>CFBundleDevelopmentRegion</key>'
+          echo '  <string>English</string>'
+          echo '  <key>CFBundleExecutable</key>'
+          echo '  <string>atari800</string>'
+          echo '  <key>CFBundleIconFile</key>'
+          echo '  <string>Atari800</string>'
+          echo '  <key>CFBundleIdentifier</key>'
+          echo '  <string>org.atari800.atari800</string>'
+          echo '  <key>CFBundleInfoDictionaryVersion</key>'
+          echo '  <string>6.0</string>'
+          echo '  <key>CFBundleName</key>'
+          echo '  <string>Atari800</string>'
+          echo '  <key>CFBundlePackageType</key>'
+          echo '  <string>APPL</string>'
+          echo '  <key>CFBundleShortVersionString</key>'
+          echo "  <string>${V}</string>"
+          echo '  <key>CFBundleVersion</key>'
+          echo "  <string>${V}</string>"
+          echo '  <key>NSHighResolutionCapable</key>'
+          echo '  <true/>'
+          echo '</dict>'
+          echo '</plist>'
+        } > "$APP/Contents/Info.plist"
+
+        codesign --deep --force --verify=strict --sign - "$APP" 2>/dev/null || true
+
+        hdiutil create -volname "Atari800 ${V}" -srcfolder "$APP" \
+          -ov -format UDZO "Atari800-${V}-macos-arm64.dmg"
+
+    - name: Upload DMG
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-macos-arm64-dmg
+        path: Atari800-*.dmg
     - name: Archive Atari800 binary
       uses: actions/upload-artifact@v7
       with:
