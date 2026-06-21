@@ -12,6 +12,9 @@ OutFile "atari800-${VERSION}-${PLATFORM}.exe"
 InstallDir "$PROGRAMFILES\Atari800"
 InstallDirRegKey HKLM "Software\Atari800" ""
 
+!define MUI_ICON "data\atari800.ico"
+!define MUI_UNICON "data\atari800.ico"
+
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "pkg\doc\COPYING.txt"
 !insertmacro MUI_PAGE_DIRECTORY

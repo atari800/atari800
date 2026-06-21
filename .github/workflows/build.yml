@@ -124,6 +124,7 @@ jobs:
             awk '{print $3}' | xargs -I{} cp {} pkg/
           cp README.TXT pkg/
           cp act/*.act pkg/act/
+          cp data/atari800.ico pkg/
           cp COPYING pkg/doc/COPYING.txt
           cp DOC/INSTALL pkg/doc/INSTALL.txt
           cp DOC/NEWS pkg/doc/NEWS.txt
@@ -174,7 +175,6 @@ jobs:
             mingw-w64-i686-readline
             mingw-w64-i686-libpng
             mingw-w64-i686-nsis
-            mingw-w64-i686-ntldd
             mingw-w64-i686-lame
 
       - name: Run autoreconf
@@ -208,10 +208,13 @@ jobs:
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
           cp src/atari800.exe pkg/
-          ntldd src/atari800.exe | grep '\/mingw32\/bin\/' | \
-            awk '{print $3}' | xargs -I{} cp {} pkg/
+          for dll in SDL2.dll libmp3lame-0.dll libpng16-16.dll libreadline8.dll libtermcap-0.dll libwinpthread-1.dll zlib1.dll; do
+            find /mingw32/bin -name "$dll" -exec cp {} pkg/ \; 2>/dev/null || true
+          done
+          find /mingw32/bin -name "libgcc_s_dw2-1.dll" -exec cp {} pkg/ \; 2>/dev/null || true
           cp README.TXT pkg/
           cp act/*.act pkg/act/
+          cp data/atari800.ico pkg/
           cp COPYING pkg/doc/COPYING.txt
           cp DOC/INSTALL pkg/doc/INSTALL.txt
           cp DOC/NEWS pkg/doc/NEWS.txt
