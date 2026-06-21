@@ -173,6 +173,7 @@ jobs:
             mingw-w64-i686-readline
             mingw-w64-i686-libpng
             mingw-w64-i686-nsis
+            mingw-w64-i686-ntldd
 
       - name: Run autoreconf
         run: autoreconf -fiv
@@ -205,7 +206,7 @@ jobs:
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
           cp src/atari800.exe pkg/
-          ldd src/atari800.exe | grep '\/mingw32\/bin\/' | \
+          ntldd src/atari800.exe | grep '\/mingw32\/bin\/' | \
             awk '{print $3}' | xargs -I{} cp {} pkg/
           cp README.TXT pkg/
           cp act/*.act pkg/act/
