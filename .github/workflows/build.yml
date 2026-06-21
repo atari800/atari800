@@ -74,8 +74,8 @@ jobs:
         chmod +x /tmp/linuxdeploy
         APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir "$APPDIR" --output appimage
 
-        if [ -f "/tmp/Atari800-x86_64.AppImage" ]; then
-          mv "/tmp/Atari800-x86_64.AppImage" "Atari800-${V}-x86_64.AppImage"
+        if [ -f "Atari800-x86_64.AppImage" ]; then
+          mv "Atari800-x86_64.AppImage" "Atari800-${V}-x86_64.AppImage"
         else
           curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
             -o /tmp/appimagetool
