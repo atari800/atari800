@@ -17,11 +17,14 @@ jobs:
   build-amd64:
     name: Build on Linux amd64
     runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:20.04
 
     steps:
     - uses: actions/checkout@v7
     - name: install depends
-      run: sudo apt update && sudo apt install -y libsdl2-dev libmp3lame-dev libreadline-dev
+      run: apt-get update && apt-get install -y build-essential autoconf automake libtool \
+        libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev curl ca-certificates
     - name: autogen
       run: ./autogen.sh
     - name: configure
@@ -89,7 +92,7 @@ jobs:
     name: Build on Linux i386
     runs-on: ubuntu-24.04
     container:
-      image: i386/ubuntu:24.04
+      image: i386/ubuntu:20.04
 
     steps:
     - uses: actions/checkout@v7
