@@ -2,6 +2,11 @@ name: Build CI
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for installer (e.g. 6.1.0). Empty = skip.'
+        required: false
+        type: string
   push:
     branches: [ "master" ]
     tags:
@@ -102,11 +107,16 @@ jobs:
           path: src/atari800.exe
 
       - name: Stage files and build installer
-        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         shell: msys2 {0}
         run: |
-          V=${GITHUB_REF_NAME#ATARI800_}
-          V=${V//_/.}
+          if [ -n "${{ inputs.version }}" ]; then
+            V=${{ inputs.version }}
+          else
+            V=${GITHUB_REF_NAME#ATARI800_}
+            V=${V//_/.}
+          fi
+          echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
           cp src/atari800.exe pkg/
           ldd src/atari800.exe | grep '\/mingw64\/bin\/' | \
@@ -117,19 +127,108 @@ jobs:
           cp DOC/INSTALL pkg/doc/INSTALL.txt
           cp DOC/NEWS pkg/doc/NEWS.txt
           cp DOC/USAGE pkg/doc/USAGE.txt
-          makensis -DVERSION=$V atari800.nsi
+          makensis -DVERSION=$V -DPLATFORM=win64 atari800.nsi
 
       - name: Verify installer
-        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         shell: msys2 {0}
         run: |
-          V=${GITHUB_REF_NAME#ATARI800_}
-          V=${V//_/.}
+          if [ -n "${{ inputs.version }}" ]; then
+            V=${{ inputs.version }}
+          else
+            V=${GITHUB_REF_NAME#ATARI800_}
+            V=${V//_/.}
+          fi
           test -f atari800-$V-win64.exe && echo "Installer OK: atari800-$V-win64.exe"
 
       - name: Archive installer
-        if: startsWith(github.ref, 'refs/tags/ATARI800_')
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         uses: actions/upload-artifact@v4
         with:
-          name: atari800-windows-installer
+          name: atari800-${{ env.VERSION }}-win64
           path: atari800-*-win64.exe
+
+  build-windows-msys2-32:
+    name: Build on Windows MSYS2 (32-bit)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >-
+            git
+            base-devel
+            mingw-w64-i686-toolchain
+            autoconf automake libtool
+            mingw-w64-i686-SDL2
+            mingw-w64-i686-readline
+            mingw-w64-i686-libpng
+            mingw-w64-i686-nsis
+
+      - name: Run autoreconf
+        run: autoreconf -fiv
+
+      - name: Configure project
+        run: ./configure --with-video=sdl2 --with-sound=sdl2
+
+      - name: Build project
+        run: make -j$(nproc)
+
+      - name: Verify build
+        run: |
+          test -f src/atari800.exe && echo "Build succeeded"
+
+      - name: Archive plain binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: atari800-windows-msys2-32
+          path: src/atari800.exe
+
+      - name: Stage files and build installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            V=${{ inputs.version }}
+          else
+            V=${GITHUB_REF_NAME#ATARI800_}
+            V=${V//_/.}
+          fi
+          echo "VERSION=$V" >> $GITHUB_ENV
+          mkdir -p pkg/act pkg/doc
+          cp src/atari800.exe pkg/
+          ldd src/atari800.exe | grep '\/mingw32\/bin\/' | \
+            awk '{print $3}' | xargs -I{} cp {} pkg/
+          cp README.TXT pkg/
+          cp act/*.act pkg/act/
+          cp COPYING pkg/doc/COPYING.txt
+          cp DOC/INSTALL pkg/doc/INSTALL.txt
+          cp DOC/NEWS pkg/doc/NEWS.txt
+          cp DOC/USAGE pkg/doc/USAGE.txt
+          makensis -DVERSION=$V -DPLATFORM=win32 atari800.nsi
+
+      - name: Verify installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            V=${{ inputs.version }}
+          else
+            V=${GITHUB_REF_NAME#ATARI800_}
+            V=${V//_/.}
+          fi
+          test -f atari800-$V-win32.exe && echo "Installer OK: atari800-$V-win32.exe"
+
+      - name: Archive installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: atari800-${{ env.VERSION }}-win32
+          path: atari800-*-win32.exe

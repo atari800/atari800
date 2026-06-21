@@ -3,10 +3,13 @@
 !ifndef VERSION
   !define VERSION "6.1.0"
 !endif
+!ifndef PLATFORM
+  !define PLATFORM "win64"
+!endif
 
 Name "Atari800 ${VERSION}"
-OutFile "atari800-${VERSION}-win64.exe"
-InstallDir "$PROGRAMFILES64\Atari800"
+OutFile "atari800-${VERSION}-${PLATFORM}.exe"
+InstallDir "$PROGRAMFILES\Atari800"
 InstallDirRegKey HKLM "Software\Atari800" ""
 
 !insertmacro MUI_PAGE_WELCOME
