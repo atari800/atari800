@@ -98,10 +98,19 @@ jobs:
     - uses: actions/checkout@v7
 
     - name: Build and package in 32-bit Debian container
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          V=${{ inputs.version }}
+        else
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=${V//_/.}
+        fi
+
         docker run --platform=linux/386 --rm \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
+          -e V="$V" \
           debian:bullseye \
           bash -c "
             set -e
@@ -111,13 +120,6 @@ jobs:
             ./autogen.sh
             ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
             make -j\$(nproc)
-
-            if [ -n \"${{ inputs.version }}\" ]; then
-              V=\${{ inputs.version }}
-            else
-              V=\${GITHUB_REF_NAME#ATARI800_}
-              V=\${V//_/.}
-            fi
 
             APPDIR=\"/tmp/Atari800-\${V}.AppDir\"
             mkdir -p \"\$APPDIR/usr/bin\" \
@@ -143,14 +145,14 @@ jobs:
             chmod +x /tmp/linuxdeploy
             APPIMAGE_EXTRACT_AND_RUN=1 /tmp/linuxdeploy --appdir \"\$APPDIR\" --output appimage
 
-            APPIMAGE_FILE=\$(ls /tmp/Atari800-*.AppImage 2>/dev/null | head -1)
+            APPIMAGE_FILE=\$(ls Atari800-*.AppImage 2>/dev/null | head -1)
             if [ -n \"\$APPIMAGE_FILE\" ]; then
-              mv \"\$APPIMAGE_FILE\" \"/workspace/Atari800-\${V}-i386.AppImage\"
+              mv \"\$APPIMAGE_FILE\" \"Atari800-\${V}-i386.AppImage\"
             else
-              curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i386.AppImage\" \
+              curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage\" \
                 -o /tmp/appimagetool
               chmod +x /tmp/appimagetool
-              APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool \"\$APPDIR\" \"/workspace/Atari800-\${V}-i386.AppImage\"
+              APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
             fi
           "
 
