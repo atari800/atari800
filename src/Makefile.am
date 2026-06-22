@@ -96,8 +96,11 @@ atari800_SOURCES += sdl/init.c sdl/init.h
 if CONFIGURE_HOST_WIN
 atari800_SOURCES += sdl/SDL_win32_main.c
 atari800_CPPFLAGS += -Dmain=SDL_main
-atari800_SOURCES += atari800_res.rc
+atari800_LDADD += atari800_res.o
 AM_WINDRESFLAGS = -I $(top_srcdir)
+
+atari800_res.o: $(srcdir)/atari800_res.rc
+	$(WINDRES) $(AM_WINDRESFLAGS) -i $< -o $@
 endif
 endif
 
