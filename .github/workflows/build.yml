@@ -354,8 +354,7 @@ jobs:
           cd src
           windres --include-dir .. -i atari800_res.rc -o atari800_res_icon.o
           rm -f atari800.exe
-          LINK_CMD=$(make -n atari800.exe 2>/dev/null | grep 'gcc.*-o atari800' | head -1)
-          $LINK_CMD atari800_res_icon.o
+          make atari800.exe atari800_LDADD="atari800_res_icon.o"
 
       - name: Archive plain binary
         uses: actions/upload-artifact@v7
@@ -459,8 +458,7 @@ jobs:
           cd src
           windres --include-dir .. -i atari800_res.rc -o atari800_res_icon.o
           rm -f atari800.exe
-          LINK_CMD=$(make -n atari800.exe 2>/dev/null | grep 'gcc.*-o atari800' | head -1)
-          $LINK_CMD atari800_res_icon.o
+          make atari800.exe atari800_LDADD="atari800_res_icon.o"
 
       - name: Archive plain binary
         uses: actions/upload-artifact@v7
