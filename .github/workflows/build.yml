@@ -348,6 +348,15 @@ jobs:
           fi
           echo "Build succeeded"
 
+      - name: Embed app icon
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+        run: |
+          cd src
+          windres --include-dir .. -i atari800_res.rc -o atari800_res_icon.o
+          rm -f atari800.exe
+          LINK_CMD=$(make -n atari800.exe 2>/dev/null | grep 'gcc.*-o atari800' | head -1)
+          $LINK_CMD atari800_res_icon.o
+
       - name: Archive plain binary
         uses: actions/upload-artifact@v7
         with:
@@ -444,6 +453,14 @@ jobs:
       - name: Verify build
         run: |
           test -f src/atari800.exe && echo "Build succeeded"
+
+      - name: Embed app icon
+        run: |
+          cd src
+          windres --include-dir .. -i atari800_res.rc -o atari800_res_icon.o
+          rm -f atari800.exe
+          LINK_CMD=$(make -n atari800.exe 2>/dev/null | grep 'gcc.*-o atari800' | head -1)
+          $LINK_CMD atari800_res_icon.o
 
       - name: Archive plain binary
         uses: actions/upload-artifact@v7
