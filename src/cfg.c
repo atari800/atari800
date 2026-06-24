@@ -67,6 +67,7 @@
 #endif
 
 int CFG_save_on_exit = FALSE;
+char CFG_data_dir[FILENAME_MAX];
 
 /* If another default path config path is defined use it
    otherwise use the default one */
@@ -105,6 +106,9 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 		else
 			strcpy(rtconfig_filename, DEFAULT_CFG_NAME);
 	}
+	Util_splitpath(rtconfig_filename, CFG_data_dir, NULL);
+	if (CFG_data_dir[0] == '\0')
+		Util_getcwd(CFG_data_dir, sizeof(CFG_data_dir));
 
 	fp = fopen(fname, "r");
 	if (fp == NULL) {
