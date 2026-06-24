@@ -221,3 +221,14 @@ The build procedure is much the same as on most platforms, except for step 4:
 The resulting libatari800.a file can be linked with user programs to create an
 embedded atari800 emulator.
 
+Running on macOS
+----------------
+
+The macOS .dmg package contains an ad-hoc signed Atari800.app bundle.
+Before launching it for the first time, right-click the app in Finder
+and select "Open" to bypass Gatekeeper, then confirm the dialog.
+The app will run normally afterwards. Alternatively, remove the
+quarantine attribute from Terminal:
+
+  xattr -dr com.apple.quarantine /Applications/Atari800.app
+
