@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#define _POSIX_C_SOURCE 199309L /* for nanosleep */
+#define _POSIX_C_SOURCE 200809L /* for nanosleep, mkdtemp */
 
 #include "afile.h"
 #include "config.h"
@@ -184,6 +184,10 @@ int Atari800_auto_frameskip = FALSE;
 
 #ifdef BENCHMARK
 static double benchmark_start_time;
+#endif
+
+#ifdef HAVE_DOWNLOAD
+static char dl_dir[FILENAME_MAX] = "";
 #endif
 
 #ifdef CTRL_C_HANDLER
@@ -926,14 +930,37 @@ int Atari800_Initialise(int *argc, char *argv[])
 	/* Auto-start files left on the command line */
 	j = 1; /* diskno */
 	for (i = 1; i < *argc; i++) {
+		const char *filename = argv[i];
 		if (j > 8) {
 			/* The remaining arguments are not necessary disk images, but ignore them... */
 			Log_print("Too many disk image filenames on the command line (max. 8).");
 			break;
 		}
-		switch (AFILE_OpenFile(argv[i], i == 1, j, FALSE)) {
+#ifdef HAVE_DOWNLOAD
+		char dl_buf[FILENAME_MAX+2] = "";
+		if (strncmp(argv[i], "http://", 7) == 0 || strncmp(argv[i], "https://", 8) == 0) {
+			static const char *img_exts[] = { ".atr", ".xfd", ".atx", ".pro", ".dcm", ".xex", ".bas", ".lst", ".cas", ".rom", ".car", ".bin", NULL };
+			if (dl_dir[0] == '\0') {
+				char tmpl[] = "Atari800_XXXXXX";
+				if (mkdtemp(tmpl) != NULL)
+					Util_strlcpy(dl_dir, tmpl, sizeof(dl_dir));
+			}
+			if (dl_dir[0] != '\0') {
+				const char *first = Download_And_Extract(argv[i], img_exts, dl_dir);
+				if (first != NULL) {
+					snprintf(dl_buf, sizeof(dl_buf), "%s/%s", dl_dir, first);
+					filename = dl_buf;
+				}
+			}
+			if (filename == argv[i]) {
+				Log_print("Error downloading \"%s\"", argv[i]);
+				continue;
+			}
+		}
+#endif /* HAVE_DOWNLOAD */
+		switch (AFILE_OpenFile(filename, i == 1, j, FALSE)) {
 			case AFILE_ERROR:
-				Log_print("Error opening \"%s\"", argv[i]);
+				Log_print("Error opening \"%s\"", filename);
 				break;
 			case AFILE_ATR:
 			case AFILE_XFD:
@@ -943,6 +970,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			case AFILE_PRO:
 			case AFILE_ATX:
 				j++;
+				if (filename != argv[i]) unlink(filename);
 				break;
 			default:
 				break;
@@ -1137,6 +1165,10 @@ int Atari800_Exit(int run_monitor)
 #endif /* SDL */
 	}
 #endif /* __PLUS */
+#ifdef HAVE_DOWNLOAD
+	if (dl_dir[0] != '\0')
+		rmdir(dl_dir);
+#endif
 	return restart;
 }
 
