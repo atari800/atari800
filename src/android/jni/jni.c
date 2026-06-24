@@ -531,6 +531,17 @@ static jboolean JNICALL NativeSetROMPath(JNIEnv *env, jobject this, jstring path
 	return ret;
 }
 
+static jboolean JNICALL NativeNeedsDownload(JNIEnv *env, jobject this)
+{
+	return (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE)
+	       ? JNI_TRUE : JNI_FALSE;
+}
+
+static jstring JNICALL NativeGetROMURL(JNIEnv *env, jobject this)
+{
+	return (*env)->NewStringUTF(env, ROM_URL);
+}
+
 static jstring JNICALL NativeGetJoypos(JNIEnv *env, jobject this)
 {
 	char tmp[16];
@@ -587,6 +598,8 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 		{ "NativeClearDevB",		"()V",								NativeClearDevB		  },
 		{ "NativeBootCartType",		"(I)V",								NativeBootCartType	  },
 		{ "NativeSetTopInset",		"(I)V",								NativeSetTopInset	  },
+		{ "NativeNeedsDownload",	"()Z",								NativeNeedsDownload	  },
+		{ "NativeGetROMURL",		"()Ljava/lang/String;",				NativeGetROMURL		  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },

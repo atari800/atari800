@@ -31,6 +31,9 @@ import java.io.InputStream;
 import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.EnumMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -51,7 +54,14 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
 import android.os.Build;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
+import java.util.function.Consumer;
 import android.view.WindowManager;
 import android.view.WindowInsets;
 import android.view.View;
@@ -70,6 +80,7 @@ public final class MainActivity extends Activity
 	private static final int DLG_PATHSETUP = 1;
 	private static final int DLG_BRWSCONFRM = 2;
 	private static final int DLG_SELCARTTYPE = 3;
+	private static final int DLG_UPGRADE = 4;
 
 	public static String _pkgversion;
 	public static String _coreversion;
@@ -196,9 +207,22 @@ public final class MainActivity extends Activity
 	private void bootupMsgs() {
 		String instver = _settings.get(false, "version");
 		if (instver == null || instver.equals("false")) {
+			pauseEmulation(true);
 			showDialog(DLG_WELCOME);
 			return;
 		}
+		try {
+			if (Integer.parseInt(instver) != getPInfo().versionCode) {
+				pauseEmulation(true);
+				showDialog(DLG_UPGRADE);
+				return;
+			}
+		} catch (NumberFormatException e) {
+		}
+		showFinishToast();
+	}
+
+	private void showFinishToast() {
 		Toast.makeText(this, R.string.noactionbarhelptoast, Toast.LENGTH_SHORT).show();
 	}
 
@@ -238,7 +262,46 @@ public final class MainActivity extends Activity
 							@Override
 							public void onClick(DialogInterface d, int i) {
 								dismissDialog(DLG_WELCOME);
-								showDialog(DLG_PATHSETUP);
+								_settings.putInt("version", getPInfo().versionCode);
+								boolean needsDownload = NativeNeedsDownload();
+								if (needsDownload)
+									new DownloadAndExtractTask(_romsDir.getAbsolutePath(), new String[]{".rom"}, extracted -> {
+										if (!extracted.isEmpty()) {
+											NativeSetROMPath(_romsDir.getAbsolutePath());
+											showFinishToast();
+											pauseEmulation(false);
+										} else {
+											showDialog(DLG_PATHSETUP);
+										}
+									}).execute(NativeGetROMURL());
+								else {
+									showFinishToast();
+									pauseEmulation(false);
+								}
+							}
+							})
+						.create();
+			break;
+
+		case DLG_UPGRADE:
+			t = new TextView(this);
+			t.setText(String.format(getString(R.string.upgradenote), getPInfo().versionName));
+			t.setTextAppearance(this, android.R.style.TextAppearance_Small_Inverse);
+			t.setBackgroundResource(android.R.color.background_light);
+			s = new ScrollView(this);
+			s.addView(t);
+			d = new AlertDialog.Builder(this)
+						.setTitle(R.string.upgrade)
+						.setView(s)
+						.setInverseBackgroundForced(true)
+						.setCancelable(false)
+						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface d, int i) {
+								dismissDialog(DLG_UPGRADE);
+								_settings.putInt("version", getPInfo().versionCode);
+								showFinishToast();
+								pauseEmulation(false);
 							}
 							})
 						.create();
@@ -264,12 +327,14 @@ public final class MainActivity extends Activity
 								String rp = _romsDir.getAbsolutePath();
 								_settings.putString("rompath", rp);
 								_settings.simulateChanged("rompath");
+								showFinishToast();
 								pauseEmulation(false);
 							}
 							})
 						.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface d, int i) {
+								showFinishToast();
 								pauseEmulation(false);
 								dismissDialog(DLG_PATHSETUP);
 							}
@@ -765,6 +830,78 @@ public final class MainActivity extends Activity
 		}
 	}
 
+	private class DownloadAndExtractTask extends AsyncTask<String, Void, List<String>> {
+		private final ProgressDialog progress;
+		private final Consumer<List<String>> callback;
+		private final String[] exts;
+		private final String destDir;
+
+		DownloadAndExtractTask(String destDir, String[] exts, Consumer<List<String>> callback) {
+			this.destDir = destDir;
+			this.exts = exts;
+			this.callback = callback;
+			progress = new ProgressDialog(MainActivity.this);
+			progress.setMessage(getString(R.string.downloading_roms));
+			progress.setIndeterminate(true);
+			progress.setCancelable(false);
+		}
+
+		@Override
+		protected void onPreExecute() {
+			progress.show();
+		}
+
+		@Override
+		protected List<String> doInBackground(String... params) {
+			String urlStr = params[0];
+			List<String> extracted = new ArrayList<>();
+			try {
+				URL url = new URL(urlStr);
+				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+				ZipInputStream zis = new ZipInputStream(conn.getInputStream());
+				ZipEntry entry;
+				while ((entry = zis.getNextEntry()) != null) {
+					String name = entry.getName();
+					String lower = name.toLowerCase();
+					if (!entry.isDirectory() && !name.contains("__MACOSX")) {
+						boolean match = false;
+						for (String ext : exts) {
+							if (lower.endsWith(ext)) {
+								match = true;
+								break;
+							}
+						}
+						if (!match) { zis.closeEntry(); continue; }
+						String basename = name;
+						int slash = basename.lastIndexOf('/');
+						if (slash >= 0) basename = basename.substring(slash + 1);
+						File outFile = new File(destDir, basename);
+						FileOutputStream fos = new FileOutputStream(outFile);
+						byte[] buffer = new byte[8192];
+						int len;
+						while ((len = zis.read(buffer)) > 0)
+							fos.write(buffer, 0, len);
+						fos.close();
+						extracted.add(basename);
+					}
+					zis.closeEntry();
+				}
+				zis.close();
+				return extracted;
+			} catch (Exception e) {
+				Log.e(TAG, "Download failed", e);
+				return Collections.emptyList();
+			}
+		}
+
+		@Override
+		protected void onPostExecute(List<String> extracted) {
+			progress.dismiss();
+			if (callback != null)
+				callback.accept(extracted);
+		}
+	}
+
 	private static native void NativePrefGfx(int aspect, boolean bilinear, int artifact,
 											 int frameskip, boolean collisions, int crophoriz, int cropvert, int portpad, int covlhold);
 	private static native boolean NativePrefMachine(int machine, boolean ntsc);
@@ -784,4 +921,6 @@ public final class MainActivity extends Activity
 	private static native String NativeGetURL();
 	private static native void NativeClearDevB();
 	private static native void NativeSetTopInset(int topInset);
+	private static native boolean NativeNeedsDownload();
+	private static native String NativeGetROMURL();
 }

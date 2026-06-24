@@ -11,6 +11,9 @@
 
 #define Atari800_TITLE  "Atari 800 Emulator, Version " PACKAGE_VERSION
 
+/* URL for automatic ROM download. */
+#define ROM_URL "http://www.emulators.com/freefile/pcxf380.zip"
+
 #ifndef FALSE
 #define FALSE  0
 #endif

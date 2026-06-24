@@ -33,10 +33,10 @@
 							   \nJust a few tips to get you going:
 							   \n1) Left hand joystick, right hand trigger.
 							   \n2) Tap the top-right corner for console keys.
-							   \n3) Use the WiiController or the keyboard for accuracy.
+							   \n3) Use real joysticks or keyboard for accuracy.
 							   \n4) Original joysticks work with <a href="https://joy.sophics.cz/dual-joystick-usb-adapter/">DualJoyUSB adapter</a>.
 							   \n5) Open any disk image or exe file directly and have fun.\n
-							   \nFirst consider importing the Atari ROM in the next dialog.\n
+							   \nOriginal Atari ROMs are automatically downloaded for best compatibility.\n
 							   \nEnjoy! </string>
     <string name="pathsetup">Atari ROM Import</string>
 	<string name="pathsetupmsg"><![CDATA[
@@ -59,6 +59,11 @@
 								]]></string>
 	<string name="rompatherror">Failed to initialize machine.\n
 							  \nRequired ROM not found or path not accessible.</string>
+    <string name="downloading_roms">Downloading Atari ROMs...</string>
+	<string name="upgrade">Colleen Updated</string>
+	<string name="upgradenote">Colleen updated to v%s.\n
+							  \nSee the end of the Help page for a list of new features and changes.\n
+							  \nEnjoy!</string>
 	<string name="about">Colleen</string>
 	<string name="aboutmsg"><![CDATA[
 							<html><head></head><body>

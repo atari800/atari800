@@ -10,8 +10,8 @@ android {
         applicationId = "cz.pstehlik.colleen"
         minSdk = 21
         targetSdk = 36
-        versionCode = 410
-        versionName = "4.1"
+        versionCode = 420
+        versionName = "4.2"
 
         ndkVersion = "28.2.13676358"
 
@@ -21,7 +21,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cFlags("-DANDROID", "-DDIRTYRECT", "-DSUPPORTS_PLATFORM_PALETTEUPDATE")
+                cFlags("-DANDROID", "-DDIRTYRECT", "-DSUPPORTS_PLATFORM_PALETTEUPDATE", "-UHAVE_DOWNLOAD")
             }
         }
     }

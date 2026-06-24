@@ -157,8 +157,6 @@
 #define NETSIO_STARTUP_WAIT_POLL_MS 10
 #endif /* NETSIO */
 
-#define ROM_URL "http://www.emulators.com/freefile/pcxf380.zip"
-
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
 int Atari800_builtin_basic = TRUE;
