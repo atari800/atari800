@@ -163,7 +163,14 @@ int Download_And_Extract(const char *url, const char *matching_ext, const char *
 					char outpath[FILENAME_MAX];
 					FILE *f;
 
-					snprintf(outpath, sizeof(outpath), "%s/%s", dest_dir, name);
+					/* Strip zip directory path so files land flat in dest_dir. */
+					const char *basename = strrchr(name, '/');
+					if (basename != NULL)
+						basename++;
+					else
+						basename = name;
+
+					snprintf(outpath, sizeof(outpath), "%s/%s", dest_dir, basename);
 					MkdirParent(outpath);
 					f = fopen(outpath, "wb");
 					if (f != NULL) {
