@@ -58,6 +58,9 @@
 
 #include "akey.h"
 #include "antic.h"
+#ifdef HAVE_DOWNLOAD
+#include "download.h"
+#endif
 #include "artifact.h"
 #include "atari.h"
 #include "binload.h"
@@ -153,6 +156,8 @@
 #define NETSIO_STARTUP_WAIT_TIMEOUT_MS 5000
 #define NETSIO_STARTUP_WAIT_POLL_MS 10
 #endif /* NETSIO */
+
+#define ROM_URL "http://www.emulators.com/freefile/pcxf380.zip"
 
 int Atari800_machine_type = Atari800_MACHINE_XLXE;
 
@@ -438,8 +443,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 	   or it does not specify some ROM paths (blank paths count as specified) */
 #ifndef ANDROID
 	{
-		char current_dir[FILENAME_MAX];
-		SYSROM_FindInDir(Util_getcwd(current_dir, FILENAME_MAX), TRUE);
+		SYSROM_FindInDir(CFG_data_dir, TRUE);
 	}
 #if defined(unix) || defined(__unix__) || defined(__linux__)
 	SYSROM_FindInDir("/usr/share/atari800", TRUE);
@@ -730,6 +734,16 @@ int Atari800_Initialise(int *argc, char *argv[])
 			else if (strcmp(argv[i], "-bpc") == 0)
 				if (i_a) MONITOR_BPC(argv[++i]); else a_m = TRUE;
 #endif /* MONITOR_BREAK */
+#ifdef HAVE_DOWNLOAD
+			else if (strcmp(argv[i], "-download-roms") == 0) {
+				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, ".rom", CFG_data_dir) != 0) {
+					Log_print("Downloading ROMs failed");
+					return FALSE;
+				}
+				Log_print("Searching in %s", CFG_data_dir);
+				SYSROM_FindInDir(CFG_data_dir, FALSE);
+			}
+#endif /* HAVE_DOWNLOAD */
 			else {
 				/* all options known to main module tried but none matched */
 
@@ -788,6 +802,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-label-file <f>  Load monitor labels from file <f>");
 #endif
 					Log_print("\t-v               Show version/release number");
+#ifdef HAVE_DOWNLOAD
+					Log_print("\t-download-roms <url> Download and extract ROM archive from <url>");
+#endif
 				}
 
 				/* copy this option for platform/module specific evaluation */
@@ -1008,6 +1025,21 @@ int Atari800_Initialise(int *argc, char *argv[])
 				Sound_Continue();
 	}
 #endif /* SOUND */
+
+#ifdef HAVE_DOWNLOAD
+	if (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE) {
+		Log_print("Downloading ROMs to %s ...", CFG_data_dir);
+		if (Download_And_Extract(ROM_URL, ".rom", CFG_data_dir) == 0) {
+			Log_print("Searching in %s", CFG_data_dir);
+			SYSROM_FindInDir(CFG_data_dir, FALSE);
+			CFG_WriteConfig();
+			Atari800_InitialiseMachine();
+		}
+		else {
+			Log_print("Downloading ROMs failed");
+		}
+	}
+#endif /* HAVE_DOWNLOAD */
 
 	return TRUE;
 }
