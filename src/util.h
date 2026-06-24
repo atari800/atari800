@@ -229,4 +229,7 @@ double Util_time(void);
 /* Get current working directory. */
 char *Util_getcwd(char *buf, size_t size);
 
+/* Get home directory (with USERPROFILE/HOMEDRIVE fallback on Windows). */
+char *Util_GetHomeDir(char *buf, size_t size);
+
 #endif /* UTIL_H_ */

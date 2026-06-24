@@ -99,21 +99,8 @@ int CFG_LoadConfig(const char *alternate_config_filename)
 	}
 	/* else use the default config name under the HOME folder */
 	else {
-		char *home = getenv("HOME");
-#ifdef HAVE_WINDOWS_H
-		if (home == NULL)
-			home = getenv("USERPROFILE");
-		if (home == NULL) {
-			char *drive = getenv("HOMEDRIVE");
-			char *path = getenv("HOMEPATH");
-			if (drive != NULL && path != NULL) {
-				static char buf[FILENAME_MAX];
-				snprintf(buf, sizeof(buf), "%s%s", drive, path);
-				home = buf;
-			}
-		}
-#endif
-		if (home != NULL)
+		char home[FILENAME_MAX];
+		if (Util_GetHomeDir(home, sizeof(home)) != NULL)
 			Util_catpath(rtconfig_filename, home, DEFAULT_CFG_NAME);
 		else
 			strcpy(rtconfig_filename, DEFAULT_CFG_NAME);

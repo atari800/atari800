@@ -628,3 +628,26 @@ char *Util_getcwd(char *buf, size_t size)
 #endif
 	return buf;
 }
+
+char *Util_GetHomeDir(char *buf, size_t size)
+{
+	const char *home = getenv("HOME");
+#ifdef HAVE_WINDOWS_H
+	if (home == NULL)
+		home = getenv("USERPROFILE");
+	if (home == NULL) {
+		const char *drive = getenv("HOMEDRIVE");
+		const char *path = getenv("HOMEPATH");
+		if (drive != NULL && path != NULL)
+			snprintf(buf, size, "%s%s", drive, path);
+		else
+			buf[0] = '\0';
+		return buf;
+	}
+#endif
+	if (home != NULL)
+		Util_strlcpy(buf, home, size);
+	else
+		buf[0] = '\0';
+	return buf;
+}

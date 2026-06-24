@@ -2393,13 +2393,11 @@ static void SaveState(void)
 
 static const char* get_state_filename(void) {
 	const char* fname = ".atari800-quicksave.state";
-	char* home = getenv("HOME");
-	if (home) {
+	char home[FILENAME_MAX];
+	if (Util_GetHomeDir(home, sizeof(home)) != NULL)
 		Util_catpath(state_filename, home, fname);
-	}
-	else {
+	else
 		strcpy(state_filename, fname);
-	}
 	return state_filename;
 }
 
