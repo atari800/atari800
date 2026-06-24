@@ -413,10 +413,20 @@ else
 
 	AC_CHECK_LIB(m,cos,[LIBS="-lm $LIBS"])
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
+
+	dnl Check for libcurl (download feature)
+	AC_ARG_ENABLE(download,AC_HELP_STRING([--disable-download],[Disable download support (default=auto)]),,enable_download=auto)
+	WANT_DOWNLOAD=no
+	if [[ "$enable_download" != "no" ]]; then
+		AC_CHECK_HEADER([curl/curl.h],
+			[AC_CHECK_LIB([curl],[curl_easy_init],
+				[AC_DEFINE(HAVE_DOWNLOAD,1,[Enable download feature.])
+				 LIBS="-lcurl $LIBS"
+				 WANT_DOWNLOAD=yes],
+				[if [[ "$enable_download" = "yes" ]]; then AC_MSG_FAILURE([curl library not found]); fi])],
+			[if [[ "$enable_download" = "yes" ]]; then AC_MSG_FAILURE([curl/curl.h not found]); fi])
+	fi
 fi
-
-
-dnl Set OBJS and libraries depending on host and target...
 
 case "$a8_target" in
     default)
@@ -1514,6 +1524,7 @@ echo "Using video recording?................: $WANT_VIDEO_RECORDING"
 if [[ "$WANT_VIDEO_RECORDING" = "yes" ]]; then
     echo "    Supported video codecs............: $supported_video_codecs"
 fi
+echo "Using download?.......................: $WANT_DOWNLOAD"
 
 if [[ "$a8_host" = "falcon" ]]; then
     echo "Using M68K assembler CPU core?........: $WANT_FALCON_CPUASM"

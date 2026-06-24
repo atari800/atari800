@@ -1,0 +1,192 @@
+#include "download.h"
+
+#ifdef HAVE_DOWNLOAD
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <curl/curl.h>
+#include <zlib.h>
+#include "log.h"
+#include "util.h"
+
+
+#ifdef HAVE_WINDOWS_H
+#include <direct.h>
+#endif
+
+struct MemoryBuffer {
+	unsigned char *data;
+	size_t size;
+};
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+	size_t realsize = size * nmemb;
+	struct MemoryBuffer *mem = (struct MemoryBuffer *)userp;
+	unsigned char *ptr = realloc(mem->data, mem->size + realsize);
+	if (ptr == NULL)
+		return 0;
+	mem->data = ptr;
+	memcpy(mem->data + mem->size, contents, realsize);
+	mem->size += realsize;
+	return realsize;
+}
+
+static int ReadLE16(const unsigned char *p)
+{
+	return p[0] | (p[1] << 8);
+}
+
+static int ReadLE32(const unsigned char *p)
+{
+	return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+}
+
+static int CreateDir(const char *path)
+{
+#ifdef HAVE_WINDOWS_H
+	return mkdir(path);
+#else
+	return mkdir(path, 0777);
+#endif
+}
+
+static int HasThisExt(const char *name, const char *ext)
+{
+	const char *dot = strrchr(name, '.');
+	return dot != NULL && (Util_stricmp(dot, ext) == 0);
+}
+
+static void MkdirParent(char *path)
+{
+	char *p;
+	for (p = path + 1; *p != '\0'; p++) {
+		if (*p == '/') {
+			*p = '\0';
+			CreateDir(path);
+			*p = '/';
+		}
+	}
+}
+
+int Download_And_Extract(const char *url, const char *matching_ext, const char *dest_dir)
+{
+	CURL *curl;
+	CURLcode res;
+	struct MemoryBuffer buf = {NULL, 0};
+	size_t offset;
+
+	curl = curl_easy_init();
+	if (curl == NULL)
+		return -1;
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+	res = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+	if (res != CURLE_OK) {
+		Log_print("Download failed: %s", curl_easy_strerror(res));
+		free(buf.data);
+		return -1;
+	}
+
+	/* parse zip local file headers */
+	offset = 0;
+	{
+		int extracted = 0;
+		while (offset + 30 <= buf.size) {
+			unsigned short compression, name_len, extra_len;
+			unsigned int comp_size, uncomp_size;
+			size_t header_size;
+			char *name;
+			unsigned char *out_data;
+			size_t out_size;
+
+			if (buf.data[offset] != 'P' || buf.data[offset + 1] != 'K'
+			    || buf.data[offset + 2] != 0x03 || buf.data[offset + 3] != 0x04)
+				break;
+
+			compression = ReadLE16(buf.data + offset + 8);
+			name_len = ReadLE16(buf.data + offset + 26);
+			extra_len = ReadLE16(buf.data + offset + 28);
+			comp_size = ReadLE32(buf.data + offset + 18);
+			uncomp_size = ReadLE32(buf.data + offset + 22);
+
+			header_size = 30 + name_len + extra_len;
+			if (offset + header_size > buf.size)
+				break;
+
+			name = malloc(name_len + 1);
+			if (name == NULL)
+				break;
+			memcpy(name, buf.data + offset + 30, name_len);
+			name[name_len] = '\0';
+
+			offset += header_size;
+
+			if (comp_size > 0 || uncomp_size > 0) {
+				out_data = malloc(uncomp_size > 0 ? uncomp_size : 1);
+				if (out_data == NULL) {
+					free(name);
+					break;
+				}
+				out_size = 0;
+
+				if (compression == 0) {
+					memcpy(out_data, buf.data + offset, comp_size);
+					out_size = comp_size;
+				}
+				else if (compression == 8) {
+					z_stream strm;
+					int ret;
+
+					memset(&strm, 0, sizeof(strm));
+					inflateInit2(&strm, -MAX_WBITS);
+					strm.next_in = buf.data + offset;
+					strm.avail_in = comp_size;
+					strm.next_out = out_data;
+					strm.avail_out = uncomp_size;
+					ret = inflate(&strm, Z_FINISH);
+					if (ret == Z_STREAM_END)
+						out_size = strm.total_out;
+					inflateEnd(&strm);
+				}
+
+				if (out_size > 0
+				    && name[name_len - 1] != '/'
+				    && strstr(name, "__MACOSX") == NULL
+				    && HasThisExt(name, matching_ext)) {
+					char outpath[FILENAME_MAX];
+					FILE *f;
+
+					snprintf(outpath, sizeof(outpath), "%s/%s", dest_dir, name);
+					MkdirParent(outpath);
+					f = fopen(outpath, "wb");
+					if (f != NULL) {
+						fwrite(out_data, 1, out_size, f);
+						fclose(f);
+						extracted++;
+					}
+				}
+
+				free(out_data);
+			}
+
+			offset += comp_size;
+			free(name);
+		}
+
+		free(buf.data);
+		if (extracted == 0) {
+			Log_print("No matching files found in archive");
+			return -1;
+		}
+		return 0;
+	}
+}
+
+#endif /* HAVE_DOWNLOAD */

@@ -26,7 +26,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y build-essential autoconf automake libtool pkg-config \
-          libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev libpng-dev curl ca-certificates
+          libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev libpng-dev libcurl4-openssl-dev curl ca-certificates
     - name: autogen
       run: ./autogen.sh
     - name: configure
@@ -134,7 +134,7 @@ jobs:
             set -e
             apt-get update
             apt-get install -y build-essential autoconf automake libtool pkg-config \
-              libsdl2-dev libmp3lame-dev libreadline-dev libpng-dev curl ca-certificates
+              libsdl2-dev libmp3lame-dev libreadline-dev libpng-dev libcurl4-openssl-dev curl ca-certificates
             ./autogen.sh
             ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
             make -j\$(nproc)
@@ -329,6 +329,7 @@ jobs:
             mingw-w64-x86_64-libpng
             mingw-w64-x86_64-nsis
             mingw-w64-x86_64-lame
+            mingw-w64-x86_64-curl
             zip
 
       - name: Run autoreconf
@@ -438,6 +439,7 @@ jobs:
             mingw-w64-i686-libpng
             mingw-w64-i686-nsis
             mingw-w64-i686-lame
+            mingw-w64-i686-curl
             zip
 
       - name: Run autoreconf

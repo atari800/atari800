@@ -69,6 +69,7 @@ atari800_SOURCES = \
 	cfg.c cfg.h \
 	cpu.c cpu.h \
 	crc32.c crc32.h \
+	download.c download.h \
 	devices.c devices.h \
 	esc.c esc.h \
 	gtia.c gtia.h \
