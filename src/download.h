@@ -5,7 +5,7 @@
 
 #ifdef HAVE_DOWNLOAD
 
-int Download_And_Extract(const char *url, const char *matching_ext, const char *dest_dir);
+const char *Download_And_Extract(const char *url, const char *exts[], const char *dest_dir);
 
 #endif /* HAVE_DOWNLOAD */
 

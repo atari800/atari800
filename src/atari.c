@@ -734,7 +734,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* MONITOR_BREAK */
 #ifdef HAVE_DOWNLOAD
 			else if (strcmp(argv[i], "-download-roms") == 0) {
-				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, ".rom", CFG_data_dir) != 0) {
+				static const char *rom_exts[] = {".rom", NULL};
+				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, rom_exts, CFG_data_dir) == NULL) {
 					Log_print("Downloading ROMs failed");
 					return FALSE;
 				}
@@ -1026,8 +1027,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 #ifdef HAVE_DOWNLOAD
 	if (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE) {
+		static const char *rom_exts[] = {".rom", NULL};
 		Log_print("Downloading ROMs to %s ...", CFG_data_dir);
-		if (Download_And_Extract(ROM_URL, ".rom", CFG_data_dir) == 0) {
+		if (Download_And_Extract(ROM_URL, rom_exts, CFG_data_dir) != NULL) {
 			Log_print("Searching in %s", CFG_data_dir);
 			SYSROM_FindInDir(CFG_data_dir, FALSE);
 			CFG_WriteConfig();

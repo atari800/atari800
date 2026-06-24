@@ -53,10 +53,15 @@ static int CreateDir(const char *path)
 #endif
 }
 
-static int HasThisExt(const char *name, const char *ext)
+static int HasAnyExt(const char *name, const char *exts[])
 {
 	const char *dot = strrchr(name, '.');
-	return dot != NULL && (Util_stricmp(dot, ext) == 0);
+	if (dot == NULL) return 0;
+	for (int i = 0; exts[i] != NULL; i++) {
+		if (Util_stricmp(dot, exts[i]) == 0)
+			return 1;
+	}
+	return 0;
 }
 
 static void MkdirParent(char *path)
@@ -71,16 +76,17 @@ static void MkdirParent(char *path)
 	}
 }
 
-int Download_And_Extract(const char *url, const char *matching_ext, const char *dest_dir)
+const char *Download_And_Extract(const char *url, const char *exts[], const char *dest_dir)
 {
 	CURL *curl;
 	CURLcode res;
 	struct MemoryBuffer buf = {NULL, 0};
 	size_t offset;
+	static char first_file[FILENAME_MAX] = "";
 
 	curl = curl_easy_init();
 	if (curl == NULL)
-		return -1;
+		return NULL;
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
@@ -91,7 +97,7 @@ int Download_And_Extract(const char *url, const char *matching_ext, const char *
 	if (res != CURLE_OK) {
 		Log_print("Download failed: %s", curl_easy_strerror(res));
 		free(buf.data);
-		return -1;
+		return NULL;
 	}
 
 	/* parse zip local file headers */
@@ -159,7 +165,7 @@ int Download_And_Extract(const char *url, const char *matching_ext, const char *
 				if (out_size > 0
 				    && name[name_len - 1] != '/'
 				    && strstr(name, "__MACOSX") == NULL
-				    && HasThisExt(name, matching_ext)) {
+				    && HasAnyExt(name, exts)) {
 					char outpath[FILENAME_MAX];
 					FILE *f;
 
@@ -176,6 +182,8 @@ int Download_And_Extract(const char *url, const char *matching_ext, const char *
 					if (f != NULL) {
 						fwrite(out_data, 1, out_size, f);
 						fclose(f);
+						if (extracted == 0)
+							strncpy(first_file, basename, sizeof(first_file)-1);
 						extracted++;
 					}
 				}
@@ -190,9 +198,9 @@ int Download_And_Extract(const char *url, const char *matching_ext, const char *
 		free(buf.data);
 		if (extracted == 0) {
 			Log_print("No matching files found in archive");
-			return -1;
+			return NULL;
 		}
-		return 0;
+		return first_file;
 	}
 }
 
