@@ -386,7 +386,7 @@ jobs:
           cp DOC/NEWS pkg/doc/NEWS.txt
           cp DOC/USAGE pkg/doc/USAGE.txt
           makensis -DVERSION=$V -DPLATFORM=win64 atari800.nsi
-          zip "atari800-${V}-win64.zip" "atari800-${V}-win64.exe"
+          zip -r "atari800-${V}-win64.zip" pkg/
 
       - name: Verify installer
         if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
@@ -400,17 +400,23 @@ jobs:
           fi
           test -f atari800-$V-win64.zip && echo "Installer OK: atari800-$V-win64.zip"
 
-      - name: Archive installer
+      - name: Archive portable zip
         if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         uses: actions/upload-artifact@v7
         with:
-          name: atari800-${{ env.VERSION }}-win64
+          name: atari800-${{ env.VERSION }}-win64-portable
           path: atari800-*-win64.zip
+      - name: Archive installer exe
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: atari800-${{ env.VERSION }}-win64-installer
+          path: atari800-*-win64.exe
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/ATARI800_')
         run: |
           gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
-          gh release upload "$GITHUB_REF_NAME" atari800-*-win64.zip --clobber
+          gh release upload "$GITHUB_REF_NAME" atari800-*-win64.exe atari800-*-win64.zip --clobber
 
   build-windows-msys2-32:
     if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
@@ -491,7 +497,7 @@ jobs:
           cp DOC/NEWS pkg/doc/NEWS.txt
           cp DOC/USAGE pkg/doc/USAGE.txt
           makensis -DVERSION=$V -DPLATFORM=win32 atari800.nsi
-          zip "atari800-${V}-win32.zip" "atari800-${V}-win32.exe"
+          zip -r "atari800-${V}-win32.zip" pkg/
 
       - name: Verify installer
         run: |
@@ -503,13 +509,18 @@ jobs:
           fi
           test -f atari800-$V-win32.zip && echo "Installer OK: atari800-$V-win32.zip"
 
-      - name: Archive installer
+      - name: Archive portable zip
         uses: actions/upload-artifact@v7
         with:
-          name: atari800-${{ env.VERSION }}-win32
+          name: atari800-${{ env.VERSION }}-win32-portable
           path: atari800-*-win32.zip
+      - name: Archive installer exe
+        uses: actions/upload-artifact@v7
+        with:
+          name: atari800-${{ env.VERSION }}-win32-installer
+          path: atari800-*-win32.exe
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/ATARI800_')
         run: |
           gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
-          gh release upload "$GITHUB_REF_NAME" atari800-*-win32.zip --clobber
+          gh release upload "$GITHUB_REF_NAME" atari800-*-win32.exe atari800-*-win32.zip --clobber
