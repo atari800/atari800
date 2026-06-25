@@ -22,6 +22,7 @@ dnl   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 
 
 AC_PREREQ(2.57)
 AC_INIT(Atari800, 6.1.0, pstehlik@sophics.cz)
+AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_SRCDIR(src/atari.c)
 AC_CONFIG_HEADER(src/config.h)
 AC_CONFIG_MACRO_DIR([m4])
