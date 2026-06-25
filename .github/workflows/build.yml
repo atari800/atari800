@@ -452,7 +452,7 @@ jobs:
         run: autoreconf -fiv
 
       - name: Configure project
-        run: ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
+        run: ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame --disable-download
 
       - name: Build project
         run: make -j$(nproc)
@@ -485,11 +485,10 @@ jobs:
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
           cp src/atari800.exe pkg/
-          for dll in SDL2.dll bcrypt.dll libbrotlicommon.dll libbrotlidec.dll libcrypto-3.dll libcurl-4.dll libiconv-2.dll libidn2-0.dll libintl-8.dll libmp3lame-0.dll libnghttp2-14.dll libnghttp3-9.dll libngtcp2_crypto_ossl-0.dll libngtcp2-16.dll libpng16-16.dll libpsl-5.dll libreadline8.dll libssh2-1.dll libssl-3.dll libtermcap-0.dll libunistring-5.dll libzstd.dll zlib1.dll; do
+          for dll in SDL2.dll libmp3lame-0.dll libpng16-16.dll libreadline8.dll libtermcap-0.dll libwinpthread-1.dll zlib1.dll; do
             find /mingw32/bin -name "$dll" -exec cp {} pkg/ \; 2>/dev/null || true
           done
           find /mingw32/bin -name "libgcc_s_dw2-1.dll" -exec cp {} pkg/ \; 2>/dev/null || true
-          cp /c/Windows/SysWOW64/bcrypt.dll pkg/ 2>/dev/null || cp /c/Windows/System32/bcrypt.dll pkg/ 2>/dev/null || true
           cp README.TXT pkg/
           cp act/*.act pkg/act/
           cp data/atari800.ico pkg/
@@ -497,8 +496,8 @@ jobs:
           cp DOC/INSTALL pkg/doc/INSTALL.txt
           cp DOC/NEWS pkg/doc/NEWS.txt
           cp DOC/USAGE pkg/doc/USAGE.txt
-          makensis -DVERSION=$V -DPLATFORM=win32 atari800.nsi
-          (cd pkg && zip -r "../atari800-${V}-win32.zip" .)
+          makensis -DVERSION=$V -DPLATFORM=win32-no-network atari800.nsi
+          (cd pkg && zip -r "../atari800-${V}-win32-no-network.zip" .)
 
       - name: Verify installer
         run: |
@@ -508,20 +507,20 @@ jobs:
             V=${GITHUB_REF_NAME#ATARI800_}
             V=${V//_/.}
           fi
-          test -f atari800-$V-win32.zip && echo "Installer OK: atari800-$V-win32.zip"
+          test -f atari800-$V-win32-no-network.zip && echo "Installer OK: atari800-$V-win32-no-network.zip"
 
       - name: Archive portable zip
         uses: actions/upload-artifact@v7
         with:
-          name: atari800-${{ env.VERSION }}-win32-portable
-          path: atari800-*-win32.zip
+          name: atari800-${{ env.VERSION }}-win32-no-network-portable
+          path: atari800-*-win32-no-network.zip
       - name: Archive installer exe
         uses: actions/upload-artifact@v7
         with:
-          name: atari800-${{ env.VERSION }}-win32-installer
-          path: atari800-*-win32.exe
+          name: atari800-${{ env.VERSION }}-win32-no-network-installer
+          path: atari800-*-win32-no-network.exe
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/ATARI800_')
         run: |
           gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
-          gh release upload "$GITHUB_REF_NAME" atari800-*-win32.exe atari800-*-win32.zip --clobber
+          gh release upload "$GITHUB_REF_NAME" atari800-*-win32-no-network.exe atari800-*-win32-no-network.zip --clobber
