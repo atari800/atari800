@@ -485,7 +485,7 @@ jobs:
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
           cp src/atari800.exe pkg/
-          for dll in SDL2.dll libbrotlicommon.dll libbrotlidec.dll libcrypto-3.dll libcurl-4.dll libiconv-2.dll libidn2-0.dll libintl-8.dll libmp3lame-0.dll libnghttp2-14.dll libnghttp3-9.dll libngtcp2_crypto_ossl-0.dll libngtcp2-16.dll libpng16-16.dll libpsl-5.dll libreadline8.dll libssh2-1.dll libssl-3.dll libtermcap-0.dll libunistring-5.dll libzstd.dll zlib1.dll; do
+          for dll in SDL2.dll bcrypt.dll libbrotlicommon.dll libbrotlidec.dll libcrypto-3.dll libcurl-4.dll libiconv-2.dll libidn2-0.dll libintl-8.dll libmp3lame-0.dll libnghttp2-14.dll libnghttp3-9.dll libngtcp2_crypto_ossl-0.dll libngtcp2-16.dll libpng16-16.dll libpsl-5.dll libreadline8.dll libssh2-1.dll libssl-3.dll libtermcap-0.dll libunistring-5.dll libzstd.dll zlib1.dll; do
             find /mingw32/bin -name "$dll" -exec cp {} pkg/ \; 2>/dev/null || true
           done
           find /mingw32/bin -name "libgcc_s_dw2-1.dll" -exec cp {} pkg/ \; 2>/dev/null || true
