@@ -35,7 +35,7 @@
 #ifdef HAVE_TERMIOS_H
 # include <termios.h>
 #endif
-#ifdef GWINSZ_IN_SYS_IOCTL
+#if defined(GWINSZ_IN_SYS_IOCTL) || defined(HAVE_SYS_IOCTL_H)
 # include <sys/ioctl.h>
 #endif
 
