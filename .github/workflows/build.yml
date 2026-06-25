@@ -489,6 +489,7 @@ jobs:
             find /mingw32/bin -name "$dll" -exec cp {} pkg/ \; 2>/dev/null || true
           done
           find /mingw32/bin -name "libgcc_s_dw2-1.dll" -exec cp {} pkg/ \; 2>/dev/null || true
+          cp /c/Windows/SysWOW64/bcrypt.dll pkg/ 2>/dev/null || cp /c/Windows/System32/bcrypt.dll pkg/ 2>/dev/null || true
           cp README.TXT pkg/
           cp act/*.act pkg/act/
           cp data/atari800.ico pkg/
