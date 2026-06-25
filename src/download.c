@@ -103,9 +103,45 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 	/* parse zip local file headers */
 	offset = 0;
 	{
+		int cd_count = 0;
+		struct {
+			unsigned int local_offset;
+			unsigned int comp_size;
+			unsigned int uncomp_size;
+		} cd_entry[256];
+		/* Parse central directory for correct sizes (some zips use data descriptors with 0 in local header) */
+		if (buf.size >= 22) {
+			size_t search_start = (buf.size > 65557) ? buf.size - 65557 : 0;
+			size_t search_end = buf.size - 22;
+			for (size_t i = search_start; i <= search_end; i++) {
+				if (buf.data[i] == 0x50 && buf.data[i+1] == 0x4B
+				    && buf.data[i+2] == 0x05 && buf.data[i+3] == 0x06) {
+					unsigned int cd_offset = ReadLE32(buf.data + i + 16);
+					unsigned int cd_total = ReadLE16(buf.data + i + 10);
+					size_t cd_pos = cd_offset;
+					for (unsigned int j = 0; j < cd_total && cd_pos + 46 <= buf.size; j++) {
+						if (buf.data[cd_pos] != 0x50 || buf.data[cd_pos+1] != 0x4B
+						    || buf.data[cd_pos+2] != 0x01 || buf.data[cd_pos+3] != 0x02)
+							break;
+						if (cd_count < 256) {
+							cd_entry[cd_count].local_offset = ReadLE32(buf.data + cd_pos + 42);
+							cd_entry[cd_count].comp_size = ReadLE32(buf.data + cd_pos + 20);
+							cd_entry[cd_count].uncomp_size = ReadLE32(buf.data + cd_pos + 24);
+							cd_count++;
+						}
+						unsigned int fn_len = ReadLE16(buf.data + cd_pos + 28);
+						unsigned int ef_len = ReadLE16(buf.data + cd_pos + 30);
+						unsigned int cm_len = ReadLE16(buf.data + cd_pos + 32);
+						cd_pos += 46 + fn_len + ef_len + cm_len;
+					}
+					break;
+				}
+			}
+		}
+
 		int extracted = 0;
 		while (offset + 30 <= buf.size) {
-			unsigned short compression, name_len, extra_len;
+			unsigned short flags, compression, name_len, extra_len;
 			unsigned int comp_size, uncomp_size;
 			size_t header_size;
 			char *name;
@@ -116,11 +152,21 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 			    || buf.data[offset + 2] != 0x03 || buf.data[offset + 3] != 0x04)
 				break;
 
+			flags = ReadLE16(buf.data + offset + 6);
 			compression = ReadLE16(buf.data + offset + 8);
 			name_len = ReadLE16(buf.data + offset + 26);
 			extra_len = ReadLE16(buf.data + offset + 28);
 			comp_size = ReadLE32(buf.data + offset + 18);
 			uncomp_size = ReadLE32(buf.data + offset + 22);
+			if ((flags & 0x08) && comp_size == 0) {
+				for (int k = 0; k < cd_count; k++) {
+					if (cd_entry[k].local_offset == (unsigned int)offset) {
+						comp_size = cd_entry[k].comp_size;
+						uncomp_size = cd_entry[k].uncomp_size;
+						break;
+					}
+				}
+			}
 
 			header_size = 30 + name_len + extra_len;
 			if (offset + header_size > buf.size)
