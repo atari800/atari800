@@ -400,17 +400,20 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* _WX_ */
 	PreInitialise();
 #else /* __PLUS */
-	const char *rtconfig_filename = NULL;
+	const char *cfg_source_path = NULL;
 	int got_config;
 	int help_only = FALSE;
+	char atari800_exe_dir[FILENAME_MAX] = "";
+	char portable_cfg[FILENAME_MAX] = "";
 
 	PreInitialise();
 
+#ifndef ANDROID
 	if (*argc > 1) {
 		for (i = j = 1; i < *argc; i++) {
 			if (strcmp(argv[i], "-config") == 0) {
 				if (i + 1 < *argc)
-					rtconfig_filename = argv[++i];
+					cfg_source_path = argv[++i];
 				else {
 					Log_print("Missing argument for '%s'", argv[i]);
 					return FALSE;
@@ -435,26 +438,33 @@ int Atari800_Initialise(int *argc, char *argv[])
 		}
 		*argc = j;
 	}
-#ifndef ANDROID
-	got_config = CFG_LoadConfig(rtconfig_filename);
-#else
-	got_config = TRUE; /* pretend we got a config file -- not needed in Android */
-#endif
+
+	if (*argc > 0 && argv[0] != NULL)
+		Util_splitpath(argv[0], atari800_exe_dir, NULL);
+
+	if (cfg_source_path == NULL && atari800_exe_dir[0] != '\0') {
+		char checkfile[FILENAME_MAX];
+		Util_catpath(checkfile, atari800_exe_dir, ".atari800-check");
+		FILE *ft = fopen(checkfile, "w");
+		if (ft != NULL) {
+			fclose(ft);
+			remove(checkfile);
+			Log_print("Portable path detected: %s", atari800_exe_dir);
+			Util_catpath(portable_cfg, atari800_exe_dir, DEFAULT_CFG_NAME);
+			cfg_source_path = portable_cfg;
+		}
+	}
+
+	got_config = CFG_LoadConfig(cfg_source_path);
 
 	/* try to find ROM images if the configuration file is not found
 	   or it does not specify some ROM paths (blank paths count as specified) */
-#ifndef ANDROID
-	{
-		SYSROM_FindInDir(CFG_data_dir, TRUE);
-	}
+	SYSROM_FindInDir(CFG_data_dir, TRUE);
 #if defined(unix) || defined(__unix__) || defined(__linux__)
 	SYSROM_FindInDir("/usr/share/atari800", TRUE);
 #endif
-	if (*argc > 0 && argv[0] != NULL) {
-		char atari800_exe_dir[FILENAME_MAX];
+	if (atari800_exe_dir[0] != '\0') {
 		char atari800_exe_rom_dir[FILENAME_MAX];
-		/* the directory of the Atari800 program */
-		Util_splitpath(argv[0], atari800_exe_dir, NULL);
 		SYSROM_FindInDir(atari800_exe_dir, TRUE);
 		/* "rom" and "ROM" subdirectories of this directory */
 		Util_catpath(atari800_exe_rom_dir, atari800_exe_dir, "rom");
@@ -465,6 +475,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 		SYSROM_FindInDir(atari800_exe_rom_dir, TRUE);
 #endif
 	}
+#else
+	got_config = TRUE; /* pretend we got a config file -- not needed in Android */
 #endif /* ANDROID */
 
 	/* finally if nothing is found, set some defaults to make
@@ -739,6 +751,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef HAVE_DOWNLOAD
 			else if (strcmp(argv[i], "-download-roms") == 0) {
 				static const char *rom_exts[] = {".rom", NULL};
+				Log_print("Downloading ROMs to %s ...", CFG_data_dir);
 				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, rom_exts, CFG_data_dir) == NULL) {
 					Log_print("Downloading ROMs failed");
 					return FALSE;
