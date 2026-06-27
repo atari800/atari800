@@ -91,10 +91,21 @@ jobs:
           done
         done
 
+        # Explicitly ensure libz.so.1 is bundled
+        if [ ! -f "$APPDIR/usr/lib/libz.so.1" ] && [ ! -L "$APPDIR/usr/lib/libz.so.1" ]; then
+          libz=$(find / -name 'libz.so.1' -type f 2>/dev/null | head -1)
+          if [ -n "$libz" ]; then
+            cp -L "$libz" "$APPDIR/usr/lib/"
+            echo "Explicitly bundled: libz.so.1"
+          fi
+        fi
+
+        curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64" \
+          -o /tmp/runtime-x86_64
         curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
           -o /tmp/appimagetool
         chmod +x /tmp/appimagetool
-        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool "$APPDIR" "Atari800-${V}-x86_64.AppImage"
+        APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool --runtime-file /tmp/runtime-x86_64 "$APPDIR" "Atari800-${V}-x86_64.AppImage"
 
     - name: Upload AppImage
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
@@ -182,10 +193,21 @@ jobs:
               done
             done
 
+            # Explicitly ensure libz.so.1 is bundled
+            if [ ! -f \"\$APPDIR/usr/lib/libz.so.1\" ] && [ ! -L \"\$APPDIR/usr/lib/libz.so.1\" ]; then
+              libz=\$(find / -name 'libz.so.1' -type f 2>/dev/null | head -1)
+              if [ -n \"\$libz\" ]; then
+                cp -L \"\$libz\" \"\$APPDIR/usr/lib/\"
+                echo \"Explicitly bundled: libz.so.1\"
+              fi
+            fi
+
+            curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-i686\" \
+              -o /tmp/runtime-i686
             curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage\" \
               -o /tmp/appimagetool
             chmod +x /tmp/appimagetool
-            APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
+            APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool --runtime-file /tmp/runtime-i686 \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
           "
 
     - name: Upload AppImage
