@@ -92,19 +92,10 @@ jobs:
           done
         done
 
-        # Explicitly ensure libz.so.1 is bundled
-        if [ ! -f "$APPDIR/usr/lib/libz.so.1" ] && [ ! -L "$APPDIR/usr/lib/libz.so.1" ]; then
-          libz=$(find / -name 'libz.so.1' -type f 2>/dev/null | head -1)
-          if [ -n "$libz" ]; then
-            cp -L "$libz" "$APPDIR/usr/lib/"
-            echo "Explicitly bundled: libz.so.1"
-          fi
-        fi
-
         # Remove GPU driver libraries to avoid version conflicts with host system Mesa/libdrm
         rm -f "$APPDIR"/usr/lib/libdrm*.so.* "$APPDIR"/usr/lib/libgbm*.so.* "$APPDIR"/usr/lib/libgallium*.so.* 2>/dev/null || true
 
-        curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64" \
+        curl -sL "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64" \
           -o /tmp/runtime-x86_64
         curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
           -o /tmp/appimagetool
@@ -198,19 +189,11 @@ jobs:
               done
             done
 
-            # Explicitly ensure libz.so.1 is bundled
-            if [ ! -f \"\$APPDIR/usr/lib/libz.so.1\" ] && [ ! -L \"\$APPDIR/usr/lib/libz.so.1\" ]; then
-              libz=\$(find / -name 'libz.so.1' -type f 2>/dev/null | head -1)
-              if [ -n \"\$libz\" ]; then
-                cp -L \"\$libz\" \"\$APPDIR/usr/lib/\"
-                echo \"Explicitly bundled: libz.so.1\"
-              fi
-            fi
 
             # Remove GPU driver libraries to avoid version conflicts with host system Mesa/libdrm
             rm -f \"\$APPDIR\"/usr/lib/libdrm*.so.* \"\$APPDIR\"/usr/lib/libgbm*.so.* \"\$APPDIR\"/usr/lib/libgallium*.so.* 2>/dev/null || true
 
-            curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-i686\" \
+            curl -sL \"https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-i686\" \
               -o /tmp/runtime-i686
             curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage\" \
               -o /tmp/appimagetool
@@ -483,7 +466,6 @@ jobs:
             mingw-w64-i686-libpng
             mingw-w64-i686-nsis
             mingw-w64-i686-lame
-            mingw-w64-i686-curl-winssl
             zip
 
       - name: Run autoreconf
