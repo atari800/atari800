@@ -982,6 +982,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (dl_dir[0] != '\0') {
 				const char *first = Download_And_Extract(argv[i], img_exts, dl_dir);
 				if (first != NULL) {
+					Log_print("Downloaded %s to %s", first, dl_dir);
 					snprintf(dl_buf, sizeof(dl_buf), "%s/%s", dl_dir, first);
 					filename = dl_buf;
 				}
