@@ -19,4 +19,9 @@ extern char CFG_data_dir[FILENAME_MAX];
    String comparison is case-insensitive. */
 int CFG_MatchTextParameter(char const *param, char const * const cfg_strings[], int cfg_strings_size);
 
+/* If another default path config path is defined use it otherwise use the default one */
+#ifndef DEFAULT_CFG_NAME
+#define DEFAULT_CFG_NAME ".atari800.cfg"
+#endif
+
 #endif /* CFG_H_ */
