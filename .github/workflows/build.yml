@@ -100,6 +100,17 @@ jobs:
           fi
         fi
 
+        # Bundle libdrm driver libraries (loaded via dlopen, not DT_NEEDED)
+        for lib in libdrm_amdgpu.so.1 libdrm_radeon.so.1 libdrm_intel.so.1 libdrm_nouveau.so.2; do
+          if [ ! -f "$APPDIR/usr/lib/$lib" ] && [ ! -L "$APPDIR/usr/lib/$lib" ]; then
+            found=$(find /usr/lib -name "$lib*" -type f 2>/dev/null | head -1)
+            if [ -n "$found" ]; then
+              cp -L "$found" "$APPDIR/usr/lib/"
+              echo "Bundled missing dep: $lib"
+            fi
+          fi
+        done
+
         curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64" \
           -o /tmp/runtime-x86_64
         curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
@@ -201,6 +212,17 @@ jobs:
                 echo \"Explicitly bundled: libz.so.1\"
               fi
             fi
+
+            # Bundle libdrm driver libraries (loaded via dlopen, not DT_NEEDED)
+            for lib in libdrm_amdgpu.so.1 libdrm_radeon.so.1 libdrm_intel.so.1 libdrm_nouveau.so.2; do
+              if [ ! -f \"\$APPDIR/usr/lib/\$lib\" ] && [ ! -L \"\$APPDIR/usr/lib/\$lib\" ]; then
+                found=\$(find /usr/lib -name \"\$lib*\" -type f 2>/dev/null | head -1)
+                if [ -n \"\$found\" ]; then
+                  cp -L \"\$found\" \"\$APPDIR/usr/lib/\"
+                  echo \"Bundled missing dep: \$lib\"
+                fi
+              fi
+            done
 
             curl -sL \"https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-i686\" \
               -o /tmp/runtime-i686
