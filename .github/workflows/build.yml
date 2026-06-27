@@ -66,6 +66,7 @@ jobs:
 
         echo '#!/bin/sh' > "$APPDIR/AppRun"
         echo 'HERE="$(dirname "$(readlink -f "$0")")"' >> "$APPDIR/AppRun"
+        echo 'export LD_LIBRARY_PATH="$HERE/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"' >> "$APPDIR/AppRun"
         echo 'exec "$HERE/usr/bin/atari800" "$@"' >> "$APPDIR/AppRun"
         chmod +x "$APPDIR/AppRun"
 
@@ -105,7 +106,7 @@ jobs:
           if [ ! -f "$APPDIR/usr/lib/$lib" ] && [ ! -L "$APPDIR/usr/lib/$lib" ]; then
             found=$(find /usr/lib -name "$lib*" -type f 2>/dev/null | head -1)
             if [ -n "$found" ]; then
-              cp -L "$found" "$APPDIR/usr/lib/"
+              cp -L "$found" "$APPDIR/usr/lib/$lib"
               echo "Bundled missing dep: $lib"
             fi
           fi
@@ -179,6 +180,7 @@ jobs:
 
             echo '#!/bin/sh' > \"\$APPDIR/AppRun\"
             echo 'HERE=\"\$(dirname \"\$(readlink -f \"\$0\")\")\"' >> \"\$APPDIR/AppRun\"
+            echo 'export LD_LIBRARY_PATH=\"\$HERE/usr/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\"' >> \"\$APPDIR/AppRun\"
             echo 'exec \"\$HERE/usr/bin/atari800\" \"\$@\"' >> \"\$APPDIR/AppRun\"
             chmod +x \"\$APPDIR/AppRun\"
 
@@ -218,7 +220,7 @@ jobs:
               if [ ! -f \"\$APPDIR/usr/lib/\$lib\" ] && [ ! -L \"\$APPDIR/usr/lib/\$lib\" ]; then
                 found=\$(find /usr/lib -name \"\$lib*\" -type f 2>/dev/null | head -1)
                 if [ -n \"\$found\" ]; then
-                  cp -L \"\$found\" \"\$APPDIR/usr/lib/\"
+                  cp -L \"\$found\" \"\$APPDIR/usr/lib/\$lib\"
                   echo \"Bundled missing dep: \$lib\"
                 fi
               fi
