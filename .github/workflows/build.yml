@@ -46,7 +46,7 @@ jobs:
           V=${{ inputs.version }}
         else
           V=${GITHUB_REF_NAME#ATARI800_}
-          V=${V//_/.}
+          V=$(echo "$V" | sed 's/_/./g')
         fi
         echo "VERSION=$V" >> $GITHUB_ENV
 
@@ -124,7 +124,7 @@ jobs:
           V=${{ inputs.version }}
         else
           V=${GITHUB_REF_NAME#ATARI800_}
-          V=${V//_/.}
+          V=$(echo "$V" | sed 's/_/./g')
         fi
 
         docker run --platform=linux/386 --rm \
@@ -224,7 +224,7 @@ jobs:
           V=${{ inputs.version }}
         else
           V=${GITHUB_REF_NAME#ATARI800_}
-          V=${V//_/.}
+          V=$(echo "$V" | sed 's/_/./g')
         fi
         echo "VERSION=$V" >> $GITHUB_ENV
 
@@ -377,7 +377,7 @@ jobs:
             V=${{ inputs.version }}
           else
             V=${GITHUB_REF_NAME#ATARI800_}
-            V=${V//_/.}
+            V=$(echo "$V" | sed 's/_/./g')
           fi
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
@@ -402,7 +402,7 @@ jobs:
             V=${{ inputs.version }}
           else
             V=${GITHUB_REF_NAME#ATARI800_}
-            V=${V//_/.}
+            V=$(echo "$V" | sed 's/_/./g')
           fi
           test -f atari800-$V-win64.zip && echo "Installer OK: atari800-$V-win64.zip"
 
@@ -488,7 +488,7 @@ jobs:
             V=${{ inputs.version }}
           else
             V=${GITHUB_REF_NAME#ATARI800_}
-            V=${V//_/.}
+            V=$(echo "$V" | sed 's/_/./g')
           fi
           echo "VERSION=$V" >> $GITHUB_ENV
           mkdir -p pkg/act pkg/doc
@@ -513,7 +513,7 @@ jobs:
             V=${{ inputs.version }}
           else
             V=${GITHUB_REF_NAME#ATARI800_}
-            V=${V//_/.}
+            V=$(echo "$V" | sed 's/_/./g')
           fi
           test -f atari800-$V-win32-no-network.zip && echo "Installer OK: atari800-$V-win32-no-network.zip"
 
