@@ -1,3 +1,35 @@
+Version 7.0.0 (2026/06/27) — the first Atari800 with built-in Internet downloads
+================================================================================
+
+ New features:
+
+  * Auto-download missing OS/BASIC ROMs from the Internet
+  * Mount zipped disk images directly from the Internet
+  * Portable mode — config file and data storage next to the executable
+
+ Changes to config file search order:
+
+  1. --config argument — exact path given on command line
+  2. Portable exe dir — exe_dir/.atari800.cfg if exe dir is writable
+  3. $HOME default — ~/.atari800.cfg (if neither of the above applies)
+
+  plus $HOME now respects MS Windows specifics (USERPROFILE etc.)
+
+  If the resolved path (1, 2, or 3) doesn't exist:
+  4. HOME fallback — try ~/.atari800.cfg (only in portable mode)
+  5. System-wide — /etc/atari800.cfg (only if steps 1-4 all failed)
+  6. Fresh defaults — create new config at the path from step 1/2/3
+
+ Platform specific:
+
+  * Windows: 32/64-bit builds, installer executable, portable zip archive
+  * Windows: app icon, MP3 recording support
+  * Windows: win32-no-network build for XP compatibility
+  * macOS: ready-to-run .dmg archive
+  * Linux: AppImage builds (x86_64 + i386)
+  * Android: auto-download ROMs, upgrade dialog
+
+
 Version 6.1.0 (2026/06/20)
 ==========================
 
@@ -10,6 +42,7 @@ Version 6.1.0 (2026/06/20)
 Platform specific:
 
   * SDL: Alt+J hotkey added
+
 
 Version 6.0.0 (2026/06/19)
 ==========================
