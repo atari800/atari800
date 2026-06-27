@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#define _POSIX_C_SOURCE 200809L /* for nanosleep, mkdtemp */
+#define _POSIX_C_SOURCE 200809L /* for nanosleep */
 
 #include "afile.h"
 #include "config.h"
@@ -59,6 +59,9 @@
 #include "akey.h"
 #include "antic.h"
 #ifdef HAVE_DOWNLOAD
+#ifdef HAVE_DIRENT_H
+#include <dirent.h>
+#endif
 #include "download.h"
 #endif
 #include "artifact.h"
@@ -368,6 +371,25 @@ static void PreInitialise(void)
 	FILTER_NTSC_PreInitialise();
 #endif
 }
+
+#ifdef HAVE_DOWNLOAD
+static void PurgeDownloadDir(const char *dir)
+{
+	DIR *d = opendir(dir);
+	if (d == NULL)
+		return;
+	struct dirent *entry;
+	while ((entry = readdir(d)) != NULL) {
+		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			continue;
+		char path[FILENAME_MAX];
+		Util_catpath(path, dir, entry->d_name);
+		remove(path);
+	}
+	closedir(d);
+	rmdir(dir);
+}
+#endif
 
 int Atari800_Initialise(int *argc, char *argv[])
 {
@@ -751,13 +773,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef HAVE_DOWNLOAD
 			else if (strcmp(argv[i], "-download-roms") == 0) {
 				static const char *rom_exts[] = {".rom", NULL};
-				Log_print("Downloading ROMs to %s ...", CFG_data_dir);
-				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, rom_exts, CFG_data_dir) == NULL) {
+				char rom_dir[FILENAME_MAX];
+				Util_catpath(rom_dir, CFG_data_dir, "rom");
+				Log_print("Downloading ROMs to %s ...", rom_dir);
+				if (Download_And_Extract(i_a ? argv[++i] : ROM_URL, rom_exts, rom_dir) == NULL) {
 					Log_print("Downloading ROMs failed");
 					return FALSE;
 				}
-				Log_print("Searching in %s", CFG_data_dir);
-				SYSROM_FindInDir(CFG_data_dir, FALSE);
+				Log_print("Searching in %s", rom_dir);
+				SYSROM_FindInDir(rom_dir, FALSE);
 			}
 #endif /* HAVE_DOWNLOAD */
 			else {
@@ -953,11 +977,8 @@ int Atari800_Initialise(int *argc, char *argv[])
 		char dl_buf[FILENAME_MAX+2] = "";
 		if (strncmp(argv[i], "http://", 7) == 0 || strncmp(argv[i], "https://", 8) == 0) {
 			static const char *img_exts[] = { ".atr", ".xfd", ".atx", ".pro", ".dcm", ".xex", ".bas", ".lst", ".cas", ".rom", ".car", ".bin", NULL };
-			if (dl_dir[0] == '\0') {
-				char tmpl[] = "Atari800_XXXXXX";
-				if (mkdtemp(tmpl) != NULL)
-					Util_strlcpy(dl_dir, tmpl, sizeof(dl_dir));
-			}
+			if (dl_dir[0] == '\0')
+				Util_catpath(dl_dir, CFG_data_dir, ".atari800_dl");
 			if (dl_dir[0] != '\0') {
 				const char *first = Download_And_Extract(argv[i], img_exts, dl_dir);
 				if (first != NULL) {
@@ -983,7 +1004,6 @@ int Atari800_Initialise(int *argc, char *argv[])
 			case AFILE_PRO:
 			case AFILE_ATX:
 				j++;
-				if (filename != argv[i]) unlink(filename);
 				break;
 			default:
 				break;
@@ -1069,10 +1089,12 @@ int Atari800_Initialise(int *argc, char *argv[])
 #ifdef HAVE_DOWNLOAD
 	if (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE) {
 		static const char *rom_exts[] = {".rom", NULL};
-		Log_print("Downloading ROMs to %s ...", CFG_data_dir);
-		if (Download_And_Extract(ROM_URL, rom_exts, CFG_data_dir) != NULL) {
-			Log_print("Searching in %s", CFG_data_dir);
-			SYSROM_FindInDir(CFG_data_dir, FALSE);
+		char rom_dir[FILENAME_MAX];
+		Util_catpath(rom_dir, CFG_data_dir, "rom");
+		Log_print("Downloading ROMs to %s ...", rom_dir);
+		if (Download_And_Extract(ROM_URL, rom_exts, rom_dir) != NULL) {
+			Log_print("Searching in %s", rom_dir);
+			SYSROM_FindInDir(rom_dir, FALSE);
 			CFG_WriteConfig();
 			Atari800_InitialiseMachine();
 		}
@@ -1180,7 +1202,7 @@ int Atari800_Exit(int run_monitor)
 #endif /* __PLUS */
 #ifdef HAVE_DOWNLOAD
 	if (dl_dir[0] != '\0')
-		rmdir(dl_dir);
+		PurgeDownloadDir(dl_dir);
 #endif
 	return restart;
 }
