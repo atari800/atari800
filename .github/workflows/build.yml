@@ -93,7 +93,8 @@ jobs:
         done
 
         # Remove GPU driver libraries to avoid version conflicts with host system Mesa/libdrm
-        rm -f "$APPDIR"/usr/lib/libdrm*.so.* "$APPDIR"/usr/lib/libgbm*.so.* "$APPDIR"/usr/lib/libgallium*.so.* 2>/dev/null || true
+        rm -f "$APPDIR"/usr/lib/libdrm*.so.* "$APPDIR"/usr/lib/libgbm*.so.* "$APPDIR"/usr/lib/libgallium*.so.* \
+              "$APPDIR"/usr/lib/libGL.so.* "$APPDIR"/usr/lib/libGLX.so.* "$APPDIR"/usr/lib/libEGL.so.* "$APPDIR"/usr/lib/libGLdispatch.so.* 2>/dev/null || true
 
         curl -sL "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64" \
           -o /tmp/runtime-x86_64
@@ -191,7 +192,8 @@ jobs:
 
 
             # Remove GPU driver libraries to avoid version conflicts with host system Mesa/libdrm
-            rm -f \"\$APPDIR\"/usr/lib/libdrm*.so.* \"\$APPDIR\"/usr/lib/libgbm*.so.* \"\$APPDIR\"/usr/lib/libgallium*.so.* 2>/dev/null || true
+            rm -f \"\$APPDIR\"/usr/lib/libdrm*.so.* \"\$APPDIR\"/usr/lib/libgbm*.so.* \"\$APPDIR\"/usr/lib/libgallium*.so.* \
+                  \"\$APPDIR\"/usr/lib/libGL.so.* \"\$APPDIR\"/usr/lib/libGLX.so.* \"\$APPDIR\"/usr/lib/libEGL.so.* \"\$APPDIR\"/usr/lib/libGLdispatch.so.* 2>/dev/null || true
 
             curl -sL \"https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-i686\" \
               -o /tmp/runtime-i686
