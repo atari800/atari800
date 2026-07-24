@@ -28,8 +28,5 @@ go to original author David Firth and all the people that contributed since then
 EnJoy!
 
 Petr Stehlik
-Jun 19, 2026
-
-E-mail: pstehlik@sophics.cz
 
 Project homepage: http://atari800.github.io/

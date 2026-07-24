@@ -66,6 +66,7 @@
 #include "antic.h"
 #include "atari.h"
 #include "esc.h"
+#include "pokey.h"
 #include "memory.h"
 #include "monitor.h"
 #ifndef BASIC
@@ -854,6 +855,11 @@ void CPU_GO(int limit)
 #ifndef CYCLES_PER_OPCODE
 		ANTIC_xpos += cycles[insn];
 #endif
+		/* If a POKEY timer IRQ is pending, fire it at the exact cycle it should occur */
+		if (POKEY_irq_pending_mask && ANTIC_xpos >= POKEY_irq_at_xpos) {
+			CPU_GenerateIRQ();
+			POKEY_irq_pending_mask = 0;
+		}
 
 #ifdef MONITOR_PROFILE
 		CPU_instruction_count[insn]++;

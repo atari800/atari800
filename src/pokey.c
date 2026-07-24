@@ -75,6 +75,8 @@ UBYTE POKEY_SKCTL;
 int POKEY_DELAYED_SERIN_IRQ;
 int POKEY_DELAYED_SEROUT_IRQ;
 int POKEY_DELAYED_XMTDONE_IRQ;
+int POKEY_irq_at_xpos;
+UBYTE POKEY_irq_pending_mask;
 
 /* structures to hold the 9 pokey control bytes */
 UBYTE POKEY_AUDF[4 * POKEY_MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
@@ -502,8 +504,8 @@ void POKEY_Frame(void)
 
 /***************************************************************************
  ** Generate POKEY Timer IRQs if required                                 **
- ** called on a per-scanline basis, not very precise, but good enough     **
- ** for most applications                                                 **
+ ** Timer decrements are per-scanline; IRQ assertion is deferred to the   **
+ ** exact cycle the timer crossed zero (see POKEY_irq_at_xpos in cpu.c)  **
  ***************************************************************************/
 
 void POKEY_Scanline(void)
@@ -614,27 +616,46 @@ void POKEY_Scanline(void)
 #endif
 		}
 
-	if ((POKEY_DivNIRQ[POKEY_CHAN1] -= ANTIC_LINE_C) < 0 ) {
-		POKEY_DivNIRQ[POKEY_CHAN1] += POKEY_DivNMax[POKEY_CHAN1];
-		if (POKEY_IRQEN & 0x01) {
-			POKEY_IRQST &= 0xfe;
-			CPU_GenerateIRQ();
-		}
-	}
+	POKEY_irq_pending_mask = 0;
+	POKEY_irq_at_xpos = ANTIC_LINE_C; /* default: no mid-line IRQ */
+	/* Multiple timers may expire on one scanline; all IRQST bits are
+	   cleared here, but IRQ fires at the earliest timer's cycle.
+	   The ISR reads IRQST and services all pending sources at once. */
 
-	if ((POKEY_DivNIRQ[POKEY_CHAN2] -= ANTIC_LINE_C) < 0 ) {
-		POKEY_DivNIRQ[POKEY_CHAN2] += POKEY_DivNMax[POKEY_CHAN2];
-		if (POKEY_IRQEN & 0x02) {
-			POKEY_IRQST &= 0xfd;
-			CPU_GenerateIRQ();
-		}
-	}
+	{
+		int old_divn;
 
-	if ((POKEY_DivNIRQ[POKEY_CHAN4] -= ANTIC_LINE_C) < 0 ) {
-		POKEY_DivNIRQ[POKEY_CHAN4] += POKEY_DivNMax[POKEY_CHAN4];
-		if (POKEY_IRQEN & 0x04) {
-			POKEY_IRQST &= 0xfb;
-			CPU_GenerateIRQ();
+		old_divn = POKEY_DivNIRQ[POKEY_CHAN1];
+		if ((POKEY_DivNIRQ[POKEY_CHAN1] -= ANTIC_LINE_C) < 0 ) {
+			POKEY_DivNIRQ[POKEY_CHAN1] += POKEY_DivNMax[POKEY_CHAN1];
+			if (POKEY_IRQEN & 0x01) {
+				POKEY_IRQST &= 0xfe;
+				POKEY_irq_pending_mask |= 0x01;
+				if (old_divn < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = old_divn;
+			}
+		}
+
+		old_divn = POKEY_DivNIRQ[POKEY_CHAN2];
+		if ((POKEY_DivNIRQ[POKEY_CHAN2] -= ANTIC_LINE_C) < 0 ) {
+			POKEY_DivNIRQ[POKEY_CHAN2] += POKEY_DivNMax[POKEY_CHAN2];
+			if (POKEY_IRQEN & 0x02) {
+				POKEY_IRQST &= 0xfd;
+				POKEY_irq_pending_mask |= 0x02;
+				if (old_divn < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = old_divn;
+			}
+		}
+
+		old_divn = POKEY_DivNIRQ[POKEY_CHAN4];
+		if ((POKEY_DivNIRQ[POKEY_CHAN4] -= ANTIC_LINE_C) < 0 ) {
+			POKEY_DivNIRQ[POKEY_CHAN4] += POKEY_DivNMax[POKEY_CHAN4];
+			if (POKEY_IRQEN & 0x04) {
+				POKEY_IRQST &= 0xfb;
+				POKEY_irq_pending_mask |= 0x04;
+				if (old_divn < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = old_divn;
+			}
 		}
 	}
 #ifdef NETSIO
