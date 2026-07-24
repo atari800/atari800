@@ -18,7 +18,7 @@ jobs:
     name: Build on Linux amd64
     runs-on: ubuntu-24.04
     container:
-      image: debian:bullseye
+      image: debian:trixie
 
     steps:
     - uses: actions/checkout@v7
@@ -26,7 +26,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y build-essential autoconf automake libtool pkg-config \
-          libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev libpng-dev libcurl4-openssl-dev curl ca-certificates
+          libsdl2-dev libmp3lame-dev libreadline-dev libgl1-mesa-dev libpng-dev libcurl4-openssl-dev curl ca-certificates gh
     - name: autogen
       run: ./autogen.sh
     - name: configure
@@ -138,7 +138,7 @@ jobs:
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
           -e V="$V" \
-          debian:bullseye \
+          debian:trixie \
           bash -c "
             set -e
             apt-get update
@@ -217,8 +217,8 @@ jobs:
         gh release upload "$GITHUB_REF_NAME" Atari800-*-i386.AppImage --clobber
 
   build-macos:
-    name: Build on MacOS M1 (arm64)
-    runs-on: macos-14
+    name: Build on MacOS (arm64)
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v7
