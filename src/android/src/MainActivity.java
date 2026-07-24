@@ -95,6 +95,7 @@ public final class MainActivity extends Activity
 	private String _cartTypes[][] = null;
 	private static File _romsDir = null;
 	static File _savesDir = null;
+	private android.widget.TextView[] _driveBtns = new android.widget.TextView[4];
 
 	static {
 		System.loadLibrary("atari800");
@@ -182,6 +183,7 @@ public final class MainActivity extends Activity
 				}
 			});
 			driveBar.addView(btn);
+			_driveBtns[d] = btn;
 		}
 
 		LinearLayout menuContainer = new LinearLayout(this);
@@ -527,7 +529,21 @@ public final class MainActivity extends Activity
 		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
 				View.STATUS_BAR_HIDDEN);
 		pauseEmulation(false);
+		updateDriveButtons();
 		super.onResume();
+	}
+
+	private void updateDriveButtons() {
+		int[] status = NativeGetDriveStatus();
+		for (int i = 0; i < 4; i++) {
+			boolean mounted = (status[i] == 2 || status[i] == 3);
+			int flags = _driveBtns[i].getPaintFlags();
+			if (mounted)
+				flags |= android.graphics.Paint.UNDERLINE_TEXT_FLAG;
+			else
+				flags &= ~android.graphics.Paint.UNDERLINE_TEXT_FLAG;
+			_driveBtns[i].setPaintFlags(flags);
+		}
 	}
 
 	@Override 
@@ -557,6 +573,8 @@ public final class MainActivity extends Activity
 											copyPath.substring(copyPath.lastIndexOf("/") + 1)),
 									   Toast.LENGTH_SHORT)
 							 .show();
+					else
+						updateDriveButtons();
 				}
 			}
 			return;
@@ -579,6 +597,7 @@ public final class MainActivity extends Activity
 											_curDiskFname.substring(_curDiskFname.lastIndexOf("/") + 1)),
 									   Toast.LENGTH_SHORT)
 							 .show();
+					updateDriveButtons();
 				}
 				break;
 			}
@@ -629,6 +648,7 @@ public final class MainActivity extends Activity
 										   f.getName()),
 									   Toast.LENGTH_SHORT)
 							 .show();
+						updateDriveButtons();
 						return;
 					}
 					if (side != '9')
@@ -982,4 +1002,5 @@ public final class MainActivity extends Activity
 	private static native void NativeSetTopInset(int topInset);
 	private static native boolean NativeNeedsDownload();
 	private static native String NativeGetROMURL();
+	private static native int[] NativeGetDriveStatus();
 }

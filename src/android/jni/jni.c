@@ -577,6 +577,17 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 	Sound_Exit();
 }
 
+static jintArray JNICALL NativeGetDriveStatus(JNIEnv *env, jobject this)
+{
+	jintArray result = (*env)->NewIntArray(env, 4);
+	jint buf[4];
+	int i;
+	for (i = 0; i < 4; i++)
+		buf[i] = SIO_drive_status[i];
+	(*env)->SetIntArrayRegion(env, result, 0, 4, buf);
+	return result;
+}
+
 
 	jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
@@ -600,6 +611,7 @@ static void JNICALL NativeOSLSoundExit(JNIEnv *env, jobject this)
 		{ "NativeSetTopInset",		"(I)V",								NativeSetTopInset	  },
 		{ "NativeNeedsDownload",	"()Z",								NativeNeedsDownload	  },
 		{ "NativeGetROMURL",		"()Ljava/lang/String;",				NativeGetROMURL		  },
+		{ "NativeGetDriveStatus",	"()[I",								NativeGetDriveStatus  },
 	};
 	JNINativeMethod view_methods[] = {
 		{ "NativeTouch", 			"(IIIIII)I", 						NativeTouch			  },
