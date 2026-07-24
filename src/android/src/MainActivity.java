@@ -171,7 +171,8 @@ public final class MainActivity extends Activity
 			@Override
 			public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
 				int topInset = insets.getSystemWindowInsetTop();
-				topBar.setPadding(0, topInset, 0, 0);
+				boolean landscape = getResources().getDisplayMetrics().widthPixels > getResources().getDisplayMetrics().heightPixels;
+				topBar.setPadding(16, topInset + (landscape ? 16 : 0), 0, 0);
 				NativeSetTopInset(topInset);
 				return insets;
 			}
