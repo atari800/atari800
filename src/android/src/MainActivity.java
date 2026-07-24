@@ -81,11 +81,13 @@ public final class MainActivity extends Activity
 	private static final int DLG_BRWSCONFRM = 2;
 	private static final int DLG_SELCARTTYPE = 3;
 	private static final int DLG_UPGRADE = 4;
+	private static final int ACTIVITY_DISK_BASE = 10;
 
 	public static String _pkgversion;
 	public static String _coreversion;
 	private static boolean _initialized = false;
 	private static String _curDiskFname = null;
+	private int _pendingDrive = 0;
 	private A800view _view = null;
 	private AudioThread _audio = null;
 	private InputMethodManager _imng;
@@ -154,7 +156,45 @@ public final class MainActivity extends Activity
 		});
 		topBar.addView(btnPrefs);
 
-		root.addView(topBar, new FrameLayout.LayoutParams(
+		/* Drive assignment buttons */
+		LinearLayout driveBar = new LinearLayout(this);
+		driveBar.setOrientation(LinearLayout.HORIZONTAL);
+		driveBar.setBackgroundColor(0x00000000);
+		driveBar.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+
+		String[] driveLabels = {"\u2460", "\u2461", "\u2462", "\u2463"};
+		for (int d = 0; d < 4; d++) {
+			final int drive = d + 1;
+			android.widget.TextView btn = new android.widget.TextView(this);
+			btn.setText(driveLabels[d]);
+			btn.setTextColor(0xFFFFFFFF);
+			btn.setTextSize(20);
+			btn.setBackgroundColor(0x00000000);
+			btn.setPadding(24, 4, 24, 4);
+			btn.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					_pendingDrive = drive;
+					startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+						.addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+						.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+						ACTIVITY_DISK_BASE + drive);
+				}
+			});
+			driveBar.addView(btn);
+		}
+
+		LinearLayout menuContainer = new LinearLayout(this);
+		menuContainer.setOrientation(LinearLayout.VERTICAL);
+		menuContainer.setGravity(Gravity.LEFT | Gravity.TOP);
+		menuContainer.addView(topBar);
+		LinearLayout.LayoutParams driveBarLp = new LinearLayout.LayoutParams(
+			LinearLayout.LayoutParams.WRAP_CONTENT,
+			LinearLayout.LayoutParams.WRAP_CONTENT);
+		driveBarLp.topMargin = 32;
+		menuContainer.addView(driveBar, driveBarLp);
+
+		root.addView(menuContainer, new FrameLayout.LayoutParams(
 			FrameLayout.LayoutParams.WRAP_CONTENT,
 			FrameLayout.LayoutParams.WRAP_CONTENT,
 			Gravity.LEFT | Gravity.TOP));
@@ -172,7 +212,7 @@ public final class MainActivity extends Activity
 			public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
 				int topInset = insets.getSystemWindowInsetTop();
 				boolean landscape = getResources().getDisplayMetrics().widthPixels > getResources().getDisplayMetrics().heightPixels;
-				topBar.setPadding(16, topInset + (landscape ? 16 : 0), 0, 0);
+				menuContainer.setPadding(16, topInset + (landscape ? 16 : 0), 0, 0);
 				NativeSetTopInset(topInset);
 				return insets;
 			}
@@ -503,6 +543,24 @@ public final class MainActivity extends Activity
 
 	@Override
 	protected void onActivityResult(int reqc, int resc, Intent data) {
+
+		if (reqc >= ACTIVITY_DISK_BASE && reqc <= ACTIVITY_DISK_BASE + 3) {
+			if (resc == RESULT_OK && data != null
+				&& Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && data.getData() != null
+				&& data.getData().getScheme() != null && data.getData().getScheme().equals("content")) {
+				String copyPath = copyContentUriToCache(data.getData());
+				if (copyPath != null) {
+					int drive = reqc - ACTIVITY_DISK_BASE;
+					int r = NativeRunAtariProgram(copyPath, drive, 0);
+					if (r < 0)
+						Toast.makeText(this, String.format(getString(R.string.errorboot),
+											copyPath.substring(copyPath.lastIndexOf("/") + 1)),
+									   Toast.LENGTH_SHORT)
+							 .show();
+				}
+			}
+			return;
+		}
 
 		switch (reqc) {
 		case ACTIVITY_FSEL:
