@@ -105,7 +105,7 @@ static void JNICALL NativeResize(JNIEnv *env, jobject this, jint w, jint h, jflo
 	Android_ScreenH = h;
 	Android_DisplayDensity = density;
 	Android_SplitCalc();
-	Android_CovlHold = (Android_ScreenW < Android_ScreenH) ? 0 : Android_CovlHoldPref;
+	Android_CovlHold = 0;
 	Android_InitGraphics();
 }
 

@@ -159,8 +159,12 @@ int Android_TouchEvent(int x1, int y1, int s1, int x2, int y2, int s2)
 					conptr = PTRTRG;
 		if (conptr != PTRSTL) {	  /* if bb is exact on top & bottom => check only horiz/lly */
 			int i;
-			dy = covl->keycoo[1] - newtc[conptr].y;
 			for (i = 0; i < CONK_VERT_MAX; i += 8) {
+				/* Check y-range first (essential for vertical rectangles, harmless for parallelograms) */
+				if (newtc[conptr].y < covl->keycoo[i + 5] ||
+				    newtc[conptr].y > covl->keycoo[i + 1])
+					continue;
+				float dy = covl->keycoo[i + 1] - newtc[conptr].y;
 				float a = ((float) covl->keycoo[i + 6] - covl->keycoo[i    ]) /
 					((float) covl->keycoo[i + 1] - covl->keycoo[i + 7]);
 				dx = covl->keycoo[i] + a * dy;

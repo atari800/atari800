@@ -44,7 +44,7 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 	public static final int REQ_BROWSER = 1;
 	private static final String TAG = "A800Renderer";
 	private final int OVL_TEXW = 128;
-	private final int OVL_TEXH = 64;
+	private final int OVL_TEXH = 128;
 	private int[] _pix;
 	private Toast _crashtoast;
 	private int _frameret;
@@ -118,7 +118,7 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 		can.drawOval(r, fill);
 		can.restore();
 
-		// El texto
+		// Labels for portrait/horizontal layout
 		can.save();
 		can.clipRect(64, 16, 128, 64);
 		Paint t = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -130,6 +130,19 @@ public final class A800Renderer implements GLSurfaceView.Renderer
 		can.drawText("OPTION", 65, 44, t);
 		can.drawText("RESET", 65, 54, t);
 		can.drawText("HELP", 65, 64, t);
+		can.restore();
+
+		// Labels for landscape/vertical layout (horizontal, stacked vertically)
+		can.save();
+		can.clipRect(0, 64, 128, 128);
+		Paint rt = new Paint(Paint.ANTI_ALIAS_FLAG);
+		rt.setColor(0xFF001976);
+		rt.setTextSize(10);
+		String[] vertLabels = {"HELP", "START", "SELECT", "OPTION", "RESET"};
+		int[] vertBaselines = {78, 88, 98, 108, 118};
+		for (int i = 0; i < 5; i++) {
+			can.drawText(vertLabels[i], 2, vertBaselines[i], rt);
+		}
 		can.restore();
 
 		bmp.getPixels(_pix, 0, OVL_TEXW, 0, 0, OVL_TEXW, OVL_TEXH);
