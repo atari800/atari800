@@ -1,3 +1,23 @@
+Version 7.1.0 (2026/07/25) — implemented cycle-precise POKEY interrupts
+=======================================================================
+
+ Core:
+
+  * Implemented cycle-precise POKEY interrupts; Project-M now works correctly
+
+ Android:
+
+  * Vertical, always-on console key overlay in landscape mode
+  * Menu bar icons padded away from rounded screen edges
+  * Disk drive mounting buttons (D1-D4) with mount status indicator
+  * Fixed gzip disk image mounting (.atr.gz, .xfd.gz)
+
+ CI:
+
+  * AppImage build improvements and fine-tuning
+  * Fixed bashism, HTTPS certs, automatic release
+
+
 Version 7.0.0 (2026/06/27) — the first Atari800 with built-in Internet downloads
 ================================================================================
 

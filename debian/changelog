@@ -1,3 +1,10 @@
+atari800 (7.1.0) unstable; urgency=medium
+
+  * New upstream version 7.1.0
+  * Implemented cycle-precise POKEY interrupts — Project-M now works correctly
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Fri, 25 Jul 2026 12:00:00 +0000
+
 atari800 (7.0.0) unstable; urgency=medium
 
   * New upstream version 7.0.0
