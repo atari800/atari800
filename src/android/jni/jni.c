@@ -179,6 +179,7 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 	jobjectArray arr, xarr;
 	jstring str;
 	char tmp[128];
+	char cwd_buf[1024] = "";
 
 	if (reboot) {
 		NativeUnmountAll(env, this);
@@ -186,7 +187,18 @@ static jint JNICALL NativeRunAtariProgram(JNIEnv *env, jobject this,
 	}
 
 	img_utf = (*env)->GetStringUTFChars(env, img, NULL);
+	/* chdir to the image's directory so that gzip temp files (created by
+	   mkstemp with a relative path) land in a writable location. */
+	char *slash;
+	if (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL
+		&& (slash = strrchr(img_utf, '/')) != NULL) {
+		*slash = '\0';
+		chdir(img_utf);
+		*slash = '/';
+	}
 	r = AFILE_OpenFile(img_utf, reboot, drv, FALSE);
+	if (cwd_buf[0] != '\0')
+		chdir(cwd_buf);
 	if ((r & 0xFF) == AFILE_ROM && (r >> 8) != 0) {
 		kb = r >> 8;
 		scls = (*env)->FindClass(env, "java/lang/String");
