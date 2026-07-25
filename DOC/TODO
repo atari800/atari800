@@ -22,7 +22,7 @@ Keyboard and controllers
 Emulation core
 --------------
 
-* cycle-exact POKEY interrupts (timers, serial I/O, keyboard)
+* cycle-exact POKEY interrupts (serial I/O, keyboard)
 
 * precisely emulate serial I/O rates
 

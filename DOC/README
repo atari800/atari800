@@ -98,7 +98,9 @@ o MapRAM memory enhancement for the XL/XE.
 
 o Cycle-exact 6502 emulation, all unofficial instructions.
 
-o Cycle-exact NMI interrupts, scanline-based POKEY interrupts.
+o Cycle-exact NMI interrupts.
+
+o Cycle-exact POKEY interrupts.
 
 o Cycle-exact ANTIC and GTIA emulation, all display modes.
 
