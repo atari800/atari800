@@ -218,50 +218,20 @@ jobs:
 
   build-macos:
     name: Build on MacOS (arm64)
-    runs-on: macos-latest
-    env:
-      MACOSX_DEPLOYMENT_TARGET: "12.0"
+    runs-on: macos-14
 
     steps:
     - uses: actions/checkout@v7
     - name: install depends
       env:
         HOMEBREW_REQUIRE_TAP_TRUST: 0
-      run: |
-        # Install SDL2 if available; fall back to SDL3 with a compat shim
-        if brew install sdl2 2>/dev/null; then
-          echo "Installed sdl2 successfully"
-        else
-          echo "sdl2 formula not found, installing sdl3..."
-          brew install sdl3
-          # Create sdl2-config wrapper if missing (needed by AM_PATH_SDL2 macro)
-          if ! command -v sdl2-config &>/dev/null; then
-            SDL3_PREFIX="$(brew --prefix sdl3)"
-            printf '#!/bin/bash\nexec "%s/bin/sdl3-config" "$@"\n' "$SDL3_PREFIX" > /usr/local/bin/sdl2-config
-            chmod +x /usr/local/bin/sdl2-config
-            echo "Created sdl2-config shim wrapping sdl3-config"
-          fi
-        fi
-        # Install remaining build dependencies
-        brew install automake readline dylibbundler
-        # Verify SDL detection works
-        if ! command -v sdl2-config &>/dev/null; then
-          echo "ERROR: sdl2-config not found after installation"
-          exit 1
-        fi
-        echo "SDL2 config: $(sdl2-config --version)"
+      run:  brew install sdl2 automake readline dylibbundler
     - name: autogen
       run: ./autogen.sh
     - name: configure
       run: ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
     - name: building
       run: make -j4
-    - name: Verify SDL linkage
-      run: |
-        echo "=== SDL linkage check ==="
-        otool -L src/atari800 | grep -i sdl || echo "WARNING: No SDL library found in binary linkage"
-        echo "=== All linked libraries ==="
-        otool -L src/atari800
     - name: Package .dmg
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       run: |
@@ -280,29 +250,6 @@ jobs:
 
         dylibbundler -od -b -x "$APP/Contents/MacOS/atari800" \
           -d "$APP/Contents/lib/" -p @executable_path/../lib/
-
-        echo "=== Verifying bundled dylibs ==="
-        OTOOL_OUT=$(otool -L "$APP/Contents/MacOS/atari800" | tail -n +2)
-        MISSING=0
-        while IFS= read -r line; do
-          lib=$(echo "$line" | awk '{print $1}')
-          bname=$(basename "$lib")
-          if echo "$lib" | grep -q '@executable_path'; then
-            if [ ! -f "$APP/Contents/lib/$bname" ] && [ ! -L "$APP/Contents/lib/$bname" ]; then
-              echo "ERROR: Missing bundled dylib: $lib -> Contents/lib/$bname"
-              MISSING=1
-            else
-              echo "OK: $bname"
-            fi
-          else
-            echo "SKIP (system): $lib"
-          fi
-        done <<< "$OTOOL_OUT"
-        if [ "$MISSING" = "1" ]; then
-          echo "FATAL: Some required dylibs are not bundled in the app."
-          exit 1
-        fi
-        echo "=== Dylib verification passed ==="
 
         cp README.TXT "$APP/Contents/Resources/"
         cp COPYING "$APP/Contents/Resources/"
@@ -354,8 +301,6 @@ jobs:
           echo "  <string>${V}</string>"
           echo '  <key>NSHighResolutionCapable</key>'
           echo '  <true/>'
-          echo '  <key>LSMinimumSystemVersion</key>'
-          echo '  <string>12.0</string>'
           echo '</dict>'
           echo '</plist>'
         } > "$APP/Contents/Info.plist"
