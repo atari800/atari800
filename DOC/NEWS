@@ -1,3 +1,11 @@
+Version 7.1.2 (2026/07/26) — keyboard joystick config fix
+=======================================================================
+
+ Core:
+
+  * Fixed keyboard joystick configuration dialog stuck in infinite loop
+
+
 Version 7.1.1 (2026/07/26) — SDL2 joystick fixes
 =======================================================================
 
