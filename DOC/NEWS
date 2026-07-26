@@ -1,3 +1,12 @@
+Version 7.1.1 (2026/07/26) — SDL2 joystick fixes
+=======================================================================
+
+ Core:
+
+  * Fixed keyboard joystick keys not working in SDL2 (only numpad keys worked)
+  * Fixed joystick port mode "none" not persisting across restarts
+
+
 Version 7.1.0 (2026/07/25) — implemented cycle-precise POKEY interrupts
 =======================================================================
 

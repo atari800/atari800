@@ -1,3 +1,11 @@
+atari800 (7.1.1) unstable; urgency=medium
+
+  * New upstream version 7.1.1
+  * Fixed keyboard joystick keys not working in SDL2
+  * Fixed joystick port mode "none" not persisting across restarts
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sun, 26 Jul 2026 12:00:00 +0000
+
 atari800 (7.1.0) unstable; urgency=medium
 
   * New upstream version 7.1.0
