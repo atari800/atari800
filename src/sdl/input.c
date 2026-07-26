@@ -70,13 +70,14 @@ static int grab_mouse = FALSE;
 /* Per-Atari-port input source assignment */
 #define MAX_HOST_JOYSTICKS 16
 #define MAX_LPT_JOYSTICKS 2
+#define JOY_MODE_UNDEFINED  -1
 #define JOY_MODE_NONE        0
 #define JOY_MODE_KBD0        1
 #define JOY_MODE_KBD1        2
 #define JOY_MODE_PARALLEL    3
 #define JOY_MODE_HOST_JOY    4
 
-static int joy_port_mode[4] = {JOY_MODE_NONE, JOY_MODE_NONE, JOY_MODE_NONE, JOY_MODE_NONE};
+static int joy_port_mode[4] = {JOY_MODE_UNDEFINED, JOY_MODE_UNDEFINED, JOY_MODE_NONE, JOY_MODE_NONE};
 static int joy_port_param[4] = {0, 0, 0, 0};
 static char joy_port_name[4][256] = {{0}};
 static int joy_port_has_name[4] = {0};
@@ -2190,22 +2191,23 @@ int SDL_INPUT_Initialise(int *argc, char *argv[])
 				}
 			}
 		}
-		/* Apply smart defaults when no saved config was loaded:
-		   0 host joysticks -> port 0 = Keyboard 1
-		   1 host joystick  -> port 0 = Host0, port 1 = Keyboard 1
-		   2+ host joysticks -> ports 0..N = Host0..N, no keyboard */
-		if (joy_port_mode[0] == JOY_MODE_NONE) {
-			if (n_host_joys > 0) {
-				int i;
-				for (i = 0; i < MAX_JOYSTICKS && i < n_host_joys; i++) {
-					joy_port_mode[i] = JOY_MODE_HOST_JOY;
-					joy_port_param[i] = i;
-				}
-				if (n_host_joys == 1 && MAX_JOYSTICKS > 1)
-					joy_port_mode[1] = JOY_MODE_KBD0;
-			} else
-				joy_port_mode[0] = JOY_MODE_KBD0;
+		/* Apply smart defaults per port when not configured:
+		   Each port tries the next available host joystick, falling back to keyboard.
+		   Port 0: first joy -> Keyboard 1
+		   Port 1: next unused joy -> Keyboard 2 */
+		if (joy_port_mode[0] == JOY_MODE_UNDEFINED) {
+			joy_port_mode[0] = n_host_joys > 0 ? JOY_MODE_HOST_JOY : JOY_MODE_KBD0;
+			joy_port_param[0] = 0;
 		}
+		if (joy_port_mode[1] == JOY_MODE_UNDEFINED) {
+			int used = (joy_port_mode[0] == JOY_MODE_HOST_JOY) ? 1 : 0;
+			joy_port_mode[1] = n_host_joys > used ? JOY_MODE_HOST_JOY : JOY_MODE_KBD1;
+			joy_port_param[1] = used;
+		}
+		if (joy_port_mode[2] == JOY_MODE_UNDEFINED)
+			joy_port_mode[2] = JOY_MODE_NONE;
+		if (joy_port_mode[3] == JOY_MODE_UNDEFINED)
+			joy_port_mode[3] = JOY_MODE_NONE;
 	}
 
 	apply_port_mapping();
