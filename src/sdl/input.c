@@ -880,20 +880,31 @@ void PLATFORM_GetJoystickKeyName(int joystick, int direction, char *buffer, int 
 	snprintf(buffer, bufsize, "%11s", key);
 }
 
+static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
+static int lastuni = 0;
+
 int PLATFORM_GetRawKey(void)
 {
+	SDL_Keycode key;
 	while(TRUE)
 	{
 		SDL_Event event;
 		if (SDL_PollEvent(&event)) {
 			switch (event.type) {
 			case SDL_KEYDOWN:
-				return event.key.keysym.sym;
+				key = event.key.keysym.sym;
+				while(TRUE) {
+					if (SDL_PollEvent(&event)) {
+						if (event.type == SDL_KEYUP && event.key.keysym.sym == key) {
+							key_pressed = 0;
+							return key;
+						}
+					}
+					SDL_Delay(10);
+				}
 			}
 		}
-#if SDL2
 		SDL_Delay(10);
-#endif
 	}
 }
 
@@ -912,8 +923,6 @@ static struct INPUT_joystick_button* JoyButtonPress(SDL_JoystickID id, int butto
 }
 #endif
 
-static int lastkey = SDLK_UNKNOWN, key_pressed = 0, key_control = 0;
-static int lastuni = 0;
 static int previous_caps_state = -1;
 
 #if HAVE_WINDOWS_H
