@@ -179,9 +179,10 @@ static void Init_SDL_Joysticks(void);
 
 static int get_key_state(const Uint8* kbhits, int keycode) {
 #if SDL2
-	keycode &= ~SDLK_SCANCODE_MASK;
-#endif
+	return kbhits[SDL_GetScancodeFromKey((SDL_Keycode)keycode)];
+#else
 	return kbhits[keycode];
+#endif
 }
 
 /* Convert SDL1 keycode to SDL2 keycode.
