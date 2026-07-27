@@ -1,3 +1,4 @@
+'\" t
 .TH ATARI800 1 "2026-07-26" "Atari800 7.1.2"
 
 .SH NAME
@@ -1831,8 +1832,8 @@ the \fB-compression-level 0\fR command line argument.
 Video Support:
 .TS
 tab(@), center, box;
-l | c | c | c c c
-l | c | c | cB cB cB.
+l | c | c | c2 c2 c
+l | c | c | cB2 cB2 cB.
 Application@Type@Platform@RLE@PNG@ZMBV
 _
 YouTube@Website@Browser@Yes@Yes@Yes
@@ -1867,9 +1868,9 @@ ZMBV codec (default compression level):
 tab(@), center, box;
 l | c | c s s s s
 c | c | _ _ _ _ _
-c | c | c c c c c
-l | c | c c c c c
-l | cB | cB cB cB cB cB.
+c | c | c2 c2 c2 c2 c
+l | c | c2 c2 c2 c2 c
+l | cB | cB2 cB2 cB2 cB2 cB.
 @Average@Estimated recording time
 Game@video@
 @frame@mp3@mp3@ADPCM@8-bit@16-bit
@@ -1890,9 +1891,9 @@ RLE codec:
 tab(@), center, box;
 l | c | c s s s s
 c | c | _ _ _ _ _
-c | c | c c c c c
-l | c | c c c c c
-l | cB | cB cB cB cB cB.
+c | c | c2 c2 c2 c2 c
+l | c | c2 c2 c2 c2 c
+l | cB | cB2 cB2 cB2 cB2 cB.
 @Average@Estimated recording time
 Game@video@
 @frame@mp3@mp3@ADPCM@8-bit@16-bit
@@ -1913,9 +1914,9 @@ PNG codec (default compression level):
 tab(@), center, box;
 l | c | c s s s s
 c | c | _ _ _ _ _
-c | c | c c c c c
-l | c | c c c c c
-l | cB | cB cB cB cB cB.
+c | c | c2 c2 c2 c2 c
+l | c | c2 c2 c2 c2 c
+l | cB | cB2 cB2 cB2 cB2 cB.
 @Average@Estimated recording time
 Game@video@
 @frame@mp3@mp3@ADPCM@8-bit@16-bit
