@@ -885,7 +885,10 @@ static int lastuni = 0;
 
 int PLATFORM_GetRawKey(void)
 {
-	SDL_Keycode key;
+#if SDL2
+	typedef SDL_Keycode SDLKey;
+#endif
+	SDLKey key;
 	while(TRUE)
 	{
 		SDL_Event event;
