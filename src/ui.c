@@ -4362,7 +4362,9 @@ void UI_Run(void)
 		UI_MENU_FILESEL_ACCEL(UI_MENU_PCX, "PCX Screenshot (+Shift = interlaced)", "F10"),
 #endif
 #endif
+#ifndef DREAMCAST
 		UI_MENU_ACTION(UI_MENU_SAVE_CONFIG, "Save Configuration"),
+#endif
 		UI_MENU_ACTION_ACCEL(UI_MENU_BACK, "Back to Emulated Atari", "Esc"),
 		UI_MENU_ACTION_ACCEL(UI_MENU_RESETW, "Reset (Warm Start)", "F5"),
 		UI_MENU_ACTION_ACCEL(UI_MENU_RESETC, "Reboot (Cold Start)", "Shift+F5"),
@@ -4476,10 +4478,12 @@ void UI_Run(void)
 		case UI_MENU_PCXI:
 			Screenshot(TRUE);
 			break;
+#endif
+#endif
+#ifndef DREAMCAST
 		case UI_MENU_SAVE_CONFIG:
 			UI_driver->fMessage(CFG_WriteConfig() ? "Configuration file updated" : "Error writing configuration file", 1);
 			break;
-#endif
 #endif
 #ifndef USE_CURSES
 		case UI_MENU_CONTROLLER:
