@@ -66,7 +66,7 @@ struct consolekey_overlay_state
 	int    resetcnt_grace;
 	int    hotlen;
 
-	#define COVL_MAX_OPACITY 0.5f
+	#define COVL_MAX_OPACITY 0.85f
 	#define COVL_HOLD_TIME   150
 
 	#define RESET_SOFT 10
