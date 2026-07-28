@@ -189,6 +189,10 @@ if [[ "$a8_host" = "firebee" ]]; then
     SUPPORTS_RDEVICE=no
     SUPPORTS_NETSIO=no
 fi
+if [[ "$a8_target" = "falcon" || "$a8_target" = "firebee" ]]; then
+    SUPPORTS_RDEVICE=no
+    SUPPORTS_NETSIO=no
+fi
 if [[ "$a8_target" = "libatari800" ]]; then
     with_readline=no
     WANT_EVENT_RECORDING=no
