@@ -50,8 +50,10 @@ extern UBYTE POKEY_SKCTL;
 extern int POKEY_DELAYED_SERIN_IRQ;
 extern int POKEY_DELAYED_SEROUT_IRQ;
 extern int POKEY_DELAYED_XMTDONE_IRQ;
+#ifdef NEW_CYCLE_EXACT
 extern int POKEY_irq_at_xpos;
 extern UBYTE POKEY_irq_pending_mask;
+#endif
 
 extern UBYTE POKEY_POT_input[8];
 

@@ -67,6 +67,8 @@ NEW_CYCLE_EXACT equ 0   ; set to 1 to use the new cycle exact CPU emulation
   ifne NEW_CYCLE_EXACT
   xref ANTIC_cpu2antic_ptr
   xref ANTIC_cur_screen_pos
+  xref POKEY_irq_at_xpos
+  xref POKEY_irq_pending_mask
   endif
   xref ANTIC_xpos
   xref ANTIC_xpos_limit
@@ -3256,6 +3258,11 @@ COMPARE:
 NEXTCHANGE_N:
   ext.w  NFLAG
 NEXTCHANGE_WITHOUT:
+  ifne   NEW_CYCLE_EXACT
+  tst.b  POKEY_irq_pending_mask  ; POKEY timer IRQ pending?
+  bne.w  POKEY_TIMER_IRQ
+POKEY_TIMER_IRQ_DONE:
+  endif
   cmp.l  ANTIC_xpos_limit,CD
   bge.s  END_OF_CYCLE
 ****************************************
@@ -3328,6 +3335,15 @@ END_OF_CYCLE:
   move.l CD,ANTIC_xpos ;returned value
   movem.l (a7)+,d2-d7/a2-a6
   rts
+
+  ifne   NEW_CYCLE_EXACT
+POKEY_TIMER_IRQ:
+  cmp.l  POKEY_irq_at_xpos,CD    ; ANTIC_xpos >= POKEY_irq_at_xpos ?
+  blt.w  POKEY_TIMER_IRQ_DONE    ; not yet, keep it pending
+  st     CPU_IRQ                 ; CPU_GenerateIRQ()
+  clr.b  POKEY_irq_pending_mask
+  bra.w  POKEY_TIMER_IRQ_DONE
+  endif
 
 go_monitor:
   ConvertSTATUS_RegP_destroy d0

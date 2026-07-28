@@ -75,8 +75,10 @@ UBYTE POKEY_SKCTL;
 int POKEY_DELAYED_SERIN_IRQ;
 int POKEY_DELAYED_SEROUT_IRQ;
 int POKEY_DELAYED_XMTDONE_IRQ;
+#ifdef NEW_CYCLE_EXACT
 int POKEY_irq_at_xpos;
 UBYTE POKEY_irq_pending_mask;
+#endif
 
 /* structures to hold the 9 pokey control bytes */
 UBYTE POKEY_AUDF[4 * POKEY_MAXPOKEYS];	/* AUDFx (D200, D202, D204, D206) */
@@ -504,8 +506,10 @@ void POKEY_Frame(void)
 
 /***************************************************************************
  ** Generate POKEY Timer IRQs if required                                 **
- ** Timer decrements are per-scanline; IRQ assertion is deferred to the   **
- ** exact cycle the timer crossed zero (see POKEY_irq_at_xpos in cpu.c)  **
+ ** Timer decrements are per-scanline; with NEW_CYCLE_EXACT the IRQ       **
+ ** assertion is deferred to the exact cycle the timer crossed zero       **
+ ** (see POKEY_irq_at_xpos in cpu.c), otherwise the IRQ is generated      **
+ ** per-scanline, not very precise, but good enough for most applications **
  ***************************************************************************/
 
 void POKEY_Scanline(void)
@@ -616,6 +620,7 @@ void POKEY_Scanline(void)
 #endif
 		}
 
+#ifdef NEW_CYCLE_EXACT
 	POKEY_irq_pending_mask = 0;
 	POKEY_irq_at_xpos = ANTIC_LINE_C; /* default: no mid-line IRQ */
 	/* Multiple timers may expire on one scanline; all IRQST bits are
@@ -658,6 +663,31 @@ void POKEY_Scanline(void)
 			}
 		}
 	}
+#else /* NEW_CYCLE_EXACT */
+	if ((POKEY_DivNIRQ[POKEY_CHAN1] -= ANTIC_LINE_C) < 0 ) {
+		POKEY_DivNIRQ[POKEY_CHAN1] += POKEY_DivNMax[POKEY_CHAN1];
+		if (POKEY_IRQEN & 0x01) {
+			POKEY_IRQST &= 0xfe;
+			CPU_GenerateIRQ();
+		}
+	}
+
+	if ((POKEY_DivNIRQ[POKEY_CHAN2] -= ANTIC_LINE_C) < 0 ) {
+		POKEY_DivNIRQ[POKEY_CHAN2] += POKEY_DivNMax[POKEY_CHAN2];
+		if (POKEY_IRQEN & 0x02) {
+			POKEY_IRQST &= 0xfd;
+			CPU_GenerateIRQ();
+		}
+	}
+
+	if ((POKEY_DivNIRQ[POKEY_CHAN4] -= ANTIC_LINE_C) < 0 ) {
+		POKEY_DivNIRQ[POKEY_CHAN4] += POKEY_DivNMax[POKEY_CHAN4];
+		if (POKEY_IRQEN & 0x04) {
+			POKEY_IRQST &= 0xfb;
+			CPU_GenerateIRQ();
+		}
+	}
+#endif /* NEW_CYCLE_EXACT */
 #ifdef NETSIO
 	netsio_poll();
 #endif /* NETSIO */
