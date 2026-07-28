@@ -977,15 +977,13 @@ A8_OPTION(pbi_bb,yes,
      )
 AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
-if test "x$SUPPORTS_NETSIO" = "xyes"; then
+if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
 A8_OPTION(netsio,yes,
        [Support NetSIO Protocol I/O interface (FujiNet) (default=ON)],
        NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
        )
-else
-    WANT_NETSIO=no
 fi
-AM_CONDITIONAL([WANT_NETSIO], test "x$WANT_NETSIO" = "xyes")
+AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
 
 if test "x$WANT_NETSIO" = "xyes"; then
     if test "x$a8_host" != "xwin"; then
