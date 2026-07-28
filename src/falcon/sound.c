@@ -33,11 +33,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* https://github.com/mikrosk/atari_sound_setup */
-#include <usound.h>
+/*
+ * https://github.com/mikrosk/usound
+ *
+ * Use usound_compat.h until SDL 1.2 + uSound have been upgraded in the build image.
+ * Replace with #include <usound.h> once ihe image ships usound.h >= 2; it will #error in such case.
+ */
+#define USOUND_COMPAT_INIT	Atari800_SoundSetupInitXbios
+#define USOUND_COMPAT_DEINIT	Atari800_SoundSetupDeinitXbios
+#include "usound_compat.h"
 
 #include "platform.h"
 #include "sound.h"
+
+static USoundContext usoundContext;
 
 static char* pPhysical;
 static char* pLogical;
@@ -98,7 +107,7 @@ void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
 {
-	AudioSpec desired, obtained;
+	USoundSpec desired, obtained;
 
 	if (Sound_enabled) {
 		PLATFORM_SoundExit();
@@ -112,18 +121,18 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	 */
 	desired.frequency = setup->freq;
 	desired.channels  = setup->channels;
-	desired.format    = setup->sample_size == 1 ? AudioFormatSigned8 : AudioFormatSigned16MSB;
+	desired.format    = setup->sample_size == 1 ? USoundFormatSigned8 : USoundFormatSigned16MSB;
 	desired.samples   = Sound_NextPow2(setup->buffer_frames == 0
 		? setup->freq * 2 / 50	/* buffer for at least two 50 Hz frames */
 		: setup->buffer_frames);
 
-	if (!AtariSoundSetupInitXbios(&desired, &obtained)) {
+	if (!USoundInitXbios(&desired, &obtained, &usoundContext)) {
 		return FALSE;
 	}
 
 	setup->freq          = obtained.frequency;
 	setup->channels      = obtained.channels;
-	setup->sample_size   = (obtained.format == AudioFormatSigned8 || obtained.format == AudioFormatUnsigned8) ? 1 : 2;
+	setup->sample_size   = (obtained.format == USoundFormatSigned8 || obtained.format == USoundFormatUnsigned8) ? 1 : 2;
 	setup->buffer_frames = desired.samples;	/* stick with requested */
 
 	/* channels * 8/16 bit * freq in Hz * seconds */
@@ -148,7 +157,7 @@ set_buffer_failed:
 	Mfree(pBuffer);
 	pBuffer = NULL;
 malloc_failed:
-	AtariSoundSetupDeinitXbios();
+	USoundDeinitXbios(&usoundContext);
 
 	return FALSE;
 }
@@ -162,7 +171,7 @@ void PLATFORM_SoundExit(void)
 		pBuffer = NULL;
 	}
 
-	AtariSoundSetupDeinitXbios();
+	USoundDeinitXbios(&usoundContext);
 }
 
 void PLATFORM_SoundPause(void)
