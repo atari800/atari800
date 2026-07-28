@@ -11,6 +11,7 @@
 /depcomp
 /DOC/Makefile
 /DOC/Makefile.in
+/build
 /emuos/build
 /install-sh
 /Makefile

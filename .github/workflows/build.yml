@@ -117,6 +117,128 @@ jobs:
         gh release create "$GITHUB_REF_NAME" --repo ${{ github.repository }} 2>/dev/null || true
         gh release upload "$GITHUB_REF_NAME" Atari800-*-x86_64.AppImage --clobber --repo ${{ github.repository }}
 
+  build-falcon:
+    name: Build for Atari Falcon/FireBee (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    container:
+      image: scummvm/dockerized-toolchains:atari
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: classic
+            cpu: m68020-60
+            flags: --target=falcon --enable-falconcpuasm --disable-interpolatesound
+            output: atari800.gtp
+          - name: fast
+            cpu: m68020-60
+            flags: --target=falcon --enable-falconcpuasm --disable-interpolatesound --disable-newcycleexact
+            output: atarifst.gtp
+          - name: sdl
+            cpu: m68020-60
+            flags: --target=default --with-video=sdl --enable-falconcpuasm --disable-interpolatesound
+            output: atarisdl.gtp
+          - name: firebee
+            cpu: m5475
+            flags: --target=firebee --with-video=sdl --enable-pagedattrib --enable-cyclesperopcode
+            output: atari_cf.gtp
+
+    env:
+      VASM_VERSION: 2_0f
+      COMMON_FLAGS: >-
+        --host=m68k-atari-mintelf --enable-veryslow --disable-nonlinear_mixing
+        --disable-pbi_bb --disable-pbi_mio --with-readline=no
+        --disable-monitorbreak --disable-monitorhints --disable-crashmenu
+        --disable-monitorasm --disable-monitorutf8 --disable-monitoransi
+        --disable-eventrecording --disable-pokeyrec --disable-videorecording
+        --disable-screenshots --disable-audiorecording
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: install vasm
+      run: |
+        if command -v vasmm68k_mot >/dev/null; then
+          echo "vasmm68k_mot already provided by the toolchain image"
+          exit 0
+        fi
+        cd /tmp
+        curl -sLO http://phoenix.owl.de/tags/vasm${VASM_VERSION}.tar.gz
+        tar xzf vasm${VASM_VERSION}.tar.gz
+        make -C vasm -j$(nproc) CPU=m68k SYNTAX=mot
+        install -m 755 vasm/vasmm68k_mot /usr/local/bin/
+    - name: select CPU-specific libraries
+      run: echo "$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/${{ matrix.cpu }}" >> $GITHUB_PATH
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure $COMMON_FLAGS ${{ matrix.flags }}
+    - name: building
+      run: make -j$(nproc)
+    - name: fix up executable
+      run: |
+        m68k-atari-mintelf-stack --fix=256k src/atari800
+        m68k-atari-mintelf-flags -S src/atari800
+        m68k-atari-mintelf-strip -s src/atari800
+        cp src/atari800 ${{ matrix.output }}
+    - name: Archive Atari800 binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-falcon-${{ matrix.name }}
+        path: ${{ matrix.output }}
+
+  package-falcon:
+    if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
+    name: Package Atari Falcon/FireBee
+    runs-on: ubuntu-24.04
+    needs: build-falcon
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: install depends
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y dos2unix
+    - name: Download binaries
+      uses: actions/download-artifact@v7
+      with:
+        pattern: atari800-falcon-*
+        merge-multiple: true
+        path: pkg
+    - name: Stage files and build archive
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          V=${{ inputs.version }}
+        else
+          V=${GITHUB_REF_NAME#ATARI800_}
+          V=$(echo "$V" | sed 's/_/./g')
+        fi
+        echo "VERSION=$V" >> $GITHUB_ENV
+        test -f pkg/atari800.gtp && test -f pkg/atarifst.gtp \
+          && test -f pkg/atarisdl.gtp && test -f pkg/atari_cf.gtp
+        mkdir -p pkg/act pkg/doc
+        cp README.TXT pkg/
+        cp act/*.act pkg/act/
+        cp COPYING pkg/doc/COPYING.txt
+        cp DOC/INSTALL pkg/doc/INSTALL.txt
+        cp DOC/NEWS pkg/doc/NEWS.txt
+        cp DOC/USAGE pkg/doc/USAGE.txt
+        # the repository keeps text files LF-only, convert them to CR/LF for TOS
+        unix2dos pkg/README.TXT pkg/doc/*.txt
+        (cd pkg && zip -r "../atari800-${V}-falcon.zip" .)
+    - name: Archive portable zip
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-${{ env.VERSION }}-falcon
+        path: atari800-*-falcon.zip
+    - name: Attach to release
+      if: startsWith(github.ref, 'refs/tags/ATARI800_')
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
+        gh release upload "$GITHUB_REF_NAME" atari800-*-falcon.zip --clobber
+
   build-linux-i386:
     if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
     name: Build on Linux i386
