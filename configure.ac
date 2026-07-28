@@ -119,7 +119,7 @@ case $host_os in
     darwin*)
         a8_host="macos"
         ;;
-    mint)
+    mint*)
         if [[ "$a8_target" = "firebee" ]]; then
             a8_host=firebee
             a8_target=default
