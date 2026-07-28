@@ -3,7 +3,7 @@ set -e
 
 DIR_ATARI800_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DIR_BUILD="${DIR_ATARI800_SRC}/build"
-DIR_ATARI800_CLASSIC="${DIR_BUILD}/atari800"
+DIR_ATARI800_DEFAULT="${DIR_BUILD}/atari800"
 DIR_ATARI800_FAST="${DIR_BUILD}/atari800-fast"
 DIR_ATARI800_SDL="${DIR_BUILD}/atari800-sdl"
 DIR_ATARI800_CF="${DIR_BUILD}/atari800-cf"
@@ -15,7 +15,7 @@ COMMON_FLAGS='--host=m68k-atari-mintelf --enable-veryslow --disable-nonlinear_mi
 	--disable-eventrecording --disable-pokeyrec --disable-videorecording --disable-screenshots --disable-audiorecording'
 
 rm -rf ${DIR_BUILD}
-mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
+mkdir -p ${DIR_ATARI800_DEFAULT} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 
 (
 	cd ${DIR_ATARI800_SRC}
@@ -23,7 +23,7 @@ mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_
 )
 
 (
-	cd ${DIR_ATARI800_CLASSIC}
+	cd ${DIR_ATARI800_DEFAULT}
 	export PATH=${DIR_SYSROOT}/usr/bin/m68020-60:$PATH
 	${DIR_ATARI800_SRC}/configure $COMMON_FLAGS --target=falcon --enable-falconcpuasm --disable-interpolatesound
 	make V=1
@@ -50,14 +50,14 @@ mkdir -p ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_
 	make V=1
 )
 
-for d in ${DIR_ATARI800_CLASSIC} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
+for d in ${DIR_ATARI800_DEFAULT} ${DIR_ATARI800_FAST} ${DIR_ATARI800_SDL} ${DIR_ATARI800_CF}
 do
 	m68k-atari-mintelf-stack --fix=256k "$d/src/atari800"
 	m68k-atari-mintelf-flags -S "$d/src/atari800"
 	m68k-atari-mintelf-strip -s "$d/src/atari800"
 done
 
-cp ${DIR_ATARI800_CLASSIC}/src/atari800 ${DIR_BUILD}/atari800.gtp
+cp ${DIR_ATARI800_DEFAULT}/src/atari800 ${DIR_BUILD}/atari800.gtp
 cp ${DIR_ATARI800_FAST}/src/atari800 ${DIR_BUILD}/atarifst.gtp
 cp ${DIR_ATARI800_SDL}/src/atari800 ${DIR_BUILD}/atarisdl.gtp
 cp ${DIR_ATARI800_CF}/src/atari800 ${DIR_BUILD}/atari_cf.gtp

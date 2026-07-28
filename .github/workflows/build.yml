@@ -118,7 +118,7 @@ jobs:
         gh release upload "$GITHUB_REF_NAME" Atari800-*-x86_64.AppImage --clobber --repo ${{ github.repository }}
 
   build-falcon:
-    name: Build for Atari Falcon/FireBee (${{ matrix.name }})
+    name: Build for ${{ matrix.title }}
     runs-on: ubuntu-24.04
     container:
       image: scummvm/dockerized-toolchains:atari
@@ -127,19 +127,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: classic
+          - title: Falcon (default)
+            artifact: atari800-falcon-default
             cpu: m68020-60
             flags: --target=falcon --enable-falconcpuasm --disable-interpolatesound
             output: atari800.gtp
-          - name: fast
+          - title: Falcon (fast)
+            artifact: atari800-falcon-fast
             cpu: m68020-60
             flags: --target=falcon --enable-falconcpuasm --disable-interpolatesound --disable-newcycleexact
             output: atarifst.gtp
-          - name: sdl
+          - title: Falcon (SDL)
+            artifact: atari800-falcon-sdl
             cpu: m68020-60
             flags: --target=default --with-video=sdl --enable-falconcpuasm --disable-interpolatesound
             output: atarisdl.gtp
-          - name: firebee
+          - title: FireBee
+            artifact: atari800-firebee
             cpu: m5475
             flags: --target=firebee --with-video=sdl --enable-pagedattrib --enable-cyclesperopcode
             output: atari_cf.gtp
@@ -184,12 +188,12 @@ jobs:
     - name: Archive Atari800 binary
       uses: actions/upload-artifact@v7
       with:
-        name: atari800-falcon-${{ matrix.name }}
+        name: ${{ matrix.artifact }}
         path: ${{ matrix.output }}
 
   package-falcon:
     if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
-    name: Package Atari Falcon/FireBee
+    name: Package Falcon/FireBee
     runs-on: ubuntu-24.04
     needs: build-falcon
 
@@ -199,11 +203,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y dos2unix
-    - name: Download binaries
+    - name: Download Falcon binaries
       uses: actions/download-artifact@v7
       with:
         pattern: atari800-falcon-*
         merge-multiple: true
+        path: pkg
+    - name: Download FireBee binary
+      uses: actions/download-artifact@v7
+      with:
+        name: atari800-firebee
         path: pkg
     - name: Stage files and build archive
       run: |
@@ -216,28 +225,38 @@ jobs:
         echo "VERSION=$V" >> $GITHUB_ENV
         test -f pkg/atari800.gtp && test -f pkg/atarifst.gtp \
           && test -f pkg/atarisdl.gtp && test -f pkg/atari_cf.gtp
-        mkdir -p pkg/act pkg/doc
-        cp README.TXT pkg/
-        cp act/*.act pkg/act/
-        cp COPYING pkg/doc/COPYING.txt
-        cp DOC/INSTALL pkg/doc/INSTALL.txt
-        cp DOC/NEWS pkg/doc/NEWS.txt
-        cp DOC/USAGE pkg/doc/USAGE.txt
+        # TOS filenames are 8.3 and "atari800" already fills the name part, so the
+        # version only fits as a <=3 char extension (7.1.2 -> atari800.712)
+        SHORTVER=$(echo "$V" | tr -d '.')
+        if [ ${#SHORTVER} -le 3 ]; then
+          TOPDIR="atari800.$SHORTVER"
+        else
+          TOPDIR="atari800"
+        fi
+        mkdir -p pkg/$TOPDIR/act pkg/$TOPDIR/DOC
+        mv pkg/*.gtp pkg/$TOPDIR/
+        cp README.TXT pkg/$TOPDIR/readme.txt
+        cp DOC/versions.falcon pkg/$TOPDIR/versions.txt
+        cp COPYING pkg/$TOPDIR/
+        cp act/*.act pkg/$TOPDIR/act/
+        cp DOC/BUGS DOC/CREDITS DOC/FAQ DOC/NEWS DOC/README DOC/TODO DOC/USAGE pkg/$TOPDIR/DOC/
+        # the Falcon specific one, INSTALL.falcon is not a valid 8.3 name
+        cp DOC/INSTALL.falcon pkg/$TOPDIR/DOC/INSTALL
         # the repository keeps text files LF-only, convert them to CR/LF for TOS
-        unix2dos pkg/README.TXT pkg/doc/*.txt
-        (cd pkg && zip -r "../atari800-${V}-falcon.zip" .)
+        unix2dos pkg/$TOPDIR/readme.txt pkg/$TOPDIR/versions.txt pkg/$TOPDIR/COPYING pkg/$TOPDIR/DOC/*
+        (cd pkg && zip -r "../atari800-${V}-falcon_and_firebee.zip" "$TOPDIR")
     - name: Archive portable zip
       uses: actions/upload-artifact@v7
       with:
-        name: atari800-${{ env.VERSION }}-falcon
-        path: atari800-*-falcon.zip
+        name: atari800-${{ env.VERSION }}-falcon_and_firebee
+        path: atari800-*-falcon_and_firebee.zip
     - name: Attach to release
       if: startsWith(github.ref, 'refs/tags/ATARI800_')
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
         gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
-        gh release upload "$GITHUB_REF_NAME" atari800-*-falcon.zip --clobber
+        gh release upload "$GITHUB_REF_NAME" atari800-*-falcon_and_firebee.zip --clobber
 
   build-linux-i386:
     if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''

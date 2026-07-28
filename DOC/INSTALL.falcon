@@ -1,5 +1,3 @@
-                                                                        May 2024
-
     Hi all Atari users,
 
 this is the Atari 8-bit computer emulator for Atari TT/Falcon range of
@@ -36,6 +34,8 @@ reason why all executables (except the FireBee, naturally) have the fast
 assembler core included! No more dilemmas about speed vs. compatibility.
 
 ===========================================================================
+This is what util/build_m68k.sh does, it is also used by the GitHub CI.
+
 All m68k versions are built with following switches:
 
 --host=m68k-atari-mintelf --enable-veryslow --disable-nonlinear_mixing
@@ -44,6 +44,15 @@ All m68k versions are built with following switches:
 --disable-monitorasm --disable-monitorutf8 --disable-monitoransi
 --disable-eventrecording --disable-pokeyrec --disable-videorecording
 --disable-screenshots --disable-audiorecording
+
+The CPU specific `*-config` scripts (`sdl-config` etc.) must be on PATH,
+i.e. for the Falcon/TT versions:
+
+PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m68020-60:$PATH
+
+and for the FireBee one:
+
+PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m5475:$PATH
 
 Then specifically:
 
@@ -56,14 +65,12 @@ ATARIFST.GTP (XBIOS audio, GEM/Videl video, inexact 6502/ANTIC)
 (fastest version, you can gain a few % by adding --without-sound)
 
 ATARISDL.GTP (XBIOS audio, SDL video, cycle exact 6502/ANTIC)
-# point to -m68020-60 aware `sdl-config`
-PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m68020-60:$PATH
---target=default --enable-falconcpuasm --disable-interpolatesound
+--target=default --with-video=sdl --enable-falconcpuasm
+--disable-interpolatesound
 
 ATARI_CF.GTP (ATARISDL.GTP for the FireBee, without asm emulation core)
-# point to -mcpu=5475 aware `sdl-config`
-PATH=$(m68k-atari-mintelf-gcc -print-sysroot)/usr/bin/m5475
---target=firebee --enable-pagedattrib --enable-cyclesperopcode
+--target=firebee --with-video=sdl --enable-pagedattrib
+--enable-cyclesperopcode
 
 Then for all versions:
 
@@ -88,8 +95,6 @@ F6 = Help key
 F7 = Break key
 F8 = Invoke monitor
 F9 = Exit emulator
-F10 = Save screenshot
-Shift+F10 = Save interlaced screenshot
 Help = Help key
 
 Joystick emulation works fine. Both real joysticks (CX-40 type) can be

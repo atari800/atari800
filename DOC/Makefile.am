@@ -33,4 +33,5 @@ EXTRA_DIST = $(doc_DATA) \
 	rdevice_faq.txt \
 	readme.html.in \
 	trainer.txt \
+	versions.falcon \
 	$(empty)

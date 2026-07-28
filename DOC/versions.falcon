@@ -1,0 +1,4 @@
+ATARI800.GTP: XBIOS audio, GEM/Videl video, cycle exact 6502/ANTIC
+ATARIFST.GTP: XBIOS audio, GEM/Videl video, inexact 6502/ANTIC
+ATARISDL.GTP: XBIOS audio, SDL video, cycle exact 6502/ANTIC
+ATARI_CF.GTP: ATARISDL.GTP for the FireBee, without asm emulation core
