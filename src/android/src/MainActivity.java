@@ -207,7 +207,9 @@ public final class MainActivity extends Activity
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
-				View.STATUS_BAR_HIDDEN);
+				View.STATUS_BAR_HIDDEN |
+				View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
 		root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
 			@Override
@@ -527,7 +529,9 @@ public final class MainActivity extends Activity
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
 		_view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
-				View.STATUS_BAR_HIDDEN);
+				View.STATUS_BAR_HIDDEN |
+				View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 		pauseEmulation(false);
 		updateDriveButtons();
 		super.onResume();
