@@ -69,6 +69,7 @@ import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.util.DisplayMetrics;
 
 
 public final class MainActivity extends Activity
@@ -96,6 +97,7 @@ public final class MainActivity extends Activity
 	private static File _romsDir = null;
 	static File _savesDir = null;
 	private android.widget.TextView[] _driveBtns = new android.widget.TextView[4];
+	private int _driveCount = 4;
 
 	static {
 		System.loadLibrary("atari800");
@@ -163,8 +165,11 @@ public final class MainActivity extends Activity
 		driveBar.setBackgroundColor(0x00000000);
 		driveBar.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 
+		DisplayMetrics dm = getResources().getDisplayMetrics();
+		float ratio = Math.max(dm.widthPixels, dm.heightPixels) / (float) Math.min(dm.widthPixels, dm.heightPixels);
+		_driveCount = ratio > 2.0f ? 4 : 3;
 		String[] driveLabels = {"\u2460", "\u2461", "\u2462", "\u2463"};
-		for (int d = 0; d < 4; d++) {
+		for (int d = 0; d < _driveCount; d++) {
 			final int drive = d + 1;
 			android.widget.TextView btn = new android.widget.TextView(this);
 			btn.setText(driveLabels[d]);
@@ -539,7 +544,7 @@ public final class MainActivity extends Activity
 
 	private void updateDriveButtons() {
 		int[] status = NativeGetDriveStatus();
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < _driveCount; i++) {
 			boolean mounted = (status[i] == 2 || status[i] == 3);
 			int flags = _driveBtns[i].getPaintFlags();
 			if (mounted)
