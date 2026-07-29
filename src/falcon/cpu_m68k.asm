@@ -666,6 +666,33 @@ ClrCFLAG macro
   clr.b  CFLAG
   endm
 
+; take a pending IRQ: push return address and status (B clear), set I and
+; vector through $fffe (7 cycles); expects the complete status in d7 and
+; the stack pointer in d0
+CPUTAKEIRQ macro
+  subq.b #2,d0          ; push PC and P to stack ( PHW + PHB ),
+  andi.b #B_FLAGN,d7    ; the wrong way around for optim.
+  move.b d7,(memory_pointer,d0.l) ; Push P
+  move.l PC6502,d7
+  sub.l  memory_pointer,d7
+  addq.b #1,d0
+  move.b d7,(memory_pointer,d0.l)
+  addq.b #1,d0
+  LoHi d7
+  move.b d7,(memory_pointer,d0.l)
+  subq.b #3,d0
+  move.b d0,CPU_regS
+  SetI
+  move.w (memory_pointer,$fffe.l),d7
+  LoHi d7
+  move.l d7,PC6502
+  add.l  memory_pointer,PC6502
+  addq.l #7,CD
+  ifne   MONITOR_BREAK
+  addq.l #1,MONITOR_ret_nesting
+  endif
+  endm
+
 CPU_GetStatus:
   move.b regP,CPU_regP           ; this is called before/after CPU_GO_m68k()
   rts
@@ -1669,29 +1696,7 @@ opcode_28: ;/* PLP */
   bge     NEXTCHANGE_WITHOUT
   btst   #I_FLAGB,d7
   bne.w  NEXTCHANGE_WITHOUT
-; moveq  #0,d0
-; move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
-  subq.b #2,d0          ; but do it the wrong way around for optim.
-  andi.b  #B_FLAGN,d7              ;
-  move.b  d7,(memory_pointer,d0.l) ; Push P
-  move.l PC6502,d7
-  sub.l  memory_pointer,d7
-  addq.b #1,d0     ; wrong way around
-  move.b d7,(memory_pointer,d0.l)  ; Push High
-  addq.b #1,d0
-  LoHi d7
-  move.b d7,(memory_pointer,d0.l)  ; Push Low
-  subq.b #3,d0
-  move.b d0,CPU_regS       ; push PC and P to stack ( PHW + PHB ) end
-  SetI
-  move.w (memory_pointer,$fffe.l),d7
-  LoHi d7
-  move.l d7,PC6502
-  add.l  memory_pointer,PC6502
-  addq.l #7,CD
-  ifne   MONITOR_BREAK
-  addq.l #1,MONITOR_ret_nesting
-  endif
+  CPUTAKEIRQ               ; P is in d7, S in d0
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_48: ;/* PHA */
@@ -2131,35 +2136,15 @@ opcode_38: ;/* SEC */
 opcode_58: ;/* CLI */
   addq.l #cy_FlagCS,CD
   ClrI
-  tst.b  CPU_IRQ      ; ~ CPUCHECKIRQ
+  tst.b  CPU_IRQ      ; CPUCHECKIRQ
   beq.w  NEXTCHANGE_WITHOUT
   cmp.l   ANTIC_xpos_limit,CD
   bge     NEXTCHANGE_WITHOUT
-  move.l PC6502,d7
-  sub.l  memory_pointer,d7
-  moveq  #0,d0                    ; PHW + PHP (B0)
-  move.w regS,d0
-  subq.b #1,d0     ; wrong way around
-  move.b d7,(memory_pointer,d0.l)
-  addq.b #1,d0
-  LoHi d7
-  move.b d7,(memory_pointer,d0.l)
-  subq.b #2,d0
   ConvertSTATUS_RegP d7
-  andi.b #B_FLAGN,d7
-  move.b d7,(memory_pointer,d0.l)
-  subq.b #1,d0
-  move.b d0,CPU_regS
-  SetI
-  move.w (memory_pointer,$fffe.l),d7
-  LoHi d7
-  move.l d7,PC6502
-  add.l  memory_pointer,PC6502
+  moveq  #0,d0
+  move.w regS,d0
+  CPUTAKEIRQ
   clr.b  CPU_IRQ
-  addq.l #7,CD
-  ifne   MONITOR_BREAK
-  addq.l #1,MONITOR_ret_nesting
-  endif
   bra.w  NEXTCHANGE_WITHOUT
 
 opcode_78: ;/* SEI */
@@ -2326,28 +2311,8 @@ opcode_40: ;/* RTI */
   btst   #I_FLAGB,d7
   bne.w  .no_irq
   moveq  #0,d0
-  move.w regS,d0        ; push PC and P to stack ( PHW + PHB ) start
-  subq.b #2,d0
-  andi.b #B_FLAGN,d7
-  move.b d7,(memory_pointer,d0.l) ; Push P
-  move.l PC6502,d7
-  sub.l  memory_pointer,d7
-  addq.b #1,d0          ; wrong way around
-  move.b d7,(memory_pointer,d0.l)
-  addq.b #1,d0
-  LoHi d7
-  move.b d7,(memory_pointer,d0.l)
-  subq.b #3,d0
-  move.b d0,CPU_regS       ; push PC and P to stack ( PHW + PHB ) end
-  SetI
-  move.w (memory_pointer,$fffe.l),d7
-  LoHi d7
-  move.l d7,PC6502
-  add.l  memory_pointer,PC6502
-  addq.l #7,CD
-  ifne   MONITOR_BREAK
-  addq.l #1,MONITOR_ret_nesting
-  endif
+  move.w regS,d0
+  CPUTAKEIRQ               ; P is in d7, S in d0
 .no_irq:
   ifne   MONITOR_BREAK
   tst.b  MONITOR_break_ret
