@@ -3303,10 +3303,25 @@ END_OF_CYCLE:
 
   ifne   NEW_CYCLE_EXACT
 POKEY_TIMER_IRQ:
-  cmp.l  POKEY_irq_at_xpos,CD    ; ANTIC_xpos >= POKEY_irq_at_xpos ?
+  move.l CD,d0
+  cmp.l  #-999,ANTIC_cur_screen_pos ; ANTIC_DRAWING_SCREEN ?
+  beq.s  .not_drawing
+  move.l ANTIC_cpu2antic_ptr,a0
+  move.l (a0,d0.l*4),d0          ; ANTIC_cpu2antic_ptr[ANTIC_xpos]
+.not_drawing:
+  cmp.l  POKEY_irq_at_xpos,d0    ; ANTIC_XPOS >= POKEY_irq_at_xpos ?
   blt.w  POKEY_TIMER_IRQ_DONE    ; not yet, keep it pending
   st     CPU_IRQ                 ; CPU_GenerateIRQ()
   clr.b  POKEY_irq_pending_mask
+  cmp.l  ANTIC_xpos_limit,CD     ; CPUCHECKIRQ
+  bge.w  POKEY_TIMER_IRQ_DONE    ; we are at an instruction boundary,
+  move.b CPU_regP,d7             ; so take the IRQ right away
+  btst   #I_FLAGB,d7
+  bne.w  POKEY_TIMER_IRQ_DONE
+  ConvertSTATUS_RegP d7
+  moveq  #0,d0
+  move.w regS,d0
+  CPUTAKEIRQ
   bra.w  POKEY_TIMER_IRQ_DONE
   endif
 

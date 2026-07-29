@@ -78,6 +78,7 @@ int POKEY_DELAYED_XMTDONE_IRQ;
 #ifdef NEW_CYCLE_EXACT
 int POKEY_irq_at_xpos;
 UBYTE POKEY_irq_pending_mask;
+static int irq_15khz_phase;
 #endif
 
 /* structures to hold the 9 pokey control bytes */
@@ -356,6 +357,13 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 #ifdef VOICEBOX
 		VOICEBOX_SKCTLPutByte(byte);
 #endif
+#ifdef NEW_CYCLE_EXACT
+		if ((POKEY_SKCTL & 0x03) == 0 && (byte & 0x03) != 0)
+			/* Leaving init mode locks the 15 kHz clock to the current cycle;
+			   its first tick comes 83 cycles after this write (Altirra
+			   Hardware Reference Manual, chapters 5.2 and 5.4). */
+			irq_15khz_phase = (ANTIC_XPOS + 83) % ANTIC_LINE_C;
+#endif
 		POKEY_SKCTL = byte;
 		POKEYSND_Update(POKEY_OFFSET_SKCTL, byte, 0, SOUND_GAIN);
 #ifdef NETSIO
@@ -512,6 +520,19 @@ void POKEY_Frame(void)
  ** per-scanline, not very precise, but good enough for most applications **
  ***************************************************************************/
 
+#ifdef NEW_CYCLE_EXACT
+/* Map a timer expiry from the scanline-quantized grid to the real in-line
+   position of the 15 kHz clock tick, whose phase software controls by the
+   timing of leaving SKCTL init mode (Altirra HRM 5.4). Used e.g. by
+   Project-M 2 to place timer IRQs at a chosen horizontal position. */
+static int irq_tick_xpos(int old_divn)
+{
+	if (POKEY_Base_mult[0] == ANTIC_LINE_C)
+		return (old_divn + irq_15khz_phase) % ANTIC_LINE_C;
+	return old_divn;
+}
+#endif
+
 void POKEY_Scanline(void)
 {
 #ifdef POKEYREC
@@ -634,10 +655,11 @@ void POKEY_Scanline(void)
 		if ((POKEY_DivNIRQ[POKEY_CHAN1] -= ANTIC_LINE_C) < 0 ) {
 			POKEY_DivNIRQ[POKEY_CHAN1] += POKEY_DivNMax[POKEY_CHAN1];
 			if (POKEY_IRQEN & 0x01) {
+				int at = irq_tick_xpos(old_divn);
 				POKEY_IRQST &= 0xfe;
 				POKEY_irq_pending_mask |= 0x01;
-				if (old_divn < POKEY_irq_at_xpos)
-					POKEY_irq_at_xpos = old_divn;
+				if (at < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = at;
 			}
 		}
 
@@ -645,10 +667,11 @@ void POKEY_Scanline(void)
 		if ((POKEY_DivNIRQ[POKEY_CHAN2] -= ANTIC_LINE_C) < 0 ) {
 			POKEY_DivNIRQ[POKEY_CHAN2] += POKEY_DivNMax[POKEY_CHAN2];
 			if (POKEY_IRQEN & 0x02) {
+				int at = irq_tick_xpos(old_divn);
 				POKEY_IRQST &= 0xfd;
 				POKEY_irq_pending_mask |= 0x02;
-				if (old_divn < POKEY_irq_at_xpos)
-					POKEY_irq_at_xpos = old_divn;
+				if (at < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = at;
 			}
 		}
 
@@ -656,10 +679,11 @@ void POKEY_Scanline(void)
 		if ((POKEY_DivNIRQ[POKEY_CHAN4] -= ANTIC_LINE_C) < 0 ) {
 			POKEY_DivNIRQ[POKEY_CHAN4] += POKEY_DivNMax[POKEY_CHAN4];
 			if (POKEY_IRQEN & 0x04) {
+				int at = irq_tick_xpos(old_divn);
 				POKEY_IRQST &= 0xfb;
 				POKEY_irq_pending_mask |= 0x04;
-				if (old_divn < POKEY_irq_at_xpos)
-					POKEY_irq_at_xpos = old_divn;
+				if (at < POKEY_irq_at_xpos)
+					POKEY_irq_at_xpos = at;
 			}
 		}
 	}

@@ -106,6 +106,13 @@ UBYTE CPU_cim_encountered = FALSE;
 UBYTE CPU_IRQ;
 UBYTE CPU_delayed_nmi;
 
+#if defined(NEW_CYCLE_EXACT) && !defined(FALCON_CPUASM)
+/* A POKEY timer IRQ fired mid-instruction and is to be taken at the next
+   instruction boundary, like on a real 6502 (0-6 cycles to finish the
+   current instruction, then the 7-cycle interrupt sequence). */
+static int service_pokey_irq;
+#endif
+
 /* Windows headers define it */
 #undef ABSOLUTE
 
@@ -619,6 +626,12 @@ void CPU_GO(int limit)
 #ifndef FALCON_CPUASM
 	while (ANTIC_xpos < ANTIC_xpos_limit) {
 		CPU_delayed_nmi = 0;
+#ifdef NEW_CYCLE_EXACT
+		if (service_pokey_irq) {
+			service_pokey_irq = 0;
+			CPUCHECKIRQ;
+		}
+#endif /* NEW_CYCLE_EXACT */
 #ifdef MONITOR_PROFILE
 		int old_xpos = ANTIC_xpos;
 		UWORD old_PC = GET_PC();
@@ -856,10 +869,14 @@ void CPU_GO(int limit)
 		ANTIC_xpos += cycles[insn];
 #endif
 #ifdef NEW_CYCLE_EXACT
-		/* If a POKEY timer IRQ is pending, fire it at the exact cycle it should occur */
-		if (POKEY_irq_pending_mask && ANTIC_xpos >= POKEY_irq_at_xpos) {
+		/* If a POKEY timer IRQ is pending, fire it at the exact cycle it should occur.
+		   POKEY_irq_at_xpos counts real machine cycles within the scanline, so use
+		   ANTIC_XPOS which maps ANTIC_xpos back from the DMA-compressed CPU cycle
+		   space while the screen is being drawn. */
+		if (POKEY_irq_pending_mask && ANTIC_XPOS >= POKEY_irq_at_xpos) {
 			CPU_GenerateIRQ();
 			POKEY_irq_pending_mask = 0;
+			service_pokey_irq = 1;
 		}
 #endif /* NEW_CYCLE_EXACT */
 
