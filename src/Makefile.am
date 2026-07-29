@@ -70,7 +70,6 @@ atari800_SOURCES = \
 	cfg.c cfg.h \
 	cpu.c cpu.h \
 	crc32.c crc32.h \
-	download.c download.h \
 	devices.c devices.h \
 	esc.c esc.h \
 	gtia.c gtia.h \
@@ -266,6 +265,9 @@ atari800_SOURCES += netsiowin.c netsio.h
 else
 atari800_SOURCES += netsio.c netsio.h
 endif
+endif
+if WANT_DOWNLOAD
+atari800_SOURCES += download.c download.h
 endif
 if WANT_PBI_XLD
 if WITH_SOUND

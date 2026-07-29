@@ -197,7 +197,7 @@ static char dl_dir[FILENAME_MAX] = "";
 #ifdef CTRL_C_HANDLER
 volatile sig_atomic_t sigint_flag = FALSE;
 
-static RETSIGTYPE sigint_handler(int num)
+static void sigint_handler(int num)
 {
 	sigint_flag = TRUE;
 	/* Avoid restoring the original signal handler. */
@@ -467,8 +467,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 
 	if (cfg_source_path == NULL && atari800_exe_dir[0] != '\0') {
 		char checkfile[FILENAME_MAX];
+		FILE *ft;
 		Util_catpath(checkfile, atari800_exe_dir, ".atari800-check");
-		FILE *ft = fopen(checkfile, "w");
+		ft = fopen(checkfile, "w");
 		if (ft != NULL) {
 			fclose(ft);
 			remove(checkfile);

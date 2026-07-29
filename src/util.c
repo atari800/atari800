@@ -40,15 +40,11 @@
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
+#endif
+#ifdef HAVE_TIME_H
 # include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# elif defined(HAVE_TIME_H)
-#  include <time.h>
-# endif
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* getcwd() */
@@ -360,12 +356,11 @@ void Util_splitpath(const char *path, char *dir_part, char *file_part)
 
 void Util_catpath(char *result, const char *path1, const char *path2)
 {
-	snprintf(result, FILENAME_MAX,
-		path1[0] == '\0' || path2[0] == Util_DIR_SEP_CHAR || path1[strlen(path1) - 1] == Util_DIR_SEP_CHAR
+	int no_sep = path1[0] == '\0' || path2[0] == Util_DIR_SEP_CHAR || path1[strlen(path1) - 1] == Util_DIR_SEP_CHAR;
 #ifdef DIR_SEP_BACKSLASH
-		 || path2[0] == '/' || path1[strlen(path1) - 1] == '/'
+	no_sep = no_sep || path2[0] == '/' || path1[strlen(path1) - 1] == '/';
 #endif
-			? "%s%s" : "%s" Util_DIR_SEP_STR "%s", path1, path2);
+	snprintf(result, FILENAME_MAX, no_sep ? "%s%s" : "%s" Util_DIR_SEP_STR "%s", path1, path2);
 }
 
 static int parse_hashes(const char *p, char *buffer, int bufsize)

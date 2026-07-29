@@ -721,6 +721,7 @@ void Screen_Draw1200LED(void)
 	}
 }
 
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 /* Returns screen address for placing the next character on the left of the
    drawn number. */
 static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places, UBYTE color1, UBYTE color2)
@@ -749,6 +750,7 @@ static UBYTE *SmallFont_DrawFloat(UBYTE *screen, float f, int num_decimal_places
 	}
 	return screen;
 }
+#endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 static UBYTE *SmallFont_DrawString(UBYTE *screen, const char *s, UBYTE color1, UBYTE color2)
 {

@@ -441,6 +441,7 @@ struct ide_device {
 #define SMART_ATTR_AUTOSAVE   0xd2  /* ATA3 attribute autosave */
 #define SMART_SAVE_ATTR       0xd3  /* ATA3 save attribute values */
 #define SMART_EXECUTE_OFFLINE 0xd4  /* ATA4 execute offline immediate */
+#undef SMART_READ_LOG               /* also defined by <winsmcrd.h> */
 #define SMART_READ_LOG        0xd5  /* ATA5 */
 #define SMART_WRITE_LOG       0xd6  /* ATA5 */
 /*#define   unknown            0xd7  // ATA4 obsolete */

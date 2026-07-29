@@ -3710,7 +3710,6 @@ static void PortConfiguration(int port)
 	int is_paddle = (mode == JOY_MODE_PADDLE);
 	SDL_INPUT_RealJSConfig_t *js_config = SDL_INPUT_GetRealJSConfig(port);
 	int potA, potB, btnA, btnB;
-	SDL_INPUT_GetPortPaddleConfig(port, &potA, &potB, &btnA, &btnB);
 #if SDL2
 	static UI_tMenuItem menu_array[] = {
 		UI_MENU_ACTION(0, " Mode:"),
@@ -3725,6 +3724,7 @@ static void PortConfiguration(int port)
 		UI_MENU_END
 	};
 
+	SDL_INPUT_GetPortPaddleConfig(port, &potA, &potB, &btnA, &btnB);
 	snprintf(title, sizeof(title), "Port %d configuration", port + 1);
 
 	for (;;) {
@@ -3781,6 +3781,7 @@ static void PortConfiguration(int port)
 		UI_MENU_END
 	};
 
+	SDL_INPUT_GetPortPaddleConfig(port, &potA, &potB, &btnA, &btnB);
 	snprintf(title, sizeof(title), "Port %d configuration", port + 1);
 
 	for (;;) {
@@ -3813,6 +3814,19 @@ static void PortConfiguration(int port)
 		}
 	}
 #endif /* SDL2 */
+}
+#endif
+
+#ifdef GUI_SDL
+/* Fills in a single action item of a dynamically built menu.
+   A plain function, because ISO C90 has no compound literals. */
+static void SetActionMenuItem(UI_tMenuItem *item, int retval, const char *prefix, char *text)
+{
+	item->flags = UI_ITEM_ACTION;
+	item->retval = (SWORD) retval;
+	item->prefix = prefix;
+	item->item = text;
+	item->suffix = NULL;
 }
 #endif
 
@@ -3977,18 +3991,20 @@ static void ControllerConfiguration(void)
 			int sel;
 #define PARALLEL_BASE 0x100
 #define HOSTJOY_BASE  0x200
+#ifdef __linux__
 			char lpt_label[2][32];
+#endif
 			UI_tMenuItem mode_menu[32];
 			int n_modes = 0;
-			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_NONE, "None", "", NULL };
-			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_KBD0, "Keyboard 1", "", NULL };
-			mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, JOY_MODE_KBD1, "Keyboard 2", "", NULL };
+			SetActionMenuItem(&mode_menu[n_modes++], JOY_MODE_NONE, "None", "");
+			SetActionMenuItem(&mode_menu[n_modes++], JOY_MODE_KBD0, "Keyboard 1", "");
+			SetActionMenuItem(&mode_menu[n_modes++], JOY_MODE_KBD1, "Keyboard 2", "");
 #ifdef __linux__
 			{
 				int lpt;
 				for (lpt = 0; lpt < SDL_INPUT_GetNumLPTJoysticks() && lpt < 2; lpt++) {
 					snprintf(lpt_label[lpt], sizeof(lpt_label[lpt]), "Parallel port %d", lpt + 1);
-					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, PARALLEL_BASE + lpt, lpt_label[lpt], "", NULL };
+					SetActionMenuItem(&mode_menu[n_modes++], PARALLEL_BASE + lpt, lpt_label[lpt], "");
 				}
 			}
 #endif
@@ -3996,7 +4012,7 @@ static void ControllerConfiguration(void)
 				int j;
 				for (j = 0; j < SDL_INPUT_GetNumHostJoysticks() && j < 16; j++) {
 					const char *jname = SDL_INPUT_GetHostJoystickDisplayName(j);
-					mode_menu[n_modes++] = (UI_tMenuItem){ UI_ITEM_ACTION, HOSTJOY_BASE + j, NULL, (char *)(jname ? jname : "?"), NULL };
+					SetActionMenuItem(&mode_menu[n_modes++], HOSTJOY_BASE + j, NULL, (char *)(jname ? jname : "?"));
 				}
 			}
 			memset(&mode_menu[n_modes], 0, sizeof(UI_tMenuItem));

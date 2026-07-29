@@ -5,15 +5,14 @@
 extern volatile int netsio_enabled;
 
 #include <stdint.h>
+#include <stddef.h>
 #ifndef HAVE_WINDOWS_H
 #include <pthread.h>
-#include <sys/types.h>
-#else
-#include <windows.h>
-#include <winsock2.h>
+#endif
 #ifdef _MSC_VER
 typedef intptr_t ssize_t;
-#endif
+#else
+#include <sys/types.h>	/* ssize_t */
 #endif
 
 /* NetSIO Commands */
@@ -99,6 +98,12 @@ int netsio_cold_reset(void);
 int netsio_warm_reset(void);
 
 void netsio_test_cmd(void);
+
+#ifdef HAVE_WINDOWS_H
+void netsio_flush_fifo(void);
+void netsio_cmd_cancel(void);
+void netsio_recover_stale_sio_transaction(void);
+#endif
 
 /* Netstream state gates (Fuji $70/$F0 + MOTOR + POKEY config). */
 void netsio_netstream_set_motor(int motor_on);
