@@ -56,6 +56,7 @@
 #include <SDL.h>
 #endif
 
+#include "acidtest.h"
 #include "akey.h"
 #include "antic.h"
 #ifdef HAVE_DOWNLOAD
@@ -691,6 +692,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 			if (strcmp(argv[i], "-run") == 0) {
 				if (i_a) run_direct = argv[++i]; else a_m = TRUE;
 			}
+			else if (strcmp(argv[i], "-acid800") == 0) {
+				if (i_a) ACIDTEST_Init(argv[++i]); else a_m = TRUE;
+			}
 #ifdef R_IO_DEVICE
 			else if (strcmp(argv[i], "-rdevice") == 0) {
 				Devices_enable_r_patch = TRUE;
@@ -833,6 +837,7 @@ int Atari800_Initialise(int *argc, char *argv[])
 					Log_print("\t-nostereo        Turn off emulation of two POKEYs");
 #endif
 					Log_print("\t-turbo           Run emulated Atari as fast as possible");
+					Log_print("\t-acid800 <file>  Run the Acid800 suite, compare with expected results in <file>");
 					Log_print("\t-monitor         Start emulated Atari in the monitor");
 #ifdef MONITOR_BREAK
 					Log_print("\t-bbrk            Break on BRK instruction");
@@ -1088,7 +1093,9 @@ int Atari800_Initialise(int *argc, char *argv[])
 #endif /* SOUND */
 
 #ifdef HAVE_DOWNLOAD
-	if (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE) {
+	/* never in the Acid800 check: it must boot the built-in OS everywhere */
+	if (!ACIDTEST_enabled
+	 && (Atari800_os_version < 0 || Atari800_os_version >= SYSROM_LOADABLE_SIZE)) {
 		static const char *rom_exts[] = {".rom", NULL};
 		char rom_dir[FILENAME_MAX];
 		Util_catpath(rom_dir, CFG_data_dir, "rom");
@@ -1528,6 +1535,8 @@ void Atari800_Frame(void)
 	}
 #endif /* BASIC */
 	POKEY_Frame();
+	if (ACIDTEST_enabled)
+		ACIDTEST_Frame();
 #ifdef VIDEO_RECORDING
 	File_Export_WriteVideo();
 #endif

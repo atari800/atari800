@@ -1,0 +1,55 @@
+TOTALS	25 31 2
+PASS	CPU: Basic instructions
+PASS	CPU: Flags
+PASS	CPU: Decimal mode
+PASS	CPU: Timing
+FAIL	CPU: Bugs
+SKIP	CPU: CLI/SEI timing
+PASS	CPU: Illegal instructions
+PASS	CPU: Illegal insn timing
+SKIP	CPU: 65C816 tests
+PASS	ANTIC: Default value
+FAIL	ANTIC: NMIST/NMIRES test
+FAIL	ANTIC: Hires bug
+FAIL	ANTIC: VCOUNT timing
+FAIL	ANTIC: WSYNC timing
+PASS	ANTIC: Address wrapping
+FAIL	ANTIC: Display list wrapping
+FAIL	ANTIC: DLI timing
+PASS	ANTIC: Address mirroring
+FAIL	ANTIC: P/M graphics DMA
+PASS	ANTIC: Character control
+FAIL	ANTIC: DMA pattern
+FAIL	ANTIC: Blocked NMIs
+FAIL	ANTIC: HSCROL bug
+FAIL	ANTIC: Virtual DMA
+FAIL	ANTIC: Vertical scrolling
+FAIL	ANTIC: VSCROL+NMI timing
+FAIL	ANTIC: Playfield start timing
+FAIL	ANTIC: Playfield stop timing
+PASS	ANTIC: Line buffering
+PASS	POKEY: Default value
+FAIL	POKEY: Noise generators
+FAIL	POKEY: IRQ timing
+PASS	POKEY: Timer IRQs
+FAIL	POKEY: Timer timing
+FAIL	POKEY: Two-tone mode
+FAIL	POKEY: Serial clocking modes
+FAIL	POKEY: Direct serial input
+FAIL	POKEY: Serial port timing
+FAIL	POKEY: Serial status
+PASS	POKEY: Address mirroring
+FAIL	POKEY: Init timing
+PASS	PIA: Basic test
+PASS	PIA: Interrupt control test
+PASS	GTIA: Default value
+FAIL	GTIA: Phantom PMG DMA
+PASS	GTIA: CONSOL test
+PASS	GTIA: Vertical delay
+PASS	GTIA: Collision test
+PASS	GTIA: P/M retriggering
+FAIL	GTIA: Player resizing
+FAIL	GTIA: Player overlap
+PASS	GTIA: Psuedo mode E
+PASS	GTIA: Address mirroring
+PASS	MMU: XL banking

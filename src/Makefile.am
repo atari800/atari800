@@ -58,6 +58,7 @@ atari800_SOURCES = \
 	platform.h \
 	pcjoy.h \
 	akey.h \
+	acidtest.c acidtest.h \
 	afile.c afile.h \
 	antic.c antic.h \
 	atari.c atari.h \
@@ -322,6 +323,14 @@ ide.o: ide.c ide.h ide_internal.h
 
 .asm.o:
 	$(CCAS) $(CCASFLAGS) -o $@ $<
+
+# run the Acid800 test suite against the expected results ("make check");
+# delete test/acid800.expected and run again to record a new baseline
+check-local: atari800$(EXEEXT)
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./atari800$(EXEEXT) \
+	  -config /dev/null -xl-rev altirra -nosound -nobasic -turbo \
+	  -acid800 $(top_srcdir)/test/acid800.expected \
+	  $(top_srcdir)/test/acid800.atr
 
 if CONFIGURE_HOST_JAVANVM
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class

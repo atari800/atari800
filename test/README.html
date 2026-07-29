@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <style>
+body {
+	font-family: sans-serif;
+	font-weight: normal;
+	font-size: 10pt;
+	margin: 0;
+	padding: 0;
+	padding-bottom: 10pt;
+	background: #fff;
+	color: #000;
+}
+
+a {
+	text-decoration: none;
+	margin: 0;
+	padding: 0;
+}
+
+p {
+    margin-left: 6pt;
+    margin-right: 6pt;
+}
+
+h1 {
+	font-family: sans-serif;
+	font-weight: bold;
+	font-size: 20pt;
+	background: #c0e0ff;
+	margin: 0 0 10pt 0;
+	padding: 4pt 4pt 4pt 4pt;
+}
+
+h2 {
+	font-size: 14pt;
+	font-weight: normal;
+	border-bottom: 1px solid #bbb;
+	margin: 0 3pt;
+}
+
+h3 {
+	font-size: 11pt;
+	font-weight: bold;
+	margin-top: 18pt;
+	margin-bottom: 0;
+	margin-left: 6pt;
+}
+
+li {
+	font-size: 10pt;
+	margin: 0;
+	padding: 0;
+	vertical-align: bottom;
+}
+
+@media(prefers-color-scheme: dark) {
+  body {
+    background: #222;
+    color: #eee;
+  }
+
+  h1 {
+    background: #247;
+  }
+}
+
+        </style>
+        <title>Altirra Acid800 test</title>
+    </head>
+    <body>
+        <h1>Altirra Acid800 test</h1>
+        <h2>Introduction</h2>
+        <p>
+            Acid800 is an test suite used to test Altirra, an emulator for the Atari line of 8-bit home computers. It is named
+            after the famous Acid browser tests and runs a series
+            of tests that stress corner cases in emulators but which all pass on real hardware, reporting any discrepancies
+            in behavior. As it is designed to run unattended and on stock hardware, it is limited to testing deterministic program
+            visible behavior, and avoids tests that are subjective or require human assessment, such as color output. The intent
+            is that every test in the test suite can unambiguously and reliably determine whether emulator behavior is correct
+            or incorrect.
+        </p>
+        <p>
+            Although the test suite is meant to test one particular emulator, it has been tweaked and designed to run on any emulator which
+            emulates the Atari hardware to sufficient accuracy. Because many of the tests rely on the same hardware functions,
+            a single emulation bug can result in several tests failing and the pass/fail ratio is not a good indicator of
+            emulation quality. The test suite is also biased towards testing program-visible corner cases instead of commonly used
+            behavior, so it is not representative of the features most commonly used in production software, nor is it
+            a comprehensive hardware test.
+        </p>
+        <p>
+            If you are running the Acid800 tests and have trouble interpreting the test results, or if you are an emulator author
+            and need help tracking down a specific issue, or even if you just have general comments, please drop me a line
+            and I'll be glad to help.
+        </p>
+        <p>
+            <tt>
+                &mdash; Avery Lee &lt;virtualdub.org / phaeron (reverse for email address)&gt;
+            </tt>
+        </p>
+        <h2>Running the test suite</h2>
+        <h3>Main test suite</h3>
+        <p>
+            The Acid800 test suite is distributed as a bootable ATR disk image. Simply mount the disk image in an emulator or
+            through an SIO2PC/APE emulation cable to a real Atari, and boot the Atari system. It is recommended that the test
+            be run without BASIC or any other cartridges installed, although it will run with either BASIC enabled or an 8K
+            cartridge as long as 80-column mode is not used. Acid800 will automatically detect whether the system is PAL or
+            NTSC.
+        </p>
+        <p>
+            Shortly after booting, Acid800 will wait five seconds for a request to change options. Pressing a key will bring
+            up the options menu, from which you can fix incorrect CPU detection, disable use of 6502 undocumented (illegal)
+            instructions, enable prompting after each test or failed test, or enable one of two 80-column display modes.
+            The 80-column modes require a high-quality video output, no cartridge or BASIC, and optionally a Video Board XE
+            expansion with an FX1.20 or later core.
+        </p>
+        <p>
+            Afterward, Acid800 will begin running the test suite. The disk image should be kept mounted
+            during the test as tests are incrementally loaded from disk. During operation the tests will frequently
+            have to take full control of the Atari hardware, so it is normal for the display to blank out or display test patterns
+            during test execution. Most tests execute in a second or less and the entire suite should take no more than
+            a couple of minutes to finish. The test suite will report and attempt to recover from any failures, although
+            it is possible for it to crash if there is a catastrophic failure.
+        </p>
+        <p>
+            Acid800 contains a lot of precision code in its tests, so it requires a high degree of hardware compatibility
+            in order to run correctly. Hardware expansions on real hardware or special options in an emulator can cause
+            deviations from expected behavior, and this should be taken into account when interpreting test results. If
+            you are getting unexpected failures on real hardware and haven't modified your Atari, well, that's a bad sign....
+        </p>
+        <h3>65C02/65C816 warning</h3>
+        <p>
+            Acid800 will automatically check for and disable some tests if it sees detects a 65C02 or 65C816 CPU. However,
+            as many of its tests are extremely timing critical and the presence of such a CPU means a non-standard
+            accelerator, some tests may fail with such a CPU on a real system.
+        </p>
+        <h3>Veronica cartridge support</h3>
+        <p>
+            A Veronica cartridge can be used to cross-check the 65C816 tests, if enabled via Options. When enabled,
+            65C816 tests will upload their code to and run on the Veronica coprocessor instead of the main CPU.
+        </p>
+        <h3>Standalone tests</h3>
+        <p>
+            All of the tests are also available in standalone form in a subdirectory; these run only the test in
+            question and then stop. Labels and listings have been provided for each test.
+        </p>
+        <h3>Acid5200 (version for 5200 SuperSystem)</h3>
+        <p>
+            The Acid5200 suite is an appropriate subset of tests relocated for the 5200 SuperSystem and packed into
+            a cartridge. It operates similarly to the main Acid800 suite. Use a 5200 controller in port 1 to control
+            the test. The main suite is a standard 5200 32K cartridge, while the standalone tests are 8K cartridges.
+        </p>
+        <h3>AcidSAP (version for SAP format)</h3>
+        <p>
+            The AcidSAP suite is an even stricter subset of tests for players that support the TYPE D profile of
+            the Slight Audio Player (SAP) format. This tests the CPU, POKEY, and a small portion of ANTIC, but not
+            GTIA. Because a SAP player only has audio output, the test suite will emit a series of pips as it
+            executes each test, and then a small victory tune or raspberry when it has finished. The console output
+            is available at $1000-17FF in memory.
+        </p>
+        <h3>AcidOS (OS test suite)</h3>
+        <p>
+            The AcidOS test suite tests behaviors of the OS kernel, including the math pack and the character input/output
+            facility (CIO). Unlike the hardware suites, it attempts to stay within the bounds of defined OS behavior
+            and avoids testing undocumented behaviors.
+        </p>
+        <p>
+            AcidOS uses a standard DOS 2.0 disk format and comes with its own mini-DOS, but it can be run under
+            regular DOS. A <tt>LOMEM</tt> of at least <tt>$2800</tt> is required. When running the test suite
+            this way, <tt>AUTORUN.SYS</tt> must be invoked to properly initialize the shared library
+            and boot the test suite; the individual tests cannot be run directly. The versions in the
+            <tt>standalone</tt> subdirectory should be used for that instead.
+        </p>
+        
+        <h2>Hardware test suite notes</h2>
+        <h3>CPU: Basic instructions</h3>
+        <p>
+            Tests non control flow, non stack instructions. This test will fail if zp,X, zp,Y, and (zp,X) modes
+            do not wrap in zero page.
+        </p>
+        <h3>CPU: Flags</h3>
+        <p>
+            Checks whether certain bits in the 6502's P register are handled properly.
+            In particular, it detects whether the (B)reak bit can be changed under program control,
+            which it should not.
+        </p>
+        <h3>CPU: Decimal mode</h3>
+        <p>
+            Checks if basic decimal mode operations work correctly. It is not an exhaustive
+            test, however. Only the result values are tested, not the flags.
+        </p>
+        <h3>CPU: Timing</h3>
+        <p>
+            Checks whether addressing modes take an expected number of clock cycles, including
+            some cases with page crossings. This test relies on the VCOUNT register in ANTIC
+            and will fail if VCOUNT timing is too far off.
+        </p>
+        <h3>CPU: Bugs</h3>
+        <p>
+            Tests for two 6502 bugs: the famous JMP (abs) page bug, and BRK being overridden by a concurrent
+            NMI.
+        </p>
+        <h3>CPU: CLI/SEI timing</h3>
+        <p>
+            Checks for correct IRQ acknowledge timing around the CLI and SEI instructions, including
+            whether an IRQ handler can be entered with the I bit set.
+        </p>
+        <h3>CPU: Illegal instructions</h3>
+        <p>
+            Runs a series of checks for various undocumented 6502 instructions. This test will be
+            automatically skipped if either a 65C02 or 65C816 CPU is detected, neither of which
+            support these instructions.
+        </p>
+        <h3>CPU: Illegal insn timing</h3>
+        <p>
+            Checks the cycle count of undocumented 6502 instructions. This test is skipped for a 65C02/65C816.
+        </p>
+        <h3>CPU: 65C816 tests</h3>
+        <p>
+            Runs a battery of tests to check for 65C816 specific behavior. This includes basic functionality,
+            proper selection of bank 0/PBK/DBK for data accesses, and quirks such as being able to access
+            page zero/two with 16-bit stack operations in emulation mode and some address modes wrapping
+            or not wrapping into adjacent banks. 
+        </p>
+        <p>
+            Obviously, this test is skipped if a 65C816 is not detected. Some of the tests are also
+            skipped if 24-bit addressing and high memory in bank $01 are not available.
+        </p>
+        <p>
+            If Veronica is available and enabled in options, this test will upload the '816 test code to
+            Veronica and run it there instead. This will run the majority of tests, but cannot run interrupt
+            or 24-bit addressing tests.
+        </p>
+        <h3>ANTIC: Default value</h3>
+        <p>
+            Checks whether undocumented registers in ANTIC return the correct value.
+        </p>
+        <h3>ANTIC: NMIST/NMIRES test</h3>
+        <p>
+            Checks for correct functionality and timing of the DLI and VBI bits in NMIST.
+        </p>
+        <h3>ANTIC: VCOUNT timing</h3>
+        <p>
+            Checks for increment timing and value ranges for the VCOUNT register. This test will fail
+            if WSYNC timing is incorrect.
+        </p>
+        <h3>ANTIC: WSYNC timing</h3>
+        <p>
+            Checks for correct timing of STA WSYNC and INC WSYNC instructions around the start of
+            horizontal blank. This test relies on 9-bit RANDOM and will fail if that pattern is
+            incorrect.
+        </p>
+        <p>
+            The sub-test for INC WSYNC is skipped if a 65C02 or 65C816 is present as those CPUs
+            stop when RDY is pulled on a write cycle, unlike the original 6502.
+        </p>
+        <h3>ANTIC: Address wrapping</h3>
+        <p>
+            Checks whether ANTIC display list DMA correctly wraps at 1K boundaries and playfield DMA
+            wraps at 4K boundaries. The playfield DMA wrapping test will fail if GTIA player-to-playfield
+            collisions are not implemented.
+        </p>
+        <h3>ANTIC: Display list wrapping</h3>
+        <p>
+            Checks for correct ANTIC function when a display list is longer than 240 visible scanlines
+            and is not manually reset by the CPU during vertical blank.
+        </p>
+        <h3>ANTIC: DLI timing</h3>
+        <p>
+            Checks for correct timing of entry into DLI handlers. This test will fail if CPU NMI
+            acknowledge timing is off.
+        </p>
+        <h3>ANTIC: Address mirroring</h3>
+        <p>
+            Checks for ANTIC response in the $D420-D4FF range.
+        </p>
+        <h3>ANTIC: P/M graphics DMA</h3>
+        <p>
+            Checks for correct player/missile DMA function, including automatic enabling of missile DMA
+            when player DMA is enabled and per-scanline DMA in two-line mode. This test relies heavily
+            on exact WSYNC + CPU timing and player/missile/playfield collisions.
+        </p>
+        <h3>ANTIC: Character control</h3>
+        <p>
+            Checks output pattern for character modes (ANTIC modes 2-7), including inversion and vertical
+            reflection. This test relies on P/M graphics collisions.
+        </p>
+        <h3>ANTIC: DMA pattern</h3>
+        <p>
+            Checks for correct positioning of DMA cycles within the scanline for various playfield
+            modes. This test requires correct STA WSYNC timing and 9-bit RANDOM sequencing. It does not
+            require POKEY initialization mode, however. The sub-modes break down as follows:
+        </p>
+        <ul>
+            <li><b>-a</b>: Narrow width, first scanline.</li>
+            <li><b>-b</b>: Narrow width, second scanline.</li>
+            <li><b>-c</b>: Normal width, first scanline.</li>
+            <li><b>-d</b>: Normal width, second scanline.</li>
+        </ul>
+        <p>
+            <tt>Mode 04-b</tt> is thus the second scanline of a narrow IR mode 4 line.
+        </p>
+        <p>
+            This test also checks the timing of display list DMA, but not player or missile DMA.
+        </p>
+        <h3>ANTIC: Blocked NMIs</h3>
+        <p>
+            Checks that the CPU can be induced into ignoring an NMI from ANTIC by entering the interrupt
+            sequence at precisely the correct cycle.
+        </p>
+        <h3>ANTIC: HSCROL bug</h3>
+        <p>
+            Checks that a mid-screen write to HSCROL can cause ANTIC to ignore the end of the playfield
+            and continue to issue playfield fetches across HBLANK.
+        </p>
+        <h3>ANTIC: Virtual DMA</h3>
+        <p>
+            Checks for correct behavior when playfield DMA extends beyond the DMA stop on the right side
+            of the screen and captures data fetched by the 6502 during that time. This test relies on
+            precise CPU and ANTIC DMA timing.
+        </p>
+        <h3>ANTIC: Vertical scrolling</h3>
+        <p>
+            Checks for correct changes in mode line height with vertical scrolling enabled, including
+            unusual values of VSCROL that cause the delta counter to wrap. This also tests that vertical
+            scrolling cannot cause a mode line to extend across vertical blank into the next frame.
+        </p>
+        <h3>ANTIC: VSCROL+DLI timing</h3>
+        <p>
+            Checks for accurate timing for when VSCROL is sampled to determine whether a DLI occurs
+            on a mode line ending a vertically scrolled region.
+        </p>
+        <h3>ANTIC: Playfield start timing</h3>
+        <p>
+            Checks for correct behavior when playfield width or horizontal scroll value are changed very
+            close to the start of playfield DMA: these should only take effect if the change occurs before
+            the playfield DMA clock is started. This test relies on cycle exact WSYNC, CPU execution, and
+            DMA timing.
+        </p>
+        <h3>ANTIC: Playfield stop timing</h3>
+        <p>
+            Same as ANTIC: Playfield start timing, except that the playfield stop edge is tested. Only legal values are tested; cases that would cause playfield
+            DMA to continue into horizontal blank are avoided.
+        </p>
+        <h3>ANTIC: Line buffering</h3>
+        <p>
+            Tests for proper behavior of the internal line buffer. This includes replaying data from
+            previous scan lines. This test will fail if ANTIC does not preserve line buffer contents
+            when playfield DMA is disabled for the first scan line of a mode line or if the buffered
+            data replays incorrectly in a different mode.
+        </p>
+        <p>
+            This test relies on being able to stretch a mode line past its usual height with vertical
+            scrolling.
+        </p>
+        <h3>POKEY: Default value</h3>
+        <p>
+            Checks for the correct value being returned by undocumented POKEY registers.
+        </p>
+        <h3>POKEY: Noise generators</h3>
+        <p>
+            Checks that the 17-bit psuedo-random number generator circuit in POKEY resets when
+            initialization mode is enabled and returns the correct value after a set number of cycles.
+            This test requires correct WSYNC timing.
+        </p>
+        <h3>POKEY: IRQ timing</h3>
+        <p>
+            Checks that an IRQ occurs at the correct time when an active IRQ is enabled via the POKEY
+            IRQEN register. This test will also fail if CPU IRQ acknowledge timing is incorrect.
+        </p>
+        <p>
+            <b>Note:</b> There is one cycle of leeway in this test to account for temperature sensitivity
+            in some systems.
+        </p>
+        <h3>POKEY: Timer IRQs</h3>
+        <p>
+            Checks that POKEY timers can be used to issue periodic IRQs.
+        </p>
+        <h3>POKEY: Timer timing</h3>
+        <p>
+            Checks for various cycle timing deadlines related to timers, including the timing of when
+            timer IRQs are asserted in IRQST, how late AUDF1-4 can be written for it to take effect,
+            when STIMER can preempt a timer, and two-tone resync timing. This includes unlinked (8-bit)
+            timers and both the low/high timers of linked (16-bit) timers.
+        </p>
+        <h3>POKEY: 1.79MHz timer granularity</h3>
+        <p>
+            Checks that timer IRQs can be issued from POKEY with cycle granularity when using the 1.79MHz
+            clock. This test will fail if POKEY interrupts are being emulated with scanline granularity.
+        </p>
+        <h3>POKEY: Two-tone mode</h3>
+        <p>
+            Checks if enabling two-tone mode affects IRQs issued by timers 1 and 2.
+        </p>
+        <h3>POKEY: Serial output complete IRQ</h3>
+        <p>
+            Checks if the special unlatched serial output complete IRQ (IRQEN/ST bit 3) is handled properly.
+            This test will fail if the bit is latched and can be cleared or if an IRQ is not issued when
+            this interrupt is enabled.
+        </p>
+        <h3>POKEY: Serial clocking modes</h3>
+        <p>
+            Tests for proper switching between timer 2, timer 4, and the external clock for serial output
+            based on bits 4-6 of SKCTL, with the timers running at both 15KHz and 1.79MHz. Only gross timing
+            of serial output rate is done. This test may not work correctly if the serial output interrupt
+            is not working correctly.
+        </p>
+        <h3>POKEY: Direct serial input</h3>
+        <p>
+            Issues an invalid read sector 0 request to D1: and attempts to receive the returned NAK byte
+            by directly polling SKSTAT bit 4 at 19200 baud. This test will fail if the data returned by
+            the disk drive is only readable through SERIN. An SIO status request is performed beforehand
+            and the test will be skipped if D1: does not respond.
+        </p>
+        <p>
+            This test will fail if D1: is a virtual drive, such as one emulated by custom firmware intercepting
+            SIO requests.
+        </p>
+        <h3>POKEY: Serial port timing</h3>
+        <p>
+            Checks for cycle exact timing of when the serial output shift register is loaded, as signaled by
+            the serial output complete bit in IRQST (bit 3).
+        </p>
+        <h3>POKEY: Serial status</h3>
+        <p>
+            Checks for correct functionality of the SKSTAT serial input busy bit (bit 2) and overrun bit
+            (bit 5).
+        </p>
+        <h3>POKEY: Asynchronous receive mode</h3>
+        <p>
+            Checks that enabling asynchronous receive mode on the POKEY serial port also correctly affects
+            operation of timers 3 and 4. This test will fail if timers 3 and 4 continue to operate while
+            asynchronous receive mode is enabled and no serial activity is occurring.
+        </p>
+        <h3>POKEY: Init timing</h3>
+        <p>
+            Checks that the 15KHz and 64KHz clocks have the proper phase after exiting initialization mode.
+        </p>
+        <p>
+            <b>Note:</b> There is one cycle of leeway in this test to account for temperature sensitivity
+            in some systems.
+        </p>
+        <h3>PIA: Basic test</h3>
+        <p>
+            Checks basic operation of PIA registers. This test will fail if port output and data direction
+            registers are not distinct or if port A output bits are not also reflected in the input.
+        </p>
+        <h3>PIA: Interrupt control test</h3>
+        <p>
+            Checks for correct functionality of PIA port control bits 6 and 7. Bit 7 cannot be set under
+            program control; bit 6 can only be set indirectly through the CA2/CB2 mode selection and
+            cleared by reading PORTA/PORTB. This test also checks that the PIA can actually fire an IRQ.
+            CA1/CB1 are not currently tested due to a lack of a known method to do so without external
+            hardware.
+        </p>
+        <p>
+            <b>Note:</b> Devices that use the SIO proceed and interrupt lines, such as modems or RS-232
+            serial adapters other than SIO2PC-type devices, should not be hooked up to the SIO bus during
+            this test. They can pull the proceed and interrupt lines during the test and cause it to fail.
+        </p>
+        <h3>GTIA: Default value</h3>
+        <p>
+            Checks for the correct value being returned from undocumented GTIA registers.
+        </p>
+        <h3>GTIA: Phantom PMG DMA</h3>
+        <p>
+            Checks that the GTIA can read data bytes fetched by the 6502 CPU when the P/M DMA bits in
+            ANTIC DMACTL and GTIA GRACTL do not match.
+        </p>
+        <h3>GTIA: CONSOL test</h3>
+        <p>
+            Checks for correct function of the GTIA CONSOL bits, particularly whether GTIA can pull the
+            console switch lines low as well as read them. This test will fail if you press console
+            buttons during the test.
+        </p>
+        <h3>GTIA: Vertical delay test</h3>
+        <p>
+            Checks for correct functionality of the player/missile vertical delay (VDELAY) register.
+        </p>
+        <h3>GTIA: Collision test</h3>
+        <p>
+            Checks for basic functionality of player/missile collision registers, and whether collisions
+            are correctly restricted to the visible area.
+        </p>
+        <h3>GTIA: Special modes collision test</h3>
+        <p>
+            Checks for correct collision behavior between players/missiles and the playfield when
+            GTIA modes are active.
+        </p>
+        <p>
+            It has been reported that this test can fail on a real Atari if you have a defective GTIA
+            that does not display GTIA modes properly, a problem which affected some runs of some XL/XE systems.
+        </p>
+        <h3>GTIA: P/M retriggering</h3>
+        <p>
+            Checks that the same player or missile can be displayed multiple times in the same scanline
+            under CPU control.
+        </p>
+        <p>
+            There is one cycle of leeway in this test to account for differences between machines or
+            in the same machine depending on temperature.
+        </p>
+        <h3>GTIA: Player resizing</h3>
+        <p>
+            Checks for the correct scanout pattern when the size of a player is changed in the middle of
+            display of that player.
+        </p>
+        <p>
+            This test also checks for a quirk of the GTIA where switching from quadruple width ($03)
+            to the alternate normal width ($02) can cause the player/missile shifter to lock up.
+        </p>
+        <h3>GTIA: Player overlap</h3>
+        <p>
+            Check for the correct patterns when a player is retriggered on top of itself within the same
+            scanline. This test relies heavily on P/M collisions.
+        </p>
+        <h3>GTIA: Pseudo mode E</h3>
+        <p>
+            Checks for correct behavior and timing for enabling and disabling GTIA modes in the middle
+            of a scanline using the PRIOR register.
+        </p>
+        <h3>GTIA: Address mirroring</h3>
+        <p>
+            Checks for correct GTIA function in the $D020-D07F region. The $D080-D0FF region is not checked
+            to avoid tripping some GTIA-based expansions.
+        </p>
+        <h3>MMU: XL banking</h3>
+        <p>
+            Checks for correct behavior of the XL MMU, including swapping in and out the kernel, self-test,
+            and BASIC ROMs, as well as writing to ROM. This test will fail if run on a 400/800 or if a memory
+            expansion is installed that disables the BASIC or self-test ROMs; these are expected failures.
+        </p>
+        <p>
+            A check is also made for whether the self test ROM correctly overlays the extended memory window,
+            which is the way that the 130XE MMU behaves. This may fail if you have a memory expansion
+            that does not support such behavior. However, this check is skipped if the test detects a memory
+            expansion that uses bit 7 for extended bank selection.
+        </p>
+        <p>
+            This test is skipped entirely on a 16K configuration (400/65XE).
+        </p>
+
+        <h2>OS test suite notes</h2>
+        <h3>TMTHPACK.EXE (Math Pack test)</h3>
+        <p>
+            Tests for ASCII&lt;-&gt;FP conversion, overflow, underflow, and precision loss issues in the
+            math pack. When possible, the subtests are constructed to avoid testing for accuracy in the
+            math routines, as the stock math pack is poor at rounding and replacements may have better
+            accuracy. Some overflow and underflow checks have also been relaxed to accommodate anomalies
+            in the XL/XE OS math pack, such as FMUL and FDIV signaling an error on minor underflow but not
+            signaling an error and returning garbage for extreme underflow/overflow cases.
+        </p>
+        
+        <h3>TCIO.EXE (Character I/O facility test)</h3>
+        <p>
+            Temporarily registers a custom CIO device and checks for basic path parsing behavior. This
+            test relies on all CIO devices being visible in HATABS -- it will first check for A: and
+            attempt to use the first device letter that is free.
+        </p>
+        
+        <h2>Emulator-specific notes</h2>
+        <h3>Altirra 2.40</h3>
+        <p>
+            The "enable illegal instructions" option should be enabled and the "stop on BRK instruction"
+            diagnostic option should be disabled under System &gt; CPU Options... before running the test suite.
+        </p>
+        <p>
+            Burst serial port operation should be disabled, as it will otherwise cause some of the low-level
+            serial port tests to fail.
+        </p>
+        <h3>Atari++ 1.70</h3>
+        <p>
+            Atari++ will report unexpected SIO data and halt the emulation during the <i>POKEY: Serial
+            clocking modes</i> test.
+            This is normal and should be Dismissed. This test writes data to the SIO bus with the command
+            line deasserted, which is normally ignored by any devices on the bus.
+        </p>
+        <p>
+            The UseBasic setting must be enabled in order for the MMU: XL Banking test to pass.
+            Otherwise, Atari++ will not allow Acid800 to bank in the BASIC ROM through PIA port
+            B. This is an expected failure.
+        </p>
+        <p>
+            Cycle-precise POKEY emulation should be enabled to pass the POKEY: 1.79MHz Timer Granularity test.
+        </p>
+        <h3>kat5200 0.6.2</h3>
+        <p>
+            This version of kat5200 does not support the full set of undocumented 6502 opcodes
+            and will report a crash during the undocumented opcode test on default settings.
+            Use the options menu in Acid800 to disable the undocumented opcode test.
+        </p>
+        <h2>Changelog</h2>
+        <h3>Version 1.2</h3>
+        <ul>
+            <li>Acid800: ANTIC DLI timing test now checks for instruction timing after a DLI is delayed by STA WSYNC.</li>
+            <li>Acid800: Fixed some incorrect error messages in the ANTIC P/M graphics DMA test. The tests themselves were OK, but the specific error test was wrong.</li>
+            <li>Acid800: Added CPU: Illegal insn timing test.</li>
+            <li>Acid800: 65C816 test can now be run on Veronica, if enabled in Options.</li>
+            <li>Acid800: Fixed a couple of broken 65C816 indirect addressing tests and also added a check for the WDM instruction and stack page crossing tests.</li>
+            <li>Acid800: POKEY init timing test now checks for 1 bits being shifted out when exiting init mode.</li>
+            <li>Acid800: Expanded timer timing test to check cycle deadlines around writes to AUDF1-4 and STIMER, as well as two-tone mode resync timing.</li>
+            <li>Acid800: Fixed an issue with PIA test not clearing stray interrupts.</li>
+            <li>AcidOS: Added more FASC tests.</li>
+            <li>AcidOS: Added EXP/LOG tests.</li>
+            <li>AcidOS: Added math pack ZP usage checks.</li>
+            <li>AcidOS: Removed all usage of .fl directive to work around MADS bugs.</li>
+            <li>AcidOS: Added CIO permission tests.</li>
+        </ul>
+        <h3>Version 1.1</h3>
+        <ul>
+            <li>Added ANTIC line buffering test.</li>
+            <li>Added ANTIC vertical scrolling test.</li>
+            <li>Added GTIA player overlap test.</li>
+            <li>GTIA player retriggering test now also tests odd player positions.</li>
+            <li>GTIA collision test now checks players partially in HBLANK.</li>
+            <li>Added scrolling 40-column display driver.</li>
+            <li>Display drivers can now unloaded and be switched on the fly.</li>
+            <li>INC WSYNC test is now skipped for 65C02 and 65C816 CPUs.</li>
+            <li>Added detection for whether a 65C816 based system is using 16-bit or 24-bit addressing.</li>
+            <li>The CPU: Basic Instructions test no longer checks for 64K addressing wrap with the abs,X and abs,Y addressing modes for 65C816 compatibility.</li>
+            <li>Added 65C816 tests.</li>
+            <li>Fixed bug in <i>POKEY: Direct serial input</i> test that was stomping some OS page
+                two variables (thanks to Thor for noticing this).</li>
+            <li>
+                Reorganized low memory usage so that standalone tests can now load with MEMLO up
+                to $1A00 instead of $1000.
+            </li>
+            <li>
+                The ANTIC DMA pattern test now runs four times faster.
+            </li>
+            <li>
+                The <i>ANTIC: HSCROL bug</i> test now tests both even and odd cycle offset cases.
+            </li>
+            <li>Added GTIA vertical delay test.</li>
+            <li>
+                Fixed <i>POKEY: Default value</i> test using the wrong address on the 5200.
+            </li>
+            <li>Added POKEY serial status test.</li>
+            <li>Added AcidOS test suite.</li>
+        </ul>
+        <h3>Version 1.0</h3>
+        <ul>
+            <li>PIA interrupt test is now actually able to trigger and test PIA interrupts.</li>
+            <li>Added ANTIC playfield start/stop timing tests.</li>
+            <li>Standard 80-column module can now auto-disable the BASIC ROM.</li>
+            <li>Acid800 can now be run in a 16K memory configuration.</li>
+            <li>Added additional POKEY serial port tests.</li>
+            <li>The MMU: XL Banking test no longer does the main ROM banking tests with expanded
+                memory enabled and is more tolerant of memory expansions.</li>
+            <li>
+                The <i>POKEY: Asynchronous receive mode</i> test now also checks that asynchronous
+                receive mode resets timers 3+4 immediately and doesn't just prevent them from
+                restarting.
+            </li>
+            <li>
+                Removed opcode $AB from the CPU illegal instructions test as it is unstable. Added
+                page crossing checks for opcodes $9C and $9E.
+            </li>
+        </ul>
+        <h3>Version 0.9</h3>
+        <ul>
+            <li>ANTIC NMIRES/NMIST test now catches the case where an NMI reactivates after being cleared by NMIRES.</li>
+            <li>Fixed bug where ANTIC NMIRES/NMIST test could randomly fail due to a refresh cycle falling after an STA WSYNC.</li>
+        </ul>
+        <h2>License</h2>
+        <p>
+            The Acid800 test suite is licensed under the MIT license.
+        </p>
+        <h3>License text</h3>
+        <p>
+            Altirra Acid800 test suite
+            <br/>
+            Copyright (C) 2010-2022 Avery Lee, All Rights Reserved.
+        </p>
+        <p>
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the "Software"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+        </p>
+        <p>
+            The above copyright notice and this permission notice shall be included in
+            all copies or substantial portions of the Software.
+        </p>
+        <p>
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+            THE SOFTWARE.
+        </p>
+    </body>
+</html>

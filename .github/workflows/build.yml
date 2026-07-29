@@ -32,7 +32,9 @@ jobs:
     - name: configure
       run: ./configure --with-opengl --with-readline --with-mp3=lame --with-video=sdl2 --with-sound=sdl2
     - name: building
-      run: make -j4
+      run: make -j$(nproc)
+    - name: run Acid800 test suite
+      run: make check
     - name: Archive Atari800 binary
       uses: actions/upload-artifact@v7
       with:
@@ -288,6 +290,7 @@ jobs:
             ./autogen.sh
             ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
             make -j\$(nproc)
+            make check
 
             APPDIR=\"/tmp/Atari800-\${V}.AppDir\"
             mkdir -p \"\$APPDIR/usr/bin\" \
@@ -372,7 +375,9 @@ jobs:
     - name: configure
       run: ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
     - name: building
-      run: make -j4
+      run: make -j$(sysctl -n hw.ncpu)
+    - name: run Acid800 test suite
+      run: make check
     - name: Package .dmg
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       run: |

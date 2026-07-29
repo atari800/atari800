@@ -8,4 +8,4 @@ endif
 
 doc_DATA = COPYING README.TXT
 
-EXTRA_DIST = $(doc_DATA) act data debian util
+EXTRA_DIST = $(doc_DATA) act data debian test util
