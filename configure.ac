@@ -24,7 +24,7 @@ AC_PREREQ(2.57)
 AC_INIT(Atari800, 7.1.2, pstehlik@sophics.cz)
 AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_SRCDIR(src/atari.c)
-AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
@@ -370,8 +370,6 @@ if [[ "$a8_target" = "android" ]]; then
 else
     AC_HEADER_DIRENT
 fi
-AC_HEADER_STDC
-AC_HEADER_TIME
 AC_TYPE_UINTPTR_T
 AC_CHECK_HEADERS([direct.h errno.h file.h signal.h sys/time.h time.h unistd.h unixio.h])
 AC_HEADER_TIOCGWINSZ
@@ -416,7 +414,7 @@ else
 	AC_CHECK_LIB(ossaudio,_oss_ioctl,[LIBS="-lossaudio $LIBS"])
 
 	dnl Check for libcurl (download feature)
-	AC_ARG_ENABLE(download,AC_HELP_STRING([--disable-download],[Disable download support (default=auto)]),,enable_download=auto)
+	AC_ARG_ENABLE(download,AS_HELP_STRING([--disable-download],[Disable download support (default=auto)]),,enable_download=auto)
 	WANT_DOWNLOAD=no
 	if [[ "$enable_download" != "no" ]]; then
 		AC_CHECK_HEADER([curl/curl.h],
@@ -546,17 +544,18 @@ AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_INLINE
 AC_C_VOLATILE
-AC_PROG_GCC_TRADITIONAL
 AC_STRUCT_TM
-AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 
 
 dnl Set usage of unaligned word accesses...
 
-AC_ARG_ENABLE(unalignedwords,AC_HELP_STRING(--enable-unalignedwords,[Override usage of unaligned words]))
+AC_ARG_ENABLE(unalignedwords,AS_HELP_STRING(--enable-unalignedwords,[Override usage of unaligned words]))
 if [[ "$enable_unalignedwords" != "yes" -a "$enable_unalignedwords" != "no" ]]; then
     case $host_cpu in
+        aarch64* | arm64*)
+            enable_unalignedwords=yes
+            ;;
         alpha* | arm* | hppa* | ia64 | mips* | sparc*)
             enable_unalignedwords=no
             ;;
@@ -615,12 +614,12 @@ AC_DEFUN([AX_FUNC_MKDIR],
 [AC_CHECK_FUNCS([mkdir _mkdir])
 AC_CACHE_CHECK([whether mkdir takes one argument],
                [ac_cv_mkdir_takes_one_arg],
-[AC_TRY_COMPILE([
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/stat.h>
 #if HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
-], [mkdir (".");],
+]], [[mkdir (".");]])],
 [ac_cv_mkdir_takes_one_arg=yes], [ac_cv_mkdir_takes_one_arg=no])])
 if test x"$ac_cv_mkdir_takes_one_arg" = xyes; then
   AC_DEFINE([MKDIR_TAKES_ONE_ARG], 1,
@@ -666,7 +665,7 @@ fi
 dnl Select/detect video interface.
 
 AC_ARG_WITH([video],
-    [AC_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|sdl2|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
+    [AS_HELP_STRING([--with-video@<:@=no|yes|curses|ncurses|pdcurses|dosvga|sdl|sdl2|javanvm@:>@],[Select video interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | curses | ncurses | pdcurses | dosvga | sdl | sdl2 | javanvm)
@@ -811,7 +810,7 @@ AM_CONDITIONAL(WITH_VIDEO_NO, test "$with_video" = no)
 
 dnl Select optional Atari800 features...
 
-dnl The A8_OPTION macro automates the calling of AC_ARG_ENABLE, AC_HELP_STRING and AC_DEFINE.
+dnl The A8_OPTION macro automates the calling of AC_ARG_ENABLE, AS_HELP_STRING and AC_DEFINE.
 dnl         $1    = the name of the feature, what follows "--enable-".
 dnl         $2    = "yes" or "no", determines if feature defaults to being active or not.
 dnl         $3    = The right side of the help line.
@@ -820,7 +819,7 @@ dnl         $4    = The symbol name which goes to config.h, the C #define symbol
 dnl                 A symbol called "WANT_$4" is defined for use in this configure.ac.
 dnl         $5    = The help string which shows up in config.h for the $4 symbol.
 AC_DEFUN([A8_OPTION],[
-    AC_ARG_ENABLE($1,AC_HELP_STRING(--enable-$1,$3),WANT_$4=$enableval,WANT_$4=$2)
+    AC_ARG_ENABLE($1,AS_HELP_STRING(--enable-$1,$3),WANT_$4=$enableval,WANT_$4=$2)
     if [[ "$WANT_$4" = "yes" ]]; then
         AC_DEFINE($4,1,$5)
     fi
@@ -1000,7 +999,7 @@ fi
 dnl Select/detect sound interface.
 
 AC_ARG_WITH([sound],
-    [AC_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|sdl2|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
+    [AS_HELP_STRING([--with-sound@<:@=no|yes|dossb|oss|falcon|sdl|sdl2|javanvm@:>@],[Select sound interface to use @<:@default=check@:>@])],
     [
         case "$withval" in
             no | yes | check | dossb | oss | falcon | sdl | sdl2 | javanvm)
@@ -1151,7 +1150,7 @@ if [[ "$with_sound" != no ]]; then
     if [[ "$WANT_AUDIO_RECORDING" = "yes" ]]; then
         supported_audio_codecs="pcm adpcm mulaw"
         AC_ARG_WITH(mp3,
-            [AC_HELP_STRING(--with-mp3@<:@=no|yes|lame@:>@,[Select mp3 audio @<:@default=check@:>@])],
+            [AS_HELP_STRING(--with-mp3@<:@=no|yes|lame@:>@,[Select mp3 audio @<:@default=check@:>@])],
             [
                 case "$withval" in
                     no | yes | check | lame)
@@ -1275,6 +1274,7 @@ if [[ "$WANT_IDE" = "yes" ]]; then
     AC_FUNC_FSEEKO
 fi
 AM_CONDITIONAL([WANT_IDE], test "$WANT_IDE" = "yes")
+AM_CONDITIONAL([WANT_DOWNLOAD], test "$WANT_DOWNLOAD" = "yes")
 
 A8_OPTION(pokeyrec,$WANT_POKEYREC,
           [Provide Pokey registers recording (default=ON)],
@@ -1296,7 +1296,7 @@ dnl Select/detect features based on external software...
 
 dnl Check for existence of the readline library and headers.
 AC_ARG_WITH(readline,
-    [AC_HELP_STRING(--with-readline,[Use libreadline for input in monitor @<:@default=check@:>@])],
+    [AS_HELP_STRING(--with-readline,[Use libreadline for input in monitor @<:@default=check@:>@])],
     [],
     [with_readline=check])
 
@@ -1338,7 +1338,7 @@ fi
 
 dnl Check for availability of the OpenGL header.
 AC_ARG_WITH(opengl,
-    AC_HELP_STRING(--with-opengl,[Build support for OpenGL hardware video acceleration - only in SDL target @<:@default=check@:>@]),
+    AS_HELP_STRING(--with-opengl,[Build support for OpenGL hardware video acceleration - only in SDL target @<:@default=check@:>@]),
     [],
     [with_opengl=check])
 
