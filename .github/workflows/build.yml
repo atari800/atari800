@@ -261,14 +261,35 @@ jobs:
         gh release upload "$GITHUB_REF_NAME" atari800-*-falcon_and_firebee.zip --clobber
 
   build-linux-i386:
-    if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
     name: Build on Linux i386
     runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v7
 
-    - name: Build and package in 32-bit Debian container
+    - name: Start 32-bit Debian container
+      run: |
+        docker run -d --name atari800-i386 --platform=linux/386 \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          debian:trixie sleep infinity
+        docker exec atari800-i386 apt-get update
+        docker exec atari800-i386 apt-get install -y \
+          build-essential autoconf automake libtool pkg-config \
+          libsdl2-dev libmp3lame-dev libreadline-dev libpng-dev libcurl4-openssl-dev curl ca-certificates
+
+    - name: Build in 32-bit Debian container
+      run: |
+        docker exec atari800-i386 bash -c "
+            set -e
+            ./autogen.sh
+            ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
+            make -j\$(nproc)
+            test -f src/atari800 && echo 'Build succeeded'
+          "
+
+    - name: Package AppImage in 32-bit Debian container
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       run: |
         if [ -n "${{ inputs.version }}" ]; then
           V=${{ inputs.version }}
@@ -277,19 +298,8 @@ jobs:
           V=$(echo "$V" | sed 's/_/./g')
         fi
 
-        docker run --platform=linux/386 --rm \
-          -v ${{ github.workspace }}:/workspace \
-          -w /workspace \
-          -e V="$V" \
-          debian:trixie \
-          bash -c "
+        docker exec -e V="$V" atari800-i386 bash -c "
             set -e
-            apt-get update
-            apt-get install -y build-essential autoconf automake libtool pkg-config \
-              libsdl2-dev libmp3lame-dev libreadline-dev libpng-dev libcurl4-openssl-dev curl ca-certificates
-            ./autogen.sh
-            ./configure --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame
-            make -j\$(nproc)
 
             APPDIR=\"/tmp/Atari800-\${V}.AppDir\"
             mkdir -p \"\$APPDIR/usr/bin\" \
@@ -346,7 +356,12 @@ jobs:
             APPIMAGE_EXTRACT_AND_RUN=1 /tmp/appimagetool --runtime-file /tmp/runtime-i686 \"\$APPDIR\" \"Atari800-\${V}-i386.AppImage\"
           "
 
+    - name: Stop 32-bit Debian container
+      if: always()
+      run: docker rm -f atari800-i386 || true
+
     - name: Upload AppImage
+      if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       uses: actions/upload-artifact@v7
       with:
         name: atari800-linux-i386-appimage
@@ -594,7 +609,6 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" atari800-*-win64.exe atari800-*-win64.zip --clobber
 
   build-windows-msys2-32:
-    if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
     name: Build on Windows MSYS2 (32-bit)
     runs-on: windows-latest
 
@@ -636,6 +650,7 @@ jobs:
           test -f src/atari800.exe && echo "Build succeeded"
 
       - name: Embed app icon
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         run: |
           cd src
           windres --include-dir .. -i atari800_res.rc -o atari800_res_icon.o
@@ -649,6 +664,7 @@ jobs:
           path: src/atari800.exe
 
       - name: Stage files and build installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         run: |
           if [ -n "${{ inputs.version }}" ]; then
             V=${{ inputs.version }}
@@ -674,6 +690,7 @@ jobs:
           (cd pkg && zip -r "../atari800-${V}-win32-no-network.zip" .)
 
       - name: Verify installer
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         run: |
           if [ -n "${{ inputs.version }}" ]; then
             V=${{ inputs.version }}
@@ -684,11 +701,13 @@ jobs:
           test -f atari800-$V-win32-no-network.zip && echo "Installer OK: atari800-$V-win32-no-network.zip"
 
       - name: Archive portable zip
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         uses: actions/upload-artifact@v7
         with:
           name: atari800-${{ env.VERSION }}-win32-no-network-portable
           path: atari800-*-win32-no-network.zip
       - name: Archive installer exe
+        if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
         uses: actions/upload-artifact@v7
         with:
           name: atari800-${{ env.VERSION }}-win32-no-network-installer
