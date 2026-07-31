@@ -376,14 +376,16 @@ static void PreInitialise(void)
 #ifdef HAVE_DOWNLOAD
 static void PurgeDownloadDir(const char *dir)
 {
-	DIR *d = opendir(dir);
+	DIR *d;
+	struct dirent *entry;
+
+	d = opendir(dir);
 	if (d == NULL)
 		return;
-	struct dirent *entry;
 	while ((entry = readdir(d)) != NULL) {
+		char path[FILENAME_MAX];
 		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 			continue;
-		char path[FILENAME_MAX];
 		Util_catpath(path, dir, entry->d_name);
 		remove(path);
 	}
@@ -974,13 +976,15 @@ int Atari800_Initialise(int *argc, char *argv[])
 	j = 1; /* diskno */
 	for (i = 1; i < *argc; i++) {
 		const char *filename = argv[i];
+#ifdef HAVE_DOWNLOAD
+		char dl_buf[FILENAME_MAX+2] = "";
+#endif
 		if (j > 8) {
 			/* The remaining arguments are not necessary disk images, but ignore them... */
 			Log_print("Too many disk image filenames on the command line (max. 8).");
 			break;
 		}
 #ifdef HAVE_DOWNLOAD
-		char dl_buf[FILENAME_MAX+2] = "";
 		if (strncmp(argv[i], "http://", 7) == 0 || strncmp(argv[i], "https://", 8) == 0) {
 			static const char *img_exts[] = { ".atr", ".xfd", ".atx", ".pro", ".dcm", ".xex", ".bas", ".lst", ".cas", ".rom", ".car", ".bin", NULL };
 			if (dl_dir[0] == '\0')

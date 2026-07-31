@@ -5,6 +5,7 @@
 * queues complete packets to emulator
 *
 */
+#include "config.h"	/* must precede system headers: enables POSIX/GNU declarations */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

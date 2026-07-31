@@ -1104,7 +1104,7 @@ static int FileSelector(char *path, int select_dir, char pDirectories[][FILENAME
 #endif
 				else {
 					/* directory selected */
-					char *pbracket = strrchr(selected_filename, ']');
+					char *pbracket = strrchr((char *) selected_filename, ']');
 					if (pbracket == NULL)
 						continue; /* XXX: regular file? */
 					*pbracket = '\0';	/*cut ']' */

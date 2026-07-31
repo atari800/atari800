@@ -56,8 +56,9 @@ static int CreateDir(const char *path)
 static int HasAnyExt(const char *name, const char *exts[])
 {
 	const char *dot = strrchr(name, '.');
+	int i;
 	if (dot == NULL) return 0;
-	for (int i = 0; exts[i] != NULL; i++) {
+	for (i = 0; exts[i] != NULL; i++) {
 		if (Util_stricmp(dot, exts[i]) == 0)
 			return 1;
 	}
@@ -104,6 +105,7 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 	offset = 0;
 	{
 		int cd_count = 0;
+		int extracted = 0;
 		struct {
 			unsigned int local_offset;
 			unsigned int comp_size;
@@ -113,13 +115,18 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 		if (buf.size >= 22) {
 			size_t search_start = (buf.size > 65557) ? buf.size - 65557 : 0;
 			size_t search_end = buf.size - 22;
-			for (size_t i = search_start; i <= search_end; i++) {
+			size_t i;
+			for (i = search_start; i <= search_end; i++) {
 				if (buf.data[i] == 0x50 && buf.data[i+1] == 0x4B
 				    && buf.data[i+2] == 0x05 && buf.data[i+3] == 0x06) {
 					unsigned int cd_offset = ReadLE32(buf.data + i + 16);
 					unsigned int cd_total = ReadLE16(buf.data + i + 10);
 					size_t cd_pos = cd_offset;
-					for (unsigned int j = 0; j < cd_total && cd_pos + 46 <= buf.size; j++) {
+					unsigned int j;
+					for (j = 0; j < cd_total && cd_pos + 46 <= buf.size; j++) {
+						unsigned int fn_len;
+						unsigned int ef_len;
+						unsigned int cm_len;
 						if (buf.data[cd_pos] != 0x50 || buf.data[cd_pos+1] != 0x4B
 						    || buf.data[cd_pos+2] != 0x01 || buf.data[cd_pos+3] != 0x02)
 							break;
@@ -129,9 +136,9 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 							cd_entry[cd_count].uncomp_size = ReadLE32(buf.data + cd_pos + 24);
 							cd_count++;
 						}
-						unsigned int fn_len = ReadLE16(buf.data + cd_pos + 28);
-						unsigned int ef_len = ReadLE16(buf.data + cd_pos + 30);
-						unsigned int cm_len = ReadLE16(buf.data + cd_pos + 32);
+						fn_len = ReadLE16(buf.data + cd_pos + 28);
+						ef_len = ReadLE16(buf.data + cd_pos + 30);
+						cm_len = ReadLE16(buf.data + cd_pos + 32);
 						cd_pos += 46 + fn_len + ef_len + cm_len;
 					}
 					break;
@@ -139,7 +146,6 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 			}
 		}
 
-		int extracted = 0;
 		while (offset + 30 <= buf.size) {
 			unsigned short flags, compression, name_len, extra_len;
 			unsigned int comp_size, uncomp_size;
@@ -159,7 +165,8 @@ const char *Download_And_Extract(const char *url, const char *exts[], const char
 			comp_size = ReadLE32(buf.data + offset + 18);
 			uncomp_size = ReadLE32(buf.data + offset + 22);
 			if ((flags & 0x08) && comp_size == 0) {
-				for (int k = 0; k < cd_count; k++) {
+				int k;
+				for (k = 0; k < cd_count; k++) {
 					if (cd_entry[k].local_offset == (unsigned int)offset) {
 						comp_size = cd_entry[k].comp_size;
 						uncomp_size = cd_entry[k].uncomp_size;

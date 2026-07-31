@@ -1433,9 +1433,17 @@ if [[ "$SUPPORTS_RDEVICE" = "yes" ]]; then
             fi
             WANT_R_SERIAL="no"
         fi
+        if [[ "$WANT_R_NETWORK" != "yes" -a "$WANT_R_SERIAL" != "yes" ]]; then
+            AC_MSG_ERROR([--enable-riodevice needs --enable-rnetwork and/or --enable-rserial])
+        fi
     fi
 fi
 AM_CONDITIONAL([WANT_R_IO_DEVICE], test "$WANT_R_IO_DEVICE" = "yes")
+
+dnl Treat compiler warnings as errors. Appended here, after every
+dnl target-specific CFLAGS assignment, so that none of them can drop it.
+
+CFLAGS="$CFLAGS -Werror"
 
 dnl Wrapup: export and write Makefile...
 
