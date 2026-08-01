@@ -1485,6 +1485,12 @@ int PLATFORM_Keyboard(void)
 		key_pressed = 0;
 		return AKEY_TURBO;
 	}
+#ifdef USE_UI_BASIC_ONSCREEN_KEYBOARD
+	if (lastkey == SDLK_F11) {
+		key_pressed = 0;
+		return AKEY_KEYB;
+	}
+#endif
 	if (UI_alt_function != -1) {
 		key_pressed = 0;
 		return AKEY_UI;

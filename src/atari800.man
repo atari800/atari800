@@ -1425,6 +1425,9 @@ Save screenshot
 .BR Shift + F10
 Save interlaced screenshot
 .TP
+.B F11
+On-screen keyboard (SDL builds with on-screen keyboard enabled)
+.TP
 .BR Alt + R
 Run Atari program
 .TP

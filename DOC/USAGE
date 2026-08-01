@@ -437,6 +437,7 @@ F8                   Enter monitor
 F9                   Exit emulator
 F10                  Save screenshot
 Shift+F10            Save interlaced screenshot
+F11                  On-screen keyboard
 F12                  Turbo mode
 Alt+R                Run Atari program
 Alt+D                Disk management
