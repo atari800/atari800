@@ -32,6 +32,10 @@ EditorClose = ScreenClose
 ; Note that since AUX1 is tested on the IOCB used, it is possible to have
 ; E: open on more than one IOCB with different forced read modes.
 ;
+; Despite what the OS Manual says, the forced read mode is actually a
+; feature of K: and not E:, and can also be activated when directly
+; using K:.
+;
 .proc	EditorGetByte
 	;check if we have anything left in the current line
 	lda		bufcnt
@@ -123,12 +127,6 @@ _start_y equ bufstr
 	mva		colcrs _start_x
 	mva		rowcrs _start_y
 	jsr		EditorSwapToScreen
-
-	;check if forced read is enabled on the IOCB -- if so, assume we've gotten
-	;an EOL
-	lda		icax1z
-	lsr
-	bcs		do_eol
 
 read_loop:
 	;get a character
@@ -771,6 +769,7 @@ special_found:
 .proc	EditorRecomputeCursorAddr
 	ldx		colcrs
 	ldy		rowcrs
+.def :ScreenComputeAddrToOldAdr
 	jsr		ScreenComputeAddr
 	stx		oldadr
 	sta		oldadr+1

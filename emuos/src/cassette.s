@@ -138,6 +138,32 @@ notwrite:
 .endp
 
 ;==========================================================================
+; CassetteReadBlock
+;
+; Read the next block from the C: device, and then fetch the next character
+; from the cassette buffer. Pointed to by RBLOKV.
+;
+; Input:
+;	- FTYPE bit 7 set to stop motor afterward (short IRG), cleared to leave
+;	  motor running.
+;
+; Output:
+;	- Block read to CASBUF.
+;	- FEOF set to $FF if end block found ($FE), otherwise unchanged.
+;	- BPTR set to $01 on success, $00 on EOF
+;	- BLIM set to block length on success, $00 on EOF, otherwise unchanged.
+;	- A = next character read from buffer, if successful.
+;
+; Notes:
+;	- If the motor is not already running, it is started.
+;	- It is possible for this to read another block, if an empty block is
+;	  read ($FA/$00).
+;
+;==========================================================================
+; CassetteGetByte
+;
+; Get Byte handler for C: device.
+;
 .proc CassetteGetByte
 	;check if we have an EOF condition
 	lda		feof			;!! FIRST TWO BYTES CHECKED BY ARCHON
@@ -152,54 +178,55 @@ fetchbyte:
 	lda		casbuf+3,x
 	inc		bptr
 	ldy		#1
-	rts
-	
-nobytes:
-	;fetch more bytes
-	jsr		CassetteReadBlock
-	bmi		error
-	
-	;check control byte
-	lda		casbuf+2
-	cmp		#$fe
-	bne		noteofbyte
-	
-	;found $FE (EOF) - set flag and return EOF
-	sta		feof
-xit_eof:
-	ldy		#CIOStatEndOfFile
 error:
 	rts
-	
-noteofbyte:
-	;reset buffer ptr
-	mvx		#0 bptr
-	
+
+eof:
+	;set EOF flag
+	mvy		#$ff feof
+
+	;clear buffer length
+	iny
+	sty		blim
+
+	;return EOF status
+xit_eof:
+	ldy		#CIOStatEndOfFile
+	rts
+
+nobytes:
+	;fetch more bytes
+.def :CassetteReadBlock
+	ldx		#$40
+	ldy		#'R'
+
+	jsr		CassetteDoIO
+	bmi		error
+
+	;reset buffer pointer
+	mva		#$00 bptr
+
+	;check for EOF
+	lda		casbuf+2
+	cmp		#$fe
+	beq		eof
+
+init_block:
 	;assume full block first (128 bytes)
 	ldx		#$80
 	
-	;check if it actually is one
-	cmp		#$fc
-	bne		not_full_block
+	;check if it actually is one -- officially $fc is complete (128 bytes)
+	;and $fa is partial, but all other values are treated as $fc
+	cmp		#$fa
+	bne		full_block
+
+	;set length of partial block
+	ldx		casbuf+130
 	
-init_new_block:
+full_block:
 	;reset block length and loop back
 	stx		blim
 	jmp		fetchbyte
-	
-not_full_block:
-	;check if we have a partial block
-	cmp		#$fa
-	bne		not_partial_block
-	
-	;set length of partial block and the jump to init+loop
-	ldx		casbuf+130
-	bcs		init_new_block
-	
-not_partial_block:	
-	;uh oh... bad control byte.
-	ldy		#CIOStatFatalDiskIO
-	rts
 .endp
 
 ;==========================================================================
@@ -271,14 +298,7 @@ CassetteSpecial = CIOExitNotSupported
 ; Note that SOUNDR must take effect each time a cassette I/O operation
 ; occurs.
 ;
-CassetteDoIO = _CassetteDoIO.do_io
-CassetteReadBlock = _CassetteDoIO.read_block
-
-.proc _CassetteDoIO
-read_block:
-	ldx		#$40
-	ldy		#'R'
-do_io:
+.proc CassetteDoIO
 	;start the motor if not already running
 	lda		#$34
 	sta		pactl
