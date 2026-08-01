@@ -1458,14 +1458,14 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 				layout_lines[1] = "-Esc 1 2 3 4 5 6 7 8 9 0 < > BackSpc";
 				layout_lines[2] = "-Tab- Q W E R T Y U I O P - = Return";
 				layout_lines[3] = "-Ctrl- A S D F G H J K L ; + * -Caps";
-				layout_lines[4] = "-Shift- Z X C V B N M , . / --Shift-";
+				layout_lines[4] = "-Shift- Z X C V B N M , . / Shft Inv";
 			}
 			else {
 				Print(0x94, 0x9a, " SHIFT ", 2, 17, 40);
 				layout_lines[1] = "-Esc ! \" # $ % & ' @ ( ) Clr Ins Del";
 				layout_lines[2] = "-Tab- Q W E R T Y U I O P _ | Return";
 				layout_lines[3] = "-Ctrl- A S D F G H J K L : \\ ^ -Caps";
-				layout_lines[4] = "-Shift- Z X C V B N M [ ] ? --Shift-";
+				layout_lines[4] = "-Shift- Z X C V B N M [ ] ? Shft Inv";
 			}
 			layout_lines[5] = "        -------Space-------         ";
 		}
@@ -1559,7 +1559,7 @@ int UI_BASIC_OnScreenKeyboard(const char *title, int layout)
 					{ AKEY_CTRL, AKEY_a, AKEY_s, AKEY_d, AKEY_f, AKEY_g, AKEY_h,
 					  AKEY_j, AKEY_k, AKEY_l, AKEY_SEMICOLON, AKEY_PLUS, AKEY_ASTERISK, AKEY_CAPSTOGGLE },
 					{ AKEY_SHFT, AKEY_z, AKEY_x, AKEY_c, AKEY_v, AKEY_b, AKEY_n,
-					  AKEY_m, AKEY_COMMA, AKEY_FULLSTOP, AKEY_SLASH, AKEY_SHFT, AKEY_SHFT, AKEY_SHFT }
+					  AKEY_m, AKEY_COMMA, AKEY_FULLSTOP, AKEY_SLASH, AKEY_SHFT, AKEY_ATARI, AKEY_SHFT }
 				};
 				switch (key_y) {
 				case 0:
