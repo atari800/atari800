@@ -189,13 +189,18 @@ int main(int argc, char **argv)
 		if (INPUT_key_code == AKEY_KEYB) {
 			Sound_Pause();
 			UI_BASIC_in_kbui = TRUE;
-			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, 0);
+			INPUT_key_code = UI_BASIC_OnScreenKeyboard(NULL, Atari800_machine_type);
 			UI_BASIC_in_kbui = FALSE;
 			switch (INPUT_key_code) {
 				case AKEY_OPTION: INPUT_key_consol &= (~INPUT_CONSOL_OPTION); break;
 				case AKEY_SELECT: INPUT_key_consol &= (~INPUT_CONSOL_SELECT); break;
 				case AKEY_START: INPUT_key_consol &= (~INPUT_CONSOL_START); break;
 			}
+
+			/* flush keypresses so the key used to confirm the
+			 * on-screen keyboard does not reach the emulator */
+			while (PLATFORM_Keyboard() != AKEY_NONE)
+				Atari800_Sync();
 
 			Sound_Continue();
 		}
