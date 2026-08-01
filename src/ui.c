@@ -344,7 +344,9 @@ static void SystemSettings(void)
 	char default_basic_label[21];
 	/* Size must be long enough to store "<longest XEGAME label> (auto)". */
 	char default_xegame_label[23];
-	char mosaic_label[7]; /* Fits "256 KB" */
+	/* "256 KB" is the longest label in practice, but the compiler cannot see
+	   that MEMORY_mosaic_num_banks is range-checked, so size for any int. */
+	char mosaic_label[16];
 
 	int option = 0;
 	int option2 = 0;
@@ -458,7 +460,7 @@ static void SystemSettings(void)
 			if (MEMORY_mosaic_num_banks == 0)
 				menu_array[7].suffix = mosaic_ram_menu_array[0].item;
 			else {
-				sprintf(mosaic_label, "%i KB", MEMORY_mosaic_num_banks * 4);
+				snprintf(mosaic_label, sizeof(mosaic_label), "%i KB", MEMORY_mosaic_num_banks * 4);
 				menu_array[7].suffix = mosaic_label;
 			}
 		}
