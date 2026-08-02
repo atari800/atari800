@@ -121,6 +121,8 @@ dispatch:
 		sta		ciochr
 		lda		icax1,x
 		sta		icax1z
+		lda		icax2,x
+		sta		icax2z
 		lda		icpth,x
 		pha
 		lda		icptl,x

@@ -118,9 +118,13 @@ holdch	= $007c			;temporary key hold area prior to shift/control lock logic
 countr	= $007e			;Screen Editor: line length
 		; $007f
 fr0		= $00d4			;FP: Accumulator 0
-_fr3	= $00da			;FP: Accumulator 3 (officially FRE)
+fre		= $00da			;FP: Accumulator extra
+_fr3 = fre
 fr1		= $00e0			;FP: Accumulator 1
 fr2		= $00e6			;FP: Accumulator 2
+frx		= $00ec			;FP: FRX
+		; $00ed			;FP: EEXP
+		; $00ee			;FP: NSIGN
 ;esign	  $00ef			;BASIC: Used in sqr() routine -- must not be touched by FP elementary functions
 ;fchrflg  $00f0			;BASIC: Used in sin() routine -- must not be touched by any non-transcendental FP functions
 cix		= $00f2			;FP: Character index

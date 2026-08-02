@@ -47,6 +47,12 @@ KeyboardClose = CIOExitSuccess
 ;	  1B-1F/7D-7F/9B-9F/FD-FF.
 ;	- Any Ctrl+Shift key code (>=$C0) produces a key click but is otherwise
 ;	  ignored.
+;	- Despite the OS Manual saying that there are no AUX1/AUX2 bits for
+;	  K:, it actually implements the forced input bit for E: (AUX1 bit 0).
+;	  This carries over to also implementing this bit for C:, which is
+;	  relied upon by Black Lamp and Karateka loaders. This returns an EOL,
+;	  BRKKEY is not checked, the keyboard table is not used, and there is
+;	  no key click sound.
 ;
 .nowarn .proc	_KeyboardGetByte
 toggle_shift:
@@ -66,6 +72,10 @@ write_shflok:
 	sta		shflok
 
 .def :KeyboardGetByte
+	lda		icax1z
+	lsr
+	lda		#$9b
+	bcs		forced_input
 waitForChar:
 	ldx		#$ff
 waitForChar2:
@@ -139,6 +149,7 @@ notAlpha:
 	;apply inverse flag
 	eor		invflg
 skip_inverse:
+forced_input:
 
 	;return char
 	sta		atachr			;required or CON.SYS (SDX 4.46) breaks

@@ -707,13 +707,18 @@ standard_colors:
 ;	  vertical wrap)
 ;	- Does NOT update OLDROW/OLDCOL
 ;
+; Behavior in all modes:
+;	- DOES update OLDADR
+;
+; Dependencies:
+;	- Darg relies on a Get Byte changing OLDADR so the next Put Byte
+;	  doesn't overwrite the last location when restoring the cursor.
+;
 .proc ScreenGetByte
 	jsr		ScreenCheckPosition
 	bmi		xit
 	
 	;compute addressing
-	ldy		rowcrs
-	jsr		ScreenComputeToAddrX0
 	lda		colcrs
 	ldx		dindex
 	ldy		ScreenEncodingTab,x
@@ -721,12 +726,17 @@ standard_colors:
 	tax
 	lda		colcrs+1
 	jsr		ScreenSetupPixelAddr.phase2
+	stx		frmadr
+	ldy		rowcrs
+	ldx		shfamt
+	jsr		ScreenComputeAddrToOldAdr
 	
 	;retrieve byte containing pixel
-	ldy		shfamt
-	lda		(toadr),y
+	ldy		#0
+	lda		(oldadr),y
 	
 	;shift down
+	ldx		frmadr
 	jsr		ScreenAlignPixel
 
 	;convert from Internal to ATASCII - must be done before we mask
@@ -1780,8 +1790,7 @@ xmaskshift_done:
 ; Setup for pixel addressing.
 ;
 ; Entry:
-;	COLCRS, ROWCRS = position (ScreenSetupPixelAddr)
-;	OLDCOL, OLDROW = position (ScreenSetupPixelAddrOld)
+;	OLDCOL, OLDROW = position (ScreenSetupPixelAddr)
 ;
 ; Exit:
 ;	TOADR = screen row

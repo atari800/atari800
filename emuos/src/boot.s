@@ -22,8 +22,35 @@
 	ldx		#1
 	stx		dunit
 	jsr		dskinv
-	bmi		xit
+	bpl		status_ok
+xit:
+	rts
 
+status_ok:
+.if _KERNEL_USE_BOOT_SCREEN
+	jsr		try_read_sector1
+	bpl		try_boot_loop_postsector1
+enter_exit_boot_screen:
+	lda		portb
+	eor		#$80
+	sta		portb
+	bmi		try_boot_loop
+	jsr		BootScreen.boot_entry
+	jmp		enter_exit_boot_screen
+
+try_boot_loop:
+	jsr		try_read_sector1
+	smi
+try_boot_loop_postsector1:
+	jsr		try_boot
+	jsr		BootShowError
+	jmp		try_boot_loop
+
+.else
+try_boot_loop:
+.endif
+
+try_read_sector1:
 	;read first sector to $0400
 	ldx		#1
 	stx		dunit
@@ -33,10 +60,15 @@
 	stx		daux2
 	mva		#$52	dcomnd
 	mva		#$04	dbufhi
+
+.if _KERNEL_USE_BOOT_SCREEN
+	jmp		dskinv
+.else
 	jsr		dskinv
 	bmi		fail
-	
-sector1_ok:
+.endif
+
+try_boot:
 	ldx		#dosini
 	jsr		BootInitHeaders
 
@@ -61,28 +93,16 @@ sectorloop:
 	
 	;read failed
 fail:
-	cpy		#SIOErrorTimeout
-	bne		failmsg
-xit:
-	rts
-	
-failmsg:
 .if _KERNEL_USE_BOOT_SCREEN
-st_loop:
-	lda		portb
-	eor		#$80
-	sta		portb
-	bmi		sector1_ok
-	jsr		BootScreen.boot_entry
-	jmp		st_loop
+	jmp		BootShowError
 .else
 	jsr		BootShowError
-	jmp		BootDisk
+	jmp		try_boot_loop
 .endif
 
 loaddone:
 	jsr		BootRunLoader
-	bcs		failmsg
+	bcs		fail
 	
 	;Diskette Boot Process, step 7 (p.161 of the OS Manual) is misleading. It
 	;says that DOSVEC is invoked after DOSINI, but actually that should NOT
@@ -94,6 +114,10 @@ loaddone:
 	;Must not occur until after init routine is called -- SpartaDOS 3.2 does
 	;an INC on this flag and never exits.
 	mva		#1 boot?
+.if _KERNEL_USE_BOOT_SCREEN
+	pla
+	pla
+.endif
 	rts
 .endp
 
@@ -120,17 +144,30 @@ block_loop:
 	;update destination pointer
 	jsr		BootCopyBlock
 
-	;read next block
-	;we always need to do one more to catch the EOF block, which is
-	;required by STDBLOAD2
+	;Read next block.
+	;
+	;We always need to do one more to catch the EOF block, which is
+	;required by STDBLOAD2. It does not matter whether this last read
+	;succeeds -- timeout, checksum error, not EOF, doesn't matter to
+	;the stock OS.
 	jsr		rblokv
-	bmi		load_failure
 	
 	dec		dbsect
-	bne		block_loop
+	beq		load_done
 
+	tya
+	bpl		block_loop
+
+load_failure:
+	lda		#0
+	sta		ckey
+	jsr		CassetteClose
+	jmp		BootShowError
+
+load_done:
 	;run loader
 	jsr		BootRunLoader
+	bcs		load_failure
 
 	;run cassette init routine
 	jsr		InitCassetteBoot
@@ -144,12 +181,6 @@ block_loop:
 	
 	;run application
 	jmp		(dosvec)
-
-load_failure:
-	lda		#0
-	sta		ckey
-	jsr		CassetteClose
-	jmp		BootShowError
 .endp
 
 ;============================================================================
