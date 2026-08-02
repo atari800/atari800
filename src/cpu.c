@@ -870,10 +870,15 @@ void CPU_GO(int limit)
 #endif
 #ifdef NEW_CYCLE_EXACT
 		/* If a POKEY timer IRQ is pending, fire it at the exact cycle it should occur.
-		   POKEY_irq_at_xpos counts real machine cycles within the scanline, so use
-		   ANTIC_XPOS which maps ANTIC_xpos back from the DMA-compressed CPU cycle
-		   space while the screen is being drawn. */
-		if (POKEY_irq_pending_mask && ANTIC_XPOS >= POKEY_irq_at_xpos) {
+		   POKEY_irq_at_xpos counts real machine cycles within the scanline, so map
+		   ANTIC_xpos back from the DMA-compressed CPU cycle space while the screen
+		   is being drawn. The 6502 polls the IRQ line on the penultimate cycle of
+		   an instruction; an IRQ asserted later than that is taken only after the
+		   next instruction, so compare the assert position against the machine
+		   cycle of the instruction's second-to-last CPU cycle. */
+		if (POKEY_irq_pending_mask && ANTIC_xpos >= 2
+		 && (ANTIC_DRAWING_SCREEN ? ANTIC_cpu2antic_ptr[ANTIC_xpos - 2] : ANTIC_xpos - 2)
+			>= POKEY_irq_at_xpos) {
 			CPU_GenerateIRQ();
 			POKEY_irq_pending_mask = 0;
 			service_pokey_irq = 1;

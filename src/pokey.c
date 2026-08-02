@@ -358,11 +358,15 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		VOICEBOX_SKCTLPutByte(byte);
 #endif
 #ifdef NEW_CYCLE_EXACT
-		if ((POKEY_SKCTL & 0x03) == 0 && (byte & 0x03) != 0)
+		if ((POKEY_SKCTL & 0x03) == 0 && (byte & 0x03) != 0) {
 			/* Leaving init mode locks the 15 kHz clock to the current cycle;
-			   its first tick comes 83 cycles after this write (Altirra
-			   Hardware Reference Manual, chapters 5.2 and 5.4). */
-			irq_15khz_phase = (ANTIC_XPOS + 83) % ANTIC_LINE_C;
+			   its first tick comes 81 cycles after this write (Altirra
+			   Hardware Reference Manual, chapters 5.2 and 5.4).
+			   ANTIC_XPOS here points one cycle past the write cycle of the
+			   store instruction (ANTIC_xpos is advanced before the opcode
+			   body runs), hence the -1. */
+			irq_15khz_phase = (ANTIC_XPOS - 1 + 81) % ANTIC_LINE_C;
+		}
 #endif
 		POKEY_SKCTL = byte;
 		POKEYSND_Update(POKEY_OFFSET_SKCTL, byte, 0, SOUND_GAIN);
@@ -528,7 +532,10 @@ void POKEY_Frame(void)
 static int irq_tick_xpos(int old_divn)
 {
 	if (POKEY_Base_mult[0] == ANTIC_LINE_C)
-		return (old_divn + irq_15khz_phase) % ANTIC_LINE_C;
+		/* The timer borrow (counter reload and IRQ assertion) happens
+		   3 cycles after the 15 kHz tick that underflowed the counter
+		   (Altirra HRM 5.4). */
+		return (old_divn + irq_15khz_phase + 3) % ANTIC_LINE_C;
 	return old_divn;
 }
 #endif
@@ -642,8 +649,12 @@ void POKEY_Scanline(void)
 		}
 
 #ifdef NEW_CYCLE_EXACT
-	POKEY_irq_pending_mask = 0;
-	POKEY_irq_at_xpos = ANTIC_LINE_C; /* default: no mid-line IRQ */
+	if (POKEY_irq_pending_mask != 0)
+		/* An IRQ asserted so late in the previous line that no instruction
+		   boundary could take it there; it is due immediately. */
+		POKEY_irq_at_xpos = 0;
+	else
+		POKEY_irq_at_xpos = ANTIC_LINE_C; /* default: no mid-line IRQ */
 	/* Multiple timers may expire on one scanline; all IRQST bits are
 	   cleared here, but IRQ fires at the earliest timer's cycle.
 	   The ISR reads IRQST and services all pending sources at once. */

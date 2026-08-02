@@ -3304,12 +3304,14 @@ END_OF_CYCLE:
   ifne   NEW_CYCLE_EXACT
 POKEY_TIMER_IRQ:
   move.l CD,d0
+  subq.l #2,d0                   ; the 6502 polls the IRQ line on the
+  bmi.w  POKEY_TIMER_IRQ_DONE    ; penultimate cycle of an instruction
   cmp.l  #-999,ANTIC_cur_screen_pos ; ANTIC_DRAWING_SCREEN ?
   beq.s  .not_drawing
   move.l ANTIC_cpu2antic_ptr,a0
-  move.l (a0,d0.l*4),d0          ; ANTIC_cpu2antic_ptr[ANTIC_xpos]
+  move.l (a0,d0.l*4),d0          ; ANTIC_cpu2antic_ptr[ANTIC_xpos-2]
 .not_drawing:
-  cmp.l  POKEY_irq_at_xpos,d0    ; ANTIC_XPOS >= POKEY_irq_at_xpos ?
+  cmp.l  POKEY_irq_at_xpos,d0    ; ... >= POKEY_irq_at_xpos ?
   blt.w  POKEY_TIMER_IRQ_DONE    ; not yet, keep it pending
   st     CPU_IRQ                 ; CPU_GenerateIRQ()
   clr.b  POKEY_irq_pending_mask
