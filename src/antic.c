@@ -3013,6 +3013,8 @@ void ANTIC_Frame(int draw_display)
 		if (draw_display) {
 			ANTIC_cur_screen_pos = LBORDER_START;
 			ANTIC_xpos = ANTIC_antic2cpu_ptr[ANTIC_xpos]; /* convert antic to cpu(need for WSYNC) */
+			if (vscrol_off && (IR & 0x80))
+				CPU_GO(ANTIC_antic2cpu_ptr[ANTIC_NMIST_C - 2]);
 			if (dctr == lastline) {
 				if (no_jvb)
 					need_dl = TRUE;
@@ -3028,15 +3030,19 @@ void ANTIC_Frame(int draw_display)
 		}
 		else /* force this to be within an else if NEW_CYCLE_EXACT */
 #endif /* NEW_CYCLE_EXACT */
-		if (dctr == lastline) {
-			if (no_jvb)
-				need_dl = TRUE;
-			if (IR & 0x80) {
-				CPU_GO(ANTIC_NMIST_C);
-				ANTIC_NMIST = 0x9f;
-				if (ANTIC_NMIEN & 0x80) {
-					CPU_GO(ANTIC_NMI_C);
-					CPU_NMI();
+		{
+			if (vscrol_off && (IR & 0x80))
+				CPU_GO(ANTIC_NMIST_C - 2);
+			if (dctr == lastline) {
+				if (no_jvb)
+					need_dl = TRUE;
+				if (IR & 0x80) {
+					CPU_GO(ANTIC_NMIST_C);
+					ANTIC_NMIST = 0x9f;
+					if (ANTIC_NMIEN & 0x80) {
+						CPU_GO(ANTIC_NMI_C);
+						CPU_NMI();
+					}
 				}
 			}
 		}
