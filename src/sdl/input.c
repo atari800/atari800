@@ -814,6 +814,50 @@ int SDL_INPUT_ReadConfig(char *option, char *parameters)
 		return set_real_js_actions(3, parameters);
 	else if (strcmp(option, KEY_SDL"JOY_PORT_3_BUTTON_KEYS") == 0)
 		return set_real_js_keys(3, parameters);
+	/* silent backward compat: pre-rename JOY_%d_* port settings (see 514f3211).
+	   JOY_%d_LEFT/RIGHT/UP/DOWN/TRIGGER above are keyboard bindings and are
+	   unaffected; only these five per-port real-joystick keys are aliased.
+	   New files are written with JOY_PORT_* only. */
+	else if (strcmp(option, KEY_SDL"JOY_0_USE_HAT") == 0)
+		return set_real_js_use_hat(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_USE_HAT") == 0)
+		return set_real_js_use_hat(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_USE_HAT") == 0)
+		return set_real_js_use_hat(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_USE_HAT") == 0)
+		return set_real_js_use_hat(3, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_AXES") == 0)
+		return set_real_js_axes(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_AXES") == 0)
+		return set_real_js_axes(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_AXES") == 0)
+		return set_real_js_axes(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_AXES") == 0)
+		return set_real_js_axes(3, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_DIAGONALS") == 0)
+		return set_real_js_diagonals(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_DIAGONALS") == 0)
+		return set_real_js_diagonals(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_DIAGONALS") == 0)
+		return set_real_js_diagonals(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_DIAGONALS") == 0)
+		return set_real_js_diagonals(3, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_0_BUTTON_KEYS") == 0)
+		return set_real_js_keys(0, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_1_BUTTON_KEYS") == 0)
+		return set_real_js_keys(1, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_2_BUTTON_KEYS") == 0)
+		return set_real_js_keys(2, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_BUTTON_ACTIONS") == 0)
+		return set_real_js_actions(3, parameters);
+	else if (strcmp(option, KEY_SDL"JOY_3_BUTTON_KEYS") == 0)
+		return set_real_js_keys(3, parameters);
 	else if (strcmp(option, KEY_SDL"UI_KEY") == 0)
 		return SDLKeyBind(&KBD_UI, parameters);
 	else if (strcmp(option, KEY_SDL"OPTION_KEY") == 0)
