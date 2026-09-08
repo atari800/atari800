@@ -69,9 +69,9 @@
 int CFG_save_on_exit = FALSE;
 char CFG_data_dir[FILENAME_MAX];
 
-#ifndef SYSTEM_WIDE_CFG_FILE
-#define SYSTEM_WIDE_CFG_FILE "/etc/atari800.cfg"
-#endif
+/* SYSTEM_WIDE_CFG_FILE is defined only by legacy ports that need it
+   (Dreamcast /rd or /cd, DOS/Falcon C:\). There is intentionally no
+   Unix default (formerly /etc/atari800.cfg). */
 
 static char rtconfig_filename[FILENAME_MAX];
 
