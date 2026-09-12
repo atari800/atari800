@@ -1,8 +1,56 @@
+Version 7.2.0 (2026/09/12) — on-screen keyboard and better joystick handling
+============================================================================
+
+ Core:
+ -----
+  * More accurate emulation: cycle-precise POKEY timer IRQs and
+    VSCROL DLI timing; fixes the "Rewind 2" demo (#274)
+  * Altirra OS updated to 3.49, Altirra BASIC to 1.59
+  * F1-F12 special keys (open-menu, OPTION, SELECT, START, etc.) can now
+    be rebound via the UI
+  * On-screen keyboard improvements: enabled by default, rebindable
+    F11 hotkey, SDL2 controller button mapping, console key support
+  * Dropped the /etc/atari800.cfg system-wide fallback on Unix
+  * Fixed "Save Configuration" doing nothing on builds without
+    screenshots
+  * Acid800 suite wired into "make check" so every change is tested
+
+ SDL joystick handling:
+ ----------------------
+  * Hat or axes picked automatically from what the device reports;
+    the -joy0hat..-joy3hat options were removed
+  * Port settings renamed from JOY_%d_* to JOY_PORT_%d_* (old keys
+    still accepted)
+  * Ports remember their joysticks (and auto-detected defaults) across
+    runs, even while disconnected
+  * Small sticks default to fire trigger and wide diagonals
+  * F1 menu and on-screen keyboard work with any host joystick, no
+    port binding needed
+  * Fixed SDL1 build
+
+ Falcon/FireBee:
+ ---------------
+  * Precise POKEY IRQs, fixed sound latency, uSound v2 API
+  * Stack/flags in LDFLAGS, mintelf target support re-introduced
+
+ Android (Colleen):
+ ------------------
+  * Hid the navigation buttons, made the console keys overlay
+    less dim
+  * Four drive icons shown in the menu only on very wide screens
+
+ Build/CI:
+ ---------
+  * Falcon/FireBee and 32-bit builds added to CI
+  * -Werror enabled, build warnings fixed
+  * macOS universal (arm64 + x86_64) DMG fixed
+
+
 Version 7.1.2 (2026/07/26) — keyboard joystick config fix
 =======================================================================
 
  Core:
-
+ -----
   * Fixed keyboard joystick configuration dialog stuck in infinite loop
 
 
@@ -10,7 +58,7 @@ Version 7.1.1 (2026/07/26) — SDL2 joystick fixes
 =======================================================================
 
  Core:
-
+ -----
   * Fixed keyboard joystick keys not working in SDL2 (only numpad keys worked)
   * Fixed joystick port mode "none" not persisting across restarts
 
@@ -19,18 +67,18 @@ Version 7.1.0 (2026/07/25) — implemented cycle-precise POKEY interrupts
 =======================================================================
 
  Core:
-
+ -----
   * Implemented cycle-precise POKEY interrupts; Project-M now works correctly
 
  Android:
-
+ --------
   * Vertical, always-on console key overlay in landscape mode
   * Menu bar icons padded away from rounded screen edges
   * Disk drive mounting buttons (D1-D4) with mount status indicator
   * Fixed gzip disk image mounting (.atr.gz, .xfd.gz)
 
  CI:
-
+ ---
   * AppImage build improvements and fine-tuning
   * Fixed bashism, HTTPS certs, automatic release
 
@@ -39,13 +87,13 @@ Version 7.0.0 (2026/06/27) — the first Atari800 with built-in Internet downloa
 ================================================================================
 
  New features:
-
+ -------------
   * Auto-download missing OS/BASIC ROMs from the Internet
   * Mount zipped disk images directly from the Internet
   * Portable mode — config file and data storage next to the executable
 
  Changes to config file search order:
-
+ ------------------------------------
   1. --config argument — exact path given on command line
   2. Portable exe dir — exe_dir/.atari800.cfg if exe dir is writable
   3. $HOME default — ~/.atari800.cfg (if neither of the above applies)
@@ -58,7 +106,7 @@ Version 7.0.0 (2026/06/27) — the first Atari800 with built-in Internet downloa
   6. Fresh defaults — create new config at the path from step 1/2/3
 
  Platform specific:
-
+ ------------------
   * Windows: 32/64-bit builds, installer executable, portable zip archive
   * Windows: app icon, MP3 recording support
   * Windows: win32-no-network build for XP compatibility
@@ -71,12 +119,13 @@ Version 6.1.0 (2026/06/20)
 ==========================
 
  New features:
-
+ -------------
   * Alt+J opens Controller Configuration directly
   * Save Configuration File moved to root menu
   * Screenshot entries consolidated (Shift+F10 hint in label)
 
 Platform specific:
+------------------
 
   * SDL: Alt+J hotkey added
 

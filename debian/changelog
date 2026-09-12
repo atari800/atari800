@@ -1,3 +1,11 @@
+atari800 (7.2.0) unstable; urgency=medium
+
+  * New upstream version 7.2.0
+  * More accurate POKEY/ANTIC emulation, SDL joystick handling overhaul,
+    on-screen keyboard improvements
+
+ -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 12 Sep 2026 12:00:00 +0000
+
 atari800 (7.1.2) unstable; urgency=medium
 
   * New upstream version 7.1.2
