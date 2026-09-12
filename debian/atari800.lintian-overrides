@@ -1,6 +1,0 @@
-# Standard construct for checking existence via [ -x ]
-atari800: command-with-path-in-maintainer-script postrm:5 /usr/bin/update-menus
-
-# We are quite positive that relro is enabled. There is .data.rel.ro structure
-# present and blhc seems to be happy as well
-atari800: hardening-no-relro usr/bin/atari800

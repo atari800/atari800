@@ -1,29 +1,17 @@
 Getting Atari ROMs
 ------------------
 
-The Atari ROMs can be downloaded from:
-
-	http://prdownloads.sf.net/atari800/xf25.zip
-
-Note that if you don't own an Atari, getting the ROMs via ftp may not be 
-legal. You must have the ROMs to use this emulator. The system admin should
-install the ROMS in /usr/local/lib/atari/ROMS/ or anywhere else if you
-adapt the configuration file (see the provided atari800.cfg).
-
-Getting Atari Software
-----------------------
-
-To add other software, you'll have to find your own disk images (some are 
-in the xf25.zip I mentioned above), and install them either in
-/usr/local/lib/atari/DISKS or somewhere else.
+Atari800 will fetch required files from the Internet starting from version 7.
+Check your ~/.atari800.cfg for locations and additional configuration. It will 
+be created in ~/.atari800.cfg on the first start of the emulator.
 
 Running the Emulator
 --------------------
 
-In the past, 3 versions of the Atari emulator were needed to support both 
+In the past, 3 versions of the Atari emulator were needed to support both
 an X version and either vga or curses version for the console.
 
-With the incorporation of the SDL interface, the same code can run in both 
+With the incorporation of the SDL interface, the same code can run in both
 the console and an X window.
 
 Luck,
@@ -47,12 +35,12 @@ From the new maintainer:
   build some common foundation and knowledgebase for emulation within Debian GNU.
 
   Have a nice day, Martin Albert <ma@debian.org>
-  
+
 2nd takeover
 ------------
 
   I took over this package from Martin, thanks for excellent work. I am in close
   cooperation with Petr Stehlik, who maintains the sources, he is doing 
   excellent job as a release manager.
-  
+
   Enjoy the package, Antonin Kral <A.Kral@sh.cvut.cz>

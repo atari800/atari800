@@ -6,98 +6,96 @@ atari800 (7.2.0) unstable; urgency=medium
 
  -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 12 Sep 2026 12:00:00 +0000
 
-atari800 (7.1.2) unstable; urgency=medium
+atari800 (7.1.2-2) unstable; urgency=medium
 
-  * New upstream version 7.1.2
-  * Fixed keyboard joystick configuration dialog stuck in infinite loop
+  * [4fd56c9] Drop, now useless, info about SDL from description
+  * [6e987c2] man page fix has been forwarded to upstream
+  * [a3a54f6] Update config.guess/sub because of loongarch64
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sun, 26 Jul 2026 12:00:00 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Mon, 27 Jul 2026 15:57:55 +0200
 
-atari800 (7.1.1) unstable; urgency=medium
+atari800 (7.1.2-1) unstable; urgency=medium
 
-  * New upstream version 7.1.1
-  * Fixed keyboard joystick keys not working in SDL2
-  * Fixed joystick port mode "none" not persisting across restarts
+  * [8305b60] New upstream version 7.1.2
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sun, 26 Jul 2026 12:00:00 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Mon, 27 Jul 2026 08:58:11 +0200
 
-atari800 (7.1.0) unstable; urgency=medium
+atari800 (5.2.0-2) unstable; urgency=medium
 
-  * New upstream version 7.1.0
-  * Implemented cycle-precise POKEY interrupts — Project-M now works correctly
+  * [b80f407] Remove the config from the package
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Fri, 25 Jul 2026 12:00:00 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 20 Apr 2024 20:08:40 +0200
 
-atari800 (7.0.0) unstable; urgency=medium
+atari800 (5.2.0-1) unstable; urgency=medium
 
-  * New upstream version 7.0.0
-  * Portable mode — config and data next to the executable
-  * Download ROM and disk images from the internet
-  * Config file search order improvements with HOME fallback
-  * Packages released via GitHub, Jun 2026:
-  * https://github.com/atari800/atari800/releases
+  * [ecc83a5] Use configuration from the source
+  * [3d53471] New upstream version 5.2.0
+  * [fea0abe] Use `libgl-dev` instead of `libgl1-mesa-dev`
+  * [1e21acb] Upstream changed way how `autogen` is called
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 27 Jun 2026 17:03:52 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 20 Apr 2024 18:48:05 +0200
 
-atari800 (6.1.0) unstable; urgency=medium
+atari800 (5.0.0-1) unstable; urgency=medium
 
-  * New upstream version 6.1.0
-  * Alt+J opens Controller Configuration directly
-  * Save Configuration File moved to root menu
-  * Screenshot entries consolidated
-  * Packages released via GitHub, Jun 2026:
-  * https://github.com/atari800/atari800/releases
+  * New upstream release 5.0.0 -- released at Atariada.cz
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 20 Jun 2026 17:03:52 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Fri, 10 Jun 2022 19:14:03 +0200
 
-atari800 (6.0.0) unstable; urgency=medium
+atari800 (4.2.0-4) unstable; urgency=medium
 
-  * New upstream version 6.0.0
-  * SDL2 support
-  * Packages released via GitHub, Jun 2026:
-  * https://github.com/atari800/atari800/releases
+  * Switching to libeditreadline-dev to resolve licensing issue 
+    (Closes: #977654)
+  * Clarified in the d/copyright why we are in contrib
+    (Closes: #977654)
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Fri, 19 Jun 2026 17:03:52 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 06 Oct 2021 20:55:50 +0200
 
-atari800 (5.2.0) unstable; urgency=low
+atari800 (4.2.0-3) unstable; urgency=medium
 
-  * New upstream version 5.2.0
-  * Packages released via GitHub, Cliff Hatch, Dec 2023:
-  * https://github.com/atari800/atari800/releases
-  * atari800_5.2.0_amd64.deb
-  * atari800_5.2.0_armhf.deb
-  * atari800_5.2.0_arm64.deb
+  * Fine-tune of the desktop entry.
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sat, 30 Dec 2023 17:03:52 +0000
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 06 Oct 2021 12:41:38 +0200
 
-atari800 (5.0.0) unstable; urgency=medium
+atari800 (4.2.0-2) unstable; urgency=medium
 
-  * New upstream version 5.0.0
-  * Package released via GitHub, Cliff Hatch, May 2022:
-  * AMD and Intel 64 bit    - atari800_5.0.0_amd64.deb
+  * Bump debhelper from old 12 to 13.
+  * Set upstream metadata fields: Name (from ./configure), Repository,
+    Repository-Browse.
+  * Replace menu entry with desktop entry.
 
- -- Antonin Kral  <A.Kral@sh.cvut.cz>  Sun, 19 Jun 2022 16:08:37 +0100
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Sat, 11 Sep 2021 05:09:16 -0000
 
-atari800 (4.2.0-1) unstable; urgency=low
+atari800 (4.2.0-1) unstable; urgency=medium
 
   * New upstream version 4.2.0
-  * Packages released via GitHub, Cliff Hatch, Dec 2019:
-  * https://github.com/atari800/atari800/releases
-  * AMD and Intel 64 bit    - atari800_4.2.0-1_amd46.deb
-  * Raspberry Pi 0, 2 and 3 - atari800_4.2.0_rpi0+2+3_stretch+buster.deb
-  * Raspberry Pi 4          - atari800_4.2.0_rpi4_buster.deb
 
- -- Antonin Kral <A.Kral@sh.cvut.cz>  Sun, 29 Dec 2019 20:59:21 +0100
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Tue, 25 May 2021 08:54:49 +0200
 
-atari800 (4.1.0-1) unstable; urgency=low
+atari800 (4.1.0-3) unstable; urgency=medium
+
+  * Add icon into menu (Closes: Ubuntu#1575369)
+  * Bump standards to 4.5.0
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 19 Aug 2020 11:26:10 +0200
+
+atari800 (4.1.0-2) unstable; urgency=medium
+
+  * Modernization of package infrastructure to be able to switch
+    to e.g. dh_strip (Closes: #968532)
+
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 19 Aug 2020 11:05:34 +0200
+
+atari800 (4.1.0-1) unstable; urgency=medium
 
   * New upstream version 4.1.0
-  * Packages released via GitHub, Cliff Hatch, Apr 2019:
-  * https://github.com/atari800/atari800/releases
-  * AMD and Intel 64 bit    - atari800_4.1.0-1_amd64.deb
-  * Raspberry Pi            - atari800_4.1.0-1_rpi.deb
+  * Drop no longer supported add-log-mailing-address setting from
+    debian/changelog.
+  * Bump debhelper dependency to >= 11, since that's what is used in
+    debian/compat.
+  * Bump debhelper from old 11 to 12.
+  * Use secure URI in Vcs control header.
 
- -- Antonin Kral <A.Kral@sh.cvut.cz>  Wed, 24 Apr 2019 20:36:30 +0100
+ -- Antonin Kral <A.Kral@sh.cvut.cz>  Tue, 17 Dec 2019 08:41:08 +0100
 
 atari800 (4.0.0-1) unstable; urgency=medium
 
@@ -371,8 +369,3 @@ atari800 (0.6.1-1) unstable; urgency=low
   * First release.
 
  -- Joey Hess <joeyh@master.debian.org>  Wed, 5 Mar 1997 22:08:42 -0500
-
-
-Local variables:
-mode: debian-changelog
-End:
