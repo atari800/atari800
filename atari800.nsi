@@ -1,7 +1,7 @@
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "7.2.0"
+  !define VERSION "7.2.1"
 !endif
 !ifndef PLATFORM
   !define PLATFORM "win64"

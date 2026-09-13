@@ -1,3 +1,18 @@
+Version 7.2.1 (2026/09/13) — build fixes
+========================================
+
+ Build/CI:
+ ---------
+  * Fixed -Werror build failures with newer GCC (dead VAPI sector
+    count, DEBUG-only baud parsing, embedded-shader strncpy,
+    undeclared variable in DEBUG2 code, dead DOS accumulator)
+  * Fixed the default ncurses build, which failed to link
+    (status-text calls without recording support)
+  * macOS CI: x86_64 slice built on a native Intel runner;
+    libpng and lame installed explicitly so both slices configure
+    identically, with merge-time diagnostics on skew
+
+
 Version 7.2.0 (2026/09/12) — on-screen keyboard and better joystick handling
 ============================================================================
 
