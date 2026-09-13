@@ -374,8 +374,8 @@ jobs:
         gh release create "$GITHUB_REF_NAME" 2>/dev/null || true
         gh release upload "$GITHUB_REF_NAME" Atari800-*-i386.AppImage --clobber
 
-  build-macos:
-    name: Build on MacOS (universal)
+  build-macos-arm64:
+    name: Build on MacOS (arm64 slice)
     runs-on: macos-14
 
     env:
@@ -387,36 +387,160 @@ jobs:
       env:
         HOMEBREW_REQUIRE_TAP_TRUST: 0
       run: |
-        # native (arm64) dependencies and build tools
         brew install sdl2 automake readline
-        # x86_64 dependencies under Rosetta 2 for the universal build
-        sudo softwareupdate --install-rosetta --agree-to-license >/dev/null 2>&1 || true
-        if [ ! -x /usr/local/bin/brew ]; then
-          NONINTERACTIVE=1 arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        fi
-        arch -x86_64 /usr/local/bin/brew install sdl2 readline
+        brew list --versions sdl2 automake readline
     - name: autogen
       run: ./autogen.sh
     - name: build arm64 slice
       run: |
         ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
         make -j$(sysctl -n hw.ncpu)
-        cp src/atari800 /tmp/atari800-arm64
+    - name: stage slice and Homebrew dylibs
+      run: |
+        rm -rf macos-slice && mkdir -p macos-slice/lib
+        cp src/atari800 macos-slice/atari800-arm64
+        # Collect every Homebrew-provided dylib this slice links against,
+        # following transitive references, so the package job can merge
+        # them with the x86_64 counterparts via lipo.
+        deps_of() {
+          otool -L "$1" \
+            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
+            | sort -u
+        }
+        collect_libs() {
+          local dep base out
+          while read -r dep; do
+            base=$(basename "$dep")
+            out="macos-slice/lib/$base"
+            if [ ! -f "$out" ]; then
+              cp -L "$dep" "$out"
+              collect_libs "$out"
+            fi
+          done < <(deps_of "$1")
+        }
+        collect_libs macos-slice/atari800-arm64
+        ls macos-slice macos-slice/lib
+    - name: Upload arm64 slice
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-macos-arm64-slice
+        path: macos-slice/
+
+  build-macos-x86_64:
+    name: Build on MacOS (x86_64 slice)
+    # macos-15-intel is the last x86_64 image GitHub provides (retired
+    # August 2027). When it goes away, this leg and the universal DMG
+    # below must be revisited.
+    runs-on: macos-15-intel
+
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: install depends
+      env:
+        HOMEBREW_REQUIRE_TAP_TRUST: 0
+      run: |
+        brew install sdl2 automake readline
+        brew list --versions sdl2 automake readline
+    - name: autogen
+      run: ./autogen.sh
     - name: build x86_64 slice
       run: |
-        make distclean
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 \
-          CFLAGS="-arch x86_64" \
-          CPPFLAGS="-I/usr/local/include" \
-          LDFLAGS="-L/usr/local/lib -arch x86_64" \
-          SDL2_CONFIG=/usr/local/bin/sdl2-config \
-          PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
         make -j$(sysctl -n hw.ncpu)
-        cp src/atari800 /tmp/atari800-x86_64
-    - name: merge universal binary
+    - name: stage slice and Homebrew dylibs
       run: |
-        lipo -create /tmp/atari800-arm64 /tmp/atari800-x86_64 -output src/atari800
-        lipo -info src/atari800
+        rm -rf macos-slice && mkdir -p macos-slice/lib
+        cp src/atari800 macos-slice/atari800-x86_64
+        # Collect every Homebrew-provided dylib this slice links against,
+        # following transitive references, so the package job can merge
+        # them with the arm64 counterparts via lipo.
+        deps_of() {
+          otool -L "$1" \
+            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
+            | sort -u
+        }
+        collect_libs() {
+          local dep base out
+          while read -r dep; do
+            base=$(basename "$dep")
+            out="macos-slice/lib/$base"
+            if [ ! -f "$out" ]; then
+              cp -L "$dep" "$out"
+              collect_libs "$out"
+            fi
+          done < <(deps_of "$1")
+        }
+        collect_libs macos-slice/atari800-x86_64
+        ls macos-slice macos-slice/lib
+    - name: Upload x86_64 slice
+      uses: actions/upload-artifact@v7
+      with:
+        name: atari800-macos-x86_64-slice
+        path: macos-slice/
+
+  package-macos:
+    name: Package MacOS (universal)
+    runs-on: macos-14
+    needs: [build-macos-arm64, build-macos-x86_64]
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Download arm64 slice
+      uses: actions/download-artifact@v7
+      with:
+        name: atari800-macos-arm64-slice
+        path: slice-arm64
+    - name: Download x86_64 slice
+      uses: actions/download-artifact@v7
+      with:
+        name: atari800-macos-x86_64-slice
+        path: slice-x86_64
+    - name: merge universal binary and libraries
+      run: |
+        lipo -create slice-arm64/atari800-arm64 slice-x86_64/atari800-x86_64 -output atari800-universal
+        lipo -info atari800-universal
+        archs=$(lipo -archs atari800-universal)
+        case " $archs " in
+          *" x86_64 "*)
+            case " $archs " in
+              *" arm64 "*) ;;
+              *)
+                echo "::error::merged binary is missing the arm64 slice (got: $archs)"
+                exit 1
+                ;;
+            esac
+            ;;
+          *)
+            echo "::error::merged binary is missing the x86_64 slice (got: $archs)"
+            exit 1
+            ;;
+        esac
+        # Merge each dependency dylib pair by basename. Both slices are
+        # built against the same formulae, so every library must exist in
+        # both slices; anything else is a hard error, not a silent
+        # single-arch bundle.
+        mkdir -p universal-libs
+        for f in slice-arm64/lib/*; do
+          base=$(basename "$f")
+          if [ -f "slice-x86_64/lib/$base" ]; then
+            lipo -create "$f" "slice-x86_64/lib/$base" -output "universal-libs/$base"
+          else
+            echo "::error::library $base has no x86_64 counterpart"
+            exit 1
+          fi
+        done
+        for f in slice-x86_64/lib/*; do
+          base=$(basename "$f")
+          if [ ! -f "universal-libs/$base" ]; then
+            echo "::error::library $base has no arm64 counterpart"
+            exit 1
+          fi
+        done
+        lipo -info universal-libs/*
+        cp atari800-universal src/atari800
     - name: Package .dmg
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       run: |
@@ -433,36 +557,16 @@ jobs:
 
         cp src/atari800 "$APP/Contents/MacOS/"
 
-        # Bundle every Homebrew-provided dylib as a universal (arm64+x86_64)
-        # library. Both prefixes (/opt/homebrew, /usr/local) use identical
-        # sub-paths below their root, so each dependency pair can be merged
-        # with lipo.
+        # Bundle the pre-merged universal (arm64+x86_64) dependency
+        # libraries produced from the per-architecture slices.
+        cp universal-libs/* "$APP/Contents/lib/"
+        # Matches Homebrew install paths referenced by either slice: the
+        # arm64 slice uses /opt/homebrew, the native Intel slice /usr/local.
         deps_of() {
           { otool -arch arm64 -L "$1"; otool -arch x86_64 -L "$1"; } \
             | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
             | sort -u
         }
-
-        other_prefix() {
-          case "$1" in
-            /opt/homebrew/*) echo "/usr/local${1#/opt/homebrew}" ;;
-            *)               echo "/opt/homebrew${1#/usr/local}" ;;
-          esac
-        }
-
-        collect_libs() {
-          local dep base out
-          while read -r dep; do
-            base=$(basename "$dep")
-            out="$APP/Contents/lib/$base"
-            if [ ! -f "$out" ]; then
-              lipo -create "$dep" "$(other_prefix "$dep")" -output "$out"
-              collect_libs "$out"
-            fi
-          done < <(deps_of "$1")
-        }
-
-        collect_libs "$APP/Contents/MacOS/atari800"
 
         # Point all references at the bundled copies. install_name_tool rewrites
         # the load commands of every slice of a fat binary in one go.
