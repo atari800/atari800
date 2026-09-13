@@ -345,7 +345,7 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 		vapi_additional_info_t *info;
 		vapi_file_header_t fileheader;
 		vapi_track_header_t trackheader;
-		int trackoffset, totalsectors;
+		int trackoffset;
 
 		/* .atx is read only for now */
 #ifndef VAPI_WRITE_ENABLE
@@ -376,26 +376,6 @@ int SIO_Mount(int diskno, const char *filename, int b_open_readonly)
 #ifdef DEBUG_VAPI
 		Log_print("VAPI File Version %d.%d",fileheader.majorver,fileheader.minorver);
 #endif
-		/* Read all of the track headers to get the total sector count */
-		totalsectors = 0;
-		while (trackoffset > 0 && trackoffset < file_length) {
-			ULONG next;
-			UWORD tracktype;
-
-			fseek(f,trackoffset,SEEK_SET);
-			if (fread(&trackheader,1,sizeof(trackheader),f) != sizeof(trackheader)) {
-				Util_fclose(f, sio_tmpbuf[diskno - 1]);
-				Log_print("VAPI: Bad Track Header");
-				return(FALSE);
-				}
-			next = VAPI_32(trackheader.next);
-			tracktype = VAPI_16(trackheader.type);
-			if (tracktype == 0) {
-				totalsectors += VAPI_16(trackheader.sectorcnt);
-				}
-			trackoffset += next;
-		}
-
 		info = (vapi_additional_info_t *)Util_malloc(sizeof(vapi_additional_info_t));
 		additional_info[diskno-1] = info;
 		info->sectors = (vapi_sec_info_t *)Util_malloc(sectorcount[diskno - 1] * 
