@@ -397,11 +397,22 @@ jobs:
       run: ./autogen.sh
     - name: build arm64 slice
       run: |
+        # Point the build at Homebrew kegs explicitly: /usr/local is in
+        # Apple's default search paths but /opt/homebrew (ARM) is not,
+        # so without this ARM configure checks silently miss brew libs.
+        BREW_PREFIX=$(brew --prefix)
+        export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
+        export LDFLAGS="-L$BREW_PREFIX/lib $LDFLAGS"
         mkdir -p macos-slice
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 >macos-slice/configure.log 2>&1
+        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
         rc=$?
         tail -25 macos-slice/configure.log
         test $rc -eq 0
+        # Fail fast (with evidence) if an expected feature got silently
+        # disabled: a skew here would otherwise surface only at merge time.
+        grep "Supported screenshot formats" macos-slice/configure.log | grep -q png || { echo "::error::PNG support not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
+        grep "Supported audio codecs" macos-slice/configure.log | grep -q mp3 || { echo "::error::MP3 support not detected"; grep -B2 -A12 "lame_init\|lame\.h" config.log | head -40; exit 1; }
+        grep "Supported video codecs" macos-slice/configure.log | grep -q png || { echo "::error::PNG video codec not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
@@ -465,11 +476,22 @@ jobs:
       run: ./autogen.sh
     - name: build x86_64 slice
       run: |
+        # Point the build at Homebrew kegs explicitly: /usr/local is in
+        # Apple's default search paths but /opt/homebrew (ARM) is not,
+        # so without this ARM configure checks silently miss brew libs.
+        BREW_PREFIX=$(brew --prefix)
+        export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
+        export LDFLAGS="-L$BREW_PREFIX/lib $LDFLAGS"
         mkdir -p macos-slice
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 >macos-slice/configure.log 2>&1
+        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
         rc=$?
         tail -25 macos-slice/configure.log
         test $rc -eq 0
+        # Fail fast (with evidence) if an expected feature got silently
+        # disabled: a skew here would otherwise surface only at merge time.
+        grep "Supported screenshot formats" macos-slice/configure.log | grep -q png || { echo "::error::PNG support not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
+        grep "Supported audio codecs" macos-slice/configure.log | grep -q mp3 || { echo "::error::MP3 support not detected"; grep -B2 -A12 "lame_init\|lame\.h" config.log | head -40; exit 1; }
+        grep "Supported video codecs" macos-slice/configure.log | grep -q png || { echo "::error::PNG video codec not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
@@ -539,7 +561,10 @@ jobs:
         # otherwise surface later as an unpairable dylib. Compare only the
         # CONFIGURATION RESULTS summary, whose lines are plain yes/no
         # feature values with no paths.
-        summary() { sed -n '/CONFIGURATION RESULTS:/,$p' "$1" | grep -v '^$' | grep -v 'Now run'; }
+        # Compare only the feature summary: it ends where the
+        # Main build variables block (CC/CFLAGS/LIBS with runner-local
+        # paths and compiler defaults) begins.
+        summary() { sed -n '/CONFIGURATION RESULTS:/,/Main build variables:/p' "$1" | grep -v '^Main build variables:' | grep -v '^$'; }
         summary slice-arm64/configure.log > /tmp/config-arm64.txt
         summary slice-x86_64/configure.log > /tmp/config-x86_64.txt
         if ! diff /tmp/config-arm64.txt /tmp/config-x86_64.txt; then

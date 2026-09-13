@@ -1167,7 +1167,7 @@ if [[ "$with_sound" != no ]]; then
         if [[ "$with_mp3" != "no" ]]; then
             if [[ "$with_mp3" = check -o "$with_mp3" = yes -o "$with_mp3" = lame ]]; then
                 AC_CHECK_LIB(mp3lame, lame_init, [
-                    A8_ADD_INCLUDE_PATH([lame],[lame.h],[/usr/include /usr/local/include],[lame],[
+                    A8_ADD_INCLUDE_PATH([lame],[lame.h],[/usr/include /usr/local/include /opt/homebrew/include],[lame],[
                         if [[ "$with_mp3" = yes -o "$with_mp3" = "lame" ]]; then
                             AC_MSG_ERROR([lame.h not found, modify CPPFLAGS or use --with-mp3=check])
                         fi
