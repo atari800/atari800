@@ -600,6 +600,10 @@ jobs:
             exit 1
             ;;
         esac
+        # Artifacts lose the executable bit on download; restore it so the
+        # packaged binary (and the archived copy below) can actually run.
+        chmod +x atari800-universal
+        test -x atari800-universal
         # Merge each dependency dylib pair by basename. Both slices are
         # built against the same formulae, so every library must exist in
         # both slices; anything else is a hard error, not a silent
