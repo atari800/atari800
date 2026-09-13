@@ -195,7 +195,6 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
   __dpmi_regs rg;
   struct VESAinfo vInfo;
   struct modeInfo mInfo;
-  UWORD modesAddr;
   UWORD mode;
   UWORD modes[0x1000]; /* modes list needs to be saved (K.N.) */
   int i;
@@ -217,12 +216,9 @@ UBYTE VESA_getmode(int width,int height,UWORD *videomode,ULONG *memaddress,ULONG
     return FALSE;  /*vesa 2.0 not found*/
 
   /*now we must search the videomode list for desired screen resolutin*/
-  modesAddr=( (vInfo.videomodes>>12)&0xffff0)+(vInfo.videomodes&0xffff);
   dosmemget(__tb&0xfffff, sizeof(modes), modes); /* save modes list (K.N.) */
   for (i = 0; (mode = modes[i]) != 0xffff; i++)
   {
-    modesAddr+=2;
-
     rg.x.ax=0x4f01;
     rg.x.cx=mode;
     rg.x.es=(__tb>>4) & 0xffff;

@@ -929,11 +929,11 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 #else
 #include "sdl/gen-atari800-shader.vert.h"
 			GLchar* vertexShader = Util_malloc(vertexShaderArr_len + 1);
-			strncpy(vertexShader, (char*)vertexShaderArr, vertexShaderArr_len);
+			memcpy(vertexShader, (char*)vertexShaderArr, vertexShaderArr_len);
 			vertexShader[vertexShaderArr_len] = 0;
 #include "sdl/gen-atari800-shader.frag.h"
 			GLchar* fragmentShader = Util_malloc(fragmentShaderArr_len + 1);
-			strncpy(fragmentShader, (char*)fragmentShaderArr, fragmentShaderArr_len);
+			memcpy(fragmentShader, (char*)fragmentShaderArr, fragmentShaderArr_len);
 			fragmentShader[fragmentShaderArr_len] = 0;
 #endif
 			GLint success = 0;

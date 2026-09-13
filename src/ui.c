@@ -2416,9 +2416,11 @@ static void QuickSaveState(void) {
 	if (!result) {
 		CantSave(state_filename);
 	}
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	else {
 		Screen_SetStatusText("Saved", 120);
 	}
+#endif
 }
 
 static void QuickLoadState(void) {
@@ -2426,9 +2428,11 @@ static void QuickLoadState(void) {
 	if (!result) {
 		CantLoad(state_filename);
 	}
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
 	else {
 		Screen_SetStatusText("Loaded", 120);
 	}
+#endif
 }
 
 static void LoadState(void)

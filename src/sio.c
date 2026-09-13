@@ -1811,7 +1811,7 @@ int NetSIO_GetByte(void)
 		break;
 	}
 #ifdef DEBUG2
-	Log_print("NetSIO_GetByte_%d: %02x", ts, (int)b);
+	Log_print("NetSIO_GetByte_%d: %02x", TransferStatus, (int)b);
 #endif
 
 	return (int)b;

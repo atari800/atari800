@@ -734,7 +734,9 @@ static void *fujinet_rx_thread(void *arg) {
             case NETSIO_SPEED_CHANGE:
             {
                 /* packet: [cmd][baud32le] */
+#ifdef DEBUG
                 uint32_t baud;
+#endif
                 if (n < 5)
                 {
 #ifdef DEBUG
@@ -742,11 +744,11 @@ static void *fujinet_rx_thread(void *arg) {
 #endif
                     break;
                 }
+#ifdef DEBUG
                 baud  = (uint32_t)buf[1];
                 baud |= (uint32_t)buf[2] <<  8;
                 baud |= (uint32_t)buf[3] << 16;
                 baud |= (uint32_t)buf[4] << 24;
-#ifdef DEBUG
                 Log_print("netsio: recv: requested baud rate %u", baud);
 #endif
                 send_to_fujinet(buf, 5); /* echo back */
