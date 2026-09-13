@@ -387,13 +387,21 @@ jobs:
       env:
         HOMEBREW_REQUIRE_TAP_TRUST: 0
       run: |
-        brew install sdl2 automake readline
-        brew list --versions sdl2 automake readline
+        # Explicitly install every auto-detected library so both slices
+        # configure identically: AC_CHECK_LIB would otherwise silently
+        # enable PNG screenshots/codecs and MP3 recording on whatever
+        # runner happens to have them, diverging the dep closure below.
+        brew install sdl2 automake readline libpng lame
+        brew list --versions sdl2 automake readline libpng lame
     - name: autogen
       run: ./autogen.sh
     - name: build arm64 slice
       run: |
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
+        mkdir -p macos-slice
+        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 >macos-slice/configure.log 2>&1
+        rc=$?
+        tail -25 macos-slice/configure.log
+        test $rc -eq 0
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
@@ -419,6 +427,7 @@ jobs:
           done < <(deps_of "$1")
         }
         collect_libs macos-slice/atari800-arm64
+        brew list --versions | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload arm64 slice
       uses: actions/upload-artifact@v7
@@ -442,13 +451,21 @@ jobs:
       env:
         HOMEBREW_REQUIRE_TAP_TRUST: 0
       run: |
-        brew install sdl2 automake readline
-        brew list --versions sdl2 automake readline
+        # Explicitly install every auto-detected library so both slices
+        # configure identically: AC_CHECK_LIB would otherwise silently
+        # enable PNG screenshots/codecs and MP3 recording on whatever
+        # runner happens to have them, diverging the dep closure below.
+        brew install sdl2 automake readline libpng lame
+        brew list --versions sdl2 automake readline libpng lame
     - name: autogen
       run: ./autogen.sh
     - name: build x86_64 slice
       run: |
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2
+        mkdir -p macos-slice
+        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 >macos-slice/configure.log 2>&1
+        rc=$?
+        tail -25 macos-slice/configure.log
+        test $rc -eq 0
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
@@ -474,6 +491,7 @@ jobs:
           done < <(deps_of "$1")
         }
         collect_libs macos-slice/atari800-x86_64
+        brew list --versions | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload x86_64 slice
       uses: actions/upload-artifact@v7
@@ -500,6 +518,37 @@ jobs:
         path: slice-x86_64
     - name: merge universal binary and libraries
       run: |
+        echo "=== arm64 slice contents ==="
+        ls slice-arm64 slice-arm64/lib
+        echo "=== x86_64 slice contents ==="
+        ls slice-x86_64 slice-x86_64/lib
+        echo "=== brew formula versions (arm64 vs x86_64) ==="
+        diff slice-arm64/brew-versions.txt slice-x86_64/brew-versions.txt \
+          && echo "brew versions identical" \
+          || echo "::warning::brew formula versions differ between slices (see diff above)"
+        # Both slices must configure with identical features; a skew here
+        # (e.g. PNG screenshots auto-detected on one runner only) would
+        # otherwise surface later as an unpairable dylib. Compare only the
+        # CONFIGURATION RESULTS summary, whose lines are plain yes/no
+        # feature values with no paths.
+        summary() { sed -n '/CONFIGURATION RESULTS:/,$p' "$1" | grep -v '^$' | grep -v 'Now run'; }
+        summary slice-arm64/configure.log > /tmp/config-arm64.txt
+        summary slice-x86_64/configure.log > /tmp/config-x86_64.txt
+        if ! diff /tmp/config-arm64.txt /tmp/config-x86_64.txt; then
+          echo "::error::slices configured with different features (see diff above)"
+          exit 1
+        fi
+        # On a pairing failure below, show which binary/library pulls in
+        # the one-sided dylib, so the cause is obvious from this log.
+        missing_refs() {
+          local base="$1" dir="$2" b
+          for b in "$dir"/atari800-* "$dir"/lib/*; do
+            [ -f "$b" ] || continue
+            if otool -L "$b" 2>/dev/null | grep -q "/$base"; then
+              echo "  referenced by: $b"
+            fi
+          done
+        }
         lipo -create slice-arm64/atari800-arm64 slice-x86_64/atari800-x86_64 -output atari800-universal
         lipo -info atari800-universal
         archs=$(lipo -archs atari800-universal)
@@ -529,6 +578,7 @@ jobs:
             lipo -create "$f" "slice-x86_64/lib/$base" -output "universal-libs/$base"
           else
             echo "::error::library $base has no x86_64 counterpart"
+            missing_refs "$base" slice-arm64
             exit 1
           fi
         done
@@ -536,6 +586,7 @@ jobs:
           base=$(basename "$f")
           if [ ! -f "universal-libs/$base" ]; then
             echo "::error::library $base has no arm64 counterpart"
+            missing_refs "$base" slice-x86_64
             exit 1
           fi
         done
