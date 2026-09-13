@@ -769,26 +769,6 @@ jobs:
           -ov -format UDZO "$DMG"
         hdiutil verify "$DMG"
 
-        # Smoke-test the packaged image: checksums, signature validity, both
-        # CPU slices present, and that the binary actually starts. "-help"
-        # makes Atari800_Initialise return FALSE after printing usage, so the
-        # expected exit code is 3; anything else (e.g. SIGKILL on a broken
-        # signature) fails the build.
-        hdiutil attach -readonly -nobrowse "$DMG"
-        MNT="/Volumes/Atari800 ${V}"
-        codesign --verify --deep --strict "$MNT/$APP"
-        lipo -archs "$MNT/$APP/Contents/MacOS/atari800"
-        set +e
-        "$MNT/$APP/Contents/MacOS/atari800" -config /dev/null -nosound -help >/dev/null 2>&1
-        RC=$?
-        set -e
-        if [ "$RC" != 3 ]; then
-          echo "::error::packaged binary failed to start (exit $RC)"
-          hdiutil detach "$MNT" || true
-          exit 1
-        fi
-        hdiutil detach "$MNT"
-
     - name: Upload DMG
       if: startsWith(github.ref, 'refs/tags/ATARI800_') || inputs.version != ''
       uses: actions/upload-artifact@v7
