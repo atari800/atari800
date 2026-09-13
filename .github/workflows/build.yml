@@ -405,7 +405,9 @@ jobs:
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
-        rm -rf macos-slice && mkdir -p macos-slice/lib
+        # NB: no rm -rf here: the build step already placed
+        # configure.log in macos-slice/ (runners are fresh VMs).
+        mkdir -p macos-slice/lib
         cp src/atari800 macos-slice/atari800-arm64
         # Collect every Homebrew-provided dylib this slice links against,
         # following transitive references, so the package job can merge
@@ -427,7 +429,9 @@ jobs:
           done < <(deps_of "$1")
         }
         collect_libs macos-slice/atari800-arm64
-        brew list --versions | sort > macos-slice/brew-versions.txt
+        # Only our own formulae: the runners' preinstalled sets
+        # (browsers, php, …) legitimately differ and would never match.
+        brew list --versions sdl2 automake readline libpng lame | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload arm64 slice
       uses: actions/upload-artifact@v7
@@ -469,7 +473,9 @@ jobs:
         make -j$(sysctl -n hw.ncpu)
     - name: stage slice and Homebrew dylibs
       run: |
-        rm -rf macos-slice && mkdir -p macos-slice/lib
+        # NB: no rm -rf here: the build step already placed
+        # configure.log in macos-slice/ (runners are fresh VMs).
+        mkdir -p macos-slice/lib
         cp src/atari800 macos-slice/atari800-x86_64
         # Collect every Homebrew-provided dylib this slice links against,
         # following transitive references, so the package job can merge
@@ -491,7 +497,9 @@ jobs:
           done < <(deps_of "$1")
         }
         collect_libs macos-slice/atari800-x86_64
-        brew list --versions | sort > macos-slice/brew-versions.txt
+        # Only our own formulae: the runners' preinstalled sets
+        # (browsers, php, …) legitimately differ and would never match.
+        brew list --versions sdl2 automake readline libpng lame | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload x86_64 slice
       uses: actions/upload-artifact@v7
