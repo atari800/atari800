@@ -702,6 +702,8 @@ static int SetVideoMode(int w, int h, int windowed)
 		if (w != cw || h != ch) {
 			SDL_SetWindowSize(SDL_VIDEO_wnd, w, h);
 		}
+		SDL_VIDEO_screen->w = w;
+		SDL_VIDEO_screen->h = h;
 	}
 
 	int width = 0, height = 0;

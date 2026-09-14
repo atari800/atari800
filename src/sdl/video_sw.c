@@ -185,11 +185,12 @@ static void SetVideoMode(int w, int h, int bpp, int windowed)
 {
 #if SDL2
 	Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
-	if (!windowed) {
+	int new_fullscreen = !windowed;
+	if (new_fullscreen) {
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
 
-	if (SDL_VIDEO_wnd && (!SDL_VIDEO_screen || SDL_VIDEO_screen->flags != flags)) {
+	if (SDL_VIDEO_wnd && (!SDL_VIDEO_screen || fullscreen != new_fullscreen)) {
 		SDL_DestroyWindow(SDL_VIDEO_wnd);
 		SDL_VIDEO_wnd = 0;
 	}
@@ -208,6 +209,14 @@ static void SetVideoMode(int w, int h, int bpp, int windowed)
 			exit(-1);
 		}
 	}
+	else {
+		int cw, ch;
+		SDL_GetWindowSize(SDL_VIDEO_wnd, &cw, &ch);
+		if (w != cw || h != ch)
+			SDL_SetWindowSize(SDL_VIDEO_wnd, w, h);
+	}
+
+	fullscreen = new_fullscreen;
 
 	int width = 0, height = 0;
 	if (SDL_GetRendererOutputSize(SDL_VIDEO_renderer, &width, &height)) {
