@@ -1242,9 +1242,12 @@ int PLATFORM_Keyboard(void)
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
-			case SDL_WINDOWEVENT_RESIZED:
-				VIDEOMODE_SetWindowSize(event.window.data1, event.window.data2);
+			case SDL_WINDOWEVENT_RESIZED: {
+				int width, height;
+				SDL_GetWindowSize(SDL_VIDEO_wnd, &width, &height);
+				VIDEOMODE_SetWindowSize(width, height);
 				break;
+			}
 			case SDL_WINDOWEVENT_EXPOSED:
 				PLATFORM_DisplayScreen();
 				break;
