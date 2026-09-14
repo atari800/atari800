@@ -272,6 +272,7 @@ void SDL_VIDEO_SW_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, 
 #if SDL2
 	SetVideoMode(res->width, res->height, 0, windowed);
 	SDL_VIDEO_SW_bpp = 32;
+	UpdatePaletteLookup(mode);
 	SDL_SetRenderDrawColor(SDL_VIDEO_renderer, 0, 0, 0, 255);
 	SDL_RenderClear(SDL_VIDEO_renderer);
 	SDL_RenderPresent(SDL_VIDEO_renderer);
