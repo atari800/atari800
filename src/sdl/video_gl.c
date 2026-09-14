@@ -672,6 +672,10 @@ static int SetVideoMode(int w, int h, int windowed)
 	}
 
 	if (!SDL_VIDEO_wnd) {
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
 		SDL_VIDEO_wnd = SDL_CreateWindow(Atari800_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, flags);
 		if (!SDL_VIDEO_wnd) {
 			Log_print("Creating an OpenGL window with size %dx%d failed: %s", w, h, SDL_GetError());
