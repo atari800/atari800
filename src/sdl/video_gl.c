@@ -712,11 +712,6 @@ static int SetVideoMode(int w, int h, int windowed)
 	screen_height = height;
 	VIDEOMODE_dest_scale_factor = (double)width / w;
 
-	SDL_VIDEO_vsync_available = TRUE;
-	if (SDL_VIDEO_vsync) {
-		SDL_GL_SetSwapInterval(1); // VSync
-	}
-
 #else
 	Uint32 flags = SDL_OPENGL | (windowed ? SDL_RESIZABLE : SDL_OpenGL_FULLSCREEN);
 	/* In OpenGL mode, the SDL screen is always opened with the default
@@ -997,6 +992,11 @@ int SDL_VIDEO_GL_SetVideoMode(VIDEOMODE_resolution_t const *res, int windowed, V
 		InitGlContext();
 		context_updated = TRUE;
 	}
+
+#if SDL2
+	SDL_VIDEO_vsync_available =
+		SDL_GL_SetSwapInterval(SDL_VIDEO_vsync ? 1 : 0) == 0;
+#endif
 
 	if (isnew) {
 		FreeTexture();
