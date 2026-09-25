@@ -391,8 +391,8 @@ jobs:
         # configure identically: AC_CHECK_LIB would otherwise silently
         # enable PNG screenshots/codecs and MP3 recording on whatever
         # runner happens to have them, diverging the dep closure below.
-        brew install sdl2 automake readline libpng lame
-        brew list --versions sdl2 automake readline libpng lame
+        brew install sdl2-compat sdl3 automake readline libpng lame
+        brew list --versions sdl2-compat sdl3 automake readline libpng lame
     - name: autogen
       run: ./autogen.sh
     - name: build arm64 slice
@@ -400,11 +400,13 @@ jobs:
         # Point the build at Homebrew kegs explicitly: /usr/local is in
         # Apple's default search paths but /opt/homebrew (ARM) is not,
         # so without this ARM configure checks silently miss brew libs.
+        SDL2_COMPAT_PREFIX=$(brew --prefix sdl2-compat)
+        export SDL2_CONFIG="$SDL2_COMPAT_PREFIX/bin/sdl2-config"
         BREW_PREFIX=$(brew --prefix)
-        export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
-        export LDFLAGS="-L$BREW_PREFIX/lib $LDFLAGS"
+        export CPPFLAGS="-I$SDL2_COMPAT_PREFIX/include/SDL2 -I$SDL2_COMPAT_PREFIX/include -I$BREW_PREFIX/include $CPPFLAGS"
+        export LDFLAGS="-L$SDL2_COMPAT_PREFIX/lib -L$BREW_PREFIX/lib $LDFLAGS"
         mkdir -p macos-slice
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
+        ./configure --with-sdl2-prefix="$SDL2_COMPAT_PREFIX" --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
         rc=$?
         tail -25 macos-slice/configure.log
         test $rc -eq 0
@@ -414,6 +416,7 @@ jobs:
         grep "Supported audio codecs" macos-slice/configure.log | grep -q mp3 || { echo "::error::MP3 support not detected"; grep -B2 -A12 "lame_init\|lame\.h" config.log | head -40; exit 1; }
         grep "Supported video codecs" macos-slice/configure.log | grep -q png || { echo "::error::PNG video codec not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
         make -j$(sysctl -n hw.ncpu)
+        test -x "$SDL2_CONFIG"
     - name: stage slice and Homebrew dylibs
       run: |
         # NB: no rm -rf here: the build step already placed
@@ -425,7 +428,7 @@ jobs:
         # them with the x86_64 counterparts via lipo.
         deps_of() {
           otool -L "$1" \
-            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
+            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt|\/usr\/local\/Cellar)\/[^ ]*).*/\1/p' \
             | sort -u
         }
         collect_libs() {
@@ -439,10 +442,26 @@ jobs:
             fi
           done < <(deps_of "$1")
         }
+        collect_formula_dylib() {
+          local formula="$1" pattern="$2" prefix lib found=no
+          prefix=$(brew --prefix "$formula")
+          for lib in "$prefix"/lib/$pattern; do
+            if [ -f "$lib" ]; then
+              cp -L "$lib" "macos-slice/lib/$(basename "$lib")"
+              found=yes
+            fi
+          done
+          if [ "$found" = no ]; then
+            echo "::error::No $pattern found for $formula"
+            return 1
+          fi
+        }
         collect_libs macos-slice/atari800-arm64
+        collect_formula_dylib sdl2-compat 'libSDL2-*.dylib'
+        collect_formula_dylib sdl3 'libSDL3*.dylib'
         # Only our own formulae: the runners' preinstalled sets
         # (browsers, php, …) legitimately differ and would never match.
-        brew list --versions sdl2 automake readline libpng lame | sort > macos-slice/brew-versions.txt
+        brew list --versions sdl2-compat sdl3 automake readline libpng lame | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload arm64 slice
       uses: actions/upload-artifact@v7
@@ -470,8 +489,8 @@ jobs:
         # configure identically: AC_CHECK_LIB would otherwise silently
         # enable PNG screenshots/codecs and MP3 recording on whatever
         # runner happens to have them, diverging the dep closure below.
-        brew install sdl2 automake readline libpng lame
-        brew list --versions sdl2 automake readline libpng lame
+        brew install sdl2-compat sdl3 automake readline libpng lame
+        brew list --versions sdl2-compat sdl3 automake readline libpng lame
     - name: autogen
       run: ./autogen.sh
     - name: build x86_64 slice
@@ -479,11 +498,13 @@ jobs:
         # Point the build at Homebrew kegs explicitly: /usr/local is in
         # Apple's default search paths but /opt/homebrew (ARM) is not,
         # so without this ARM configure checks silently miss brew libs.
+        SDL2_COMPAT_PREFIX=$(brew --prefix sdl2-compat)
+        export SDL2_CONFIG="$SDL2_COMPAT_PREFIX/bin/sdl2-config"
         BREW_PREFIX=$(brew --prefix)
-        export CPPFLAGS="-I$BREW_PREFIX/include $CPPFLAGS"
-        export LDFLAGS="-L$BREW_PREFIX/lib $LDFLAGS"
+        export CPPFLAGS="-I$SDL2_COMPAT_PREFIX/include/SDL2 -I$SDL2_COMPAT_PREFIX/include -I$BREW_PREFIX/include $CPPFLAGS"
+        export LDFLAGS="-L$SDL2_COMPAT_PREFIX/lib -L$BREW_PREFIX/lib $LDFLAGS"
         mkdir -p macos-slice
-        ./configure --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
+        ./configure --with-sdl2-prefix="$SDL2_COMPAT_PREFIX" --with-opengl --with-video=sdl2 --with-sound=sdl2 --with-mp3=lame >macos-slice/configure.log 2>&1
         rc=$?
         tail -25 macos-slice/configure.log
         test $rc -eq 0
@@ -493,6 +514,7 @@ jobs:
         grep "Supported audio codecs" macos-slice/configure.log | grep -q mp3 || { echo "::error::MP3 support not detected"; grep -B2 -A12 "lame_init\|lame\.h" config.log | head -40; exit 1; }
         grep "Supported video codecs" macos-slice/configure.log | grep -q png || { echo "::error::PNG video codec not detected"; grep -B2 -A12 "png_get_libpng_ver" config.log | head -40; exit 1; }
         make -j$(sysctl -n hw.ncpu)
+        test -x "$SDL2_CONFIG"
     - name: stage slice and Homebrew dylibs
       run: |
         # NB: no rm -rf here: the build step already placed
@@ -504,7 +526,7 @@ jobs:
         # them with the arm64 counterparts via lipo.
         deps_of() {
           otool -L "$1" \
-            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
+            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt|\/usr\/local\/Cellar)\/[^ ]*).*/\1/p' \
             | sort -u
         }
         collect_libs() {
@@ -518,10 +540,26 @@ jobs:
             fi
           done < <(deps_of "$1")
         }
+        collect_formula_dylib() {
+          local formula="$1" pattern="$2" prefix lib found=no
+          prefix=$(brew --prefix "$formula")
+          for lib in "$prefix"/lib/$pattern; do
+            if [ -f "$lib" ]; then
+              cp -L "$lib" "macos-slice/lib/$(basename "$lib")"
+              found=yes
+            fi
+          done
+          if [ "$found" = no ]; then
+            echo "::error::No $pattern found for $formula"
+            return 1
+          fi
+        }
         collect_libs macos-slice/atari800-x86_64
+        collect_formula_dylib sdl2-compat 'libSDL2-*.dylib'
+        collect_formula_dylib sdl3 'libSDL3*.dylib'
         # Only our own formulae: the runners' preinstalled sets
         # (browsers, php, …) legitimately differ and would never match.
-        brew list --versions sdl2 automake readline libpng lame | sort > macos-slice/brew-versions.txt
+        brew list --versions sdl2-compat sdl3 automake readline libpng lame | sort > macos-slice/brew-versions.txt
         ls macos-slice macos-slice/lib
     - name: Upload x86_64 slice
       uses: actions/upload-artifact@v7
@@ -652,16 +690,24 @@ jobs:
         # arm64 slice uses /opt/homebrew, the native Intel slice /usr/local.
         deps_of() {
           { otool -arch arm64 -L "$1"; otool -arch x86_64 -L "$1"; } \
-            | sed -nE 's/^[[:space:]]+((\/opt\/homebrew|\/usr\/local\/opt)\/[^ ]*).*/\1/p' \
+            | sed -nE 's/^[[:space:]]+([^ ]+).*/\1/p' \
             | sort -u
         }
 
         # Point all references at the bundled copies. install_name_tool rewrites
         # the load commands of every slice of a fat binary in one go.
         patch_refs() {
-          local bin="$1" dep
+          local bin="$1" dep base bundled
           while read -r dep; do
-            install_name_tool -change "$dep" "@executable_path/../lib/$(basename "$dep")" "$bin"
+            case "$dep" in
+              /opt/homebrew/*|/usr/local/opt/*|/usr/local/Cellar/*|@rpath/*|@loader_path/*|@executable_path/*)
+                base=$(basename "$dep")
+                bundled="$APP/Contents/lib/$base"
+                if [ -f "$bundled" ]; then
+                  install_name_tool -change "$dep" "@executable_path/../lib/$base" "$bin"
+                fi
+                ;;
+            esac
           done < <(deps_of "$bin")
         }
 
@@ -671,8 +717,18 @@ jobs:
           install_name_tool -id "@executable_path/../lib/$(basename "$lib")" "$lib"
         done
 
-        # Fail if any Homebrew reference survived the rewrite.
-        leftover=$(for bin in "$APP/Contents/MacOS/"* "$APP"/Contents/lib/*; do deps_of "$bin"; done)
+        unbundled_refs() {
+          local bin="$1" dep base
+          while read -r dep; do
+            case "$dep" in
+              /opt/homebrew/*|/usr/local/opt/*|/usr/local/Cellar/*|@rpath/*|@loader_path/*|@executable_path/*)
+                base=$(basename "$dep")
+                [ -f "$APP/Contents/lib/$base" ] || printf '%s\n' "$dep"
+                ;;
+            esac
+          done < <(deps_of "$bin")
+        }
+        leftover=$(for bin in "$APP/Contents/MacOS/"* "$APP"/Contents/lib/*; do unbundled_refs "$bin"; done)
         if [ -n "$leftover" ]; then
           echo "::error::Unbundled dependencies remain:"
           echo "$leftover"
