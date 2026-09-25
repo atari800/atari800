@@ -236,7 +236,7 @@ AC_ARG_WITH(sdl2-exec-prefix,[  --with-sdl2-exec-prefix=PFX Exec prefix where SD
            sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
   fi
 
-  if test "x$no_sdl" = x ; then
+  if test "x$no_sdl2" = x ; then
      AC_MSG_RESULT(yes)
      ifelse([$2], , :, [$2])
   else
