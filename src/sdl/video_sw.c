@@ -243,6 +243,9 @@ static void SetVideoMode(int w, int h, int bpp, int windowed)
 #else
 	Uint32 flags = (fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE)
 	               | SDL_HWPALETTE;
+#ifdef __MINT__
+	flags |= SDL_HWSURFACE;
+#endif
 	if (SDL_VIDEO_vsync)
 		flags |= SDL_HWSURFACE | SDL_DOUBLEBUF;
 
