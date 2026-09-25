@@ -1005,8 +1005,11 @@ jobs:
             mingw-w64-i686-SDL2
             mingw-w64-i686-readline
             mingw-w64-i686-libpng
-            mingw-w64-i686-nsis
             mingw-w64-i686-lame
+            # No mingw-w64-i686-nsis exists (upstream ships nsis for
+            # x86_64 only); makensis is arch-independent, so use the
+            # 64-bit binary to build the 32-bit installer.
+            mingw-w64-x86_64-nsis
             zip
 
       - name: Run autoreconf
@@ -1059,7 +1062,9 @@ jobs:
           cp DOC/INSTALL pkg/doc/INSTALL.txt
           cp DOC/NEWS pkg/doc/NEWS.txt
           cp DOC/USAGE pkg/doc/USAGE.txt
-          makensis -DVERSION=$V -DPLATFORM=win32-no-network atari800.nsi
+          # x86_64 makensis (no i686 package exists); /mingw64/bin is not
+          # on PATH under the MINGW32 shell, so use the full path.
+          /mingw64/bin/makensis -DVERSION=$V -DPLATFORM=win32-no-network atari800.nsi
           (cd pkg && zip -r "../atari800-${V}-win32-no-network.zip" .)
 
       - name: Verify installer
