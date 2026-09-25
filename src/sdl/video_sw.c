@@ -201,13 +201,16 @@ static void SetVideoMode(int w, int h, int bpp, int windowed)
 			Log_flushlog();
 			exit(-1);
 		}
-		SDL_VIDEO_renderer = SDL_CreateRenderer(SDL_VIDEO_wnd, -1, SDL_RENDERER_PRESENTVSYNC);
+		SDL_VIDEO_renderer = SDL_CreateRenderer(SDL_VIDEO_wnd, -1, 0);
 		if (!SDL_VIDEO_renderer) {
 			Log_print("Creating a renderer failed: %s", SDL_GetError());
 			Log_flushlog();
 			exit(-1);
 		}
 	}
+
+	SDL_VIDEO_vsync_available =
+		SDL_RenderSetVSync(SDL_VIDEO_renderer, SDL_VIDEO_vsync ? 1 : 0) == 0;
 
 	int width = 0, height = 0;
 	if (SDL_GetRendererOutputSize(SDL_VIDEO_renderer, &width, &height)) {
