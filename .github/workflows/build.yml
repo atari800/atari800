@@ -997,6 +997,9 @@ jobs:
         with:
           msystem: MINGW32
           update: true
+          # No mingw-w64-i686-nsis exists (upstream ships nsis for x86_64
+          # only); makensis is arch-independent, so the 32-bit installer
+          # is built with the 64-bit binary (see full path below).
           install: >-
             git
             base-devel
@@ -1006,9 +1009,6 @@ jobs:
             mingw-w64-i686-readline
             mingw-w64-i686-libpng
             mingw-w64-i686-lame
-            # No mingw-w64-i686-nsis exists (upstream ships nsis for
-            # x86_64 only); makensis is arch-independent, so use the
-            # 64-bit binary to build the 32-bit installer.
             mingw-w64-x86_64-nsis
             zip
 
