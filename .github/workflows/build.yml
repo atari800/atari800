@@ -438,16 +438,24 @@ jobs:
             out="macos-slice/lib/$base"
             if [ ! -f "$out" ]; then
               cp -L "$dep" "$out"
+              chmod +w "$out"
               collect_libs "$out"
             fi
           done < <(deps_of "$1")
         }
         collect_formula_dylib() {
-          local formula="$1" pattern="$2" prefix lib found=no
+          local formula="$1" pattern="$2" prefix lib found=no base out
           prefix=$(brew --prefix "$formula")
           for lib in "$prefix"/lib/$pattern; do
             if [ -f "$lib" ]; then
-              cp -L "$lib" "macos-slice/lib/$(basename "$lib")"
+              base=$(basename "$lib")
+              out="macos-slice/lib/$base"
+              # collect_libs above may already have staged the same
+              # basename (Homebrew dylibs are read-only, so a plain
+              # second cp fails with "Permission denied"); replace it.
+              rm -f "$out"
+              cp -L "$lib" "$out"
+              chmod +w "$out"
               found=yes
             fi
           done
@@ -536,16 +544,24 @@ jobs:
             out="macos-slice/lib/$base"
             if [ ! -f "$out" ]; then
               cp -L "$dep" "$out"
+              chmod +w "$out"
               collect_libs "$out"
             fi
           done < <(deps_of "$1")
         }
         collect_formula_dylib() {
-          local formula="$1" pattern="$2" prefix lib found=no
+          local formula="$1" pattern="$2" prefix lib found=no base out
           prefix=$(brew --prefix "$formula")
           for lib in "$prefix"/lib/$pattern; do
             if [ -f "$lib" ]; then
-              cp -L "$lib" "macos-slice/lib/$(basename "$lib")"
+              base=$(basename "$lib")
+              out="macos-slice/lib/$base"
+              # collect_libs above may already have staged the same
+              # basename (Homebrew dylibs are read-only, so a plain
+              # second cp fails with "Permission denied"); replace it.
+              rm -f "$out"
+              cp -L "$lib" "$out"
+              chmod +w "$out"
               found=yes
             fi
           done
