@@ -546,6 +546,9 @@ int IMG_TAPE_SkipToData(IMG_TAPE_t *file, int ms)
 				file->next_blockbyte = file->block_length;
 			} else {
 				int bytes = ms * (file->isCAS ? file->block_baudrates[file->current_block] : 600) / 1000 / 10;
+				if (bytes == 0)
+					/* Less than a byte's time left to skip */
+					break;
 				if (bytes > file->block_length - file->next_blockbyte)
 					bytes = file->block_length - file->next_blockbyte;
 				file->next_blockbyte += bytes;
