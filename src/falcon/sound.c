@@ -34,14 +34,9 @@
 #include <string.h>
 
 /*
- * https://github.com/mikrosk/usound
- *
- * Use usound_compat.h until SDL 1.2 + uSound have been upgraded in the build image.
- * Replace with #include <usound.h> once ihe image ships usound.h >= 2; it will #error in such case.
+ * https://github.com/mikrosk/usound (version 2 or later)
  */
-#define USOUND_COMPAT_INIT	Atari800_SoundSetupInitXbios
-#define USOUND_COMPAT_DEINIT	Atari800_SoundSetupDeinitXbios
-#include "usound_compat.h"
+#include <usound.h>
 
 #include "platform.h"
 #include "sound.h"
