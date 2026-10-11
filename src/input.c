@@ -130,6 +130,10 @@ static unsigned int compute_adler32_of_screen(void);
 static int recording_version;
 #define GZBUFSIZE 256
 static char gzbuf[GZBUFSIZE+1];
+/* The joysticks and triggers of the frame being played back: one line of the
+   recording holds all of a frame's input events, read with the keys */
+static int playback_port[2];
+static int playback_trig[4];
 #define EVENT_RECORDING_VERSION 1
 #endif
 
@@ -454,7 +458,9 @@ void INPUT_Frame(void)
 #ifdef EVENT_RECORDING
 	if (playingback) {
 		gzgets(playbackfp, gzbuf, GZBUFSIZE);
-		sscanf(gzbuf, "%d %d %d ", &INPUT_key_code, &INPUT_key_shift, &INPUT_key_consol);
+		sscanf(gzbuf, "%d %d %d %d %d %d %d %d %d ", &INPUT_key_code, &INPUT_key_shift, &INPUT_key_consol,
+		       &playback_port[0], &playback_port[1],
+		       &playback_trig[0], &playback_trig[1], &playback_trig[2], &playback_trig[3]);
 	}
 	if (recording) {
 		gzprintf(recordfp, "%d %d %d ", INPUT_key_code, INPUT_key_shift, INPUT_key_consol);
@@ -537,8 +543,7 @@ void INPUT_Frame(void)
 	/* handle joysticks */
 #ifdef EVENT_RECORDING
 	if (playingback) {
-		gzgets(playbackfp, gzbuf, GZBUFSIZE);
-		sscanf(gzbuf,"%d ",&i);
+		i = playback_port[0];
 	} else {
 #endif
 		i = PLATFORM_PORT(0);
@@ -553,8 +558,7 @@ void INPUT_Frame(void)
 	STICK[1] = (i >> 4) & 0x0f;
 #ifdef EVENT_RECORDING
 	if (playingback) {
-		gzgets(playbackfp, gzbuf, GZBUFSIZE);
-		sscanf(gzbuf,"%d ",&i);
+		i = playback_port[1];
 	} else {
 #endif
 		i = PLATFORM_PORT(1);
@@ -595,10 +599,7 @@ void INPUT_Frame(void)
 		/* Joystick Triggers */
 #ifdef EVENT_RECORDING
 		if(playingback){
-			int trigtemp;
-			gzgets(playbackfp, gzbuf, GZBUFSIZE);
-			sscanf(gzbuf,"%d ",&trigtemp);
-			TRIG_input[i] = trigtemp;
+			TRIG_input[i] = playback_trig[i];
 
 		} else {
 #endif
