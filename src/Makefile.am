@@ -327,12 +327,18 @@ ide.o: ide.c ide.h ide_internal.h
 	$(CCAS) $(CCASFLAGS) -o $@ $<
 
 # run the Acid800 test suite against the expected results ("make check");
-# delete test/acid800.expected and run again to record a new baseline
+# delete test/acid800.expected and run again to record a new baseline;
+# then play back test/playback.rec (a BASIC program printing the joystick,
+# moved and fired): playback exits with an error if the screen differs from
+# the recording's on any frame
 check-local: atari800$(EXEEXT)
 	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./atari800$(EXEEXT) \
 	  -config /dev/null -xl-rev altirra -nosound -nobasic -turbo \
 	  -acid800 $(top_srcdir)/test/acid800.expected \
 	  $(top_srcdir)/test/acid800.atr
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./atari800$(EXEEXT) \
+	  -config /dev/null -xl -xl-rev altirra -basic -basic-rev altirra \
+	  -nosound -turbo -playback $(top_srcdir)/test/playback.rec
 
 if CONFIGURE_HOST_JAVANVM
 $(TARGET_BASE_NAME).class: javanvm/$(TARGET_BASE_NAME).java | $(TARGET_BASE_NAME)_runtime.class
