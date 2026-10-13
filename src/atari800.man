@@ -925,6 +925,16 @@ Use to override the default pattern of \fIatari###.avi\fR which produces
 \fIatari000.avi\fR, \fIatari001.avi\fR etc. filenames.
 Hashes are replaced with raising numbers.
 .TP
+.BI \-record\-video\  [ start :|: end | start : end ]
+Record video, as Alt+V does, without a key press: for the whole run,
+or from \fIstart\fR seconds of emulated time to the exit (\fIstart\fR:),
+from the beginning to \fIend\fR (:\fIend\fR), or from \fIstart\fR to
+\fIend\fR (seconds may have a fraction; the colon is required).
+The file is named as Alt+V names it (see \fB\-vname\fR).
+.TP
+.BI \-record\-audio\  [ start :|: end | start : end ]
+Record sound, as Alt+W does, the same way (see \fB\-aname\fR).
+.TP
 \fB\-vcodec auto\fR|\fBrle\fR|\fBmsrle\fR|\fBpng\fR|\fBzmbv\fR|\fBuzmbv\fR
 Select the video codec used to store image frames in AVI video recordings.
 All video codecs use lossless compression.

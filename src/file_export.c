@@ -24,12 +24,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include "file_export.h"
 #include "screen.h"
 #include "colours.h"
 #include "cfg.h"
 #include "util.h"
 #include "log.h"
+#include "atari.h"
+#ifdef SOUND
+#include "sound.h"
+#endif
 
 #ifdef SCREENSHOTS
 #include "codecs/image.h"
@@ -75,6 +81,48 @@ static int video_no_last = -1;
 static int video_no_max = 0;
 #endif /* VIDEO_RECORDING */
 
+/* A recording started from the command line (-record-video, -record-audio): what to
+   record, and from when to when in seconds of emulated time (end < 0: until the exit) */
+#define AUTO_NONE 0
+#define AUTO_VIDEO 1
+#define AUTO_AUDIO 2
+static int auto_kind = AUTO_NONE;
+static double auto_start = 0.0, auto_end = -1.0;
+#define AUTO_STATE_WAITING 0   /* for the start */
+#define AUTO_STATE_RECORDING 1
+#define AUTO_STATE_DONE 2
+static int auto_state = AUTO_STATE_WAITING;
+
+/* Reads "START:", ":END" or "START:END" (seconds) into auto_start and auto_end.
+   RETURNS: TRUE if the text is such a range (the colon is required) */
+static int ParseRange(const char *text)
+{
+	char *end;
+	double start = 0.0, stop = -1.0;
+	int given = FALSE;   /* (a START or an END) */
+	if (strchr(text, ':') == NULL)
+		return FALSE;
+	if (*text != ':') {
+		start = strtod(text, &end);
+		if (end == text || start < 0.0 || *end != ':')
+			return FALSE;
+		text = end;
+		given = TRUE;
+	}
+	text++;   /* (the colon) */
+	if (*text != '\0') {
+		stop = strtod(text, &end);
+		if (end == text || *end != '\0' || stop < start)
+			return FALSE;
+		given = TRUE;
+	}
+	if (!given)
+		return FALSE;   /* (":" alone) */
+	auto_start = start;
+	auto_end = stop;
+	return TRUE;
+}
+
 #endif /* defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING) */
 
 
@@ -116,6 +164,26 @@ int File_Export_Initialise(int *argc, char *argv[])
 			else a_m = TRUE;
 		}
 #endif
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
+		else if (0
+#ifdef VIDEO_RECORDING
+			|| strcmp(argv[i], "-record-video") == 0
+#endif
+#ifdef AUDIO_RECORDING
+			|| strcmp(argv[i], "-record-audio") == 0
+#endif
+			) {
+			auto_kind = strcmp(argv[i], "-record-video") == 0 ? AUTO_VIDEO : AUTO_AUDIO;
+			/* the range is optional: an argument that is not one is left for the others,
+			   but one that looks like a number is an error (a range has its colon) */
+			if (i_a && ParseRange(argv[i + 1]))
+				i++;
+			else if (i_a && (isdigit((unsigned char) argv[i + 1][0]) || argv[i + 1][0] == '.' || argv[i + 1][0] == ':')) {
+				i++;
+				a_i = TRUE;
+			}
+		}
+#endif
 		else {
 			if (strcmp(argv[i], "-help") == 0) {
 #if defined(HAVE_LIBPNG) || defined(HAVE_LIBZ)
@@ -127,6 +195,15 @@ int File_Export_Initialise(int *argc, char *argv[])
 #endif
 #ifdef VIDEO_RECORDING
 				Log_print("\t-vname <p>       Set filename pattern for video recording");
+#endif
+#ifdef VIDEO_RECORDING
+				Log_print("\t-record-video [START:|:END|START:END]");
+				Log_print("\t                 Record video (as Alt+V does) for the whole run, or from");
+				Log_print("\t                 START (to the exit) or to END seconds of emulated time");
+#endif
+#ifdef AUDIO_RECORDING
+				Log_print("\t-record-audio [START:|:END|START:END]");
+				Log_print("\t                 Record sound (as Alt+W does), the same way");
 #endif
 			}
 			argv[j++] = argv[i];
@@ -338,6 +415,59 @@ int File_Export_WriteVideo(void)
 }
 
 #endif /* VIDEO_RECORDING */
+
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
+/* File_Export_Frame starts and stops the recording asked for on the command line
+   (-record-video, -record-audio) when the emulated time reaches its start and end.
+   It is called once a frame, before the frame is written to the video. */
+void File_Export_Frame(void)
+{
+	double now;
+	char filename[FILENAME_MAX];
+
+	if (auto_kind == AUTO_NONE || auto_state == AUTO_STATE_DONE)
+		return;
+	now = Atari800_nframes / (Atari800_tv_mode == Atari800_TV_PAL ? Atari800_FPS_PAL : Atari800_FPS_NTSC);
+	if (auto_state == AUTO_STATE_WAITING) {
+		int got = FALSE;
+		if (now < auto_start)
+			return;
+		auto_state = AUTO_STATE_RECORDING;
+#ifdef AUDIO_RECORDING
+		if (auto_kind == AUTO_AUDIO) {
+#ifdef SOUND
+			if (!Sound_enabled) {
+				Log_print("Can't record. Sound not enabled.");
+				auto_state = AUTO_STATE_DONE;
+				return;
+			}
+#endif
+			got = File_Export_GetNextSoundFile(filename, sizeof(filename));
+		}
+#endif
+#ifdef VIDEO_RECORDING
+		if (auto_kind == AUTO_VIDEO)
+			got = File_Export_GetNextVideoFile(filename, sizeof(filename));
+#endif
+		if (!got) {
+			Log_print("All %s files exist!", auto_kind == AUTO_VIDEO ? "video" : "sound");
+			auto_state = AUTO_STATE_DONE;
+		}
+		else if (File_Export_StartRecording(filename))
+			Log_print("Recording %s to file \"%s\"", auto_kind == AUTO_VIDEO ? "video" : "sound", filename);
+		else {
+			Log_print("%s", FILE_EXPORT_error_message);
+			auto_state = AUTO_STATE_DONE;
+		}
+		return;
+	}
+	if (auto_end >= 0.0 && now >= auto_end) {
+		File_Export_StopRecording();
+		Log_print("Recording stopped");
+		auto_state = AUTO_STATE_DONE;
+	}
+}
+#endif
 
 /* File_Export_GetStats gets the elapsed time in seconds, the size in kilobytes,
    and the description of the currently recording file.
