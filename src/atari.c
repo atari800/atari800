@@ -1543,6 +1543,9 @@ void Atari800_Frame(void)
 	POKEY_Frame();
 	if (ACIDTEST_enabled)
 		ACIDTEST_Frame();
+#if defined(AUDIO_RECORDING) || defined(VIDEO_RECORDING)
+	File_Export_Frame();
+#endif
 #ifdef VIDEO_RECORDING
 	File_Export_WriteVideo();
 #endif

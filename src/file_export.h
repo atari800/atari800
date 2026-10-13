@@ -24,6 +24,7 @@ void File_Export_SetErrorMessageArg(const char *format, const char *arg);
 int File_Export_IsRecording(void);
 int File_Export_StopRecording(void);
 int File_Export_StartRecording(const char *fileName);
+void File_Export_Frame(void);
 
 #ifdef AUDIO_RECORDING
 int File_Export_GetNextSoundFile(char *buffer, int bufsize);
