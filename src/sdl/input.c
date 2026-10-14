@@ -2893,7 +2893,18 @@ static int SDL_controller_kb(void)
 
 static int SDL_consol_keys(void)
 {
+	/* This runs on the frames without a keyboard event, so the keyboard's
+	   console keys are read here too: starting from none pressed released
+	   START, SELECT and OPTION one frame after they went down */
 	INPUT_key_consol = INPUT_CONSOL_NONE;
+	if (kbhits != NULL) {
+		if (get_key_state(kbhits, KBD_OPTION))
+			INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
+		if (get_key_state(kbhits, KBD_SELECT))
+			INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
+		if (get_key_state(kbhits, KBD_START))
+			INPUT_key_consol &= ~INPUT_CONSOL_START;
+	}
 
 	/* Console START/SELECT/OPTION via joystick only makes sense for a
 	   joystick that is a real Atari port controller. The fallback stick
@@ -2913,20 +2924,14 @@ static int SDL_consol_keys(void)
 				else
 					INPUT_key_consol |= INPUT_CONSOL_START;
 			}
-			else {
+			else
 				ui_leave_in_progress = FALSE;
-				INPUT_key_consol |= INPUT_CONSOL_START;
-			}
 
 			if (osk_joystick_button(OSK_BUTTON_SELECT))
 				INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
-			else
-				INPUT_key_consol |= INPUT_CONSOL_SELECT;
 
 			if (osk_joystick_button(OSK_BUTTON_OPTION))
 				INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
-			else
-				INPUT_key_consol |= INPUT_CONSOL_OPTION;
 		}
 	}
 	else {
